@@ -1,0 +1,3 @@
+namespace GpkgMerger.Src.ImageProccessing
+{
+}

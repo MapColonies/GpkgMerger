@@ -1,0 +1,5 @@
+bin/
+obj/
+*.gpkg
+.vscode
+*.sh
