@@ -56,8 +56,8 @@ namespace GpkgMerger
                 return;
             }
 
-            Data baseData = new Gpkg(DataType.GPKG, path1, 1000);
-            Data newData = new Gpkg(DataType.GPKG, path2, 1000);
+            Data baseData = new Gpkg(path1, 1000);
+            Data newData = new Gpkg(path2, 1000);
 
             Src.Proccess.Start(baseData, newData);
 

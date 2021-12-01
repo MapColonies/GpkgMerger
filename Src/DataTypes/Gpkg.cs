@@ -32,10 +32,10 @@ namespace GpkgMerger.Src.DataTypes
         private int offset;
         private Extent extent;
 
-        public Gpkg(DataType type, string path, int batchSize)
+        public Gpkg(string path, int batchSize)
         {
+            this.type = DataType.GPKG;
             this.tileCache = GpkgSql.GetTileCache(path);
-            this.type = type;
             this.path = path;
             this.batchSize = batchSize;
             this.offset = 0;
