@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using GpkgMerger.Src.Batching;
 using GpkgMerger.Src.Sql;
 
@@ -32,11 +33,9 @@ namespace GpkgMerger.Src.DataTypes
         private int offset;
         private Extent extent;
 
-        public Gpkg(string path, int batchSize)
+        public Gpkg(string path, int batchSize) : base(DataType.GPKG, path)
         {
-            this.type = DataType.GPKG;
             this.tileCache = GpkgSql.GetTileCache(path);
-            this.path = path;
             this.batchSize = batchSize;
             this.offset = 0;
             this.extent = GpkgSql.GetExtent(path);
@@ -110,6 +109,13 @@ namespace GpkgMerger.Src.DataTypes
         {
             GpkgSql.CreateTileIndex(this.path, this.tileCache);
             GpkgSql.Vacuum(this.path);
+        }
+
+        public override bool Exists()
+        {
+            // Get full path to gpkg file
+            string fullPath = Path.GetFullPath(this.path);
+            return File.Exists(fullPath);
         }
     }
 }
