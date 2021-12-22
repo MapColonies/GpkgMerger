@@ -4,7 +4,6 @@ using Amazon.Runtime;
 using System.Collections.Generic;
 using GpkgMerger.Src.Batching;
 using Amazon.S3.Model;
-using System.IO;
 using GpkgMerger.Src.Utils;
 
 namespace GpkgMerger.Src.DataTypes
@@ -13,17 +12,12 @@ namespace GpkgMerger.Src.DataTypes
     {
         private AmazonS3Client client;
         private string bucket;
-
-
-        ListObjectsV2Response listResponse;
         private string continuationToken;
-
         private bool endOfRead;
 
-        public S3(string serviceUrl, string bucket, string path) : base(DataType.S3, path)
+        public S3(string serviceUrl, string bucket, string path, int batchSize) : base(DataType.S3, path, batchSize)
         {
             this.bucket = bucket;
-            this.listResponse = null;
             this.continuationToken = null;
             this.endOfRead = false;
 
@@ -46,57 +40,6 @@ namespace GpkgMerger.Src.DataTypes
             Console.WriteLine("S3 source, skipping cleanup phase");
         }
 
-        private string GetImageHex(string key)
-        {
-            try
-            {
-                var getObjectTask = this.client.GetObjectAsync(this.bucket, key);
-                GetObjectResponse res = getObjectTask.Result;
-
-                byte[] image;
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    using (var responseStream = res.ResponseStream)
-                    {
-                        var buffer = new byte[1000];
-                        var bytesRead = 0;
-                        while ((bytesRead = responseStream.Read(buffer, 0, buffer.Length)) > 0)
-                        {
-                            ms.Write(buffer, 0, bytesRead);
-                        }
-                    }
-                    image = ms.ToArray();
-                }
-
-                return Convert.ToHexString(image);
-            }
-            catch (AggregateException e)
-            {
-                Console.WriteLine($"Error: {e.Message}");
-                return null;
-            }
-        }
-
-        private void UploadTile(Tile tile)
-        {
-            string key = $"{this.path}{tile.Z}/{tile.X}/{tile.Y}.png";
-
-            var request = new PutObjectRequest()
-            {
-                BucketName = this.bucket,
-                CannedACL = S3CannedACL.PublicRead,
-                Key = String.Format(key)
-            };
-
-            byte[] buffer = StringUtils.StringToByteArray(tile.Blob);
-            using (var ms = new MemoryStream(buffer))
-            {
-                request.InputStream = ms;
-                var task = this.client.PutObjectAsync(request);
-                var res = task.Result;
-            }
-        }
-
         public override List<Tile> GetCorrespondingBatch(List<Tile> tiles)
         {
             List<Tile> correspondingTiles = new List<Tile>();
@@ -105,7 +48,7 @@ namespace GpkgMerger.Src.DataTypes
             {
                 string key = $"{this.path}{tile.Z}/{tile.X}/{tile.Y}.png";
 
-                string blob = GetImageHex(key);
+                string blob = S3Utils.GetImageHex(this.client, this.bucket, key);
                 if (blob != null)
                 {
                     Tile correspondingTile = new Tile(tile.Z, tile.X, tile.Y, blob, blob.Length);
@@ -130,7 +73,7 @@ namespace GpkgMerger.Src.DataTypes
                 BucketName = this.bucket,
                 Prefix = this.path,
                 StartAfter = this.path,
-                MaxKeys = 5,
+                MaxKeys = this.batchSize,
                 ContinuationToken = this.continuationToken
             };
 
@@ -147,7 +90,7 @@ namespace GpkgMerger.Src.DataTypes
                     string[] parts = subPath.Split('/');
 
 
-                    string blob = GetImageHex(key);
+                    string blob = S3Utils.GetImageHex(this.client, this.bucket, key);
                     string[] last = parts[2].Split('.');
                     int z = int.Parse(parts[0]);
                     int x = int.Parse(parts[1]);
@@ -173,7 +116,7 @@ namespace GpkgMerger.Src.DataTypes
         {
             foreach (var tile in tiles)
             {
-                UploadTile(tile);
+                S3Utils.UploadTile(this.client, this.bucket, this.path, tile);
             }
         }
 
