@@ -15,11 +15,13 @@ namespace GpkgMerger.Src.DataTypes
     {
         public DataType type;
         public string path;
+        protected int batchSize;
 
-        public Data(DataType type, string path)
+        public Data(DataType type, string path, int batchSize)
         {
             this.type = type;
             this.path = path;
+            this.batchSize = batchSize;
         }
 
         public abstract void UpdateMetadata(Data data);
@@ -34,7 +36,7 @@ namespace GpkgMerger.Src.DataTypes
 
         public abstract bool Exists();
 
-        public static Data CreateDatasource(string type, string path)
+        public static Data CreateDatasource(string type, string path, int batchSize)
         {
             string s3Url = Configuration.Instance.GetConfiguration("S3", "url");
             string bucket = Configuration.Instance.GetConfiguration("S3", "bucket");
@@ -43,10 +45,10 @@ namespace GpkgMerger.Src.DataTypes
             switch (type.ToLower())
             {
                 case "gpkg":
-                    data = new Gpkg(path, 1000);
+                    data = new Gpkg(path, batchSize);
                     break;
                 case "s3":
-                    data = new S3(s3Url, bucket, path);
+                    data = new S3(s3Url, bucket, path, batchSize);
                     break;
                 default:
                     return null;

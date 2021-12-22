@@ -29,14 +29,14 @@ namespace GpkgMerger.Src.DataTypes
     public class Gpkg : Data
     {
         private string tileCache;
-        private int batchSize;
+
         private int offset;
+
         private Extent extent;
 
-        public Gpkg(string path, int batchSize) : base(DataType.GPKG, path)
+        public Gpkg(string path, int batchSize) : base(DataType.GPKG, path, batchSize)
         {
             this.tileCache = GpkgSql.GetTileCache(path);
-            this.batchSize = batchSize;
             this.offset = 0;
             this.extent = GpkgSql.GetExtent(path);
         }

@@ -44,8 +44,8 @@ namespace GpkgMerger
             // Data baseData = new Gpkg(fullBasePath, 1000);
             // Data newData = new Gpkg(fullNewPath, 1000);
 
-            Data baseData = Data.CreateDatasource(baseType, basePath);
-            Data newData = Data.CreateDatasource(newType, newPath);
+            Data baseData = Data.CreateDatasource(baseType, basePath, batchSize);
+            Data newData = Data.CreateDatasource(newType, newPath, batchSize);
 
             if (!baseData.Exists())
             {
