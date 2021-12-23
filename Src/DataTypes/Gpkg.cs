@@ -144,7 +144,12 @@ namespace GpkgMerger.Src.DataTypes
         public override void Cleanup()
         {
             GpkgSql.CreateTileIndex(this.path, this.tileCache);
-            GpkgSql.Vacuum(this.path);
+
+            bool vacuum = bool.Parse(Configuration.Instance.GetConfiguration("GPKG", "vacuum"));
+            if (vacuum)
+            {
+                GpkgSql.Vacuum(this.path);
+            }
         }
 
         public override bool Exists()
