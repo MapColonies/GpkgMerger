@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using GpkgMerger.Src.Batching;
 using GpkgMerger.Src.Sql;
+using GpkgMerger.Src.Utils;
 
 namespace GpkgMerger.Src.DataTypes
 {
@@ -28,6 +29,10 @@ namespace GpkgMerger.Src.DataTypes
 
     public class Gpkg : Data
     {
+        private const int ZoomLevelCount = 25;
+
+        private const int CoordsForAllZoomLevels = ZoomLevelCount << 1;
+
         private string tileCache;
 
         private int offset;
@@ -85,11 +90,42 @@ namespace GpkgMerger.Src.DataTypes
 
             foreach (Tile tile in tiles)
             {
-                Tile newTile = GpkgSql.GetTile(this.path, this.tileCache, tile);
-                newTiles.Add(newTile);
+                Tile baseTile = GpkgSql.GetTile(this.path, this.tileCache, tile);
+
+                if (baseTile == null)
+                {
+                    baseTile = GetLastExistingTile(tile);
+                }
+
+                newTiles.Add(baseTile);
             }
 
             return newTiles;
+        }
+
+        private Tile GetLastExistingTile(Tile tile)
+        {
+            int[] coords = new int[CoordsForAllZoomLevels];
+            for (int i = 0; i < coords.Length; i++)
+            {
+                coords[i] = -1;
+            }
+
+            int z = tile.Z;
+            int baseTileX = tile.X;
+            int baseTileY = tile.Y;
+            int arrayIterator = 0;
+            for (int i = z - 1; i >= 0; i--)
+            {
+                baseTileX >>= 1; // Divide by 2
+                baseTileY >>= 1; // Divide by 2
+                arrayIterator = i << 1; // Multiply by 2
+                coords[arrayIterator] = baseTileX;
+                coords[arrayIterator + 1] = baseTileY;
+            }
+
+            Tile lastTile = GpkgSql.GetLastTile(this.path, this.tileCache, coords, tile);
+            return lastTile;
         }
 
         public override void UpdateTiles(List<Tile> tiles)
