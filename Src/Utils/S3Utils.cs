@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using Amazon.S3;
 using Amazon.S3.Model;
 using GpkgMerger.Src.Batching;
@@ -13,7 +12,12 @@ namespace GpkgMerger.Src.Utils
         {
             try
             {
-                var getObjectTask = client.GetObjectAsync(bucket, key);
+                var request = new GetObjectRequest()
+                {
+                    BucketName = bucket,
+                    Key = key
+                };
+                var getObjectTask = client.GetObjectAsync(request);
                 GetObjectResponse res = getObjectTask.Result;
 
                 byte[] image;
@@ -21,23 +25,30 @@ namespace GpkgMerger.Src.Utils
                 {
                     using (var responseStream = res.ResponseStream)
                     {
-                        var buffer = new byte[1000];
-                        var bytesRead = 0;
-                        while ((bytesRead = responseStream.Read(buffer, 0, buffer.Length)) > 0)
-                        {
-                            ms.Write(buffer, 0, bytesRead);
-                        }
+                        responseStream.CopyTo(ms);
                     }
                     image = ms.ToArray();
                 }
 
-                return Convert.ToHexString(image);
+                return StringUtils.ByteArrayToString(image);
             }
             catch (AggregateException e)
             {
-                Console.WriteLine($"Error getting tile (key={key}): {e.Message}");
+                // Console.WriteLine($"Error getting tile (key={key}): {e.Message}");
                 return null;
             }
+        }
+
+        public static Tile GetTile(AmazonS3Client client, string bucket, string path, int z, int x, int y)
+        {
+            Tile correspondingTile = null;
+            string key = $"{path}{z}/{z}/{y}.png";
+            string blob = S3Utils.GetImageHex(client, bucket, key);
+            if (blob != null)
+            {
+                correspondingTile = new Tile(z, x, y, blob, blob.Length);
+            }
+            return correspondingTile;
         }
 
         public static void UploadTile(AmazonS3Client client, string bucket, string path, Tile tile)

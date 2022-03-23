@@ -46,19 +46,14 @@ namespace GpkgMerger.Src.DataTypes
 
             foreach (Tile tile in tiles)
             {
-                string key = $"{this.path}{tile.Z}/{tile.X}/{tile.Y}.png";
+                Tile correspondingTile = S3Utils.GetTile(this.client, this.bucket, this.path, tile.Z, tile.X, tile.Y);
 
-                string blob = S3Utils.GetImageHex(this.client, this.bucket, key);
-                if (blob != null)
+                if (correspondingTile == null)
                 {
-                    Tile correspondingTile = new Tile(tile.Z, tile.X, tile.Y, blob, blob.Length);
-                    correspondingTiles.Add(correspondingTile);
-                }
-                else
-                {
-                    correspondingTiles.Add(null);
+                    correspondingTile = GetLastExistingTile(tile);
                 }
 
+                correspondingTiles.Add(correspondingTile);
             }
 
             return correspondingTiles;
@@ -96,6 +91,9 @@ namespace GpkgMerger.Src.DataTypes
                     int x = int.Parse(parts[1]);
                     int y = int.Parse(last[0]);
 
+                    // In S3 tiles are saved as tms, so we should flip back
+                    y = (1 << z) - y - 1;
+
                     Tile tile = new Tile(z, x, y, blob, blob.Length);
                     tiles.Add(tile);
                 }
@@ -105,6 +103,32 @@ namespace GpkgMerger.Src.DataTypes
             this.endOfRead = !response.IsTruncated;
 
             return tiles;
+        }
+
+        private protected Tile GetLastExistingTile(Tile tile)
+        {
+            int z = tile.Z;
+            int baseTileX = tile.X;
+            int baseTileY = tile.Y;
+            int arrayIterator = 0;
+
+            Tile lastTile = null;
+
+            // Go over zoom levels until a tile is found (may not find tile)
+            for (int i = z - 1; i >= 0; i--)
+            {
+                baseTileX >>= 1; // Divide by 2
+                baseTileY >>= 1; // Divide by 2
+                arrayIterator = i << 1; // Multiply by 2
+
+                lastTile = S3Utils.GetTile(this.client, this.bucket, this.path, i, baseTileX, baseTileY);
+                if (lastTile != null)
+                {
+                    break;
+                }
+            }
+
+            return lastTile;
         }
 
         public override void UpdateMetadata(Data data)
@@ -132,7 +156,6 @@ namespace GpkgMerger.Src.DataTypes
 
             Console.WriteLine($"Checking if exists, bucket: {this.bucket}, path: {this.path}");
             var task = this.client.ListObjectsV2Async(listRequests);
-
             var response = task.Result;
             return response.KeyCount > 0;
         }

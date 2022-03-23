@@ -13,9 +13,14 @@ namespace GpkgMerger.Src.DataTypes
 
     public abstract class Data
     {
+
         public DataType type;
         public string path;
         protected int batchSize;
+
+        protected const int ZoomLevelCount = 30;
+
+        protected const int CoordsForAllZoomLevels = ZoomLevelCount << 1;
 
         public Data(DataType type, string path, int batchSize)
         {

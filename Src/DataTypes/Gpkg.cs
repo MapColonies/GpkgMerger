@@ -29,10 +29,6 @@ namespace GpkgMerger.Src.DataTypes
 
     public class Gpkg : Data
     {
-        private const int ZoomLevelCount = 25;
-
-        private const int CoordsForAllZoomLevels = ZoomLevelCount << 1;
-
         private string tileCache;
 
         private int offset;
