@@ -101,7 +101,7 @@ namespace GpkgMerger.Src.DataTypes
 
         private Tile GetLastExistingTile(Tile tile)
         {
-            int[] coords = new int[CoordsForAllZoomLevels];
+            int[] coords = new int[COORDS_FOR_ALL_ZOOM_LEVELS];
             for (int i = 0; i < coords.Length; i++)
             {
                 coords[i] = -1;

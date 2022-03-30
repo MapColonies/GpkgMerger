@@ -25,11 +25,11 @@ namespace GpkgMerger.Src.DataTypes
             string accessKey = Environment.GetEnvironmentVariable("S3_ACCESS_KEY");
             string secretKey = Environment.GetEnvironmentVariable("S3_SECRET_KEY");
             var credentials = new BasicAWSCredentials(accessKey, secretKey);
+
             var config = new AmazonS3Config
             {
                 RegionEndpoint = Amazon.RegionEndpoint.USEast1,
                 ServiceURL = serviceUrl,
-                UseHttp = true,
                 ForcePathStyle = true
             };
             client = new AmazonS3Client(credentials, config);
@@ -105,12 +105,11 @@ namespace GpkgMerger.Src.DataTypes
             return tiles;
         }
 
-        private protected Tile GetLastExistingTile(Tile tile)
+        private Tile GetLastExistingTile(Tile tile)
         {
             int z = tile.Z;
             int baseTileX = tile.X;
             int baseTileY = tile.Y;
-            int arrayIterator = 0;
 
             Tile lastTile = null;
 
@@ -119,7 +118,6 @@ namespace GpkgMerger.Src.DataTypes
             {
                 baseTileX >>= 1; // Divide by 2
                 baseTileY >>= 1; // Divide by 2
-                arrayIterator = i << 1; // Multiply by 2
 
                 lastTile = S3Utils.GetTile(this.client, this.bucket, this.path, i, baseTileX, baseTileY);
                 if (lastTile != null)

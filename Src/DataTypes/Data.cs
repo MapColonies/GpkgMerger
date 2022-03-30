@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using GpkgMerger.Src.Batching;
 using GpkgMerger.Src.Utils;
@@ -13,14 +14,13 @@ namespace GpkgMerger.Src.DataTypes
 
     public abstract class Data
     {
+        public readonly DataType type;
+        public readonly string path;
+        protected readonly int batchSize;
 
-        public DataType type;
-        public string path;
-        protected int batchSize;
+        protected const int ZOOM_LEVEL_COUNT = 30;
 
-        protected const int ZoomLevelCount = 30;
-
-        protected const int CoordsForAllZoomLevels = ZoomLevelCount << 1;
+        protected const int COORDS_FOR_ALL_ZOOM_LEVELS = ZOOM_LEVEL_COUNT << 1;
 
         public Data(DataType type, string path, int batchSize)
         {
@@ -56,7 +56,7 @@ namespace GpkgMerger.Src.DataTypes
                     data = new S3(s3Url, bucket, path, batchSize);
                     break;
                 default:
-                    return null;
+                    throw new Exception($"Currently there is no support for the data type '{type}'");
             }
 
             return data;
