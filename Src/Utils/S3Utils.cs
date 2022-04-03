@@ -9,7 +9,7 @@ namespace GpkgMerger.Src.Utils
 {
     public static class S3Utils
     {
-        public static string GetImageHex(AmazonS3Client client, string bucket, string key)
+        private static string GetImageHex(AmazonS3Client client, string bucket, string key)
         {
             try
             {
@@ -40,25 +40,31 @@ namespace GpkgMerger.Src.Utils
             }
         }
 
-        public static Tile GetTile(AmazonS3Client client, string bucket, string path, int z, int x, int y)
+        public static Tile GetTileTMS(AmazonS3Client client, string bucket, string path, int z, int x, int y)
         {
             Tile tile = null;
-            // In S3 tiles are saved as tms
-            int yTMS = GeoUtils.convertTMS(z, y);
+            string key = $"{path}{z}/{x}/{y}.png";
 
-            string key = $"{path}{z}/{x}/{yTMS}.png";
             string blob = S3Utils.GetImageHex(client, bucket, key);
             if (blob != null)
             {
-                // We work with non-TMS tiles, so we use original y
+                // We work with non-TMS tiles, so we convert y
+                y = GeoUtils.convertTMS(z, y);
                 tile = new Tile(z, x, y, blob, blob.Length);
             }
             return tile;
         }
 
-        public static Tile GetTile(AmazonS3Client client, string bucket, string path, Coord coord)
+        public static Tile GetTileTMS(AmazonS3Client client, string bucket, string path, Coord coord)
         {
-            return GetTile(client, bucket, path, coord.z, coord.x, coord.y);
+            return GetTileTMS(client, bucket, path, coord.z, coord.x, coord.y);
+        }
+
+        public static Tile GetTile(AmazonS3Client client, string bucket, string path, int z, int x, int y)
+        {
+            // Convert to TMS
+            y = GeoUtils.convertTMS(z, y);
+            return GetTileTMS(client, bucket, path, z, x, y);
         }
 
         public static void UploadTile(AmazonS3Client client, string bucket, string path, Tile tile)

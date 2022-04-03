@@ -95,7 +95,7 @@ namespace GpkgMerger.Src.DataTypes
                 {
                     string key = item.Key;
                     Coord coord = FromKey(item.Key);
-                    Tile tile = S3Utils.GetTile(this.client, this.bucket, this.path, coord);
+                    Tile tile = S3Utils.GetTileTMS(this.client, this.bucket, this.path, coord);
                     tiles.Add(tile);
                 }
                 this.continuationToken = response.NextContinuationToken;
