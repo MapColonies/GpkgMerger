@@ -3,6 +3,7 @@ using System.IO;
 using Amazon.S3;
 using Amazon.S3.Model;
 using GpkgMerger.Src.Batching;
+using GpkgMerger.Src.DataTypes;
 
 namespace GpkgMerger.Src.Utils
 {
@@ -41,19 +42,29 @@ namespace GpkgMerger.Src.Utils
 
         public static Tile GetTile(AmazonS3Client client, string bucket, string path, int z, int x, int y)
         {
-            Tile correspondingTile = null;
-            string key = $"{path}{z}/{z}/{y}.png";
+            Tile tile = null;
+            // In S3 tiles are saved as tms
+            int yTMS = GeoUtils.convertTMS(z, y);
+
+            string key = $"{path}{z}/{x}/{yTMS}.png";
             string blob = S3Utils.GetImageHex(client, bucket, key);
             if (blob != null)
             {
-                correspondingTile = new Tile(z, x, y, blob, blob.Length);
+                // We work with non-TMS tiles, so we use original y
+                tile = new Tile(z, x, y, blob, blob.Length);
             }
-            return correspondingTile;
+            return tile;
+        }
+
+        public static Tile GetTile(AmazonS3Client client, string bucket, string path, Coord coord)
+        {
+            return GetTile(client, bucket, path, coord.z, coord.x, coord.y);
         }
 
         public static void UploadTile(AmazonS3Client client, string bucket, string path, Tile tile)
         {
-            string key = $"{path}{tile.Z}/{tile.X}/{tile.Y}.png";
+            int y = GeoUtils.convertTMS(tile);
+            string key = $"{path}{tile.Z}/{tile.X}/{y}.png";
 
             var request = new PutObjectRequest()
             {
