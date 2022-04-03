@@ -17,11 +17,15 @@ namespace GpkgMerger.Src.ImageProccessing
             {
                 byte[] baseBytes = StringUtils.StringToByteArray(baseTile.Blob);
                 MagickImage baseImage = new MagickImage(baseBytes);
-                // blob = MergeWands(baseImage, newImage);
+
+                if (baseTile.Z != newTile.Z)
+                {
+                    Upscaling.Upscale(baseImage, baseTile, newTile);
+                }
+
                 baseImage.Composite(newImage, CompositeOperator.SrcOver);
                 byte[] baseByteArr = baseImage.ToByteArray();
                 blob = Convert.ToHexString(baseByteArr);
-                // blob = baseImage.ToString();
             }
             else
             {
@@ -30,10 +34,5 @@ namespace GpkgMerger.Src.ImageProccessing
 
             return blob;
         }
-
-        // public static string MergeWands(MagickImage baseImage, MagickImage newImage)
-        // {
-
-        // }
     }
 }

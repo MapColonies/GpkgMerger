@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using GpkgMerger.Src.Batching;
 using GpkgMerger.Src.Sql;
+using GpkgMerger.Src.Utils;
 
 namespace GpkgMerger.Src.DataTypes
 {
@@ -28,16 +30,14 @@ namespace GpkgMerger.Src.DataTypes
     public class Gpkg : Data
     {
         private string tileCache;
-        private int batchSize;
+
         private int offset;
+
         private Extent extent;
 
-        public Gpkg(DataType type, string path, int batchSize)
+        public Gpkg(string path, int batchSize) : base(DataType.GPKG, path, batchSize)
         {
             this.tileCache = GpkgSql.GetTileCache(path);
-            this.type = type;
-            this.path = path;
-            this.batchSize = batchSize;
             this.offset = 0;
             this.extent = GpkgSql.GetExtent(path);
         }
@@ -86,11 +86,42 @@ namespace GpkgMerger.Src.DataTypes
 
             foreach (Tile tile in tiles)
             {
-                Tile newTile = GpkgSql.GetTile(this.path, this.tileCache, tile);
-                newTiles.Add(newTile);
+                Tile baseTile = GpkgSql.GetTile(this.path, this.tileCache, tile);
+
+                if (baseTile == null)
+                {
+                    baseTile = GetLastExistingTile(tile);
+                }
+
+                newTiles.Add(baseTile);
             }
 
             return newTiles;
+        }
+
+        private Tile GetLastExistingTile(Tile tile)
+        {
+            int[] coords = new int[COORDS_FOR_ALL_ZOOM_LEVELS];
+            for (int i = 0; i < coords.Length; i++)
+            {
+                coords[i] = -1;
+            }
+
+            int z = tile.Z;
+            int baseTileX = tile.X;
+            int baseTileY = tile.Y;
+            int arrayIterator = 0;
+            for (int i = z - 1; i >= 0; i--)
+            {
+                baseTileX >>= 1; // Divide by 2
+                baseTileY >>= 1; // Divide by 2
+                arrayIterator = i << 1; // Multiply by 2
+                coords[arrayIterator] = baseTileX;
+                coords[arrayIterator + 1] = baseTileY;
+            }
+
+            Tile lastTile = GpkgSql.GetLastTile(this.path, this.tileCache, coords, tile);
+            return lastTile;
         }
 
         public override void UpdateTiles(List<Tile> tiles)
@@ -109,7 +140,19 @@ namespace GpkgMerger.Src.DataTypes
         public override void Cleanup()
         {
             GpkgSql.CreateTileIndex(this.path, this.tileCache);
-            GpkgSql.Vacuum(this.path);
+
+            bool vacuum = bool.Parse(Configuration.Instance.GetConfiguration("GPKG", "vacuum"));
+            if (vacuum)
+            {
+                GpkgSql.Vacuum(this.path);
+            }
+        }
+
+        public override bool Exists()
+        {
+            // Get full path to gpkg file
+            string fullPath = Path.GetFullPath(this.path);
+            return File.Exists(fullPath);
         }
     }
 }

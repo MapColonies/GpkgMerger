@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.Text;
 using GpkgMerger.Src.Batching;
 using GpkgMerger.Src.DataTypes;
 using GpkgMerger.Src.Utils;
@@ -212,6 +213,55 @@ namespace GpkgMerger.Src.Sql
             }
 
             return tiles;
+        }
+
+        public static Tile GetLastTile(string path, string tileCache, int[] coords, Tile tile)
+        {
+            Tile lastTile = null;
+            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            {
+                connection.Open();
+
+                var command = connection.CreateCommand();
+
+                // Build command
+                StringBuilder commandBuilder = new StringBuilder($"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM {tileCache} where ");
+
+                int zoomLevel = tile.Z;
+                int maxZoomLevel = zoomLevel - 1;
+                int arrayIdx = 0;
+                for (int currentZoomLevel = maxZoomLevel; currentZoomLevel >= 0; currentZoomLevel--)
+                {
+                    arrayIdx = currentZoomLevel << 1;
+                    commandBuilder.AppendFormat("(zoom_level = {0} and tile_column = {1} and tile_row = {2})", currentZoomLevel, coords[arrayIdx], coords[arrayIdx + 1]);
+                    if (currentZoomLevel > 0)
+                    {
+                        commandBuilder.Append(" OR ");
+                    }
+                }
+                commandBuilder.Append("order by zoom_level desc limit 1");
+
+                command.CommandText = commandBuilder.ToString();
+
+                using (var reader = command.ExecuteReader(System.Data.CommandBehavior.SingleRow))
+                {
+                    bool exists = reader.Read();
+
+                    if (!exists)
+                    {
+                        return null;
+                    }
+
+                    var z = reader.GetInt32(0);
+                    var x = reader.GetInt32(1);
+                    var y = reader.GetInt32(2);
+                    var blob = reader.GetString(3);
+                    var blobSize = reader.GetInt32(4);
+                    lastTile = new Tile(z, x, y, blob, blobSize);
+                }
+            }
+
+            return lastTile;
         }
 
         public static void CreateTileIndex(string path, string tileCache)

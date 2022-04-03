@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
 using GpkgMerger.Src.DataTypes;
 using GpkgMerger.Src.Utils;
 
@@ -14,22 +13,19 @@ namespace GpkgMerger
             stopWatch.Start();
 
             // Require input of 2 paths (base and new gpkg) and wanted batch size
-            if (args.Length != 4)
+            if (args.Length != 6)
             {
-                Console.WriteLine($"Usage: {args[0]} <path_to_base_gpkg> <path_to_new_gpkg> <batch_size>");
-                Console.WriteLine($"Example: {args[0]} area1.gpkg area2.gpkg 1000");
+                Console.WriteLine($"Usage: {args[0]} <base_type> <path_to_base_datasource> <new_type> <path_to_new_datasource> <batch_size>");
+                Console.WriteLine($"Example: {args[0]} gpkg area1.gpkg gpkg area2.gpkg 1000");
+                Console.WriteLine($"Example: {args[0]} s3 /path1/on/s3 s3 /path2/on/s3 1000");
                 return;
             }
 
-            // TODO: check if path exists and is file
-            string path1 = args[1];
-            string path2 = args[2];
-
-            // Get full path to gpkg files
-            string fullPath1 = Path.GetFullPath(path1);
-            string fullPath2 = Path.GetFullPath(path2);
-
-            int batchSize = int.Parse(args[3]);
+            string baseType = args[1];
+            string newType = args[3];
+            string basePath = args[2];
+            string newPath = args[4];
+            int batchSize = int.Parse(args[5]);
 
             // char* mergeType = getMergeType();
             // if (mergeType == "GPKG")
@@ -45,19 +41,23 @@ namespace GpkgMerger
             //     startFolderProccess(basePath, newPath, batchSize);
             // }
 
-            if (!File.Exists(fullPath1))
+            // Data baseData = new Gpkg(fullBasePath, 1000);
+            // Data newData = new Gpkg(fullNewPath, 1000);
+
+            Data baseData = Data.CreateDatasource(baseType, basePath, batchSize);
+            Data newData = Data.CreateDatasource(newType, newPath, batchSize);
+
+            if (!baseData.Exists())
             {
-                Console.WriteLine($"No such file '{fullPath1}'");
-                return;
-            }
-            if (!File.Exists(fullPath2))
-            {
-                Console.WriteLine($"No such file '{fullPath2}'");
+                Console.WriteLine("Base data does not exist.");
                 return;
             }
 
-            Data baseData = new Gpkg(DataType.GPKG, path1, 1000);
-            Data newData = new Gpkg(DataType.GPKG, path2, 1000);
+            if (!newData.Exists())
+            {
+                Console.WriteLine("New data does not exist");
+                return;
+            }
 
             Src.Proccess.Start(baseData, newData);
 
