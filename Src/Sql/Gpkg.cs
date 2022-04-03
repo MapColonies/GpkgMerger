@@ -172,10 +172,6 @@ namespace GpkgMerger.Src.Sql
                         command.Parameters.AddWithValue("$x", tile.X);
                         command.Parameters.AddWithValue("$y", tile.Y);
                         command.Parameters.Add(blobParameter);
-                        // command.Parameters.AddWithValue("$blob", newTile.Blob);
-
-                        // tile.PrintTile();
-
                         command.ExecuteNonQuery();
                     }
                     transaction.Commit();
