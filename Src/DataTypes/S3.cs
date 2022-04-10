@@ -37,12 +37,13 @@ namespace GpkgMerger.Src.DataTypes
 
         private Coord FromKey(string key)
         {
-            string subPath = key.Remove(0, this.path.Length);
-            string[] parts = subPath.Split('/');
+            string[] parts = key.Split('/');
+            int numParts = parts.Length;
 
-            string[] last = parts[2].Split('.');
-            int z = int.Parse(parts[0]);
-            int x = int.Parse(parts[1]);
+            // Each key represents a tile, therfore the last three parts represent the z, x and y values
+            string[] last = parts[numParts - 1].Split('.');
+            int z = int.Parse(parts[numParts - 3]);
+            int x = int.Parse(parts[numParts - 2]);
             int y = int.Parse(last[0]);
 
             return new Coord(z, x, y);

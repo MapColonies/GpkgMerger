@@ -9,6 +9,11 @@ namespace GpkgMerger.Src.Utils
 {
     public static class S3Utils
     {
+        private static string BuildKey(string path, int z, int x, int y)
+        {
+            return $"{path}/{z}/{x}/{y}.png";
+        }
+
         private static string GetImageHex(AmazonS3Client client, string bucket, string key)
         {
             try
@@ -43,7 +48,7 @@ namespace GpkgMerger.Src.Utils
         public static Tile GetTileTMS(AmazonS3Client client, string bucket, string path, int z, int x, int y)
         {
             Tile tile = null;
-            string key = $"{path}{z}/{x}/{y}.png";
+            string key = BuildKey(path, z, x, y);
 
             string blob = S3Utils.GetImageHex(client, bucket, key);
             if (blob != null)
@@ -70,7 +75,7 @@ namespace GpkgMerger.Src.Utils
         public static void UploadTile(AmazonS3Client client, string bucket, string path, Tile tile)
         {
             int y = GeoUtils.convertTMS(tile);
-            string key = $"{path}{tile.Z}/{tile.X}/{y}.png";
+            string key = BuildKey(path, tile.Z, tile.X, y);
 
             var request = new PutObjectRequest()
             {
