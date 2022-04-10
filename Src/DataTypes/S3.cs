@@ -35,6 +35,20 @@ namespace GpkgMerger.Src.DataTypes
             client = new AmazonS3Client(credentials, config);
         }
 
+        private Coord FromKey(string key)
+        {
+            string[] parts = key.Split('/');
+            int numParts = parts.Length;
+
+            // Each key represents a tile, therfore the last three parts represent the z, x and y values
+            string[] last = parts[numParts - 1].Split('.');
+            int z = int.Parse(parts[numParts - 3]);
+            int x = int.Parse(parts[numParts - 2]);
+            int y = int.Parse(last[0]);
+
+            return new Coord(z, x, y);
+        }
+
         public override void Cleanup()
         {
             Console.WriteLine("S3 source, skipping cleanup phase");
@@ -81,20 +95,8 @@ namespace GpkgMerger.Src.DataTypes
                 foreach (S3Object item in response.S3Objects)
                 {
                     string key = item.Key;
-                    string subPath = item.Key.Remove(0, this.path.Length);
-                    string[] parts = subPath.Split('/');
-
-
-                    string blob = S3Utils.GetImageHex(this.client, this.bucket, key);
-                    string[] last = parts[2].Split('.');
-                    int z = int.Parse(parts[0]);
-                    int x = int.Parse(parts[1]);
-                    int y = int.Parse(last[0]);
-
-                    // In S3 tiles are saved as tms, so we should flip back
-                    y = (1 << z) - y - 1;
-
-                    Tile tile = new Tile(z, x, y, blob, blob.Length);
+                    Coord coord = FromKey(item.Key);
+                    Tile tile = S3Utils.GetTileTMS(this.client, this.bucket, this.path, coord);
                     tiles.Add(tile);
                 }
                 this.continuationToken = response.NextContinuationToken;

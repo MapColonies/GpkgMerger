@@ -28,6 +28,11 @@ namespace GpkgMerger.Src.Batching
             this.BlobSize = blobSize;
         }
 
+        public bool HasCoords(int z, int x, int y)
+        {
+            return z == this.Z && x == this.X && y == this.Y;
+        }
+
         public void PrintTile()
         {
             Console.WriteLine($"z: {this.Z}");

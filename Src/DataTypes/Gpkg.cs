@@ -150,6 +150,7 @@ namespace GpkgMerger.Src.DataTypes
 
         public override bool Exists()
         {
+            Console.WriteLine($"Checking if exists, gpkg: {this.path}");
             // Get full path to gpkg file
             string fullPath = Path.GetFullPath(this.path);
             return File.Exists(fullPath);

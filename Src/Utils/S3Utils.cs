@@ -3,12 +3,18 @@ using System.IO;
 using Amazon.S3;
 using Amazon.S3.Model;
 using GpkgMerger.Src.Batching;
+using GpkgMerger.Src.DataTypes;
 
 namespace GpkgMerger.Src.Utils
 {
     public static class S3Utils
     {
-        public static string GetImageHex(AmazonS3Client client, string bucket, string key)
+        private static string BuildKey(string path, int z, int x, int y)
+        {
+            return $"{path}/{z}/{x}/{y}.png";
+        }
+
+        private static string GetImageHex(AmazonS3Client client, string bucket, string key)
         {
             try
             {
@@ -39,21 +45,37 @@ namespace GpkgMerger.Src.Utils
             }
         }
 
-        public static Tile GetTile(AmazonS3Client client, string bucket, string path, int z, int x, int y)
+        public static Tile GetTileTMS(AmazonS3Client client, string bucket, string path, int z, int x, int y)
         {
-            Tile correspondingTile = null;
-            string key = $"{path}{z}/{z}/{y}.png";
+            Tile tile = null;
+            string key = BuildKey(path, z, x, y);
+
             string blob = S3Utils.GetImageHex(client, bucket, key);
             if (blob != null)
             {
-                correspondingTile = new Tile(z, x, y, blob, blob.Length);
+                // We work with non-TMS tiles, so we convert y
+                y = GeoUtils.convertTMS(z, y);
+                tile = new Tile(z, x, y, blob, blob.Length);
             }
-            return correspondingTile;
+            return tile;
+        }
+
+        public static Tile GetTileTMS(AmazonS3Client client, string bucket, string path, Coord coord)
+        {
+            return GetTileTMS(client, bucket, path, coord.z, coord.x, coord.y);
+        }
+
+        public static Tile GetTile(AmazonS3Client client, string bucket, string path, int z, int x, int y)
+        {
+            // Convert to TMS
+            y = GeoUtils.convertTMS(z, y);
+            return GetTileTMS(client, bucket, path, z, x, y);
         }
 
         public static void UploadTile(AmazonS3Client client, string bucket, string path, Tile tile)
         {
-            string key = $"{path}{tile.Z}/{tile.X}/{tile.Y}.png";
+            int y = GeoUtils.convertTMS(tile);
+            string key = BuildKey(path, tile.Z, tile.X, y);
 
             var request = new PutObjectRequest()
             {

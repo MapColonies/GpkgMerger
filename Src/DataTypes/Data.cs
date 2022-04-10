@@ -15,7 +15,7 @@ namespace GpkgMerger.Src.DataTypes
     public abstract class Data
     {
         public readonly DataType type;
-        public readonly string path;
+        protected readonly string path;
         protected readonly int batchSize;
 
         protected const int ZOOM_LEVEL_COUNT = 30;
@@ -53,6 +53,7 @@ namespace GpkgMerger.Src.DataTypes
                     data = new Gpkg(path, batchSize);
                     break;
                 case "s3":
+                    path = PathUtils.RemoveTrailingSlash(path);
                     data = new S3(s3Url, bucket, path, batchSize);
                     break;
                 default:
