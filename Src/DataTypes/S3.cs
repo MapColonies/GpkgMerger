@@ -54,7 +54,7 @@ namespace GpkgMerger.Src.DataTypes
             Console.WriteLine("S3 source, skipping cleanup phase");
         }
 
-        public override List<Tile> GetCorrespondingBatch(List<Tile> tiles)
+        protected override List<Tile> CreateCorrespondingBatch(List<Tile> tiles, bool upscale)
         {
             List<Tile> correspondingTiles = new List<Tile>();
 
@@ -62,7 +62,7 @@ namespace GpkgMerger.Src.DataTypes
             {
                 Tile correspondingTile = S3Utils.GetTile(this.client, this.bucket, this.path, tile.Z, tile.X, tile.Y);
 
-                if (correspondingTile == null)
+                if (upscale && correspondingTile == null)
                 {
                     correspondingTile = GetLastExistingTile(tile);
                 }
@@ -107,7 +107,7 @@ namespace GpkgMerger.Src.DataTypes
             return tiles;
         }
 
-        private Tile GetLastExistingTile(Tile tile)
+        protected override Tile GetLastExistingTile(Tile tile)
         {
             int z = tile.Z;
             int baseTileX = tile.X;
@@ -158,6 +158,31 @@ namespace GpkgMerger.Src.DataTypes
             var task = this.client.ListObjectsV2Async(listRequests);
             var response = task.Result;
             return response.KeyCount > 0;
+        }
+
+        public override int TileCount()
+        {
+            int tileCount = 0;
+            string continuationToken = null;
+
+            do
+            {
+                var listRequests = new ListObjectsV2Request
+                {
+                    BucketName = this.bucket,
+                    Prefix = this.path,
+                    StartAfter = this.path,
+                    ContinuationToken = continuationToken
+                };
+
+                var task = this.client.ListObjectsV2Async(listRequests);
+                var response = task.Result;
+
+                tileCount += response.KeyCount;
+                continuationToken = response.NextContinuationToken;
+            } while (continuationToken != null);
+
+            return tileCount;
         }
     }
 }
