@@ -80,7 +80,7 @@ namespace GpkgMerger.Src.DataTypes
             return tiles;
         }
 
-        public override List<Tile> GetCorrespondingBatch(List<Tile> tiles)
+        protected override List<Tile> CreateCorrespondingBatch(List<Tile> tiles, bool upscale)
         {
             List<Tile> newTiles = new List<Tile>(this.batchSize);
 
@@ -88,7 +88,7 @@ namespace GpkgMerger.Src.DataTypes
             {
                 Tile baseTile = GpkgSql.GetTile(this.path, this.tileCache, tile);
 
-                if (baseTile == null)
+                if (upscale && baseTile == null)
                 {
                     baseTile = GetLastExistingTile(tile);
                 }
@@ -99,7 +99,7 @@ namespace GpkgMerger.Src.DataTypes
             return newTiles;
         }
 
-        private Tile GetLastExistingTile(Tile tile)
+        protected override Tile GetLastExistingTile(Tile tile)
         {
             int[] coords = new int[COORDS_FOR_ALL_ZOOM_LEVELS];
             for (int i = 0; i < coords.Length; i++)
@@ -154,6 +154,11 @@ namespace GpkgMerger.Src.DataTypes
             // Get full path to gpkg file
             string fullPath = Path.GetFullPath(this.path);
             return File.Exists(fullPath);
+        }
+
+        public override int TileCount()
+        {
+            return GpkgSql.GetTileCount(this.path, this.tileCache);
         }
     }
 }

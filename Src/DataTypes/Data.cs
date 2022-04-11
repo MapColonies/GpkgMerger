@@ -31,15 +31,29 @@ namespace GpkgMerger.Src.DataTypes
 
         public abstract void UpdateMetadata(Data data);
 
+        protected abstract Tile GetLastExistingTile(Tile tile);
+
         public abstract List<Tile> GetNextBatch();
 
-        public abstract List<Tile> GetCorrespondingBatch(List<Tile> tiles);
+        protected abstract List<Tile> CreateCorrespondingBatch(List<Tile> tiles, bool upscale);
+
+        public virtual List<Tile> GetCorrespondingBatch(List<Tile> tiles)
+        {
+            return CreateCorrespondingBatch(tiles, false);
+        }
+
+        public virtual List<Tile> GetUpscaledCorrespondingBatch(List<Tile> tiles)
+        {
+            return CreateCorrespondingBatch(tiles, true);
+        }
 
         public abstract void UpdateTiles(List<Tile> tiles);
 
         public abstract void Cleanup();
 
         public abstract bool Exists();
+
+        public abstract int TileCount();
 
         public static Data CreateDatasource(string type, string path, int batchSize)
         {

@@ -59,7 +59,15 @@ namespace GpkgMerger
                 return;
             }
 
-            Src.Proccess.Start(baseData, newData);
+            bool validate = bool.Parse(Configuration.Instance.GetConfiguration("GENERAL", "validate"));
+            if (validate)
+            {
+                Src.Proccess.Validate(baseData, newData);
+            }
+            else
+            {
+                Src.Proccess.Start(baseData, newData);
+            }
 
             // Do some calculation.
             stopWatch.Stop();

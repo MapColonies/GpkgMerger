@@ -56,6 +56,27 @@ namespace GpkgMerger.Src.Sql
             return extent;
         }
 
+        public static int GetTileCount(string path, string tileCache)
+        {
+            int tileCount = 0;
+
+            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            {
+                connection.Open();
+
+                var command = connection.CreateCommand();
+                command.CommandText = $"SELECT count(*) FROM {tileCache}";
+
+                using (var reader = command.ExecuteReader(System.Data.CommandBehavior.SingleRow))
+                {
+                    reader.Read();
+                    tileCount = reader.GetInt32(0);
+                }
+            }
+
+            return tileCount;
+        }
+
         public static void UpdateExtent(string path, Extent extent)
         {
             using (var connection = new SQLiteConnection($"Data Source={path}"))
