@@ -16,16 +16,35 @@ namespace GpkgMerger
             // Require input of wanted batch size and 2 types and paths (base and new gpkg)
             if (args.Length < 6)
             {
-                Console.WriteLine($"Usage: {args[0]} <batch_size> <base_type> <path_to_base_datasource> <new_type> <path_to_new_datasource>");
-                Console.WriteLine($"Example: {args[0]} 1000 gpkg area1.gpkg gpkg area2.gpkg");
-                Console.WriteLine($"Example: {args[0]} 1000 s3 /path1/on/s3 s3 /path2/on/s3");
-                Console.WriteLine($"Example: {args[0]} 1000 s3 /path/on/s3 gpkg geo.gpkg");
+                string programName = args[0];
+                Console.WriteLine($@"Usage:
+                                    Single source: {programName} <batch_size> <base_type> <path_to_base_datasource> <new_type> <path_to_new_datasource>
+                                    Examples:
+                                    {programName} 1000 gpkg area1.gpkg gpkg area2.gpkg
+                                    {programName} 1000 s3 /path1/on/s3 s3 /path2/on/s3
+                                    {programName} 1000 s3 /path/on/s3 gpkg geo.gpkg
+                                    
+                                    Multi source: {programName} <batch_size> <base_type> <path_to_base_datasource> [<new_type> <path_to_new_datasource>...]
+                                    Examples:
+                                    {programName} 1000 gpkg geo.gpkg gpkg area1.gpkg gpkg area2.gpkg gpkg area3.gpkg
+                                    {programName} 1000 gpkg geo.gpkg s3 area1 s3 area2 s3 area3
+                                    {programName} 1000 s3 geo gpkg area1 s3 area2 gpkg area3
+                                    
+                                    Minimal requirement is supplying at least one source.");
                 return;
             }
 
             int batchSize = int.Parse(args[1]);
             string baseType = args[2];
             string basePath = args[3];
+
+            // Create base datasource and make sure it exists
+            Data baseData = Data.CreateDatasource(baseType, basePath, batchSize);
+            if (!baseData.Exists())
+            {
+                Console.WriteLine("Base data does not exist.");
+                return;
+            }
 
             int sourceIndex = 4;
 
@@ -37,19 +56,8 @@ namespace GpkgMerger
                 string newType = args[sourceIndex];
                 string newPath = args[sourceIndex + 1];
 
-                // Console.WriteLine($"type: {newType}, path: {newPath}");
-                // sourceIndex += 2;
-                // continue;
-
-                Data baseData = Data.CreateDatasource(baseType, basePath, batchSize);
+                // Create new datasource and make sure it exists
                 Data newData = Data.CreateDatasource(newType, newPath, batchSize);
-
-                if (!baseData.Exists())
-                {
-                    Console.WriteLine("Base data does not exist.");
-                    return;
-                }
-
                 if (!newData.Exists())
                 {
                     Console.WriteLine("New data does not exist");
