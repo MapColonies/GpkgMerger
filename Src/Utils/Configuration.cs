@@ -16,6 +16,7 @@ namespace GpkgMerger.Src.Utils
             config = new ConfigurationBuilder()
                         .SetBasePath(basePath)
                         .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                        .AddEnvironmentVariables()
                         .Build();
         }
 
