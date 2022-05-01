@@ -34,7 +34,7 @@ namespace GpkgMerger.Src
 
                     if (baseTile != null)
                     {
-                        string blob = Merge.MergeNewToBase(newTile, baseTile);
+                        string blob = Merge.MergeTiles(new[] { newTile, baseTile });
                         newTile = new Tile(newTile.Z, newTile.X, newTile.Y, blob, blob.Length);
                     }
 

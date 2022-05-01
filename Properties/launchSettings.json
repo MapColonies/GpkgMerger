@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "GpkgMerger": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}

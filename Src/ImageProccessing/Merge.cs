@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ImageMagick;
 using GpkgMerger.Src.Batching;
 using GpkgMerger.Src.Utils;
@@ -6,33 +7,42 @@ using GpkgMerger.Src.Utils;
 namespace GpkgMerger.Src.ImageProccessing
 {
     public static class Merge
-    {
-        public static string MergeNewToBase(Tile newTile, Tile baseTile)
+    { 
+        public static string MergeTiles(IEnumerable<Tile> tiles)
         {
-            byte[] newBytes = StringUtils.StringToByteArray(newTile.Blob);
-            MagickImage newImage = new MagickImage(newBytes);
-
-            string blob;
-            if (newImage.HasAlpha)
+            using (var images = new MagickImageCollection())
             {
-                byte[] baseBytes = StringUtils.StringToByteArray(baseTile.Blob);
-                MagickImage baseImage = new MagickImage(baseBytes);
-
-                if (baseTile.Z != newTile.Z)
+                using (var iterator = tiles.GetEnumerator())
                 {
-                    Upscaling.Upscale(baseImage, baseTile, newTile);
+                    if (!iterator.MoveNext())
+                    {
+                        //no tiles recieved
+                        return null;  //TODO: replace with proper error
+                    }
+                    var firstTile = iterator.Current;
+                    var firstTileBytes = StringUtils.StringToByteArray(firstTile.Blob);
+                    images.Add(new MagickImage(firstTileBytes));
+                    while (iterator.MoveNext())
+                    {
+                        var tile = iterator.Current;
+                        var tileBytes = StringUtils.StringToByteArray(tile.Blob);
+                        var tileImage = new MagickImage(tileBytes);
+                        if (!tileImage.HasAlpha)
+                        {
+                            images.Clear();
+                        }
+                        //TODO: add upscale logic
+                        images.Add(tileImage);
+                    }
                 }
-
-                baseImage.Composite(newImage, CompositeOperator.SrcOver);
-                byte[] baseByteArr = baseImage.ToByteArray();
-                blob = Convert.ToHexString(baseByteArr);
-            }
-            else
-            {
-                blob = newTile.Blob;
+                using (var mergedImage = images.Merge()) //image magic flatten, merge, and mosaic s
+                {
+                    var mergedImageBytes = mergedImage.ToByteArray();
+                    var blob = Convert.ToHexString(mergedImageBytes);
+                    return blob;
+                }
             }
 
-            return blob;
         }
     }
 }
