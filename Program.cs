@@ -38,9 +38,15 @@ namespace GpkgMerger
             string baseType = args[2];
             string basePath = args[3];
 
+            Data baseData;
+            Data newData;
+
             // Create base datasource and make sure it exists
-            Data baseData = Data.CreateDatasource(baseType, basePath, batchSize);
-            if (!baseData.Exists())
+            try
+            {
+                baseData = Data.CreateDatasource(baseType, basePath, batchSize);
+            }
+            catch
             {
                 Console.WriteLine("Base data does not exist.");
                 return;
@@ -57,14 +63,17 @@ namespace GpkgMerger
                 string newPath = args[sourceIndex + 1];
 
                 // Create new datasource and make sure it exists
-                Data newData = Data.CreateDatasource(newType, newPath, batchSize);
-                if (!newData.Exists())
+                try
+                {
+                    newData = Data.CreateDatasource(newType, newPath, batchSize);
+                }
+                catch
                 {
                     Console.WriteLine("New data does not exist");
                     return;
                 }
 
-                Src.Proccess.Start(baseData, newData);
+                Src.Proccess.Start(baseData, newData, batchSize);
 
                 // Do some calculation.
                 stopWatch.Stop();

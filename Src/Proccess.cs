@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using GpkgMerger.Src.DataTypes;
 using GpkgMerger.Src.Batching;
+using GpkgMerger.Src.DataTypes;
 using GpkgMerger.Src.ImageProccessing;
 
 namespace GpkgMerger.Src
@@ -9,7 +9,7 @@ namespace GpkgMerger.Src
     public static class Proccess
     {
 
-        public static void Start(Data baseData, Data newData)
+        public static void Start(Data baseData, Data newData, int batchSize)
         {
             List<Tile> tiles;
             int totalTileCount = newData.TileCount();
@@ -45,7 +45,7 @@ namespace GpkgMerger.Src
                 Console.WriteLine($"Tile Count: {tileProgressCount} / {totalTileCount}");
 
                 baseData.UpdateTiles(tiles);
-            } while (tiles.Count > 0);
+            } while (tiles.Count == batchSize);
 
             baseData.Cleanup();
         }
@@ -78,7 +78,7 @@ namespace GpkgMerger.Src
                     else
                     {
                         Console.WriteLine("Missing tiles:");
-                        newTile.PrintTile();
+                        newTile.Print();
                     }
                 }
 

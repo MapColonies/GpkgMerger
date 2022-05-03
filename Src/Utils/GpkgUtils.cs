@@ -5,12 +5,18 @@ using System.Diagnostics;
 using System.Text;
 using GpkgMerger.Src.Batching;
 using GpkgMerger.Src.DataTypes;
-using GpkgMerger.Src.Utils;
 
-namespace GpkgMerger.Src.Sql
+namespace GpkgMerger.Src.Utils
 {
-    public static class GpkgSql
+    public class GpkgUtils : DataUtils
     {
+        private string tileCache;
+
+        public GpkgUtils(string path) : base(path)
+        {
+            this.tileCache = GpkgUtils.GetTileCache(path);
+        }
+
         public static string GetTileCache(string path)
         {
             string tileCache = "";
@@ -146,26 +152,26 @@ namespace GpkgMerger.Src.Sql
             }
         }
 
-        public static Tile GetTile(string path, string tileCache, Tile newTile)
+        public override Tile GetTile(int z, int x, int y)
         {
             Tile tile = null;
 
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
 
                 var command = connection.CreateCommand();
-                command.CommandText = $"SELECT hex(tile_data) FROM {tileCache} where zoom_level=$z and tile_column=$x and tile_row=$y";
-                command.Parameters.AddWithValue("$z", newTile.Z);
-                command.Parameters.AddWithValue("$x", newTile.X);
-                command.Parameters.AddWithValue("$y", newTile.Y);
+                command.CommandText = $"SELECT hex(tile_data) FROM {this.tileCache} where zoom_level=$z and tile_column=$x and tile_row=$y";
+                command.Parameters.AddWithValue("$z", z);
+                command.Parameters.AddWithValue("$x", x);
+                command.Parameters.AddWithValue("$y", y);
 
                 using (var reader = command.ExecuteReader(System.Data.CommandBehavior.SingleRow))
                 {
                     while (reader.Read())
                     {
                         var blob = reader.GetString(0);
-                        tile = new Tile(newTile.Z, newTile.X, newTile.Y, blob, blob.Length);
+                        tile = new Tile(z, x, y, blob, blob.Length);
                     }
                 }
             }
