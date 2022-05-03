@@ -117,7 +117,7 @@ namespace GpkgMerger.Src.DataTypes
             }
         }
 
-        public override void Cleanup()
+        public override void Wrapup()
         {
             GpkgUtils.CreateTileIndex(this.path, this.tileCache);
 

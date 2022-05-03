@@ -25,14 +25,17 @@ namespace GpkgMerger.Src.ImageProccessing
             int imageHeight = Math.Max((int)tileSize, 1);
 
             MagickGeometry geometry = new MagickGeometry(pixleX, pixleY, imageWidth, imageHeight);
-            if (baseTile.HasCoords(16, 78023, 44133))
-            {
-                baseTile.Print();
-                newTile.Print();
-                Console.WriteLine($"{pixleX}, {pixleY}, {imageWidth}, {imageHeight}");
-                Console.WriteLine($"image: {baseImage}, geometry: {geometry}");
-            }
+            //if (baseTile.HasCoords(16, 78023, 44133))
+            //{
+            //    baseTile.Print();
+            //    newTile.Print();
+            //    Console.WriteLine($"{pixleX}, {pixleY}, {imageWidth}, {imageHeight}");
+            //    Console.WriteLine($"image: {baseImage}, geometry: {geometry}");
+            //}
+            //baseImage.RePage();
             baseImage.Crop(geometry);
+            baseImage.RePage();
+
             baseImage.Resize(TileWidth, TileHeight);
         }
     }

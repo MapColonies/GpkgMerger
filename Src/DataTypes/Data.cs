@@ -93,9 +93,9 @@ namespace GpkgMerger.Src.DataTypes
 
         public abstract void UpdateTiles(List<Tile> tiles);
 
-        public virtual void Cleanup()
+        public virtual void Wrapup()
         {
-            Console.WriteLine($"{this.type} source, skipping cleanup phase");
+            Console.WriteLine($"{this.type} source, skipping wrapup phase");
         }
 
         public abstract bool Exists();
