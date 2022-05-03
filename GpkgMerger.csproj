@@ -19,6 +19,12 @@
 
   <Target Name="AddConfig" AfterTargets="AfterBuild">
     <Copy SourceFiles="appsettings.json" DestinationFolder="$(OutDir)" />
-</Target>
+  </Target>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 
 </Project>
