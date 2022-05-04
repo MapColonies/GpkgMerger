@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using GpkgMerger.Src.DataTypes;
 using GpkgMerger.Src.Batching;
+using GpkgMerger.Src.DataTypes;
 using GpkgMerger.Src.ImageProccessing;
 
 namespace GpkgMerger.Src
@@ -9,9 +9,9 @@ namespace GpkgMerger.Src
     public static class Proccess
     {
 
-        public static void Start(Data baseData, Data newData)
+        public static void Start(Data baseData, Data newData, int batchSize)
         {
-            List<Tile> tiles;
+            List<Tile> tiles = new List<Tile>(batchSize);
             int totalTileCount = newData.TileCount();
             int tileProgressCount = 0;
 
@@ -25,8 +25,7 @@ namespace GpkgMerger.Src
                 List<Tile> newTiles = newData.GetNextBatch();
                 List<Tile> baseTiles = baseData.GetUpscaledCorrespondingBatch(newTiles);
 
-                tiles = new List<Tile>();
-
+                tiles.Clear();
                 for (int i = 0; i < newTiles.Count; i++)
                 {
                     Tile newTile = newTiles[i];
@@ -45,9 +44,9 @@ namespace GpkgMerger.Src
                 Console.WriteLine($"Tile Count: {tileProgressCount} / {totalTileCount}");
 
                 baseData.UpdateTiles(tiles);
-            } while (tiles.Count > 0);
+            } while (tiles.Count == batchSize);
 
-            baseData.Cleanup();
+            baseData.Wrapup();
         }
 
         public static void Validate(Data baseData, Data newData)
@@ -78,7 +77,7 @@ namespace GpkgMerger.Src
                     else
                     {
                         Console.WriteLine("Missing tiles:");
-                        newTile.PrintTile();
+                        newTile.Print();
                     }
                 }
 
@@ -88,7 +87,7 @@ namespace GpkgMerger.Src
 
             } while (hasSameTiles && newTiles.Count > 0);
 
-            baseData.Cleanup();
+            baseData.Wrapup();
 
             Console.WriteLine($"Target's valid: {hasSameTiles}");
         }
