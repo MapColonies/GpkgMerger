@@ -23,19 +23,20 @@ namespace GpkgMerger.Src
             do
             {
                 List<Tile> newTiles = newData.GetNextBatch();
-                List<Tile> baseTiles = baseData.GetUpscaledCorrespondingBatch(newTiles);
 
                 tiles.Clear();
                 for (int i = 0; i < newTiles.Count; i++)
                 {
-                    Tile newTile = newTiles[i];
-                    Tile baseTile = baseTiles[i];
-
-                    if (baseTile != null)
+                    var newTile = newTiles[i];
+                    var coords = newTile.GetCoord();
+                    List<CorrespondingTileBuilder> correspondingTileBuilders = new List<CorrespondingTileBuilder>()
                     {
-                        string blob = Merge.MergeTiles(new[] { newTile, baseTile });
-                        newTile = new Tile(newTile.Z, newTile.X, newTile.Y, blob, blob.Length);
-                    }
+                        ()=> newTile,
+                        ()=>baseData.GetCorrespondingTile(coords,true)
+                    };
+
+                    string blob = Merge.MergeTiles(correspondingTileBuilders, coords);
+                    newTile = new Tile(newTile.Z, newTile.X, newTile.Y, blob, blob.Length);
 
                     tiles.Add(newTile);
                 }
@@ -60,7 +61,7 @@ namespace GpkgMerger.Src
             do
             {
                 newTiles = newData.GetNextBatch();
-                List<Tile> baseTiles = baseData.GetCorrespondingBatch(newTiles);
+                //List<Tile> baseTiles = baseData.GetCorrespondingBatch(newTiles);
 
                 int baseMatchCount = 0;
                 int newTileCount = 0;
@@ -68,7 +69,7 @@ namespace GpkgMerger.Src
                 for (int i = 0; i < newTiles.Count; i++)
                 {
                     Tile newTile = newTiles[i];
-                    Tile baseTile = baseTiles[i];
+                    Tile baseTile = baseData.GetCorrespondingTile(newTile.GetCoord(), false);
 
                     if (baseTile != null)
                     {

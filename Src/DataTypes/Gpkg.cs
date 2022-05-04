@@ -79,7 +79,7 @@ namespace GpkgMerger.Src.DataTypes
             return tiles;
         }
 
-        protected override Tile GetLastExistingTile(Tile tile)
+        protected override Tile GetLastExistingTile(Coord baseCoords)
         {
             int[] coords = new int[COORDS_FOR_ALL_ZOOM_LEVELS];
             for (int i = 0; i < coords.Length; i++)
@@ -87,9 +87,9 @@ namespace GpkgMerger.Src.DataTypes
                 coords[i] = -1;
             }
 
-            int z = tile.Z;
-            int baseTileX = tile.X;
-            int baseTileY = tile.Y;
+            int z = baseCoords.z;
+            int baseTileX = baseCoords.x;
+            int baseTileY = baseCoords.y;
             int arrayIterator = 0;
             for (int i = z - 1; i >= 0; i--)
             {
@@ -100,7 +100,7 @@ namespace GpkgMerger.Src.DataTypes
                 coords[arrayIterator + 1] = baseTileY;
             }
 
-            Tile lastTile = GpkgUtils.GetLastTile(this.path, this.tileCache, coords, tile);
+            Tile lastTile = GpkgUtils.GetLastTile(this.path, this.tileCache, coords, baseCoords);
             return lastTile;
         }
 

@@ -36,11 +36,11 @@ namespace GpkgMerger.Src.DataTypes
             Console.WriteLine($"{this.type} source, skipping metadata update");
         }
 
-        protected virtual Tile GetLastExistingTile(Tile tile)
+        protected virtual Tile GetLastExistingTile(Coord coords)
         {
-            int z = tile.Z;
-            int baseTileX = tile.X;
-            int baseTileY = tile.Y;
+            int z = coords.z;
+            int baseTileX = coords.x;
+            int baseTileY = coords.y;
 
             Tile lastTile = null;
 
@@ -62,33 +62,16 @@ namespace GpkgMerger.Src.DataTypes
 
         public abstract List<Tile> GetNextBatch();
 
-        protected List<Tile> CreateCorrespondingBatch(List<Tile> tiles, bool upscale)
-        {
-            List<Tile> correspondingTiles = new List<Tile>(this.batchSize);
 
-            foreach (Tile tile in tiles)
+        public Tile GetCorrespondingTile(Coord coords, bool upscale)
+        {
+            Tile correspondingTile = this.utils.GetTile(coords);
+
+            if (upscale && correspondingTile == null)
             {
-                Tile correspondingTile = this.utils.GetTile(tile.GetCoord());
-
-                if (upscale && correspondingTile == null)
-                {
-                    correspondingTile = GetLastExistingTile(tile);
-                }
-
-                correspondingTiles.Add(correspondingTile);
+                correspondingTile = GetLastExistingTile(coords);
             }
-
-            return correspondingTiles;
-        }
-
-        public virtual List<Tile> GetCorrespondingBatch(List<Tile> tiles)
-        {
-            return CreateCorrespondingBatch(tiles, false);
-        }
-
-        public virtual List<Tile> GetUpscaledCorrespondingBatch(List<Tile> tiles)
-        {
-            return CreateCorrespondingBatch(tiles, true);
+            return correspondingTile;
         }
 
         public abstract void UpdateTiles(List<Tile> tiles);

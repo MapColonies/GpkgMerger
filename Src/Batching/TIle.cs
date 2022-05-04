@@ -3,6 +3,8 @@ using GpkgMerger.Src.DataTypes;
 
 namespace GpkgMerger.Src.Batching
 {
+    public delegate Tile CorrespondingTileBuilder();
+
     public class Tile
     {
         public int Z

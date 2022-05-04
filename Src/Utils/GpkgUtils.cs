@@ -255,7 +255,7 @@ namespace GpkgMerger.Src.Utils
             return tiles;
         }
 
-        public static Tile GetLastTile(string path, string tileCache, int[] coords, Tile tile)
+        public static Tile GetLastTile(string path, string tileCache, int[] coords, Coord baseCoords)
         {
             Tile lastTile = null;
             using (var connection = new SQLiteConnection($"Data Source={path}"))
@@ -268,7 +268,7 @@ namespace GpkgMerger.Src.Utils
                     // Build command
                     StringBuilder commandBuilder = new StringBuilder($"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM {tileCache} where ");
 
-                    int zoomLevel = tile.Z;
+                    int zoomLevel = baseCoords.z;
                     int maxZoomLevel = zoomLevel - 1;
                     int arrayIdx = 0;
                     for (int currentZoomLevel = maxZoomLevel; currentZoomLevel >= 0; currentZoomLevel--)
