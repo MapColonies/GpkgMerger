@@ -9,27 +9,30 @@ namespace GpkgMerger.Src.ImageProccessing
     {
         public static string MergeNewToBase(Tile newTile, Tile baseTile)
         {
-            byte[] newBytes = StringUtils.StringToByteArray(newTile.Blob);
-            MagickImage newImage = new MagickImage(newBytes);
-
             string blob;
-            if (newImage.HasAlpha)
+            byte[] newBytes = StringUtils.StringToByteArray(newTile.Blob);
+            using (MagickImage newImage = new MagickImage(newBytes))
             {
-                byte[] baseBytes = StringUtils.StringToByteArray(baseTile.Blob);
-                MagickImage baseImage = new MagickImage(baseBytes);
-
-                if (baseTile.Z != newTile.Z)
+                if (newImage.HasAlpha)
                 {
-                    Upscaling.Upscale(baseImage, baseTile, newTile);
-                }
+                    byte[] baseBytes = StringUtils.StringToByteArray(baseTile.Blob);
+                    using (MagickImage baseImage = new MagickImage(baseBytes))
+                    {
 
-                baseImage.Composite(newImage, CompositeOperator.SrcOver);
-                byte[] baseByteArr = baseImage.ToByteArray();
-                blob = Convert.ToHexString(baseByteArr);
-            }
-            else
-            {
-                blob = newTile.Blob;
+                        if (baseTile.Z != newTile.Z)
+                        {
+                            Upscaling.Upscale(baseImage, baseTile, newTile);
+                        }
+
+                        baseImage.Composite(newImage, CompositeOperator.SrcOver);
+                        byte[] baseByteArr = baseImage.ToByteArray();
+                        blob = Convert.ToHexString(baseByteArr);
+                    }
+                }
+                else
+                {
+                    blob = newTile.Blob;
+                }
             }
 
             return blob;

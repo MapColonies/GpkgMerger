@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using GpkgMerger.Src.Batching;
-using GpkgMerger.Src.Sql;
 using GpkgMerger.Src.Utils;
 
 namespace GpkgMerger.Src.DataTypes
@@ -35,11 +34,16 @@ namespace GpkgMerger.Src.DataTypes
 
         private Extent extent;
 
-        public Gpkg(string path, int batchSize) : base(DataType.GPKG, path, batchSize)
+        public Gpkg(string path, int batchSize) : base(DataType.GPKG, path, batchSize, new GpkgUtils(path))
         {
-            this.tileCache = GpkgSql.GetTileCache(path);
+            this.tileCache = GpkgUtils.GetTileCache(path);
             this.offset = 0;
-            this.extent = GpkgSql.GetExtent(path);
+            this.extent = GpkgUtils.GetExtent(path);
+        }
+
+        public override void Reset()
+        {
+            this.offset = 0;
         }
 
         public override void UpdateMetadata(Data data)
@@ -65,38 +69,19 @@ namespace GpkgMerger.Src.DataTypes
             combinedExtent.maxY = Math.Max(this.extent.maxY, extent.maxY);
 
             this.extent = combinedExtent;
-            GpkgSql.UpdateExtent(this.path, combinedExtent);
+            GpkgUtils.UpdateExtent(this.path, combinedExtent);
         }
 
         private void UpdateTileMatrix(Gpkg gpkg)
         {
-            GpkgSql.CopyTileMatrix(this.path, gpkg.path, this.tileCache);
+            GpkgUtils.CopyTileMatrix(this.path, gpkg.path, this.tileCache);
         }
 
         public override List<Tile> GetNextBatch()
         {
-            List<Tile> tiles = GpkgSql.GetBatch(this.path, this.batchSize, this.offset, this.tileCache);
+            List<Tile> tiles = GpkgUtils.GetBatch(this.path, this.batchSize, this.offset, this.tileCache);
             this.offset += tiles.Count;
             return tiles;
-        }
-
-        protected override List<Tile> CreateCorrespondingBatch(List<Tile> tiles, bool upscale)
-        {
-            List<Tile> newTiles = new List<Tile>(this.batchSize);
-
-            foreach (Tile tile in tiles)
-            {
-                Tile baseTile = GpkgSql.GetTile(this.path, this.tileCache, tile);
-
-                if (upscale && baseTile == null)
-                {
-                    baseTile = GetLastExistingTile(tile);
-                }
-
-                newTiles.Add(baseTile);
-            }
-
-            return newTiles;
         }
 
         protected override Tile GetLastExistingTile(Tile tile)
@@ -120,32 +105,34 @@ namespace GpkgMerger.Src.DataTypes
                 coords[arrayIterator + 1] = baseTileY;
             }
 
-            Tile lastTile = GpkgSql.GetLastTile(this.path, this.tileCache, coords, tile);
+            Tile lastTile = GpkgUtils.GetLastTile(this.path, this.tileCache, coords, tile);
             return lastTile;
         }
 
         public override void UpdateTiles(List<Tile> tiles)
         {
-            GpkgSql.InsertTiles(this.path, this.tileCache, tiles);
+            GpkgUtils.InsertTiles(this.path, this.tileCache, tiles);
         }
 
         public void PrintBatch(List<Tile> tiles)
         {
             foreach (Tile tile in tiles)
             {
-                tile.PrintTile();
+                tile.Print();
             }
         }
 
-        public override void Cleanup()
+        public override void Wrapup()
         {
-            GpkgSql.CreateTileIndex(this.path, this.tileCache);
+            GpkgUtils.CreateTileIndex(this.path, this.tileCache);
 
             bool vacuum = bool.Parse(Configuration.Instance.GetConfiguration("GPKG", "vacuum"));
             if (vacuum)
             {
-                GpkgSql.Vacuum(this.path);
+                GpkgUtils.Vacuum(this.path);
             }
+
+            Reset();
         }
 
         public override bool Exists()
@@ -158,7 +145,7 @@ namespace GpkgMerger.Src.DataTypes
 
         public override int TileCount()
         {
-            return GpkgSql.GetTileCount(this.path, this.tileCache);
+            return GpkgUtils.GetTileCount(this.path, this.tileCache);
         }
     }
 }

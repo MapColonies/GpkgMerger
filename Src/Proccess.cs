@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using GpkgMerger.Src.DataTypes;
 using GpkgMerger.Src.Batching;
+using GpkgMerger.Src.DataTypes;
 using GpkgMerger.Src.ImageProccessing;
 
 namespace GpkgMerger.Src
@@ -9,9 +9,9 @@ namespace GpkgMerger.Src
     public static class Proccess
     {
 
-        public static void Start(Data baseData, Data newData)
+        public static void Start(Data baseData, Data newData, int batchSize)
         {
-            List<Tile> tiles;
+            List<Tile> tiles = new List<Tile>(batchSize);
             int totalTileCount = newData.TileCount();
             int tileProgressCount = 0;
 
@@ -25,8 +25,7 @@ namespace GpkgMerger.Src
                 List<Tile> newTiles = newData.GetNextBatch();
                 List<Tile> baseTiles = baseData.GetUpscaledCorrespondingBatch(newTiles);
 
-                tiles = new List<Tile>();
-
+                tiles.Clear();
                 for (int i = 0; i < newTiles.Count; i++)
                 {
                     Tile newTile = newTiles[i];
@@ -38,16 +37,20 @@ namespace GpkgMerger.Src
                         newTile = new Tile(newTile.Z, newTile.X, newTile.Y, blob, blob.Length);
                     }
 
-                    tiles.Add(newTile);
+                    if (newTile != null)
+                    {
+                        tiles.Add(newTile);
+                    }
                 }
 
                 tileProgressCount += tiles.Count;
                 Console.WriteLine($"Tile Count: {tileProgressCount} / {totalTileCount}");
 
                 baseData.UpdateTiles(tiles);
-            } while (tiles.Count > 0);
+            } while (tiles.Count == batchSize);
 
-            baseData.Cleanup();
+            baseData.Wrapup();
+            newData.Reset();
         }
 
         public static void Validate(Data baseData, Data newData)
@@ -56,6 +59,7 @@ namespace GpkgMerger.Src
             bool hasSameTiles = true;
 
             int totalTileCount = newData.TileCount();
+            int tilesChecked = 0;
             Console.WriteLine($"Base tile Count: {baseData.TileCount()}, New tile count: {newData.TileCount()}");
 
             do
@@ -78,17 +82,19 @@ namespace GpkgMerger.Src
                     else
                     {
                         Console.WriteLine("Missing tiles:");
-                        newTile.PrintTile();
+                        newTile.Print();
                     }
                 }
 
                 newTileCount += newTiles.Count;
-                Console.WriteLine($"Base tile Count: {newTileCount}, New tile count: {baseMatchCount}");
+                tilesChecked += newTiles.Count;
+                Console.WriteLine($"Total tiles checked: {tilesChecked}/{totalTileCount}");
                 hasSameTiles = newTileCount == baseMatchCount;
 
             } while (hasSameTiles && newTiles.Count > 0);
 
-            baseData.Cleanup();
+            baseData.Wrapup();
+            newData.Reset();
 
             Console.WriteLine($"Target's valid: {hasSameTiles}");
         }

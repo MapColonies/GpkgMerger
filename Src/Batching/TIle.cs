@@ -1,4 +1,6 @@
 using System;
+using GpkgMerger.Src.DataTypes;
+using GpkgMerger.Src.Utils;
 
 namespace GpkgMerger.Src.Batching
 {
@@ -33,7 +35,17 @@ namespace GpkgMerger.Src.Batching
             return z == this.Z && x == this.X && y == this.Y;
         }
 
-        public void PrintTile()
+        public Coord GetCoord()
+        {
+            return new Coord(this.Z, this.X, this.Y);
+        }
+
+        public void ToTms()
+        {
+            Y = GeoUtils.convertTMS(Z, Y);
+        }
+
+        public void Print()
         {
             Console.WriteLine($"z: {this.Z}");
             Console.WriteLine($"x: {this.X}");
