@@ -31,6 +31,11 @@ namespace GpkgMerger.Src.DataTypes
             this.client = client;
         }
 
+        ~S3()
+        {
+            this.client.Dispose();
+        }
+
         public override void Reset()
         {
             this.continuationToken = null;
