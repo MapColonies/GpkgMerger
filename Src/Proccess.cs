@@ -37,7 +37,10 @@ namespace GpkgMerger.Src
                         newTile = new Tile(newTile.Z, newTile.X, newTile.Y, blob, blob.Length);
                     }
 
-                    tiles.Add(newTile);
+                    if (newTile != null)
+                    {
+                        tiles.Add(newTile);
+                    }
                 }
 
                 tileProgressCount += tiles.Count;
@@ -47,6 +50,7 @@ namespace GpkgMerger.Src
             } while (tiles.Count == batchSize);
 
             baseData.Wrapup();
+            newData.Reset();
         }
 
         public static void Validate(Data baseData, Data newData)
@@ -55,6 +59,7 @@ namespace GpkgMerger.Src
             bool hasSameTiles = true;
 
             int totalTileCount = newData.TileCount();
+            int tilesChecked = 0;
             Console.WriteLine($"Base tile Count: {baseData.TileCount()}, New tile count: {newData.TileCount()}");
 
             do
@@ -82,12 +87,14 @@ namespace GpkgMerger.Src
                 }
 
                 newTileCount += newTiles.Count;
-                Console.WriteLine($"Base tile Count: {newTileCount}, New tile count: {baseMatchCount}");
+                tilesChecked += newTiles.Count;
+                Console.WriteLine($"Total tiles checked: {tilesChecked}/{totalTileCount}");
                 hasSameTiles = newTileCount == baseMatchCount;
 
             } while (hasSameTiles && newTiles.Count > 0);
 
             baseData.Wrapup();
+            newData.Reset();
 
             Console.WriteLine($"Target's valid: {hasSameTiles}");
         }

@@ -31,6 +31,8 @@ namespace GpkgMerger.Src.DataTypes
             this.utils = utils;
         }
 
+        public abstract void Reset();
+
         public virtual void UpdateMetadata(Data data)
         {
             Console.WriteLine($"{this.type} source, skipping metadata update");

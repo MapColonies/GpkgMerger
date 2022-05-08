@@ -14,9 +14,21 @@ namespace GpkgMerger.Src.DataTypes
 
         public FS(DataType type, string path, int batchSize) : base(type, path, batchSize, new FileUtils(path))
         {
+            Reset();
+            done = false;
+        }
+
+        public override void Reset()
+        {
             this.tiles = GetTiles();
             this.tiles.MoveNext();
             done = false;
+        }
+
+        public override void Wrapup()
+        {
+            base.Wrapup();
+            Reset();
         }
 
         public override bool Exists()
@@ -31,12 +43,22 @@ namespace GpkgMerger.Src.DataTypes
             // From: https://stackoverflow.com/a/7430971/11915280 and https://stackoverflow.com/a/19961761/11915280
             string[] ext = { ".png", ".jpg" };
             // Go over directory and count png and jpg files
-            foreach (string filePath in Directory.EnumerateFiles(this.path, "*.*", SearchOption.AllDirectories).Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
+            foreach (string filePath in Directory.EnumerateFiles(this.path, "*.*", SearchOption.AllDirectories)
+                                                    .Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
             {
                 Coord coord = PathUtils.FromPath(filePath);
                 Tile tile = this.utils.GetTile(coord);
+                tile.ToTms();
                 yield return tile;
             }
+            // Directory.EnumerateFiles(this.path, "*.*", SearchOption.AllDirectories)
+            //             .Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase)))
+            //             .Select(filePath =>
+            //                     {
+            //                         Coord coord = PathUtils.FromPath(filePath);
+            //                         Tile tile = this.utils.GetTile(coord);
+            //                         return tile;
+            //                     });
         }
 
         public override List<Tile> GetNextBatch()
@@ -45,12 +67,11 @@ namespace GpkgMerger.Src.DataTypes
 
             if (done)
             {
-                this.tiles = GetTiles();
-                done = false;
+                Reset();
                 return tiles;
             }
 
-            while (!done && tiles.Count < this.batchSize)
+            while (tiles.Count < this.batchSize)
             {
                 Tile tile = this.tiles.Current;
                 tiles.Add(tile);

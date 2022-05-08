@@ -1,5 +1,6 @@
 using System;
 using GpkgMerger.Src.DataTypes;
+using GpkgMerger.Src.Utils;
 
 namespace GpkgMerger.Src.Batching
 {
@@ -37,6 +38,11 @@ namespace GpkgMerger.Src.Batching
         public Coord GetCoord()
         {
             return new Coord(this.Z, this.X, this.Y);
+        }
+
+        public void ToTms()
+        {
+            Y = GeoUtils.convertTMS(Z, Y);
         }
 
         public void Print()

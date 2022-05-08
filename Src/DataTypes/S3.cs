@@ -31,6 +31,18 @@ namespace GpkgMerger.Src.DataTypes
             this.client = client;
         }
 
+        public override void Reset()
+        {
+            this.continuationToken = null;
+            this.endOfRead = false;
+        }
+
+        public override void Wrapup()
+        {
+            base.Wrapup();
+            Reset();
+        }
+
         public static AmazonS3Client GetClient(string serviceUrl)
         {
             // Get s3 credentials
