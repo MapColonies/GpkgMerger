@@ -26,8 +26,8 @@ namespace GpkgMerger.Src.ImageProccessing
 
             MagickGeometry geometry = new MagickGeometry(pixleX, pixleY, imageWidth, imageHeight);
 
-            baseImage.RePage();
             baseImage.Crop(geometry);
+            baseImage.RePage();
             baseImage.Resize(TileWidth, TileHeight);
         }
     }
