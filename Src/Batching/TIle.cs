@@ -1,7 +1,10 @@
 using System;
+using GpkgMerger.Src.DataTypes;
 
 namespace GpkgMerger.Src.Batching
 {
+    public delegate Tile CorrespondingTileBuilder();
+
     public class Tile
     {
         public int Z
@@ -33,7 +36,12 @@ namespace GpkgMerger.Src.Batching
             return z == this.Z && x == this.X && y == this.Y;
         }
 
-        public void PrintTile()
+        public Coord GetCoord()
+        {
+            return new Coord(this.Z, this.X, this.Y);
+        }
+
+        public void Print()
         {
             Console.WriteLine($"z: {this.Z}");
             Console.WriteLine($"x: {this.X}");

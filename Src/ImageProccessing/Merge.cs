@@ -3,46 +3,71 @@ using System.Collections.Generic;
 using ImageMagick;
 using GpkgMerger.Src.Batching;
 using GpkgMerger.Src.Utils;
+using GpkgMerger.Src.DataTypes;
 
 namespace GpkgMerger.Src.ImageProccessing
 {
     public static class Merge
-    { 
-        public static string MergeTiles(IEnumerable<Tile> tiles)
+    {
+
+        public static string MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords)
         {
-            using (var images = new MagickImageCollection())
+            var images = new List<MagickImage>();
+            Tile lastProccessedTile = null;
+            for (var i = tiles.Count - 1; i >= 0; i--)
             {
-                using (var iterator = tiles.GetEnumerator())
+                MagickImage tileImage = null;
+                try
                 {
-                    if (!iterator.MoveNext())
+                    lastProccessedTile = tiles[i]();
+                    if (lastProccessedTile.Z > targetCoords.z)
                     {
-                        //no tiles recieved
-                        return null;  //TODO: replace with proper error
+                        images.ForEach(image => image.Dispose());
+                        throw new NotImplementedException("down scaling tiles is not supported");
                     }
-                    var firstTile = iterator.Current;
-                    var firstTileBytes = StringUtils.StringToByteArray(firstTile.Blob);
-                    images.Add(new MagickImage(firstTileBytes));
-                    while (iterator.MoveNext())
+                    var tileBytes = StringUtils.StringToByteArray(lastProccessedTile.Blob);
+                    tileImage = new MagickImage(tileBytes);
+                    if (lastProccessedTile.Z < targetCoords.z)
                     {
-                        var tile = iterator.Current;
-                        var tileBytes = StringUtils.StringToByteArray(tile.Blob);
-                        var tileImage = new MagickImage(tileBytes);
-                        if (!tileImage.HasAlpha)
-                        {
-                            images.Clear();
-                        }
-                        //TODO: add upscale logic
-                        images.Add(tileImage);
+                        Upscaling.Upscale(tileImage, lastProccessedTile, targetCoords);
+                    }
+                    images.Add(tileImage);
+                    if (!tileImage.HasAlpha)
+                    {
+                        break;
                     }
                 }
-                using (var mergedImage = images.Merge()) //image magic flatten, merge, and mosaic s
+                catch
                 {
-                    var mergedImageBytes = mergedImage.ToByteArray();
-                    var blob = Convert.ToHexString(mergedImageBytes);
-                    return blob;
+                    //prevent memory leak in case of any exception while handeling images
+                    images.ForEach(image => image.Dispose());
+                    if (tileImage != null)
+                        tileImage.Dispose();
+                    throw;
                 }
             }
-
+            switch (images.Count)
+            {
+                case 0:
+                    return null;
+                case 1:
+                    return lastProccessedTile.Blob;
+                default:
+                    using (var imageCollection = new MagickImageCollection())
+                    {
+                        for (var i = images.Count - 1; i >= 0; i--)
+                        {
+                            imageCollection.Add(images[i]);
+                        }
+                        using (var mergedImage = imageCollection.Flatten())
+                        {
+                            var mergedImageBytes = mergedImage.ToByteArray();
+                            var blob = Convert.ToHexString(mergedImageBytes);
+                            return blob;
+                        }
+                    }
+            }
         }
+
     }
 }

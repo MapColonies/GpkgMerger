@@ -1,6 +1,7 @@
 using ImageMagick;
 using GpkgMerger.Src.Batching;
 using System;
+using GpkgMerger.Src.DataTypes;
 
 namespace GpkgMerger.Src.ImageProccessing
 {
@@ -9,14 +10,14 @@ namespace GpkgMerger.Src.ImageProccessing
         private const int TileWidth = 256;
         private const int TileHeight = 256;
 
-        public static void Upscale(MagickImage baseImage, Tile baseTile, Tile newTile)
+        public static void Upscale(MagickImage baseImage, Tile baseTile, Coord targetCoords)
         {
-            int zoomLevelDiff = newTile.Z - baseTile.Z;
+            int zoomLevelDiff = targetCoords.z - baseTile.Z;
             int scale = 1 << zoomLevelDiff;
             double scaleAsDouble = (double)scale;
 
-            double tilePartX = (newTile.X % scale) / scaleAsDouble;
-            double tilePartY = (newTile.Y % scale) / scaleAsDouble;
+            double tilePartX = (targetCoords.x % scale) / scaleAsDouble;
+            double tilePartY = (targetCoords.y % scale) / scaleAsDouble;
             double tileSize = TileHeight / scaleAsDouble;
 
             int pixleX = (int)(tilePartX * TileWidth);
@@ -25,7 +26,10 @@ namespace GpkgMerger.Src.ImageProccessing
             int imageHeight = Math.Max((int)tileSize, 1);
 
             MagickGeometry geometry = new MagickGeometry(pixleX, pixleY, imageWidth, imageHeight);
+
             baseImage.Crop(geometry);
+            baseImage.RePage();
+
             baseImage.Resize(TileWidth, TileHeight);
         }
     }

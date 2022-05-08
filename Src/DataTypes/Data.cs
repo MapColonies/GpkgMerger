@@ -17,39 +17,69 @@ namespace GpkgMerger.Src.DataTypes
         public readonly DataType type;
         protected readonly string path;
         protected readonly int batchSize;
+        protected DataUtils utils;
 
         protected const int ZOOM_LEVEL_COUNT = 30;
 
         protected const int COORDS_FOR_ALL_ZOOM_LEVELS = ZOOM_LEVEL_COUNT << 1;
 
-        public Data(DataType type, string path, int batchSize)
+        public Data(DataType type, string path, int batchSize, DataUtils utils)
         {
             this.type = type;
             this.path = path;
             this.batchSize = batchSize;
+            this.utils = utils;
         }
 
-        public abstract void UpdateMetadata(Data data);
+        public virtual void UpdateMetadata(Data data)
+        {
+            Console.WriteLine($"{this.type} source, skipping metadata update");
+        }
 
-        protected abstract Tile GetLastExistingTile(Tile tile);
+        protected virtual Tile GetLastExistingTile(Coord coords)
+        {
+            int z = coords.z;
+            int baseTileX = coords.x;
+            int baseTileY = coords.y;
+
+            Tile lastTile = null;
+
+            // Go over zoom levels until a tile is found (may not find tile)
+            for (int i = z - 1; i >= 0; i--)
+            {
+                baseTileX >>= 1; // Divide by 2
+                baseTileY >>= 1; // Divide by 2
+
+                lastTile = this.utils.GetTile(i, baseTileX, baseTileY);
+                if (lastTile != null)
+                {
+                    break;
+                }
+            }
+
+            return lastTile;
+        }
 
         public abstract List<Tile> GetNextBatch();
 
-        protected abstract List<Tile> CreateCorrespondingBatch(List<Tile> tiles, bool upscale);
 
-        public virtual List<Tile> GetCorrespondingBatch(List<Tile> tiles)
+        public Tile GetCorrespondingTile(Coord coords, bool upscale)
         {
-            return CreateCorrespondingBatch(tiles, false);
-        }
+            Tile correspondingTile = this.utils.GetTile(coords);
 
-        public virtual List<Tile> GetUpscaledCorrespondingBatch(List<Tile> tiles)
-        {
-            return CreateCorrespondingBatch(tiles, true);
+            if (upscale && correspondingTile == null)
+            {
+                correspondingTile = GetLastExistingTile(coords);
+            }
+            return correspondingTile;
         }
 
         public abstract void UpdateTiles(List<Tile> tiles);
 
-        public abstract void Cleanup();
+        public virtual void Wrapup()
+        {
+            Console.WriteLine($"{this.type} source, skipping wrapup phase");
+        }
 
         public abstract bool Exists();
 
@@ -57,9 +87,6 @@ namespace GpkgMerger.Src.DataTypes
 
         public static Data CreateDatasource(string type, string path, int batchSize)
         {
-            string s3Url = Configuration.Instance.GetConfiguration("S3", "url");
-            string bucket = Configuration.Instance.GetConfiguration("S3", "bucket");
-
             Data data;
             switch (type.ToLower())
             {
@@ -67,11 +94,23 @@ namespace GpkgMerger.Src.DataTypes
                     data = new Gpkg(path, batchSize);
                     break;
                 case "s3":
+                    string s3Url = Configuration.Instance.GetConfiguration("S3", "url");
+                    string bucket = Configuration.Instance.GetConfiguration("S3", "bucket");
+
+                    var client = S3.GetClient(s3Url);
                     path = PathUtils.RemoveTrailingSlash(path);
-                    data = new S3(s3Url, bucket, path, batchSize);
+                    data = new S3(client, bucket, path, batchSize);
+                    break;
+                case "fs":
+                    data = new FS(DataType.FOLDER, path, batchSize);
                     break;
                 default:
                     throw new Exception($"Currently there is no support for the data type '{type}'");
+            }
+
+            if (!data.Exists())
+            {
+                throw new Exception($"path '{path}' to data does not exist.");
             }
 
             return data;
