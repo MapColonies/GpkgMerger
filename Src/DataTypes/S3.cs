@@ -31,6 +31,23 @@ namespace GpkgMerger.Src.DataTypes
             this.client = client;
         }
 
+        ~S3()
+        {
+            this.client.Dispose();
+        }
+
+        public override void Reset()
+        {
+            this.continuationToken = null;
+            this.endOfRead = false;
+        }
+
+        public override void Wrapup()
+        {
+            base.Wrapup();
+            Reset();
+        }
+
         public static AmazonS3Client GetClient(string serviceUrl)
         {
             // Get s3 credentials
@@ -81,6 +98,11 @@ namespace GpkgMerger.Src.DataTypes
             this.endOfRead = !response.IsTruncated;
 
             return tiles;
+        }
+
+        public override void UpdateMetadata(Data data)
+        {
+            Console.WriteLine("S3 source, skipping metadata update");
         }
 
         public override void UpdateTiles(List<Tile> tiles)

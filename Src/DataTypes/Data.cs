@@ -31,6 +31,8 @@ namespace GpkgMerger.Src.DataTypes
             this.utils = utils;
         }
 
+        public abstract void Reset();
+
         public virtual void UpdateMetadata(Data data)
         {
             Console.WriteLine($"{this.type} source, skipping metadata update");
@@ -61,7 +63,6 @@ namespace GpkgMerger.Src.DataTypes
         }
 
         public abstract List<Tile> GetNextBatch();
-
 
         public Tile GetCorrespondingTile(Coord coords, bool upscale)
         {

@@ -41,6 +41,11 @@ namespace GpkgMerger.Src.DataTypes
             this.extent = GpkgUtils.GetExtent(path);
         }
 
+        public override void Reset()
+        {
+            this.offset = 0;
+        }
+
         public override void UpdateMetadata(Data data)
         {
             if (data.type != DataType.GPKG)
@@ -126,6 +131,8 @@ namespace GpkgMerger.Src.DataTypes
             {
                 GpkgUtils.Vacuum(this.path);
             }
+
+            Reset();
         }
 
         public override bool Exists()
