@@ -31,8 +31,8 @@ namespace GpkgMerger.Src
                     var coords = newTile.GetCoord();
                     List<CorrespondingTileBuilder> correspondingTileBuilders = new List<CorrespondingTileBuilder>()
                     {
-                        ()=> newTile,
-                        ()=>baseData.GetCorrespondingTile(coords,true)
+                        ()=>baseData.GetCorrespondingTile(coords,true),
+                        ()=> newTile
                     };
 
                     string blob = Merge.MergeTiles(correspondingTileBuilders, coords);

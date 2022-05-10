@@ -19,17 +19,22 @@ namespace GpkgMerger.Src.ImageProccessing
                 MagickImage tileImage = null;
                 try
                 {
-                    lastProccessedTile = tiles[i]();
-                    if (lastProccessedTile.Z > targetCoords.z)
+                    var tile = tiles[i]();
+                    if (tile == null)
+                    {
+                        continue;
+                    }
+                    lastProccessedTile = tile;
+                    if (tile.Z > targetCoords.z)
                     {
                         images.ForEach(image => image.Dispose());
                         throw new NotImplementedException("down scaling tiles is not supported");
                     }
-                    var tileBytes = StringUtils.StringToByteArray(lastProccessedTile.Blob);
+                    var tileBytes = StringUtils.StringToByteArray(tile.Blob);
                     tileImage = new MagickImage(tileBytes);
-                    if (lastProccessedTile.Z < targetCoords.z)
+                    if (tile.Z < targetCoords.z)
                     {
-                        Upscaling.Upscale(tileImage, lastProccessedTile, targetCoords);
+                        Upscaling.Upscale(tileImage, tile, targetCoords);
                     }
                     images.Add(tileImage);
                     if (!tileImage.HasAlpha)
@@ -51,7 +56,7 @@ namespace GpkgMerger.Src.ImageProccessing
                 case 0:
                     return null;
                 case 1:
-                    return lastProccessedTile.Blob;
+                    return lastProccessedTile?.Blob;
                 default:
                     using (var imageCollection = new MagickImageCollection())
                     {
