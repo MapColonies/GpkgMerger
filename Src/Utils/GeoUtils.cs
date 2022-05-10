@@ -10,7 +10,7 @@ namespace GpkgMerger.Src.Utils
             return (1 << z) - y - 1;
         }
 
-        public static int convertTMS(Tile tile)
+        public static int FlipY(Tile tile)
         {
             return FlipY(tile.Z, tile.Y);
         }

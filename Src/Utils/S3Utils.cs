@@ -72,7 +72,7 @@ namespace GpkgMerger.Src.Utils
 
         public static void UpdateTile(AmazonS3Client client, string bucket, string path, Tile tile)
         {
-            int y = GeoUtils.convertTMS(tile);
+            int y = GeoUtils.FlipY(tile);
             string key = PathUtils.GetTilePath(path, tile.Z, tile.X, y);
 
             var request = new PutObjectRequest()
