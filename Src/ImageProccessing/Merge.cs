@@ -12,45 +12,8 @@ namespace GpkgMerger.Src.ImageProccessing
 
         public static string MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords)
         {
-            var images = new List<MagickImage>();
-            Tile lastProccessedTile = null;
-            for (var i = tiles.Count - 1; i >= 0; i--)
-            {
-                MagickImage tileImage = null;
-                try
-                {
-                    var tile = tiles[i]();
-                    if (tile == null)
-                    {
-                        continue;
-                    }
-                    lastProccessedTile = tile;
-                    if (tile.Z > targetCoords.z)
-                    {
-                        images.ForEach(image => image.Dispose());
-                        throw new NotImplementedException("down scaling tiles is not supported");
-                    }
-                    var tileBytes = StringUtils.StringToByteArray(tile.Blob);
-                    tileImage = new MagickImage(tileBytes);
-                    if (tile.Z < targetCoords.z)
-                    {
-                        Upscaling.Upscale(tileImage, tile, targetCoords);
-                    }
-                    images.Add(tileImage);
-                    if (!tileImage.HasAlpha)
-                    {
-                        break;
-                    }
-                }
-                catch
-                {
-                    //prevent memory leak in case of any exception while handeling images
-                    images.ForEach(image => image.Dispose());
-                    if (tileImage != null)
-                        tileImage.Dispose();
-                    throw;
-                }
-            }
+            Tile lastProccessedTile;
+            var images = getLimageList(tiles, targetCoords, out lastProccessedTile);
             switch (images.Count)
             {
                 case 0:
@@ -74,5 +37,47 @@ namespace GpkgMerger.Src.ImageProccessing
             }
         }
 
+        private static List<MagickImage> getLimageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords, out Tile lastProccessedTile)
+        {
+            var images = new List<MagickImage>();
+            lastProccessedTile = null;
+            for (var i = tiles.Count - 1; i >= 0; i--)
+            {
+                MagickImage tileImage = null;
+                try
+                {
+                    var tile = tiles[i]();
+                    if (tile == null)
+                    {
+                        continue;
+                    }
+                    lastProccessedTile = tile;
+                    if (tile.Z > targetCoords.z)
+                    {
+                        throw new NotImplementedException("down scaling tiles is not supported");
+                    }
+                    var tileBytes = StringUtils.StringToByteArray(tile.Blob);
+                    tileImage = new MagickImage(tileBytes);
+                    if (tile.Z < targetCoords.z)
+                    {
+                        Upscaling.Upscale(tileImage, tile, targetCoords);
+                    }
+                    images.Add(tileImage);
+                    if (!tileImage.HasAlpha)
+                    {
+                        break;
+                    }
+                }
+                catch
+                {
+                    //prevent memory leak in case of any exception while handeling images
+                    images.ForEach(image => image.Dispose());
+                    if (tileImage != null)
+                        tileImage.Dispose();
+                    throw;
+                }
+            }
+            return images;
+        }
     }
 }

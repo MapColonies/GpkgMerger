@@ -100,11 +100,6 @@ namespace GpkgMerger.Src.DataTypes
             return tiles;
         }
 
-        public override void UpdateMetadata(Data data)
-        {
-            Console.WriteLine("S3 source, skipping metadata update");
-        }
-
         public override void UpdateTiles(List<Tile> tiles)
         {
             foreach (var tile in tiles)
