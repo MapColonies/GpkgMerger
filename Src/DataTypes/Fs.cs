@@ -47,7 +47,7 @@ namespace GpkgMerger.Src.DataTypes
             {
                 Coord coord = PathUtils.FromPath(filePath);
                 Tile tile = this.utils.GetTile(coord);
-                tile.ToTms();
+                tile.FlipY();
                 yield return tile;
             }         
         }
@@ -84,12 +84,17 @@ namespace GpkgMerger.Src.DataTypes
         {
             foreach (Tile tile in tiles)
             {
+                tile.FlipY();
                 string tilePath = PathUtils.GetTilePath(this.path, tile);
                 byte[] buffer = StringUtils.StringToByteArray(tile.Blob);
                 using (var ms = new MemoryStream(buffer))
-                using (var fs = File.OpenWrite(tilePath))
                 {
-                    ms.WriteTo(fs);
+                    var file = new System.IO.FileInfo(tilePath);
+                    file.Directory.Create();
+                    using (FileStream fs = file.OpenWrite())
+                    {
+                        ms.WriteTo(fs);
+                    }
                 }
             }
         }

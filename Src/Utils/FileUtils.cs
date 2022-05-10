@@ -8,14 +8,25 @@ namespace GpkgMerger.Src.Utils
         public FileUtils(string path) : base(path) { }
         private static string GetFileString(string path)
         {
-            byte[] fileBytes = File.ReadAllBytes(path);
-            return StringUtils.ByteArrayToString(fileBytes);
+            if (File.Exists(path))
+            {
+                byte[] fileBytes = File.ReadAllBytes(path);
+                return StringUtils.ByteArrayToString(fileBytes);
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public override Tile GetTile(int z, int x, int y)
         {
             string tilePath = PathUtils.GetTilePath(this.path, z, x, y);
             string blob = GetFileString(tilePath);
+            if (blob == null)
+            {
+                return null;
+            }
             return new Tile(z, x, y, blob, blob.Length);
         }
     }

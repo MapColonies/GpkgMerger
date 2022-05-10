@@ -24,7 +24,7 @@ namespace GpkgMerger.Src.Utils
 
         public static string GetTilePathTMS(string basePath, int z, int x, int y)
         {
-            y = GeoUtils.convertTMS(z, y);
+            y = GeoUtils.FlipY(z, y);
             return GetTilePath(basePath, z, x, y);
         }
 

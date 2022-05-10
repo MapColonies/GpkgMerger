@@ -42,9 +42,9 @@ namespace GpkgMerger.Src.Batching
             return new Coord(this.Z, this.X, this.Y);
         }
 
-        public void ToTms()
+        public void FlipY()
         {
-            Y = GeoUtils.convertTMS(Z, Y);
+            Y = GeoUtils.FlipY(Z, Y);
         }
 
         public void Print()

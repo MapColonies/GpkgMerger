@@ -88,7 +88,7 @@ namespace GpkgMerger.Src.DataTypes
                 {
                     string key = item.Key;
                     Coord coord = PathUtils.FromPath(item.Key);
-                    coord.ToTms();
+                    coord.flipY();
                     Tile tile = this.utils.GetTile(coord);
                     tiles.Add(tile);
                 }

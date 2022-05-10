@@ -57,7 +57,7 @@ namespace GpkgMerger.Src.Utils
             if (blob != null)
             {
                 // We work with non-TMS tiles, so we convert y
-                y = GeoUtils.convertTMS(z, y);
+                y = GeoUtils.FlipY(z, y);
                 tile = new Tile(z, x, y, blob, blob.Length);
             }
             return tile;
@@ -66,7 +66,7 @@ namespace GpkgMerger.Src.Utils
         public override Tile GetTile(int z, int x, int y)
         {
             // Convert to TMS
-            y = GeoUtils.convertTMS(z, y);
+            y = GeoUtils.FlipY(z, y);
             return GetTileTMS(z, x, y);
         }
 
