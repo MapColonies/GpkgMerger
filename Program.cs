@@ -44,7 +44,7 @@ namespace GpkgMerger
             // Create base datasource and make sure it exists
             try
             {
-                baseData = Data.CreateDatasource(baseType, basePath, batchSize);
+                baseData = Data.CreateDatasource(baseType, basePath, batchSize, true);
             }
             catch
             {
