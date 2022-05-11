@@ -86,7 +86,7 @@ namespace GpkgMerger.Src.DataTypes
 
         public abstract int TileCount();
 
-        public static Data CreateDatasource(string type, string path, int batchSize)
+        public static Data CreateDatasource(string type, string path, int batchSize, bool isBase = false)
         {
             Data data;
             switch (type.ToLower())
@@ -111,7 +111,11 @@ namespace GpkgMerger.Src.DataTypes
 
             if (!data.Exists())
             {
-                throw new Exception($"path '{path}' to data does not exist.");
+                //skip exsistence validation for base data to allow creation of new data for FS and S3
+                if (isBase)
+                    Console.WriteLine($"base data at path '{path}' does not exists and will be created");
+                else
+                    throw new Exception($"path '{path}' to data does not exist.");
             }
 
             return data;

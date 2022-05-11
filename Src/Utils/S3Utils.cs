@@ -51,7 +51,7 @@ namespace GpkgMerger.Src.Utils
         private Tile GetTileTMS(int z, int x, int y)
         {
             Tile tile = null;
-            string key = PathUtils.GetTilePath(this.path, z, x, y);
+            string key = PathUtils.GetTilePath(this.path, z, x, y, true);
 
             string blob = GetImageHex(key);
             if (blob != null)
@@ -73,7 +73,7 @@ namespace GpkgMerger.Src.Utils
         public static void UpdateTile(AmazonS3Client client, string bucket, string path, Tile tile)
         {
             int y = GeoUtils.FlipY(tile);
-            string key = PathUtils.GetTilePath(path, tile.Z, tile.X, y);
+            string key = PathUtils.GetTilePath(path, tile.Z, tile.X, y, true);
 
             var request = new PutObjectRequest()
             {
