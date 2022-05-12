@@ -51,9 +51,8 @@ namespace GpkgMerger.Src.DataTypes
             {
                 Coord coord = PathUtils.FromPath(filePath);
                 Tile tile = this.utils.GetTile(coord);
-                tile.FlipY();
                 yield return tile;
-            }         
+            }
         }
 
         public override List<Tile> GetNextBatch()
