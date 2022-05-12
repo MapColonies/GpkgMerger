@@ -38,11 +38,11 @@ namespace GpkgMerger.Src.DataTypes
             Console.WriteLine($"{this.type} source, skipping metadata update");
         }
 
-        protected virtual Tile GetLastExistingTile(Tile tile)
+        protected virtual Tile GetLastExistingTile(Coord coords)
         {
-            int z = tile.Z;
-            int baseTileX = tile.X;
-            int baseTileY = tile.Y;
+            int z = coords.z;
+            int baseTileX = coords.x;
+            int baseTileY = coords.y;
 
             Tile lastTile = null;
 
@@ -64,33 +64,15 @@ namespace GpkgMerger.Src.DataTypes
 
         public abstract List<Tile> GetNextBatch();
 
-        protected List<Tile> CreateCorrespondingBatch(List<Tile> tiles, bool upscale)
+        public Tile GetCorrespondingTile(Coord coords, bool upscale)
         {
-            List<Tile> correspondingTiles = new List<Tile>(this.batchSize);
+            Tile correspondingTile = this.utils.GetTile(coords);
 
-            foreach (Tile tile in tiles)
+            if (upscale && correspondingTile == null)
             {
-                Tile correspondingTile = this.utils.GetTile(tile.GetCoord());
-
-                if (upscale && correspondingTile == null)
-                {
-                    correspondingTile = GetLastExistingTile(tile);
-                }
-
-                correspondingTiles.Add(correspondingTile);
+                correspondingTile = GetLastExistingTile(coords);
             }
-
-            return correspondingTiles;
-        }
-
-        public virtual List<Tile> GetCorrespondingBatch(List<Tile> tiles)
-        {
-            return CreateCorrespondingBatch(tiles, false);
-        }
-
-        public virtual List<Tile> GetUpscaledCorrespondingBatch(List<Tile> tiles)
-        {
-            return CreateCorrespondingBatch(tiles, true);
+            return correspondingTile;
         }
 
         public abstract void UpdateTiles(List<Tile> tiles);
@@ -104,7 +86,7 @@ namespace GpkgMerger.Src.DataTypes
 
         public abstract int TileCount();
 
-        public static Data CreateDatasource(string type, string path, int batchSize)
+        public static Data CreateDatasource(string type, string path, int batchSize, bool isBase = false)
         {
             Data data;
             switch (type.ToLower())
@@ -121,7 +103,7 @@ namespace GpkgMerger.Src.DataTypes
                     data = new S3(client, bucket, path, batchSize);
                     break;
                 case "fs":
-                    data = new FS(DataType.FOLDER, path, batchSize);
+                    data = new FS(DataType.FOLDER, path, batchSize, isBase);
                     break;
                 default:
                     throw new Exception($"Currently there is no support for the data type '{type}'");
@@ -129,7 +111,11 @@ namespace GpkgMerger.Src.DataTypes
 
             if (!data.Exists())
             {
-                throw new Exception($"path '{path}' to data does not exist.");
+                //skip exsistence validation for base data to allow creation of new data for FS and S3
+                if (isBase)
+                    Console.WriteLine($"base data at path '{path}' does not exists and will be created");
+                else
+                    throw new Exception($"path '{path}' to data does not exist.");
             }
 
             return data;

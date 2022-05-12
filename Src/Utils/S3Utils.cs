@@ -48,32 +48,26 @@ namespace GpkgMerger.Src.Utils
             }
         }
 
-        private Tile GetTileTMS(int z, int x, int y)
-        {
-            Tile tile = null;
-            string key = PathUtils.GetTilePath(this.path, z, x, y);
-
-            string blob = GetImageHex(key);
-            if (blob != null)
-            {
-                // We work with non-TMS tiles, so we convert y
-                y = GeoUtils.convertTMS(z, y);
-                tile = new Tile(z, x, y, blob, blob.Length);
-            }
-            return tile;
-        }
-
         public override Tile GetTile(int z, int x, int y)
         {
             // Convert to TMS
-            y = GeoUtils.convertTMS(z, y);
-            return GetTileTMS(z, x, y);
+            y = GeoUtils.FlipY(z, y);
+            string key = PathUtils.GetTilePath(this.path, z, x, y, true);
+
+            string blob = GetImageHex(key);
+            if (blob == null)
+            {
+                return null;
+            }
+            // Convert from TMS
+            y = GeoUtils.FlipY(z, y);
+            return new Tile(z, x, y, blob, blob.Length);
         }
 
         public static void UpdateTile(AmazonS3Client client, string bucket, string path, Tile tile)
         {
-            int y = GeoUtils.convertTMS(tile);
-            string key = PathUtils.GetTilePath(path, tile.Z, tile.X, y);
+            int y = GeoUtils.FlipY(tile);
+            string key = PathUtils.GetTilePath(path, tile.Z, tile.X, y, true);
 
             var request = new PutObjectRequest()
             {

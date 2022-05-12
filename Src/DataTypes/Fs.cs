@@ -12,10 +12,13 @@ namespace GpkgMerger.Src.DataTypes
         private IEnumerator<Tile> tiles;
         private bool done;
 
-        public FS(DataType type, string path, int batchSize) : base(type, path, batchSize, new FileUtils(path))
+        public FS(DataType type, string path, int batchSize, bool isBase = false) : base(type, path, batchSize, new FileUtils(path))
         {
+            if (isBase)
+            {
+                Directory.CreateDirectory(path);
+            }
             Reset();
-            done = false;
         }
 
         public override void Reset()
@@ -48,17 +51,8 @@ namespace GpkgMerger.Src.DataTypes
             {
                 Coord coord = PathUtils.FromPath(filePath);
                 Tile tile = this.utils.GetTile(coord);
-                tile.ToTms();
                 yield return tile;
             }
-            // Directory.EnumerateFiles(this.path, "*.*", SearchOption.AllDirectories)
-            //             .Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase)))
-            //             .Select(filePath =>
-            //                     {
-            //                         Coord coord = PathUtils.FromPath(filePath);
-            //                         Tile tile = this.utils.GetTile(coord);
-            //                         return tile;
-            //                     });
         }
 
         public override List<Tile> GetNextBatch()
@@ -71,7 +65,7 @@ namespace GpkgMerger.Src.DataTypes
                 return tiles;
             }
 
-            while (tiles.Count < this.batchSize)
+            while (!done && tiles.Count < this.batchSize)
             {
                 Tile tile = this.tiles.Current;
                 tiles.Add(tile);
@@ -93,12 +87,17 @@ namespace GpkgMerger.Src.DataTypes
         {
             foreach (Tile tile in tiles)
             {
+                tile.FlipY();
                 string tilePath = PathUtils.GetTilePath(this.path, tile);
                 byte[] buffer = StringUtils.StringToByteArray(tile.Blob);
                 using (var ms = new MemoryStream(buffer))
-                using (var fs = File.OpenWrite(tilePath))
                 {
-                    ms.WriteTo(fs);
+                    var file = new System.IO.FileInfo(tilePath);
+                    file.Directory.Create();
+                    using (FileStream fs = file.OpenWrite())
+                    {
+                        ms.WriteTo(fs);
+                    }
                 }
             }
         }

@@ -4,15 +4,15 @@ namespace GpkgMerger.Src.Utils
 {
     public static class GeoUtils
     {
-        public static int convertTMS(int z, int y)
+        public static int FlipY(int z, int y)
         {
             // Convert to and from TMS
             return (1 << z) - y - 1;
         }
 
-        public static int convertTMS(Tile tile)
+        public static int FlipY(Tile tile)
         {
-            return convertTMS(tile.Z, tile.Y);
+            return FlipY(tile.Z, tile.Y);
         }
     }
 }

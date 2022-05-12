@@ -87,8 +87,8 @@ namespace GpkgMerger.Src.DataTypes
                 foreach (S3Object item in response.S3Objects)
                 {
                     string key = item.Key;
-                    Coord coord = PathUtils.FromPath(item.Key);
-                    coord.ToTms();
+                    Coord coord = PathUtils.FromPath(item.Key, true);
+                    coord.flipY();
                     Tile tile = this.utils.GetTile(coord);
                     tiles.Add(tile);
                 }

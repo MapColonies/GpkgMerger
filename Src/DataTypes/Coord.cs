@@ -16,9 +16,9 @@ namespace GpkgMerger.Src.DataTypes
             this.y = y;
         }
 
-        public void ToTms()
+        public void flipY()
         {
-            this.y = GeoUtils.convertTMS(this.z, this.y);
+            this.y = GeoUtils.FlipY(this.z, this.y);
         }
 
         public void Print()
