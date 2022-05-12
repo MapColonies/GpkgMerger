@@ -12,8 +12,12 @@ namespace GpkgMerger.Src.DataTypes
         private IEnumerator<Tile> tiles;
         private bool done;
 
-        public FS(DataType type, string path, int batchSize) : base(type, path, batchSize, new FileUtils(path))
+        public FS(DataType type, string path, int batchSize, bool isBase = false) : base(type, path, batchSize, new FileUtils(path))
         {
+            if (isBase)
+            {
+                Directory.CreateDirectory(path);
+            }
             Reset();
         }
 

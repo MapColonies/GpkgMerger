@@ -13,12 +13,13 @@ namespace GpkgMerger.Src.ImageProccessing
         public static string MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords)
         {
             Tile lastProccessedTile;
-            var images = getLimageList(tiles, targetCoords, out lastProccessedTile);
+            var images = getImageList(tiles, targetCoords, out lastProccessedTile);
             switch (images.Count)
             {
                 case 0:
                     return null;
                 case 1:
+                    images[0].Dispose();
                     return lastProccessedTile?.Blob;
                 default:
                     using (var imageCollection = new MagickImageCollection())
@@ -37,7 +38,7 @@ namespace GpkgMerger.Src.ImageProccessing
             }
         }
 
-        private static List<MagickImage> getLimageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords, out Tile lastProccessedTile)
+        private static List<MagickImage> getImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords, out Tile lastProccessedTile)
         {
             var images = new List<MagickImage>();
             lastProccessedTile = null;

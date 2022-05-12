@@ -103,7 +103,7 @@ namespace GpkgMerger.Src.DataTypes
                     data = new S3(client, bucket, path, batchSize);
                     break;
                 case "fs":
-                    data = new FS(DataType.FOLDER, path, batchSize);
+                    data = new FS(DataType.FOLDER, path, batchSize, isBase);
                     break;
                 default:
                     throw new Exception($"Currently there is no support for the data type '{type}'");

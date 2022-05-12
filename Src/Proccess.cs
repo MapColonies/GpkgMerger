@@ -28,14 +28,14 @@ namespace GpkgMerger.Src
                 for (int i = 0; i < newTiles.Count; i++)
                 {
                     var newTile = newTiles[i];
-                    var coords = newTile.GetCoord();
+                    var targetCoords = newTile.GetCoord();
                     List<CorrespondingTileBuilder> correspondingTileBuilders = new List<CorrespondingTileBuilder>()
                     {
-                        ()=>baseData.GetCorrespondingTile(coords,true),
+                        ()=>baseData.GetCorrespondingTile(targetCoords,true),
                         ()=> newTile
                     };
 
-                    string blob = Merge.MergeTiles(correspondingTileBuilders, coords);
+                    string blob = Merge.MergeTiles(correspondingTileBuilders, targetCoords);
 
                     if (blob != null) 
                     {
