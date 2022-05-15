@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "MergerCli": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}
