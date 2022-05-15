@@ -17,14 +17,14 @@ namespace MergerLogic.DataTypes
 
         public void flipY()
         {
-            y = GeoUtils.FlipY(z, y);
+            this.y = GeoUtils.FlipY(this.z, this.y);
         }
 
         public void Print()
         {
-            Console.WriteLine($"z: {z}");
-            Console.WriteLine($"x: {x}");
-            Console.WriteLine($"y: {y}");
+            Console.WriteLine($"z: {this.z}");
+            Console.WriteLine($"x: {this.x}");
+            Console.WriteLine($"y: {this.y}");
         }
     }
 }

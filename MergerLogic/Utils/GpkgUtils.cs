@@ -12,7 +12,7 @@ namespace MergerLogic.Utils
 
         public GpkgUtils(string path) : base(path)
         {
-            tileCache = GpkgUtils.GetTileCache(path);
+            this.tileCache = GpkgUtils.GetTileCache(path);
         }
 
         public static string GetTileCache(string path)
@@ -166,13 +166,13 @@ namespace MergerLogic.Utils
         {
             Tile tile = null;
 
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT hex(tile_data) FROM {tileCache} where zoom_level=$z and tile_column=$x and tile_row=$y";
+                    command.CommandText = $"SELECT hex(tile_data) FROM {this.tileCache} where zoom_level=$z and tile_column=$x and tile_row=$y";
                     command.Parameters.AddWithValue("$z", z);
                     command.Parameters.AddWithValue("$x", x);
                     command.Parameters.AddWithValue("$y", y);

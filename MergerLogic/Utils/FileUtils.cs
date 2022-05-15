@@ -22,7 +22,7 @@ namespace MergerLogic.Utils
         {
             // Convert to TMS
             y = GeoUtils.FlipY(z, y);
-            string tilePath = PathUtils.GetTilePath(path, z, x, y);
+            string tilePath = PathUtils.GetTilePath(this.path, z, x, y);
             string blob = GetFileString(tilePath);
             if (blob == null)
             {

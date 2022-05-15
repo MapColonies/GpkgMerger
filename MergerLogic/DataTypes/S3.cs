@@ -16,34 +16,34 @@ namespace MergerLogic.DataTypes
         public S3(string serviceUrl, string bucket, string path, int batchSize) : base(DataType.S3, path, batchSize, new S3Utils(S3.GetClient(serviceUrl), bucket, path))
         {
             this.bucket = bucket;
-            continuationToken = null;
-            endOfRead = false;
-            client = S3.GetClient(serviceUrl);
+            this.continuationToken = null;
+            this.endOfRead = false;
+            this.client = S3.GetClient(serviceUrl);
         }
 
         public S3(AmazonS3Client client, string bucket, string path, int batchSize) : base(DataType.S3, path, batchSize, new S3Utils(client, bucket, path))
         {
             this.bucket = bucket;
-            continuationToken = null;
-            endOfRead = false;
+            this.continuationToken = null;
+            this.endOfRead = false;
             this.client = client;
         }
 
         ~S3()
         {
-            client.Dispose();
+            this.client.Dispose();
         }
 
         public override void Reset()
         {
-            continuationToken = null;
-            endOfRead = false;
+            this.continuationToken = null;
+            this.endOfRead = false;
         }
 
         public override void Wrapup()
         {
             base.Wrapup();
-            Reset();
+            this.Reset();
         }
 
         public static AmazonS3Client GetClient(string serviceUrl)
@@ -76,24 +76,24 @@ namespace MergerLogic.DataTypes
                 ContinuationToken = continuationToken
             };
 
-            var listObjectsTask = client.ListObjectsV2Async(listRequests);
+            var listObjectsTask = this.client.ListObjectsV2Async(listRequests);
             var response = listObjectsTask.Result;
 
-            if (!endOfRead)
+            if (!this.endOfRead)
             {
-                response.ContinuationToken = continuationToken;
+                response.ContinuationToken = this.continuationToken;
                 foreach (S3Object item in response.S3Objects)
                 {
                     string key = item.Key;
                     Coord coord = PathUtils.FromPath(item.Key, true);
                     coord.flipY();
-                    Tile tile = utils.GetTile(coord);
+                    Tile tile = this.utils.GetTile(coord);
                     tiles.Add(tile);
                 }
-                continuationToken = response.NextContinuationToken;
+                this.continuationToken = response.NextContinuationToken;
             }
 
-            endOfRead = !response.IsTruncated;
+            this.endOfRead = !response.IsTruncated;
 
             return tiles;
         }
@@ -102,7 +102,7 @@ namespace MergerLogic.DataTypes
         {
             foreach (var tile in tiles)
             {
-                S3Utils.UpdateTile(client, bucket, path, tile);
+                S3Utils.UpdateTile(this.client, this.bucket, this.path, tile);
             }
         }
 
@@ -116,8 +116,8 @@ namespace MergerLogic.DataTypes
                 MaxKeys = 1
             };
 
-            Console.WriteLine($"Checking if exists, bucket: {bucket}, path: {path}");
-            var task = client.ListObjectsV2Async(listRequests);
+            Console.WriteLine($"Checking if exists, bucket: {this.bucket}, path: {this.path}");
+            var task = this.client.ListObjectsV2Async(listRequests);
             var response = task.Result;
             return response.KeyCount > 0;
         }
@@ -137,7 +137,7 @@ namespace MergerLogic.DataTypes
                     ContinuationToken = continuationToken
                 };
 
-                var task = client.ListObjectsV2Async(listRequests);
+                var task = this.client.ListObjectsV2Async(listRequests);
                 var response = task.Result;
 
                 tileCount += response.KeyCount;

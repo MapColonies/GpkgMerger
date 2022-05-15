@@ -24,7 +24,7 @@ namespace MergerLogic.Utils
                     BucketName = bucket,
                     Key = key
                 };
-                var getObjectTask = client.GetObjectAsync(request);
+                var getObjectTask = this.client.GetObjectAsync(request);
                 GetObjectResponse res = getObjectTask.Result;
 
                 byte[] image;
@@ -50,9 +50,9 @@ namespace MergerLogic.Utils
         {
             // Convert to TMS
             y = GeoUtils.FlipY(z, y);
-            string key = PathUtils.GetTilePath(path, z, x, y, true);
+            string key = PathUtils.GetTilePath(this.path, z, x, y, true);
 
-            string blob = GetImageHex(key);
+            string blob = this.GetImageHex(key);
             if (blob == null)
             {
                 return null;

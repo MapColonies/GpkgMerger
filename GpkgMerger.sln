@@ -3,17 +3,18 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32421.90
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MergerLogic", "MergerLogic\MergerLogic.csproj", "{469D9C94-2B7F-459A-9658-0E950C03A82D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MergerLogic", "MergerLogic\MergerLogic.csproj", "{469D9C94-2B7F-459A-9658-0E950C03A82D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MergerCli", "MergerCli\MergerCli.csproj", "{A5B5FC56-B6A9-4EE1-A21B-05B481AE8CAA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MergerCli", "MergerCli\MergerCli.csproj", "{A5B5FC56-B6A9-4EE1-A21B-05B481AE8CAA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1AF7AD11-9DD7-4FF0-9169-C09816F3BAAB}"
 	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
 		.gitignore = .gitignore
 		.licrc = .licrc
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MergerService", "MergerService\MergerService.csproj", "{000F75C1-01FD-423F-94CD-6F24C5C31A3B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MergerService", "MergerService\MergerService.csproj", "{000F75C1-01FD-423F-94CD-6F24C5C31A3B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

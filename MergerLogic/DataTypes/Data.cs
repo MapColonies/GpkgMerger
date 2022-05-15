@@ -33,7 +33,7 @@ namespace MergerLogic.DataTypes
 
         public virtual void UpdateMetadata(Data data)
         {
-            Console.WriteLine($"{type} source, skipping metadata update");
+            Console.WriteLine($"{this.type} source, skipping metadata update");
         }
 
         protected virtual Tile GetLastExistingTile(Coord coords)
@@ -50,7 +50,7 @@ namespace MergerLogic.DataTypes
                 baseTileX >>= 1; // Divide by 2
                 baseTileY >>= 1; // Divide by 2
 
-                lastTile = utils.GetTile(i, baseTileX, baseTileY);
+                lastTile = this.utils.GetTile(i, baseTileX, baseTileY);
                 if (lastTile != null)
                 {
                     break;
@@ -64,11 +64,11 @@ namespace MergerLogic.DataTypes
 
         public Tile GetCorrespondingTile(Coord coords, bool upscale)
         {
-            Tile correspondingTile = utils.GetTile(coords);
+            Tile correspondingTile = this.utils.GetTile(coords);
 
             if (upscale && correspondingTile == null)
             {
-                correspondingTile = GetLastExistingTile(coords);
+                correspondingTile = this.GetLastExistingTile(coords);
             }
             return correspondingTile;
         }
@@ -77,7 +77,7 @@ namespace MergerLogic.DataTypes
 
         public virtual void Wrapup()
         {
-            Console.WriteLine($"{type} source, skipping wrapup phase");
+            Console.WriteLine($"{this.type} source, skipping wrapup phase");
         }
 
         public abstract bool Exists();

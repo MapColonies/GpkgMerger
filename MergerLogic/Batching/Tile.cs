@@ -24,35 +24,35 @@ namespace MergerLogic.Batching
 
         public Tile(int z, int x, int y, string blob, int blobSize)
         {
-            Z = z;
-            X = x;
-            Y = y;
-            Blob = blob;
-            BlobSize = blobSize;
+            this.Z = z;
+            this.X = x;
+            this.Y = y;
+            this.Blob = blob;
+            this.BlobSize = blobSize;
         }
 
         public bool HasCoords(int z, int x, int y)
         {
-            return z == Z && x == X && y == Y;
+            return z == this.Z && x == this.X && y == this.Y;
         }
 
         public Coord GetCoord()
         {
-            return new Coord(Z, X, Y);
+            return new Coord(this.Z, this.X, this.Y);
         }
 
         public void FlipY()
         {
-            Y = GeoUtils.FlipY(Z, Y);
+            this.Y = GeoUtils.FlipY(this.Z, this.Y);
         }
 
         public void Print()
         {
-            Console.WriteLine($"z: {Z}");
-            Console.WriteLine($"x: {X}");
-            Console.WriteLine($"y: {Y}");
+            Console.WriteLine($"z: {this.Z}");
+            Console.WriteLine($"x: {this.X}");
+            Console.WriteLine($"y: {this.Y}");
             // Console.WriteLine($"blob: {this.Blob}");
-            Console.WriteLine($"blobSize: {BlobSize}");
+            Console.WriteLine($"blobSize: {this.BlobSize}");
         }
     }
 }

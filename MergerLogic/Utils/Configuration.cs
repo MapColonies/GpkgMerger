@@ -13,7 +13,7 @@ namespace MergerLogic.Utils
         {
             // Get configurations
             string basePath = System.AppContext.BaseDirectory;
-            config = new ConfigurationBuilder()
+            this.config = new ConfigurationBuilder()
                         .SetBasePath(basePath)
                         .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                         .AddEnvironmentVariables()
