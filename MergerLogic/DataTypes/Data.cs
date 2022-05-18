@@ -13,7 +13,7 @@ namespace MergerLogic.DataTypes
     public abstract class Data
     {
         public readonly DataType type;
-        protected readonly string path;
+        public readonly string path;
         protected readonly int batchSize;
         protected DataUtils utils;
 
@@ -60,7 +60,7 @@ namespace MergerLogic.DataTypes
             return lastTile;
         }
 
-        public abstract List<Tile> GetNextBatch();
+        public abstract List<Tile> GetNextBatch(out string batchIdentifier);
 
         public Tile GetCorrespondingTile(Coord coords, bool upscale)
         {
@@ -83,6 +83,8 @@ namespace MergerLogic.DataTypes
         public abstract bool Exists();
 
         public abstract int TileCount();
+
+        public abstract void setBatchIdentifier(string batchIdentifier);
 
         public static Data CreateDatasource(string type, string path, int batchSize, bool isBase = false)
         {
