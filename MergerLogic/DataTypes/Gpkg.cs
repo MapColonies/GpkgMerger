@@ -74,11 +74,17 @@ namespace MergerLogic.DataTypes
             GpkgUtils.CopyTileMatrix(this.path, gpkg.path, this.tileCache);
         }
 
-        public override List<Tile> GetNextBatch()
+        public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
+            batchIdentifier = this.offset.ToString();
             List<Tile> tiles = GpkgUtils.GetBatch(this.path, this.batchSize, this.offset, this.tileCache);
             this.offset += tiles.Count;
             return tiles;
+        }
+
+        public override void setBatchIdentifier(string batchIdentifier)
+        {
+            this.offset = int.Parse(batchIdentifier);
         }
 
         protected override Tile GetLastExistingTile(Coord baseCoords)

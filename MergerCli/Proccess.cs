@@ -1,17 +1,30 @@
+using MergerCli.Utils;
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 using MergerLogic.ImageProccessing;
 
 namespace MergerCli
 {
-    public static class Proccess
+    internal static class Proccess
     {
 
-        public static void Start(Data baseData, Data newData, int batchSize)
+        public static void Start(Data baseData, Data newData, int batchSize, BatchStatusManager batchStatusManager)
         {
+            batchStatusManager.InitilaizeLayer(newData.path);
             List<Tile> tiles = new List<Tile>(batchSize);
             int totalTileCount = newData.TileCount();
             int tileProgressCount = 0;
+
+            string? resumeBatchIdentifier = batchStatusManager.GetLayerBatchIdentifier(newData.path);
+            if (resumeBatchIdentifier != null)
+            {
+                newData.setBatchIdentifier(resumeBatchIdentifier);
+                // fix resume progress bug for gpkg and fs, fixing it for s3 requires storing additional data.
+                if (newData.type == DataType.GPKG || newData.type == DataType.FOLDER)
+                {
+                    tileProgressCount = int.Parse(resumeBatchIdentifier);
+                }
+            }
 
             Console.WriteLine($"Total amount of tiles to merge: {totalTileCount}");
 
@@ -20,7 +33,8 @@ namespace MergerCli
 
             do
             {
-                List<Tile> newTiles = newData.GetNextBatch();
+                List<Tile> newTiles = newData.GetNextBatch(out string batchIdentifier);
+                batchStatusManager.SetCurrentBatch(newData.path, batchIdentifier);
 
                 tiles.Clear();
                 for (int i = 0; i < newTiles.Count; i++)
@@ -48,6 +62,7 @@ namespace MergerCli
                 baseData.UpdateTiles(tiles);
             } while (tiles.Count == batchSize);
 
+            batchStatusManager.CompleteLayer(newData.path);
             baseData.Wrapup();
             newData.Reset();
         }
@@ -63,7 +78,7 @@ namespace MergerCli
 
             do
             {
-                newTiles = newData.GetNextBatch();
+                newTiles = newData.GetNextBatch(out _);
 
                 int baseMatchCount = 0;
                 int newTileCount = 0;
@@ -96,5 +111,6 @@ namespace MergerCli
 
             Console.WriteLine($"Target's valid: {hasSameTiles}");
         }
+
     }
 }

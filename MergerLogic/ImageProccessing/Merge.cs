@@ -69,7 +69,7 @@ namespace MergerLogic.ImageProccessing
                 }
                 catch
                 {
-                    //prevent memory leak in case of any exception while handeling images
+                    //prevent memory leak in case of any exception while handling images
                     images.ForEach(image => image.Dispose());
                     if (tileImage != null)
                         tileImage.Dispose();

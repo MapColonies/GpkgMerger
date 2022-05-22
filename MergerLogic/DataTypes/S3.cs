@@ -63,8 +63,9 @@ namespace MergerLogic.DataTypes
             return new AmazonS3Client(credentials, config);
         }
 
-        public override List<Tile> GetNextBatch()
+        public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
+            batchIdentifier = this.continuationToken;
             List<Tile> tiles = new List<Tile>();
 
             var listRequests = new ListObjectsV2Request
@@ -96,6 +97,11 @@ namespace MergerLogic.DataTypes
             this.endOfRead = !response.IsTruncated;
 
             return tiles;
+        }
+
+        public override void setBatchIdentifier(string batchIdentifier)
+        {
+            this.continuationToken = batchIdentifier;
         }
 
         public override void UpdateTiles(List<Tile> tiles)
