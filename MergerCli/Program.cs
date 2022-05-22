@@ -34,7 +34,10 @@ namespace MergerCli
                                     {programName} 1000 s3 geo gpkg area1 s3 area2 gpkg area3
 
                                     Resume: {programName} <path to status file>.
-                                    status file named 'status.json' will be created in running directory on incomplete merges
+                                    status file named 'status.json' will be created in running directory on incomplete merges.
+                                    **** please note ***
+                                    resuming partial merge with FS sources may result in incomplate data after merge as file order may not be consistent.
+                                    FS file order should be consisent at least in most use cases (os and fs type combination) but is not guaranteed to be.
                                     Emaple:
                                     {programName} status.json
                                     
