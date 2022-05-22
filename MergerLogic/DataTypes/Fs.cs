@@ -7,7 +7,7 @@ namespace MergerLogic.DataTypes
     {
         private IEnumerator<Tile> tiles;
         private bool done;
-        private int complatedTiles;
+        private int completedTiles;
 
         public FS(DataType type, string path, int batchSize, bool isBase = false) : base(type, path, batchSize, new FileUtils(path))
         {
@@ -23,7 +23,7 @@ namespace MergerLogic.DataTypes
             this.tiles = this.GetTiles();
             this.tiles.MoveNext();
             this.done = false;
-            this.complatedTiles = 0;
+            this.completedTiles = 0;
         }
 
         public override void Wrapup()
@@ -56,7 +56,7 @@ namespace MergerLogic.DataTypes
 
         public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
-            batchIdentifier = this.complatedTiles.ToString();
+            batchIdentifier = this.completedTiles.ToString();
             List<Tile> tiles = new List<Tile>(this.batchSize);
 
             if (this.done)
@@ -72,17 +72,17 @@ namespace MergerLogic.DataTypes
                 this.done = !this.tiles.MoveNext();
             }
 
-            this.complatedTiles += tiles.Count;
+            this.completedTiles += tiles.Count;
 
             return tiles;
         }
 
         public override void setBatchIdentifier(string batchIdentifier)
         {
-            this.complatedTiles = int.Parse(batchIdentifier);
-            //un commont to make this function work at any point of the run and not only after the source initialization
+            this.completedTiles = int.Parse(batchIdentifier);
+            // uncomment to make this function work at any point of the run and not only after the source initialization
             //this.tiles.Reset();
-            for (int i = 0; i < this.complatedTiles; i++)
+            for (int i = 0; i < this.completedTiles; i++)
             {
                 this.tiles.MoveNext();
             }

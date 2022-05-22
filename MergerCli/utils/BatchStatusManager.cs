@@ -7,11 +7,11 @@ namespace MergerCli.Utils
     {
         internal class LayerStatus
         {
-            public string? BathIdentifier { get; set; }
+            public string? BatchIdentifier { get; set; }
             public bool IsDone { get; set; }
             public LayerStatus()
             {
-                this.BathIdentifier = null;
+                this.BatchIdentifier = null;
                 this.IsDone = false;
             }
         }
@@ -30,7 +30,7 @@ namespace MergerCli.Utils
 
         public void SetCurrentBatch(string layer, string batchIdentifier)
         {
-            this.States[layer].BathIdentifier = batchIdentifier;
+            this.States[layer].BatchIdentifier = batchIdentifier;
         }
 
         public void InitilaizeLayer(string layer)
@@ -41,12 +41,12 @@ namespace MergerCli.Utils
             }
         }
 
-        public void ComplateLayer(string layer)
+        public void CompleteLayer(string layer)
         {
             this.States[layer].IsDone = true;
         }
 
-        public bool IsLayerComplated(string layer)
+        public bool IsLayerCompleted(string layer)
         {
             return this.States.ContainsKey(layer) && this.States[layer].IsDone;
         }
@@ -55,7 +55,7 @@ namespace MergerCli.Utils
         {
             if (this.States.ContainsKey(layer))
             {
-                return this.States[layer].BathIdentifier;
+                return this.States[layer].BatchIdentifier;
             }
             return null;
         }

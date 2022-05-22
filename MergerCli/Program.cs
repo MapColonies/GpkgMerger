@@ -34,7 +34,7 @@ namespace MergerCli
                                     {programName} 1000 s3 geo gpkg area1 s3 area2 gpkg area3
 
                                     Resume: {programName} <path to status file>.
-                                    status file named 'status.json' will be created in running directory on incomplate merges
+                                    status file named 'status.json' will be created in running directory on incomplete merges
                                     Emaple:
                                     {programName} status.json
                                     
@@ -74,7 +74,8 @@ namespace MergerCli
                     string newType = args[sourceIndex];
                     string newPath = args[sourceIndex + 1];
 
-                    if (batchStatusManager.IsLayerComplated(newPath))
+                    //skip complated layers on resume
+                    if (batchStatusManager.IsLayerCompleted(newPath))
                     {
                         sourceIndex += 2;
                         continue;
@@ -122,6 +123,7 @@ namespace MergerCli
             }
             catch (Exception ex)
             {
+                //save status on unhandeled exceptions
                 OnFailure();
                 Console.WriteLine(ex.ToString());
                 return;
@@ -150,7 +152,9 @@ namespace MergerCli
             {
                 batchStatusManager = new BatchStatusManager(args);
             }
+            //save status on program exit
             AssemblyLoadContext.Default.Unloading += delegate { OnFailure(); };
+            //save status on SigInt (ctrl + c)
             Console.CancelKeyPress += delegate { OnFailure(); };
         }
 
