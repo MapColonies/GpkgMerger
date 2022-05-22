@@ -32,7 +32,7 @@ namespace MergerLogic.Utils
             string[] parts = path.Split(GetSeperator(isS3));
             int numParts = parts.Length;
 
-            // Each path represents a tile, therfore the last three parts represent the z, x and y values
+            // Each path represents a tile, therefore the last three parts represent the z, x and y values
             string[] last = parts[numParts - 1].Split('.');
             int z = int.Parse(parts[numParts - 3]);
             int x = int.Parse(parts[numParts - 2]);

@@ -19,7 +19,7 @@ namespace MergerCli
             if (resumeBatchIdentifier != null)
             {
                 newData.setBatchIdentifier(resumeBatchIdentifier);
-                // fix resume progress bug for gpkg and fs, fixing it for s3 requries storing additional data.
+                // fix resume progress bug for gpkg and fs, fixing it for s3 requires storing additional data.
                 if (newData.type == DataType.GPKG || newData.type == DataType.FOLDER)
                 {
                     tileProgressCount = int.Parse(resumeBatchIdentifier);

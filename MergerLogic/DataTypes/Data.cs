@@ -111,7 +111,7 @@ namespace MergerLogic.DataTypes
 
             if (!data.Exists())
             {
-                //skip exsistence validation for base data to allow creation of new data for FS and S3
+                //skip existence validation for base data to allow creation of new data for FS and S3
                 if (isBase)
                     Console.WriteLine($"base data at path '{path}' does not exists and will be created");
                 else

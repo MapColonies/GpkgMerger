@@ -70,7 +70,7 @@ namespace MergerCli.Utils
             BatchStatusManager? batchStatusManager = JsonSerializer.Deserialize<BatchStatusManager>(json);
             if (batchStatusManager == null)
             {
-                throw new Exception("invalid bach status manager json");
+                throw new Exception("invalid batch status manager json");
             }
             return batchStatusManager;
         }

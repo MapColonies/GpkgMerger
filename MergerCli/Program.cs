@@ -36,9 +36,9 @@ namespace MergerCli
                                     Resume: {programName} <path to status file>.
                                     status file named 'status.json' will be created in running directory on incomplete merges.
                                     **** please note ***
-                                    resuming partial merge with FS sources may result in incomplate data after merge as file order may not be consistent.
-                                    FS file order should be consisent at least in most use cases (os and fs type combination) but is not guaranteed to be.
-                                    Emaple:
+                                    resuming partial merge with FS sources may result in incomplete data after merge as file order may not be consistent.
+                                    FS file order should be consistent at least in most use cases (os and fs type combination) but is not guaranteed to be.
+                                    Example:
                                     {programName} status.json
                                     
                                     Minimal requirement is supplying at least one source.");
@@ -53,7 +53,7 @@ namespace MergerCli
 
             Data baseData;
 
-            // Create base datasource and make sure it exists
+            // Create base data source and make sure it exists
             try
             {
                 baseData = Data.CreateDatasource(baseType, basePath, batchSize, true);
@@ -77,14 +77,14 @@ namespace MergerCli
                     string newType = args[sourceIndex];
                     string newPath = args[sourceIndex + 1];
 
-                    //skip complated layers on resume
+                    //skip completed layers on resume
                     if (batchStatusManager.IsLayerCompleted(newPath))
                     {
                         sourceIndex += 2;
                         continue;
                     }
 
-                    // Create new datasource and make sure it exists
+                    // Create new data source and make sure it exists
                     try
                     {
                         newData = Data.CreateDatasource(newType, newPath, batchSize);
@@ -111,7 +111,7 @@ namespace MergerCli
                         stopWatch.Reset();
                         stopWatch.Start();
 
-                        Console.WriteLine("Validating merged datasources");
+                        Console.WriteLine("Validating merged data sources");
                         Proccess.Validate(baseData, newData);
 
                         stopWatch.Stop();
@@ -126,7 +126,7 @@ namespace MergerCli
             }
             catch (Exception ex)
             {
-                //save status on unhandeled exceptions
+                //save status on unhandled exceptions
                 OnFailure();
                 Console.WriteLine(ex.ToString());
                 return;
