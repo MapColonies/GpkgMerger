@@ -7,7 +7,10 @@ namespace MergerLogic.DataTypes
     {
         GPKG,
         FOLDER,
-        S3
+        S3,
+        WMTS,
+        TMS,
+        XYZ
     }
 
     public abstract class Data

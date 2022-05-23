@@ -2,15 +2,7 @@ using MergerLogic.Batching;
 using MergerLogic.Utils;
 
 namespace MergerLogic.DataTypes
-{
-    public struct Extent
-    {
-        public double minX;
-        public double minY;
-        public double maxX;
-        public double maxY;
-    }
-
+{  
     public struct TileMatrix
     {
         public string tableName;

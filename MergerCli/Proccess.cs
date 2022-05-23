@@ -47,11 +47,11 @@ namespace MergerCli
                         ()=> newTile
                     };
 
-                    string blob = Merge.MergeTiles(correspondingTileBuilders, targetCoords);
+                    byte[]? image = Merge.MergeTiles(correspondingTileBuilders, targetCoords);
 
-                    if (blob != null)
+                    if (image != null)
                     {
-                        newTile = new Tile(newTile.Z, newTile.X, newTile.Y, blob, blob.Length);
+                        newTile = new Tile(newTile.Z, newTile.X, newTile.Y, image);
                         tiles.Add(newTile);
                     }
                 }

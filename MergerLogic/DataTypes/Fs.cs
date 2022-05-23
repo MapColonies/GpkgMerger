@@ -102,7 +102,7 @@ namespace MergerLogic.DataTypes
             {
                 tile.FlipY();
                 string tilePath = PathUtils.GetTilePath(this.path, tile);
-                byte[] buffer = StringUtils.StringToByteArray(tile.Blob);
+                byte[] buffer = tile.GetImageBytes();
                 using (var ms = new MemoryStream(buffer))
                 {
                     var file = new System.IO.FileInfo(tilePath);
