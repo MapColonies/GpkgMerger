@@ -18,7 +18,7 @@ namespace MergerLogic.DataTypes
         public override bool Exists()
         {
             // there is no reasonable way to validate url template source
-            // this should be modified if we chage the input to recived capabilities and layer instead of pattern
+            // this should be modified if we change the input to received capabilities and layer instead of pattern
             return true;
         }
 

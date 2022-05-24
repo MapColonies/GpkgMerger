@@ -29,7 +29,7 @@ namespace MergerLogic.Utils
                 {
                     if (keyIdx > 2)
                     {
-                        throw new Exception("invalid url pattern. pattern must have exacly 3 variables (coordinates)");
+                        throw new Exception("invalid url pattern. pattern must have exactly 3 variables (coordinates)");
                     }
                     else if (isOpenedVariable)
                     {
@@ -44,7 +44,7 @@ namespace MergerLogic.Utils
                 {
                     if (!isOpenedVariable)
                     {
-                        throw new Exception("invalid url pattern. pattern missing openning '{'");
+                        throw new Exception("invalid url pattern. pattern missing opening '{'");
                     }
                     isOpenedVariable = false;
                     this.keys[keyIdx] = pattern.Substring(lastPartEnd, i - lastPartEnd);
@@ -58,7 +58,7 @@ namespace MergerLogic.Utils
             }
             if (partIndx != 3)
             {
-                throw new Exception("invalid url pattern. pattern must have exacly 3 variables (coordinates)");
+                throw new Exception("invalid url pattern. pattern must have exactly 3 variables (coordinates)");
             }
             this.parts[partIndx] = pattern.Substring(lastPartEnd, pattern.Length - lastPartEnd);
         }
