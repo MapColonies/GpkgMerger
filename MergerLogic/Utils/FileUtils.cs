@@ -11,16 +11,16 @@ namespace MergerLogic.Utils
             // Convert to TMS
             y = GeoUtils.FlipY(z, y);
             string tilePath = PathUtils.GetTilePath(this.path, z, x, y);
-            if (File.Exists(path))
+            if (File.Exists(this.path))
             {
-                byte[] fileBytes = File.ReadAllBytes(path);
+                byte[] fileBytes = File.ReadAllBytes(this.path);
                 y = GeoUtils.FlipY(z, y);
                 return new Tile(z, x, y, fileBytes);
             }
             else
             {
                 return null;
-            }        
+            }
         }
     }
 }

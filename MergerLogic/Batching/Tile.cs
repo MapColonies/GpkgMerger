@@ -7,7 +7,7 @@ namespace MergerLogic.Batching
 
     public enum TileGridOrigin
     {
-        LOWER_LEFT, 
+        LOWER_LEFT,
         UPPER_LEFT
     }
 
@@ -30,14 +30,14 @@ namespace MergerLogic.Batching
             this.X = x;
             this.Y = y;
             this._data = data;
-            
+
         }
 
         protected Tile(int z, int x, int y)
         {
             this.Z = z;
             this.X = x;
-            this.Y = y;  
+            this.Y = y;
         }
 
         public bool HasCoords(int z, int x, int y)

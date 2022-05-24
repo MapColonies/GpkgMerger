@@ -1,9 +1,4 @@
 ﻿using MergerLogic.DataTypes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MergerLogic.Utils
 {
@@ -27,32 +22,34 @@ namespace MergerLogic.Utils
             int partIndx = 0;
             int keyIdx = 0;
             bool isOpenedVariable = false;
-            
-            for(int i = 0; i < pattern.Length; i++)
+
+            for (int i = 0; i < pattern.Length; i++)
             {
-                if(pattern[i] == '{')
+                if (pattern[i] == '{')
                 {
                     if (keyIdx > 2)
                     {
                         throw new Exception("invalid url pattern. pattern must have exacly 3 variables (coordinates)");
-                    } else if(isOpenedVariable){
+                    }
+                    else if (isOpenedVariable)
+                    {
                         throw new Exception("invalid url pattern. pattern missing closing '}'");
                     }
                     isOpenedVariable = true;
                     this.parts[partIndx] = pattern.Substring(lastPartEnd, i - lastPartEnd);
                     partIndx++;
-                    lastPartEnd = i+1;
+                    lastPartEnd = i + 1;
                 }
-                else if(pattern[i] == '}')
+                else if (pattern[i] == '}')
                 {
                     if (!isOpenedVariable)
                     {
                         throw new Exception("invalid url pattern. pattern missing openning '{'");
                     }
-                    isOpenedVariable=false;
+                    isOpenedVariable = false;
                     this.keys[keyIdx] = pattern.Substring(lastPartEnd, i - lastPartEnd);
                     keyIdx++;
-                    lastPartEnd=i+1;
+                    lastPartEnd = i + 1;
                 }
             }
             if (isOpenedVariable)
@@ -63,7 +60,7 @@ namespace MergerLogic.Utils
             {
                 throw new Exception("invalid url pattern. pattern must have exacly 3 variables (coordinates)");
             }
-            parts[partIndx]= pattern.Substring(lastPartEnd,pattern.Length - lastPartEnd);
+            this.parts[partIndx] = pattern.Substring(lastPartEnd, pattern.Length - lastPartEnd);
         }
         public string renderUrlTemplate(Coord coords)
         {
@@ -73,7 +70,7 @@ namespace MergerLogic.Utils
         public string renderUrlTemplate(int x, int y, int z)
         {
             this.prepareDictionary(x.ToString(), y.ToString(), z.ToString());
-            return $"{parts[0]}{this.keyValues[keys[0]]}{parts[1]}{this.keyValues[keys[1]]}{parts[2]}{this.keyValues[keys[2]]}{parts[3]}";
+            return $"{this.parts[0]}{this.keyValues[this.keys[0]]}{this.parts[1]}{this.keyValues[this.keys[1]]}{this.parts[2]}{this.keyValues[this.keys[2]]}{this.parts[3]}";
         }
 
         private void prepareDictionary(string x, string y, string z)

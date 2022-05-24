@@ -1,7 +1,6 @@
 using ImageMagick;
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
-using MergerLogic.Utils;
 
 namespace MergerLogic.ImageProccessing
 {

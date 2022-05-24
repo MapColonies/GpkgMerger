@@ -2,7 +2,7 @@ using MergerLogic.Batching;
 using MergerLogic.Utils;
 
 namespace MergerLogic.DataTypes
-{  
+{
     public struct TileMatrix
     {
         public string tableName;

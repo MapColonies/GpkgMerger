@@ -6,7 +6,7 @@ namespace MergerLogic.Utils
     {
         private PathPatternUtils _pathPatternUtils;
         private HttpClient _httpClient;
-        public httpUtils(string path,PathPatternUtils pathPatternUtils): base(path)
+        public httpUtils(string path, PathPatternUtils pathPatternUtils) : base(path)
         {
             this._pathPatternUtils = pathPatternUtils;
             this._httpClient = new HttpClient();

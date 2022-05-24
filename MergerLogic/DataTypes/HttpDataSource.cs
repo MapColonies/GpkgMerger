@@ -1,10 +1,5 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MergerLogic.DataTypes
 {
@@ -13,11 +8,11 @@ namespace MergerLogic.DataTypes
         protected TileRange[] tileRanges;
         protected IEnumerator<Tile[]> batches;
         protected int batchIndex = 0;
-        protected HttpDataSource(DataType type, string path, int batchSize,Extent extent, TileGridOrigin origin, int maxZoom, int minZoom = 0) : base(type, path, batchSize, null)
+        protected HttpDataSource(DataType type, string path, int batchSize, Extent extent, TileGridOrigin origin, int maxZoom, int minZoom = 0) : base(type, path, batchSize, null)
         {
             var patternUtils = new PathPatternUtils(path);
             this.utils = new httpUtils(path, patternUtils);
-            GenTilesRanges(extent, origin, minZoom, maxZoom);
+            this.GenTilesRanges(extent, origin, minZoom, maxZoom);
         }
 
         public override bool Exists()
@@ -29,9 +24,9 @@ namespace MergerLogic.DataTypes
 
         public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
-            if(this.batches == null)
+            if (this.batches == null)
             {
-                this.batches = this.GetTiles().Chunk(batchSize).GetEnumerator();   
+                this.batches = this.GetTiles().Chunk(this.batchSize).GetEnumerator();
             }
             batchIdentifier = this.batchIndex.ToString();
             this.batchIndex += this.batchSize;
@@ -52,7 +47,7 @@ namespace MergerLogic.DataTypes
         public override void setBatchIdentifier(string batchIdentifier)
         {
             this.batchIndex = int.Parse(batchIdentifier);
-            this.batches = this.GetTiles().Chunk(batchSize).Skip(batchIndex).GetEnumerator();
+            this.batches = this.GetTiles().Chunk(this.batchSize).Skip(this.batchIndex).GetEnumerator();
         }
 
         public override int TileCount()

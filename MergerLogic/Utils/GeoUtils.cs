@@ -29,7 +29,7 @@ namespace MergerLogic.Utils
             double minY = extent.minY - Math.Abs(extent.minY % tileSize);
             double maxX = extent.minX - Math.Abs(extent.maxX % tileSize);
             double maxY = extent.minY - Math.Abs(extent.maxY % tileSize);
-            if(maxX != extent.maxX)
+            if (maxX != extent.maxX)
             {
                 maxX += tileSize;
             }
@@ -45,8 +45,8 @@ namespace MergerLogic.Utils
             return new Extent { minX = minX, minY = minY, maxX = maxX, maxY = maxY };
         }
 
-        //TODO: check if deafult (gpkg) is LL or UL
-        public static TileRange extentToTileRange(Extent extent, int zoom, TileGridOrigin origin = TileGridOrigin.LOWER_LEFT) {
+        public static TileRange extentToTileRange(Extent extent, int zoom, TileGridOrigin origin = TileGridOrigin.UPPER_LEFT)
+        {
             extent = SnapExtentToTileGrid(extent, zoom);
             double tileSize = DegreesPerTile(zoom);
             double minYDeg = extent.minY;
