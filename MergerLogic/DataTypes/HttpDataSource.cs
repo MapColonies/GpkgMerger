@@ -3,7 +3,7 @@ using MergerLogic.Utils;
 
 namespace MergerLogic.DataTypes
 {
-    internal abstract class HttpDataSource : Data
+    public abstract class HttpDataSource : Data
     {
         protected TileRange[] tileRanges;
         protected IEnumerator<Tile[]> batches;
