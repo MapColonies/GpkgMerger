@@ -23,9 +23,9 @@ namespace MergerLogic.Utils
                 return null;
             }
             var bodyTask = httpRes.Content.ReadAsByteArrayAsync();
+            bodyTask.Wait();
             byte[] data = bodyTask.Result;
             return new Tile(z, x, y, data);
-
         }
     }
 }
