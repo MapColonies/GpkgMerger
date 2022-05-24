@@ -1,66 +1,30 @@
 ﻿using MergerLogic.DataTypes;
+using System.Text.RegularExpressions;
 
 namespace MergerLogic.Utils
 {
     public class PathPatternUtils
     {
-        private string[] parts;
-        private string[] keys;
+        private string[] _pattern;
         private Dictionary<string, string> keyValues;
 
         public PathPatternUtils(string pattern)
         {
-            this.parts = new string[4];
-            this.keys = new string[3];
             this.keyValues = new Dictionary<string, string>(9);
             this.compilePattern(pattern);
         }
 
         private void compilePattern(string pattern)
         {
-            int lastPartEnd = 0;
-            int partIndx = 0;
-            int keyIdx = 0;
-            bool isOpenedVariable = false;
-
-            for (int i = 0; i < pattern.Length; i++)
+            this._pattern = Regex.Split(pattern, "{(x)}|{(X)}|{(TileCol)}|{(y)}|{(Y)}|{(TileRow)}|{(TileMatrix)}|{(z)}|{(Z)}");
+            if (this._pattern.Length == 6)
             {
-                if (pattern[i] == '{')
-                {
-                    if (keyIdx > 2)
-                    {
-                        throw new Exception("invalid url pattern. pattern must have exactly 3 variables (coordinates)");
-                    }
-                    else if (isOpenedVariable)
-                    {
-                        throw new Exception("invalid url pattern. pattern missing closing '}'");
-                    }
-                    isOpenedVariable = true;
-                    this.parts[partIndx] = pattern.Substring(lastPartEnd, i - lastPartEnd);
-                    partIndx++;
-                    lastPartEnd = i + 1;
-                }
-                else if (pattern[i] == '}')
-                {
-                    if (!isOpenedVariable)
-                    {
-                        throw new Exception("invalid url pattern. pattern missing opening '{'");
-                    }
-                    isOpenedVariable = false;
-                    this.keys[keyIdx] = pattern.Substring(lastPartEnd, i - lastPartEnd);
-                    keyIdx++;
-                    lastPartEnd = i + 1;
-                }
+                this._pattern = this._pattern.Append("").ToArray();
             }
-            if (isOpenedVariable)
+            if (this._pattern.Length != 7)
             {
-                throw new Exception("invalid url pattern. pattern missing closing '}'");
+                throw new Exception("invalid url pattern.");
             }
-            if (partIndx != 3)
-            {
-                throw new Exception("invalid url pattern. pattern must have exactly 3 variables (coordinates)");
-            }
-            this.parts[partIndx] = pattern.Substring(lastPartEnd, pattern.Length - lastPartEnd);
         }
         public string renderUrlTemplate(Coord coords)
         {
@@ -70,7 +34,7 @@ namespace MergerLogic.Utils
         public string renderUrlTemplate(int x, int y, int z)
         {
             this.prepareDictionary(x.ToString(), y.ToString(), z.ToString());
-            return $"{this.parts[0]}{this.keyValues[this.keys[0]]}{this.parts[1]}{this.keyValues[this.keys[1]]}{this.parts[2]}{this.keyValues[this.keys[2]]}{this.parts[3]}";
+            return $"{this._pattern[0]}{this.keyValues[this._pattern[1]]}{this._pattern[2]}{this.keyValues[this._pattern[3]]}{this._pattern[4]}{this.keyValues[this._pattern[5]]}{this._pattern[6]}";
         }
 
         private void prepareDictionary(string x, string y, string z)

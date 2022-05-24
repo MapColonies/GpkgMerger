@@ -32,7 +32,7 @@ namespace MergerLogic.DataTypes
             this.batchIndex += this.batchSize;
             if (!this.batches.MoveNext())
             {
-                return null;
+                return new List<Tile>(0);
             }
 
             return this.batches.Current.ToList();
@@ -41,13 +41,13 @@ namespace MergerLogic.DataTypes
         public override void Reset()
         {
             this.batchIndex = 0;
-            this.batches.Reset();
+            this.batches = this.GetTiles().Chunk(this.batchSize).GetEnumerator();
         }
 
         public override void setBatchIdentifier(string batchIdentifier)
         {
             this.batchIndex = int.Parse(batchIdentifier);
-            this.batches = this.GetTiles().Chunk(this.batchSize).Skip(this.batchIndex).GetEnumerator();
+            this.batches = this.GetTiles().Skip(this.batchIndex).Chunk(this.batchSize).GetEnumerator();
         }
 
         public override int TileCount()

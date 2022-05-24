@@ -197,10 +197,10 @@ namespace MergerCli
                 int maxZoom = int.Parse(args[startIndex + 4]);
                 Extent extent = new Extent
                 {
-                    minX = int.Parse(bboxParts[0]),
-                    minY = int.Parse(bboxParts[1]),
-                    maxX = int.Parse(bboxParts[2]),
-                    maxY = int.Parse(bboxParts[3])
+                    minX = double.Parse(bboxParts[0]),
+                    minY = double.Parse(bboxParts[1]),
+                    maxX = double.Parse(bboxParts[2]),
+                    maxY = double.Parse(bboxParts[3])
                 };
                 return Data.CreateDatasource(sourceType, sourcePath, batchSize, isBase, extent, maxZoom, minZoom);
             } else

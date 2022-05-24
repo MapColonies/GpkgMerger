@@ -27,8 +27,8 @@ namespace MergerLogic.Utils
             double tileSize = DegreesPerTile(zoom);
             double minX = extent.minX - Math.Abs(extent.minX % tileSize);
             double minY = extent.minY - Math.Abs(extent.minY % tileSize);
-            double maxX = extent.minX - Math.Abs(extent.maxX % tileSize);
-            double maxY = extent.minY - Math.Abs(extent.maxY % tileSize);
+            double maxX = extent.maxX - Math.Abs(extent.maxX % tileSize);
+            double maxY = extent.maxY - Math.Abs(extent.maxY % tileSize);
             if (maxX != extent.maxX)
             {
                 maxX += tileSize;
@@ -54,8 +54,8 @@ namespace MergerLogic.Utils
 
             if (origin == TileGridOrigin.UPPER_LEFT)
             {
-                minYDeg = -minYDeg;
-                maxYDeg = -maxYDeg;
+                // flip y
+                (minYDeg, maxYDeg) = (-maxYDeg, - minYDeg);
             }
 
             int minX = (int)((extent.minX + 180) / tileSize);
