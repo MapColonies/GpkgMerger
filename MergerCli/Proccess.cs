@@ -19,8 +19,8 @@ namespace MergerCli
             if (resumeBatchIdentifier != null)
             {
                 newData.setBatchIdentifier(resumeBatchIdentifier);
-                // fix resume progress bug for gpkg and fs, fixing it for s3 requires storing additional data.
-                if (newData.type == DataType.GPKG || newData.type == DataType.FOLDER)
+                // fix resume progress bug for gpkg, fs and web, fixing it for s3 requires storing additional data.
+                if (newData.type != DataType.S3)
                 {
                     tileProgressCount = int.Parse(resumeBatchIdentifier);
                 }
@@ -47,19 +47,20 @@ namespace MergerCli
                         ()=> newTile
                     };
 
-                    string blob = Merge.MergeTiles(correspondingTileBuilders, targetCoords);
+                    byte[]? image = Merge.MergeTiles(correspondingTileBuilders, targetCoords);
 
-                    if (blob != null)
+                    if (image != null)
                     {
-                        newTile = new Tile(newTile.Z, newTile.X, newTile.Y, blob, blob.Length);
+                        newTile = new Tile(newTile.Z, newTile.X, newTile.Y, image);
                         tiles.Add(newTile);
                     }
                 }
 
+                baseData.UpdateTiles(tiles);
+                
                 tileProgressCount += tiles.Count;
                 Console.WriteLine($"Tile Count: {tileProgressCount} / {totalTileCount}");
 
-                baseData.UpdateTiles(tiles);
             } while (tiles.Count == batchSize);
 
             batchStatusManager.CompleteLayer(newData.path);

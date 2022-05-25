@@ -7,7 +7,10 @@ namespace MergerLogic.DataTypes
     {
         GPKG,
         FOLDER,
-        S3
+        S3,
+        WMTS,
+        TMS,
+        XYZ
     }
 
     public abstract class Data
@@ -104,6 +107,51 @@ namespace MergerLogic.DataTypes
                     break;
                 case "fs":
                     data = new FS(DataType.FOLDER, path, batchSize, isBase);
+                    break;
+                case "wmts":       
+                case "xyz":              
+                case "tms":
+                    throw new Exception("web tile source requires extent, and zoom restrictions");
+                default:
+                    throw new Exception($"Currently there is no support for the data type '{type}'");
+            }
+
+            if (!data.Exists())
+            {
+                //skip existence validation for base data to allow creation of new data for FS and S3
+                if (isBase)
+                    Console.WriteLine($"base data at path '{path}' does not exists and will be created");
+                else
+                    throw new Exception($"path '{path}' to data does not exist.");
+            }
+
+            return data;
+        }
+
+        public static Data CreateDatasource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom , int minZoom = 0)
+        {
+            Data data;
+            type = type.ToLower();
+            switch (type)
+            {
+                case "gpkg":
+                case "s3":
+                case "fs":
+                    return CreateDatasource(type, path, batchSize, isBase);
+            };
+            if (isBase)
+            {
+                throw new Exception("web tile source cannot be used as base (target) layer");
+            }
+            switch (type) { 
+                case "wmts":          
+                    data = new WMTS(DataType.WMTS, path, batchSize, extent, maxZoom, minZoom);
+                    break;
+                case "xyz":               
+                    data = new XYZ(DataType.XYZ, path, batchSize, extent, maxZoom, minZoom);
+                    break;
+                case "tms":            
+                    data = new TMS(DataType.TMS, path, batchSize, extent, maxZoom, minZoom);
                     break;
                 default:
                     throw new Exception($"Currently there is no support for the data type '{type}'");

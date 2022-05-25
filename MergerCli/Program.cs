@@ -1,4 +1,5 @@
 ﻿using MergerCli.Utils;
+using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 using MergerLogic.Utils;
 using System.Diagnostics;
@@ -17,21 +18,30 @@ namespace MergerCli
             TimeSpan ts;
 
             // Require input of wanted batch size and 2 types and paths (base and new gpkg)
-            if ((args.Length < 6 && args.Length != 2) || args.Length % 2 != 0)
+            if (args.Length < 6 && args.Length != 2)
             {
                 string programName = args[0];
                 Console.WriteLine($@"Usage:
-                                    Single source: {programName} <batch_size> <base_type> <path_to_base_datasource> <new_type> <path_to_new_datasource>
+
+                                    Supported sources parameters:
+                                        web sources (cant be base source):
+                                            <'xyz' / 'wmts' / 'tms'> <url template> <bbox - in format 'minX,minY,maxX,maxY'> <min zoom> <max zoom>
+                                        file sources:
+                                            <'fs' / 's3' / 'gpkg'> <path>   
+                                        **** please note all layers must be 2X1 EPSG:4326 layers ****
+
+                                    Single source: {programName} <batch_size> <base source> <addiotional source>
                                     Examples:
                                     {programName} 1000 gpkg area1.gpkg gpkg area2.gpkg
                                     {programName} 1000 s3 /path1/on/s3 s3 /path2/on/s3
                                     {programName} 1000 s3 /path/on/s3 gpkg geo.gpkg
+                                    {programName} 1000 s3 /path/on/s3 xyz http://xyzSourceUrl/{{z}}/{{x}}/{{y}}.png -180,-90,180,90 0 21
                                     
-                                    Multi source: {programName} <batch_size> <base_type> <path_to_base_datasource> [<new_type> <path_to_new_datasource>...]
+                                    Multi source: {programName} <batch_size> <base source> <addiotional source> [<another source source>...]
                                     Examples:
                                     {programName} 1000 gpkg geo.gpkg gpkg area1.gpkg gpkg area2.gpkg gpkg area3.gpkg
                                     {programName} 1000 gpkg geo.gpkg s3 area1 s3 area2 s3 area3
-                                    {programName} 1000 s3 geo gpkg area1 s3 area2 gpkg area3
+                                    {programName} 1000 s3 geo gpkg area1 s3 area2 gpkg area3 wmts http://wmtsSourceUrl/{{TileMatrix}}/{{TileCol}}/{{TileRow}}.png -180,-90,180,90 0 21
 
                                     Resume: {programName} <path to status file>.
                                     status file named 'status.json' will be created in running directory on incomplete merges.
@@ -40,7 +50,7 @@ namespace MergerCli
                                     FS file order should be consistent at least in most use cases (os and fs type combination) but is not guaranteed to be.
                                     Example:
                                     {programName} status.json
-                                    
+                                                             
                                     Minimal requirement is supplying at least one source.");
                 return;
             }
@@ -48,15 +58,14 @@ namespace MergerCli
             PrepareStatusManger(ref args);
 
             int batchSize = int.Parse(args[1]);
-            string baseType = args[2];
-            string basePath = args[3];
-
+            int sourceIndex = 2;
+            int parameterCount = 0;
             Data baseData;
 
             // Create base data source and make sure it exists
             try
             {
-                baseData = Data.CreateDatasource(baseType, basePath, batchSize, true);
+                baseData = CreateSource(args, batchSize, sourceIndex, true, out parameterCount);
             }
             catch
             {
@@ -66,7 +75,7 @@ namespace MergerCli
 
             try
             {
-                int sourceIndex = 4;
+                sourceIndex += parameterCount;
 
                 while (args.Length > sourceIndex + 1)
                 {
@@ -80,14 +89,14 @@ namespace MergerCli
                     //skip completed layers on resume
                     if (batchStatusManager.IsLayerCompleted(newPath))
                     {
-                        sourceIndex += 2;
+                        sourceIndex += GetParameterCount(newType);
                         continue;
                     }
 
                     // Create new data source and make sure it exists
                     try
                     {
-                        newData = Data.CreateDatasource(newType, newPath, batchSize);
+                        newData = CreateSource(args, batchSize, sourceIndex, false, out parameterCount);
                     }
                     catch
                     {
@@ -121,7 +130,7 @@ namespace MergerCli
                     }
 
                     // Move to next source
-                    sourceIndex += 2;
+                    sourceIndex += parameterCount;
                 }
             }
             catch (Exception ex)
@@ -150,6 +159,11 @@ namespace MergerCli
                 string json = File.ReadAllText(args[1]);
                 batchStatusManager = BatchStatusManager.FromJson(json);
                 args = batchStatusManager.Command;
+                Console.WriteLine("resuming layers merge operation. layers progress:");
+                foreach (var item in batchStatusManager.States)
+                {
+                    Console.WriteLine($"{item.Key} {item.Value.BatchIdentifier}");
+                } 
             }
             else
             {
@@ -171,6 +185,51 @@ namespace MergerCli
             else
             {
                 File.Delete("status.json");
+            }
+        }
+
+        private static Data CreateSource(string[] args,int batchSize, int startIndex, bool isBase, out int parameterCount)
+        {
+            string sourceType = args[startIndex];
+            string sourcePath = args[startIndex + 1];
+            parameterCount = GetParameterCount(sourceType);
+            if( parameterCount == 2)
+            {
+                return Data.CreateDatasource(sourceType, sourcePath, batchSize, isBase);
+            } else if ( parameterCount == 5)
+            {
+                string[] bboxParts = args[startIndex + 2].Split(',');
+                int minZoom = int.Parse(args[startIndex + 3]);
+                int maxZoom = int.Parse(args[startIndex + 4]);
+                Extent extent = new Extent
+                {
+                    minX = double.Parse(bboxParts[0]),
+                    minY = double.Parse(bboxParts[1]),
+                    maxX = double.Parse(bboxParts[2]),
+                    maxY = double.Parse(bboxParts[3])
+                };
+                return Data.CreateDatasource(sourceType, sourcePath, batchSize, isBase, extent, maxZoom, minZoom);
+            } else
+            {
+                throw new Exception($"Currently there is no support for the data type '{sourceType}'");
+            }
+        }
+
+        private static int GetParameterCount(string type)
+        {
+            string lowerType = type.ToLower();
+            switch (lowerType)
+            {
+                case "fs":
+                case "s3":
+                case "gpkg":
+                    return 2;
+                case "wmts":
+                case "xyz":
+                case "tms":
+                    return 5;
+                default:
+                    throw new Exception($"Currently there is no support for the data type '{type}'");
             }
         }
 

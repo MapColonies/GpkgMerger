@@ -6,7 +6,7 @@ output/
 *.sh
 
 
-Properties/launchSettings.json
+**/Properties/launchSettings.json
 
 # local test data 
 local/

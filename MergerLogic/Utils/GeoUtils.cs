@@ -14,5 +14,56 @@ namespace MergerLogic.Utils
         {
             return FlipY(tile.Z, tile.Y);
         }
+
+        public static double DegreesPerTile(int zoom)
+        {
+            double tilesPerYAxis = 1 << zoom; // 2^ zoom
+            double tileSizeDeg = 180 / tilesPerYAxis;
+            return tileSizeDeg;
+        }
+
+        public static Extent SnapExtentToTileGrid(Extent extent, int zoom)
+        {
+            double tileSize = DegreesPerTile(zoom);
+            double minX = extent.minX - Math.Abs(extent.minX % tileSize);
+            double minY = extent.minY - Math.Abs(extent.minY % tileSize);
+            double maxX = extent.maxX - Math.Abs(extent.maxX % tileSize);
+            double maxY = extent.maxY - Math.Abs(extent.maxY % tileSize);
+            if (maxX != extent.maxX)
+            {
+                maxX += tileSize;
+            }
+            if (maxY != extent.maxY)
+            {
+                maxY += tileSize;
+            }
+            if (zoom == 0)
+            {
+                minY = -90;
+                maxY = 90;
+            }
+            return new Extent { minX = minX, minY = minY, maxX = maxX, maxY = maxY };
+        }
+
+        public static TileRange ExtentToTileRange(Extent extent, int zoom, TileGridOrigin origin = TileGridOrigin.UPPER_LEFT)
+        {
+            extent = SnapExtentToTileGrid(extent, zoom);
+            double tileSize = DegreesPerTile(zoom);
+            double minYDeg = extent.minY;
+            double maxYDeg = extent.maxY;
+
+            if (origin == TileGridOrigin.UPPER_LEFT)
+            {
+                // flip y
+                (minYDeg, maxYDeg) = (-maxYDeg, - minYDeg);
+            }
+
+            int minX = (int)((extent.minX + 180) / tileSize);
+            int maxX = (int)((extent.maxX + 180) / tileSize);
+            int minY = (int)((minYDeg + 90) / tileSize);
+            int maxY = (int)((maxYDeg + 90) / tileSize);
+
+            return new TileRange { MinX = minX, MinY = minY, MaxX = maxX, MaxY = maxY, Z = zoom };
+        }
     }
 }
