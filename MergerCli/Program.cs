@@ -24,10 +24,11 @@ namespace MergerCli
                 Console.WriteLine($@"Usage:
 
                                     Supported sources parameters:
-                                        2X1 EPSG:4326 web sources (cant be base source):
+                                        web sources (cant be base source):
                                             <'xyz' / 'wmts' / 'tms'> <url template> <bbox - in format 'minX,minY,maxX,maxY'> <min zoom> <max zoom>
                                         file sources:
                                             <'fs' / 's3' / 'gpkg'> <path>   
+                                        **** please note all layers must be 2X1 EPSG:4326 layers ****
 
                                     Single source: {programName} <batch_size> <base source> <addiotional source>
                                     Examples:
