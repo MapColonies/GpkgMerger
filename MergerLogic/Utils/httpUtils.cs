@@ -22,6 +22,10 @@ namespace MergerLogic.Utils
             {
                 return null;
             }
+            else if (httpRes.StatusCode != System.Net.HttpStatusCode.OK)
+            {
+                throw new Exception($"invalid response from http tile source. status: {httpRes.StatusCode}");
+            }
             var bodyTask = httpRes.Content.ReadAsByteArrayAsync();
             bodyTask.Wait();
             byte[] data = bodyTask.Result;
