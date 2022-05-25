@@ -158,6 +158,11 @@ namespace MergerCli
                 string json = File.ReadAllText(args[1]);
                 batchStatusManager = BatchStatusManager.FromJson(json);
                 args = batchStatusManager.Command;
+                Console.WriteLine("resuming layers merge operation. layers progress:");
+                foreach (var item in batchStatusManager.States)
+                {
+                    Console.WriteLine($"{item.Key} {item.Value.BatchIdentifier}");
+                } 
             }
             else
             {

@@ -12,7 +12,7 @@ namespace MergerLogic.DataTypes
         {
             var patternUtils = new PathPatternUtils(path);
             this.utils = new httpUtils(path, patternUtils);
-            this.GenTilesRanges(extent, origin, minZoom, maxZoom);
+            this.GenTileRanges(extent, origin, minZoom, maxZoom);
         }
 
         public override bool Exists()
@@ -63,7 +63,7 @@ namespace MergerLogic.DataTypes
             throw new NotImplementedException();
         }
 
-        protected void GenTilesRanges(Extent extent, TileGridOrigin origin, int minZoom, int maxZoom)
+        protected void GenTileRanges(Extent extent, TileGridOrigin origin, int minZoom, int maxZoom)
         {
             this.tileRanges = new TileRange[maxZoom - minZoom + 1];
             for (int i = minZoom; i <= maxZoom; i++)

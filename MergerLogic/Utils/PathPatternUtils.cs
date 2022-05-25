@@ -19,6 +19,8 @@ namespace MergerLogic.Utils
             this._pattern = Regex.Split(pattern, "{(x)}|{(X)}|{(TileCol)}|{(y)}|{(Y)}|{(TileRow)}|{(TileMatrix)}|{(z)}|{(Z)}");
             if (this._pattern.Length == 6)
             {
+                // add empty value to the end in case the patten ends with parameter and not constant
+                // string as the render function requires length 7 array to work properly due to optimizations.
                 this._pattern = this._pattern.Append("").ToArray();
             }
             if (this._pattern.Length != 7)
