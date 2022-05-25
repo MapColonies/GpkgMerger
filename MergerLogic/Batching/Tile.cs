@@ -30,7 +30,6 @@ namespace MergerLogic.Batching
             this.X = x;
             this.Y = y;
             this._data = data;
-
         }
 
         protected Tile(int z, int x, int y)

@@ -45,7 +45,7 @@ namespace MergerLogic.Utils
             return new Extent { minX = minX, minY = minY, maxX = maxX, maxY = maxY };
         }
 
-        public static TileRange extentToTileRange(Extent extent, int zoom, TileGridOrigin origin = TileGridOrigin.UPPER_LEFT)
+        public static TileRange ExtentToTileRange(Extent extent, int zoom, TileGridOrigin origin = TileGridOrigin.UPPER_LEFT)
         {
             extent = SnapExtentToTileGrid(extent, zoom);
             double tileSize = DegreesPerTile(zoom);

@@ -22,10 +22,5 @@ namespace MergerLogic.Utils
                 return null;
             }
         }
-
-        //private bool Exists(string path)
-        //{
-            
-        //}
     }
 }
