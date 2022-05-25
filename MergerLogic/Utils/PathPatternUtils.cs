@@ -20,6 +20,7 @@ namespace MergerLogic.Utils
             if (this._pattern.Length == 6)
             {
                 // add empty value to the end in case the patten ends with parameter and not constant
+                // e.g. https://mapHost/xyz/png/myLayer/{z}/{x}/{y}
                 // string as the render function requires length 7 array to work properly due to optimizations.
                 this._pattern = this._pattern.Append("").ToArray();
             }
