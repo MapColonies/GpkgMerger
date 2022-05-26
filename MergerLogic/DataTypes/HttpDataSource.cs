@@ -8,7 +8,7 @@ namespace MergerLogic.DataTypes
         protected TileRange[] tileRanges;
         protected IEnumerator<Tile[]> batches;
         protected int batchIndex = 0;
-        protected HttpDataSource(DataType type, string path, int batchSize, Extent extent, TileGridOrigin origin, int maxZoom, int minZoom = 0) : base(type, path, batchSize, null)
+        protected HttpDataSource(DataType type, string path, int batchSize, Extent extent, TileGridOrigin origin, int maxZoom, int minZoom = 0, bool isOneXOne = false) : base(type, path, batchSize, null,isOneXOne)
         {
             var patternUtils = new PathPatternUtils(path);
             this.utils = new httpUtils(path, patternUtils);
@@ -80,7 +80,7 @@ namespace MergerLogic.DataTypes
                 {
                     for (int y = range.MinY; y < range.MaxY; y++)
                     {
-                        yield return this.utils.GetTile(range.Z, x, y);
+                        yield return this._getTile(range.Z, x, y);
                     }
                 }
             }

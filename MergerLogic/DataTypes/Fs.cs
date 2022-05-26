@@ -28,8 +28,7 @@ namespace MergerLogic.DataTypes
             {
                 this._readTile = this.utils.GetTile;
                 this._getTilePath = PathUtils.GetTilePath;
-            }
-            this._readTile = isOneXOne ? ReadOneXOneTile : this.utils.GetTile;
+            }       
         }
 
         public override void Reset()

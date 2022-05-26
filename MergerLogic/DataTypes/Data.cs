@@ -72,15 +72,17 @@ namespace MergerLogic.DataTypes
 
         protected virtual Tile GetOneXOneTile(int z, int x, int y)
         {
-            Coord coords = this._oneXOneConvetor.TryFromTwoXOne(z, x, y);
-            if (coords == null)
+            Coord oneXoneBaseCoords = this._oneXOneConvetor.TryFromTwoXOne(z, x, y);
+            if (oneXoneBaseCoords == null)
             {
                 return null;
             }
-            return this.utils.GetTile(coords);
+            Tile tile = this.utils.GetTile(oneXoneBaseCoords);
+            Coord t this._oneXOneConvetor.ToTwoXOne(tile.Z, tile.X, tile.Y);
+            return new Tile()
         }
 
-        //lazy load get tile function on first call for compatibility with null until in contractor
+        //lazy load get tile function on first call for compatibility with null utills in contractor
         protected Tile GetTileInitilaizer(int z, int x, int y)
         {
             this._getTile = this.IsOneXOne ? this.GetOneXOneTile : this.utils.GetTile;

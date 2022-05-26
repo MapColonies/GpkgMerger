@@ -23,7 +23,7 @@ namespace MergerLogic.DataTypes
 
         private Extent extent;
 
-        public Gpkg(string path, int batchSize) : base(DataType.GPKG, path, batchSize, new GpkgUtils(path))
+        public Gpkg(string path, int batchSize, bool isOneXOne = false) : base(DataType.GPKG, path, batchSize, new GpkgUtils(path),isOneXOne)
         {
             this.tileCache = GpkgUtils.GetTileCache(path);
             this.offset = 0;
