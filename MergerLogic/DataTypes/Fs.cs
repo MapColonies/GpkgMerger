@@ -5,17 +5,31 @@ namespace MergerLogic.DataTypes
 {
     public class FS : Data
     {
+        private delegate string TilePathFunction (string path, Tile tile);
+
         private IEnumerator<Tile> tiles;
         private bool done;
         private int completedTiles;
+        private GetTileFunction _readTile;
+        private TilePathFunction _getTilePath;
 
-        public FS(DataType type, string path, int batchSize, bool isBase = false) : base(type, path, batchSize, new FileUtils(path))
+        public FS(DataType type, string path, int batchSize, bool isOneXOne = false, bool isBase = false) : base(type, path, batchSize, new FileUtils(path), isOneXOne)
         {
             if (isBase)
             {
                 Directory.CreateDirectory(path);
             }
             this.Reset();
+            if (isOneXOne)
+            {
+                this._readTile = this.ReadOneXOneTile;
+                this._getTilePath = this.GetOneXOneTilePath;
+            } else
+            {
+                this._readTile = this.utils.GetTile;
+                this._getTilePath = PathUtils.GetTilePath;
+            }
+            this._readTile = isOneXOne ? ReadOneXOneTile : this.utils.GetTile;
         }
 
         public override void Reset()
@@ -53,6 +67,19 @@ namespace MergerLogic.DataTypes
                 yield return tile;
             }
         }
+
+        private Tile ReadOneXOneTile(int z, int x, int y)
+        {
+            Tile tile = this.utils.GetTile(z, x, y);
+            return new Tile(tile.Z,tile.X,tile.Y,tile.GetImageBytes());
+        }
+
+        private string GetOneXOneTilePath(string path, Tile tile)
+        {
+            Coord coords = this._oneXOneConvetor.FromTwoXOne(tile.Z, tile.X, tile.Y);
+            return PathUtils.GetTilePath(path, coords.z,coords.x, coords.y);
+        }
+
 
         public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
@@ -101,7 +128,7 @@ namespace MergerLogic.DataTypes
             foreach (Tile tile in tiles)
             {
                 tile.FlipY();
-                string tilePath = PathUtils.GetTilePath(this.path, tile);
+                string tilePath = this._getTilePath(this.path,tile);
                 byte[] buffer = tile.GetImageBytes();
                 using (var ms = new MemoryStream(buffer))
                 {

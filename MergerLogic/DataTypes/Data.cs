@@ -12,24 +12,31 @@ namespace MergerLogic.DataTypes
         TMS,
         XYZ
     }
-
     public abstract class Data
     {
+        protected delegate Tile GetTileFunction(int z, int x, int y);
+
         public readonly DataType type;
         public readonly string path;
+        public readonly bool IsOneXOne;
         protected readonly int batchSize;
         protected DataUtils utils;
+        protected GetTileFunction _getTile;
+        protected OneXOneConvetor _oneXOneConvetor;
 
         protected const int ZOOM_LEVEL_COUNT = 30;
 
         protected const int COORDS_FOR_ALL_ZOOM_LEVELS = ZOOM_LEVEL_COUNT << 1;
 
-        public Data(DataType type, string path, int batchSize, DataUtils utils)
+        public Data(DataType type, string path, int batchSize, DataUtils utils, bool isOneXOne = false)
         {
             this.type = type;
             this.path = path;
             this.batchSize = batchSize;
             this.utils = utils;
+            this.IsOneXOne = isOneXOne;
+            _oneXOneConvetor = new OneXOneConvetor();
+            this._getTile = this.GetTileInitilaizer;
         }
 
         public abstract void Reset();
@@ -53,7 +60,7 @@ namespace MergerLogic.DataTypes
                 baseTileX >>= 1; // Divide by 2
                 baseTileY >>= 1; // Divide by 2
 
-                lastTile = this.utils.GetTile(i, baseTileX, baseTileY);
+                lastTile = this._getTile(i, baseTileX, baseTileY);
                 if (lastTile != null)
                 {
                     break;
@@ -63,11 +70,28 @@ namespace MergerLogic.DataTypes
             return lastTile;
         }
 
+        protected virtual Tile GetOneXOneTile(int z, int x, int y)
+        {
+            Coord coords = this._oneXOneConvetor.TryFromTwoXOne(z, x, y);
+            if (coords == null)
+            {
+                return null;
+            }
+            return this.utils.GetTile(coords);
+        }
+
+        //lazy load get tile function on first call for compatibility with null until in contractor
+        protected Tile GetTileInitilaizer(int z, int x, int y)
+        {
+            this._getTile = this.IsOneXOne ? this.GetOneXOneTile : this.utils.GetTile;
+            return this._getTile(z, x, y);
+        }
+
         public abstract List<Tile> GetNextBatch(out string batchIdentifier);
 
         public Tile GetCorrespondingTile(Coord coords, bool upscale)
         {
-            Tile correspondingTile = this.utils.GetTile(coords);
+            Tile correspondingTile = this._getTile(coords.z, coords.x, coords.y);
 
             if (upscale && correspondingTile == null)
             {
@@ -108,8 +132,8 @@ namespace MergerLogic.DataTypes
                 case "fs":
                     data = new FS(DataType.FOLDER, path, batchSize, isBase);
                     break;
-                case "wmts":       
-                case "xyz":              
+                case "wmts":
+                case "xyz":
                 case "tms":
                     throw new Exception("web tile source requires extent, and zoom restrictions");
                 default:
@@ -128,7 +152,7 @@ namespace MergerLogic.DataTypes
             return data;
         }
 
-        public static Data CreateDatasource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom , int minZoom = 0)
+        public static Data CreateDatasource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0)
         {
             Data data;
             type = type.ToLower();
@@ -143,14 +167,15 @@ namespace MergerLogic.DataTypes
             {
                 throw new Exception("web tile source cannot be used as base (target) layer");
             }
-            switch (type) { 
-                case "wmts":          
+            switch (type)
+            {
+                case "wmts":
                     data = new WMTS(DataType.WMTS, path, batchSize, extent, maxZoom, minZoom);
                     break;
-                case "xyz":               
+                case "xyz":
                     data = new XYZ(DataType.XYZ, path, batchSize, extent, maxZoom, minZoom);
                     break;
-                case "tms":            
+                case "tms":
                     data = new TMS(DataType.TMS, path, batchSize, extent, maxZoom, minZoom);
                     break;
                 default:
