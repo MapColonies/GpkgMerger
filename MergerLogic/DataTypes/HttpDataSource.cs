@@ -12,7 +12,10 @@ namespace MergerLogic.DataTypes
         {
             var patternUtils = new PathPatternUtils(path);
             this.utils = new httpUtils(path, patternUtils);
+            //ignore zoom level that cant be converted without image manipulation
+            minZoom = isOneXOne ? Math.Max(minZoom, 2) : minZoom;
             this.GenTileRanges(extent, origin, minZoom, maxZoom);
+            this.Initilaize();
         }
 
         public override bool Exists()
@@ -84,6 +87,17 @@ namespace MergerLogic.DataTypes
                     }
                 }
             }
+        }
+
+        protected override Tile GetOneXOneTile(int z, int x, int y)
+        {
+            Coord oneXoneBaseCoords = this._oneXOneConvetor.FromTwoXOne(z, x, y);
+            Tile tile = this.utils.GetTile(oneXoneBaseCoords);
+            if (tile == null)
+            {
+                tile.SetCoords(z, x, y);
+            }
+            return tile;
         }
     }
 }

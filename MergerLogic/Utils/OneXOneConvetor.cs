@@ -1,4 +1,5 @@
-﻿using MergerLogic.DataTypes;
+﻿using MergerLogic.Batching;
+using MergerLogic.DataTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,7 +24,25 @@ namespace MergerLogic.Utils
             {
                 return null;
             }
-            return FromTwoXOne(z, x, y);
+            return this.FromTwoXOne(z, x, y);
+        }
+
+        public Coord? TryFromTwoXOne(Coord cords)
+        {
+            if (cords.z < 1)
+            {
+                return null;
+            }
+            return this.FromTwoXOne(cords.z, cords.x, cords.y);
+        }
+
+        public Tile? TryFromTwoXOne(Tile tile)
+        {
+            if (tile.Z < 1)
+            {
+                return null;
+            }
+            return this.FromTwoXOne(tile);
         }
 
         /// <summary>
@@ -34,7 +53,7 @@ namespace MergerLogic.Utils
         /// <returns></returns>
         public Coord FromTwoXOne(Coord twoXOneCoords)
         {
-            return FromTwoXOne(twoXOneCoords.z, twoXOneCoords.x, twoXOneCoords.y);
+            return this.FromTwoXOne(twoXOneCoords.z, twoXOneCoords.x, twoXOneCoords.y);
         }
 
         /// <summary>
@@ -52,6 +71,13 @@ namespace MergerLogic.Utils
             return new Coord(newZ, x, y);
         }
 
+        public Tile FromTwoXOne(Tile tile)
+        {
+            Coord cords = this.FromTwoXOne(tile.Z, tile.X, tile.Y);
+            tile.SetCoords(cords);
+            return tile;
+        }
+
         /// <summary>
         /// convert 2X1 coords to 1X1 coords.
         /// returns null with invalid z
@@ -66,7 +92,16 @@ namespace MergerLogic.Utils
             {
                 return null;
             }
-            return ToTwoXOne(z, x, y);
+            return this.ToTwoXOne(z, x, y);
+        }
+
+        public Tile? TryToTwoXOne(Tile tile)
+        {
+            if (tile.Z < 2)
+            {
+                return null;
+            }
+            return this.ToTwoXOne(tile);
         }
 
         /// <summary>
@@ -96,5 +131,13 @@ namespace MergerLogic.Utils
             y -= (1 << (z - 1));
             return new Coord(z, x, y);
         }
+
+        public Tile ToTwoXOne(Tile tile)
+        {
+            Coord cords = this.ToTwoXOne(tile.Z, tile.X, tile.Y);
+            tile.SetCoords(cords);
+            return tile;
+        }
+
     }
 }

@@ -32,6 +32,14 @@ namespace MergerLogic.Batching
             this._data = data;
         }
 
+        public Tile(Coord cords, byte[] data)
+        {
+            this.Z = cords.z;
+            this.X = cords.x;
+            this.Y = cords.y;
+            this._data = data;
+        }
+
         protected Tile(int z, int x, int y)
         {
             this.Z = z;
@@ -66,6 +74,20 @@ namespace MergerLogic.Batching
         public virtual byte[] GetImageBytes()
         {
             return this._data;
+        }
+
+        public void SetCoords(Coord cords)
+        {
+            this.X = cords.x;
+            this.Y = cords.y;
+            this.Z = cords.z;
+        }
+
+        public void SetCoords(int z, int x, int y)
+        {
+            this.X = x;
+            this.Y = y;
+            this.Z = z;
         }
     }
 }

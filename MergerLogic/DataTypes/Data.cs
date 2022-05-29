@@ -14,14 +14,16 @@ namespace MergerLogic.DataTypes
     }
     public abstract class Data
     {
-        protected delegate Tile GetTileFunction(int z, int x, int y);
+        protected delegate Tile GetTileFromXYZFunction(int z, int x, int y);
+        protected delegate Tile GetTileFromCoordFunction(Coord coords);
 
         public readonly DataType type;
         public readonly string path;
         public readonly bool IsOneXOne;
         protected readonly int batchSize;
         protected DataUtils utils;
-        protected GetTileFunction _getTile;
+        protected GetTileFromXYZFunction _getTile;
+        protected GetTileFromCoordFunction _getLastExistingTile;
         protected OneXOneConvetor _oneXOneConvetor;
 
         protected const int ZOOM_LEVEL_COUNT = 30;
@@ -35,8 +37,10 @@ namespace MergerLogic.DataTypes
             this.batchSize = batchSize;
             this.utils = utils;
             this.IsOneXOne = isOneXOne;
-            _oneXOneConvetor = new OneXOneConvetor();
-            this._getTile = this.GetTileInitilaizer;
+            this._oneXOneConvetor = new OneXOneConvetor();
+            this._getLastExistingTile = isOneXOne ? this.getLastOneXoneExistingTile : this.GetLastExistingTile;
+            // this must be calling in implementation constructor
+            // this.Initilaize()
         }
 
         public abstract void Reset();
@@ -60,7 +64,7 @@ namespace MergerLogic.DataTypes
                 baseTileX >>= 1; // Divide by 2
                 baseTileY >>= 1; // Divide by 2
 
-                lastTile = this._getTile(i, baseTileX, baseTileY);
+                lastTile = this.utils.GetTile(i, baseTileX, baseTileY);
                 if (lastTile != null)
                 {
                     break;
@@ -70,23 +74,29 @@ namespace MergerLogic.DataTypes
             return lastTile;
         }
 
+        protected Tile getLastOneXoneExistingTile(Coord coords)
+        {
+            coords = this._oneXOneConvetor.FromTwoXOne(coords);
+            Tile? tile = this.GetLastExistingTile(coords);
+            return tile!= null ? this._oneXOneConvetor.ToTwoXOne(tile): null;
+        }
+
         protected virtual Tile GetOneXOneTile(int z, int x, int y)
         {
-            Coord oneXoneBaseCoords = this._oneXOneConvetor.TryFromTwoXOne(z, x, y);
+            Coord? oneXoneBaseCoords = this._oneXOneConvetor.TryFromTwoXOne(z, x, y);
             if (oneXoneBaseCoords == null)
             {
                 return null;
             }
             Tile tile = this.utils.GetTile(oneXoneBaseCoords);
-            Coord t this._oneXOneConvetor.ToTwoXOne(tile.Z, tile.X, tile.Y);
-            return new Tile()
+            return tile != null ? this._oneXOneConvetor.ToTwoXOne(tile) : null;
         }
 
-        //lazy load get tile function on first call for compatibility with null utills in contractor
-        protected Tile GetTileInitilaizer(int z, int x, int y)
+
+        //this must be calling in implementation constructor
+        protected void Initilaize()
         {
             this._getTile = this.IsOneXOne ? this.GetOneXOneTile : this.utils.GetTile;
-            return this._getTile(z, x, y);
         }
 
         public abstract List<Tile> GetNextBatch(out string batchIdentifier);
@@ -97,7 +107,7 @@ namespace MergerLogic.DataTypes
 
             if (upscale && correspondingTile == null)
             {
-                correspondingTile = this.GetLastExistingTile(coords);
+                correspondingTile = this._getLastExistingTile(coords);
             }
             return correspondingTile;
         }
