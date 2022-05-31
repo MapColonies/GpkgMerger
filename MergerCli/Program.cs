@@ -238,7 +238,7 @@ namespace MergerCli
             if (paramCount > requiredParamCount)
             {
                 // not using set as it allows optional prams with dynamic values aka. --minZoom 3 
-                var optionalParams = args.Skip(idx + requiredParamCount).Take(optionalParamCount).ToArray(); 
+                var optionalParams = args.Skip(idx + requiredParamCount).Take(optionalParamCount).ToArray();
                 if (optionalParams.Contains("--1x1"))
                 {
                     isOneXOne = true;

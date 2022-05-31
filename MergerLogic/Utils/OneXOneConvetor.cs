@@ -1,10 +1,5 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.DataTypes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MergerLogic.Utils
 {
@@ -19,8 +14,9 @@ namespace MergerLogic.Utils
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <returns></returns>
-        public Coord? TryFromTwoXOne (int z, int x, int y)
-        {   if(z < 1)
+        public Coord? TryFromTwoXOne(int z, int x, int y)
+        {
+            if (z < 1)
             {
                 return null;
             }

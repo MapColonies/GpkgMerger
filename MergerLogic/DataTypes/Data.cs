@@ -78,7 +78,7 @@ namespace MergerLogic.DataTypes
         {
             coords = this._oneXOneConvetor.FromTwoXOne(coords);
             Tile? tile = this.GetLastExistingTile(coords);
-            return tile!= null ? this._oneXOneConvetor.ToTwoXOne(tile): null;
+            return tile != null ? this._oneXOneConvetor.ToTwoXOne(tile) : null;
         }
 
         protected virtual Tile GetOneXOneTile(int z, int x, int y)
@@ -125,13 +125,13 @@ namespace MergerLogic.DataTypes
 
         public abstract void setBatchIdentifier(string batchIdentifier);
 
-        public static Data CreateDatasource(string type, string path, int batchSize,bool isOneXOne, bool isBase = false)
+        public static Data CreateDatasource(string type, string path, int batchSize, bool isOneXOne, bool isBase = false)
         {
             Data data;
             switch (type.ToLower())
             {
                 case "gpkg":
-                    data = new Gpkg(path, batchSize,isOneXOne);
+                    data = new Gpkg(path, batchSize, isOneXOne);
                     break;
                 case "s3":
                     string s3Url = Configuration.Instance.GetConfiguration("S3", "url");
@@ -139,10 +139,10 @@ namespace MergerLogic.DataTypes
 
                     var client = S3.GetClient(s3Url);
                     path = PathUtils.RemoveTrailingSlash(path);
-                    data = new S3(client, bucket, path, batchSize,isOneXOne);
+                    data = new S3(client, bucket, path, batchSize, isOneXOne);
                     break;
                 case "fs":
-                    data = new FS(DataType.FOLDER, path, batchSize,isOneXOne, isBase);
+                    data = new FS(DataType.FOLDER, path, batchSize, isOneXOne, isBase);
                     break;
                 case "wmts":
                 case "xyz":
@@ -173,7 +173,7 @@ namespace MergerLogic.DataTypes
                 case "gpkg":
                 case "s3":
                 case "fs":
-                    return CreateDatasource(type, path, batchSize,isOneXone, isBase);
+                    return CreateDatasource(type, path, batchSize, isOneXone, isBase);
             };
             if (isBase)
             {
@@ -182,10 +182,10 @@ namespace MergerLogic.DataTypes
             switch (type)
             {
                 case "wmts":
-                    data = new WMTS(DataType.WMTS, path, batchSize, extent, maxZoom, minZoom,isOneXone);
+                    data = new WMTS(DataType.WMTS, path, batchSize, extent, maxZoom, minZoom, isOneXone);
                     break;
                 case "xyz":
-                    data = new XYZ(DataType.XYZ, path, batchSize, extent, maxZoom, minZoom,isOneXone);
+                    data = new XYZ(DataType.XYZ, path, batchSize, extent, maxZoom, minZoom, isOneXone);
                     break;
                 case "tms":
                     data = new TMS(DataType.TMS, path, batchSize, extent, maxZoom, minZoom, isOneXone);

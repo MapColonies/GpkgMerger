@@ -55,7 +55,7 @@ namespace MergerLogic.Utils
             if (origin == TileGridOrigin.UPPER_LEFT)
             {
                 // flip y
-                (minYDeg, maxYDeg) = (-maxYDeg, - minYDeg);
+                (minYDeg, maxYDeg) = (-maxYDeg, -minYDeg);
             }
 
             int minX = (int)((extent.minX + 180) / tileSize);

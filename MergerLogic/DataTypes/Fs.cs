@@ -133,7 +133,7 @@ namespace MergerLogic.DataTypes
             {
                 tile.FlipY();
                 string tilePath = this._getTilePath(this.path, tile);
-                if(tilePath == null)
+                if (tilePath == null)
                 {
                     continue;
                 }
