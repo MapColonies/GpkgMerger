@@ -15,7 +15,6 @@ namespace MergerLogic.DataTypes
             //ignore zoom level that cant be converted without image manipulation
             minZoom = isOneXOne ? Math.Max(minZoom, 2) : minZoom;
             this.GenTileRanges(extent, origin, minZoom, maxZoom);
-            this.Initilaize();
         }
 
         public override bool Exists()

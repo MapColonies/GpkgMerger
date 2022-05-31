@@ -3,6 +3,7 @@ using MergerLogic.DataTypes;
 
 namespace MergerLogic.Utils
 {
+    //TODO: add proper tests. calling this multiple tiles (i.e. converting already converted coordinates WILL BREAK THE TARGET DATA IN UNRECOVERABLE WAY (!!!)
     public class OneXOneConvetor
     {
 
@@ -25,11 +26,7 @@ namespace MergerLogic.Utils
 
         public Coord? TryFromTwoXOne(Coord cords)
         {
-            if (cords.z < 1)
-            {
-                return null;
-            }
-            return this.FromTwoXOne(cords.z, cords.x, cords.y);
+            return this.TryFromTwoXOne(cords.z, cords.x, cords.y);
         }
 
         public Tile? TryFromTwoXOne(Tile tile)

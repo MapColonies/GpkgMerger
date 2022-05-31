@@ -12,6 +12,7 @@ namespace MergerLogic.DataTypes
         TMS,
         XYZ
     }
+
     public abstract class Data
     {
         protected delegate Tile GetTileFromXYZFunction(int z, int x, int y);
@@ -24,7 +25,7 @@ namespace MergerLogic.DataTypes
         protected DataUtils utils;
         protected GetTileFromXYZFunction _getTile;
         protected GetTileFromCoordFunction _getLastExistingTile;
-        protected OneXOneConvetor _oneXOneConvetor;
+        protected OneXOneConvetor _oneXOneConvetor = null;
 
         protected const int ZOOM_LEVEL_COUNT = 30;
 
@@ -37,10 +38,16 @@ namespace MergerLogic.DataTypes
             this.batchSize = batchSize;
             this.utils = utils;
             this.IsOneXOne = isOneXOne;
-            this._oneXOneConvetor = new OneXOneConvetor();
-            this._getLastExistingTile = isOneXOne ? this.getLastOneXoneExistingTile : this.GetLastExistingTile;
-            // this must be calling in implementation constructor
-            // this.Initilaize()
+            if (isOneXOne)
+            {
+                this._oneXOneConvetor = new OneXOneConvetor();
+                this._getLastExistingTile = this.getLastOneXoneExistingTile;
+            }
+            else
+            {
+                this._getLastExistingTile = this.GetLastExistingTile;
+            }
+            this._getTile = this.GetTileInitilaizer;
         }
 
         public abstract void Reset();
@@ -74,6 +81,7 @@ namespace MergerLogic.DataTypes
             return lastTile;
         }
 
+        //TODO: move to util after IOC
         protected Tile getLastOneXoneExistingTile(Coord coords)
         {
             coords = this._oneXOneConvetor.FromTwoXOne(coords);
@@ -93,10 +101,11 @@ namespace MergerLogic.DataTypes
         }
 
 
-        //this must be calling in implementation constructor
-        protected void Initilaize()
+        //lazy load get tile function on first call for compatibility with null utills in contractor
+        protected Tile GetTileInitilaizer(int z, int x, int y)
         {
             this._getTile = this.IsOneXOne ? this.GetOneXOneTile : this.utils.GetTile;
+            return this._getTile(z, x, y);
         }
 
         public abstract List<Tile> GetNextBatch(out string batchIdentifier);

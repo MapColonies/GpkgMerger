@@ -25,9 +25,9 @@ namespace MergerLogic.DataTypes
         private int offset;
 
         private Extent extent;
-        private TileConvertorFunction _toTwoXOne;
-        private TileConvertorFunction _fromTwoXOne;
-        private CoordConvertorFunction _cordsfromTwoXOne;
+        private TileConvertorFunction _toCurrentGrid;
+        private TileConvertorFunction _toSourceGrid;
+        private CoordConvertorFunction _coordsFromCurrentGrid;
 
         public Gpkg(string path, int batchSize, bool isOneXOne = false) : base(DataType.GPKG, path, batchSize, new GpkgUtils(path), isOneXOne)
         {
@@ -37,18 +37,16 @@ namespace MergerLogic.DataTypes
 
             if (isOneXOne)
             {
-                this._toTwoXOne = this._oneXOneConvetor.TryToTwoXOne;
-                this._cordsfromTwoXOne = this._oneXOneConvetor.TryFromTwoXOne;
-                this._fromTwoXOne = this._oneXOneConvetor.TryFromTwoXOne;
+                this._toCurrentGrid = this._oneXOneConvetor.TryToTwoXOne;
+                this._coordsFromCurrentGrid = this._oneXOneConvetor.TryFromTwoXOne;
+                this._toSourceGrid = this._oneXOneConvetor.TryFromTwoXOne;
             }
             else
             {
-                this._toTwoXOne = tile => tile;
-                this._cordsfromTwoXOne = cords => cords;
-                this._fromTwoXOne = tile => tile;
+                this._toCurrentGrid = tile => tile;
+                this._coordsFromCurrentGrid = cords => cords;
+                this._toSourceGrid = tile => tile;
             };
-
-            this.Initilaize();
         }
 
         public override void Reset()
@@ -91,7 +89,7 @@ namespace MergerLogic.DataTypes
         {
             batchIdentifier = this.offset.ToString();
             //TODO: optimize after IOC refactoring
-            List<Tile> tiles = GpkgUtils.GetBatch(this.path, this.batchSize, this.offset, this.tileCache).Select(t => this._toTwoXOne(t)).ToList();
+            List<Tile> tiles = GpkgUtils.GetBatch(this.path, this.batchSize, this.offset, this.tileCache).Select(t => this._toCurrentGrid(t)).ToList();
             this.offset += tiles.Count;
             return tiles;
         }
@@ -109,7 +107,7 @@ namespace MergerLogic.DataTypes
                 coords[i] = -1;
             }
 
-            baseCoords = this._cordsfromTwoXOne(baseCoords);
+            baseCoords = this._coordsFromCurrentGrid(baseCoords);
             int z = baseCoords.z;
             int baseTileX = baseCoords.x;
             int baseTileY = baseCoords.y;
@@ -124,13 +122,13 @@ namespace MergerLogic.DataTypes
             }
 
             Tile lastTile = GpkgUtils.GetLastTile(this.path, this.tileCache, coords, baseCoords);
-            return this._toTwoXOne(lastTile);
+            return this._toCurrentGrid(lastTile);
         }
 
         public override void UpdateTiles(List<Tile> tiles)
         {
             //TODO: optimize after IOC refactoring
-            tiles = tiles.Select(tile => this._fromTwoXOne(tile)).ToList();
+            tiles = tiles.Select(tile => this._toSourceGrid(tile)).ToList();
             GpkgUtils.InsertTiles(this.path, this.tileCache, tiles);
         }
 

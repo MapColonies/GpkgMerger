@@ -29,7 +29,6 @@ namespace MergerLogic.DataTypes
                 this._readTile = this.utils.GetTile;
                 this._getTilePath = PathUtils.GetTilePath;
             }
-            this.Initilaize();
             this.Reset();
         }
 
