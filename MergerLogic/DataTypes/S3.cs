@@ -35,7 +35,7 @@ namespace MergerLogic.DataTypes
             this.Initilaize();
         }
 
-        public S3(AmazonS3Client client, string bucket, string path, int batchSize) : base(DataType.S3, path, batchSize, new S3Utils(client, bucket, path))
+        public S3(AmazonS3Client client, string bucket, string path, int batchSize, bool isOneXOne = false) : base(DataType.S3, path, batchSize, new S3Utils(client, bucket, path), isOneXOne)
         {
             this.bucket = bucket;
             this.continuationToken = null;

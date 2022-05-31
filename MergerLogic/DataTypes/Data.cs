@@ -125,13 +125,13 @@ namespace MergerLogic.DataTypes
 
         public abstract void setBatchIdentifier(string batchIdentifier);
 
-        public static Data CreateDatasource(string type, string path, int batchSize, bool isBase = false)
+        public static Data CreateDatasource(string type, string path, int batchSize,bool isOneXOne, bool isBase = false)
         {
             Data data;
             switch (type.ToLower())
             {
                 case "gpkg":
-                    data = new Gpkg(path, batchSize);
+                    data = new Gpkg(path, batchSize,isOneXOne);
                     break;
                 case "s3":
                     string s3Url = Configuration.Instance.GetConfiguration("S3", "url");
@@ -139,10 +139,10 @@ namespace MergerLogic.DataTypes
 
                     var client = S3.GetClient(s3Url);
                     path = PathUtils.RemoveTrailingSlash(path);
-                    data = new S3(client, bucket, path, batchSize);
+                    data = new S3(client, bucket, path, batchSize,isOneXOne);
                     break;
                 case "fs":
-                    data = new FS(DataType.FOLDER, path, batchSize, isBase);
+                    data = new FS(DataType.FOLDER, path, batchSize,isOneXOne, isBase);
                     break;
                 case "wmts":
                 case "xyz":
@@ -164,7 +164,7 @@ namespace MergerLogic.DataTypes
             return data;
         }
 
-        public static Data CreateDatasource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0)
+        public static Data CreateDatasource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0, bool isOneXone = false)
         {
             Data data;
             type = type.ToLower();
@@ -173,7 +173,7 @@ namespace MergerLogic.DataTypes
                 case "gpkg":
                 case "s3":
                 case "fs":
-                    return CreateDatasource(type, path, batchSize, isBase);
+                    return CreateDatasource(type, path, batchSize,isOneXone, isBase);
             };
             if (isBase)
             {
@@ -182,13 +182,13 @@ namespace MergerLogic.DataTypes
             switch (type)
             {
                 case "wmts":
-                    data = new WMTS(DataType.WMTS, path, batchSize, extent, maxZoom, minZoom);
+                    data = new WMTS(DataType.WMTS, path, batchSize, extent, maxZoom, minZoom,isOneXone);
                     break;
                 case "xyz":
-                    data = new XYZ(DataType.XYZ, path, batchSize, extent, maxZoom, minZoom);
+                    data = new XYZ(DataType.XYZ, path, batchSize, extent, maxZoom, minZoom,isOneXone);
                     break;
                 case "tms":
-                    data = new TMS(DataType.TMS, path, batchSize, extent, maxZoom, minZoom);
+                    data = new TMS(DataType.TMS, path, batchSize, extent, maxZoom, minZoom, isOneXone);
                     break;
                 default:
                     throw new Exception($"Currently there is no support for the data type '{type}'");

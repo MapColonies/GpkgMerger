@@ -19,7 +19,6 @@ namespace MergerLogic.DataTypes
             {
                 Directory.CreateDirectory(path);
             }
-            this.Reset();
             if (isOneXOne)
             {
                 this._readTile = this.ReadOneXOneTile;
@@ -31,6 +30,7 @@ namespace MergerLogic.DataTypes
                 this._getTilePath = PathUtils.GetTilePath;
             }
             this.Initilaize();
+            this.Reset();
         }
 
         public override void Reset()

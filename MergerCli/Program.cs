@@ -11,109 +11,53 @@ namespace MergerCli
     {
         private static BatchStatusManager batchStatusManager;
         private static bool done = false;
+
         private static void Main(string[] args)
         {
             Stopwatch totalTimeStopWatch = new Stopwatch();
             totalTimeStopWatch.Start();
             TimeSpan ts;
+            string programName = args[0];
 
             // Require input of wanted batch size and 2 types and paths (base and new gpkg)
-            if (args.Length < 6 && args.Length != 2)
+            if (args.Length < 8 && args.Length != 2)
             {
-                string programName = args[0];
-                Console.WriteLine($@"Usage:
-
-                                    Supported sources parameters:
-                                        web sources (cant be base source):
-                                            <'xyz' / 'wmts' / 'tms'> <url template> <bbox - in format 'minX,minY,maxX,maxY'> <min zoom> <max zoom>
-                                        file sources:
-                                            <'fs' / 's3' / 'gpkg'> <path>   
-                                        **** please note all layers must be 2X1 EPSG:4326 layers ****
-
-                                    Single source: {programName} <batch_size> <base source> <addiotional source>
-                                    Examples:
-                                    {programName} 1000 gpkg area1.gpkg gpkg area2.gpkg
-                                    {programName} 1000 s3 /path1/on/s3 s3 /path2/on/s3
-                                    {programName} 1000 s3 /path/on/s3 gpkg geo.gpkg
-                                    {programName} 1000 s3 /path/on/s3 xyz http://xyzSourceUrl/{{z}}/{{x}}/{{y}}.png -180,-90,180,90 0 21
-                                    
-                                    Multi source: {programName} <batch_size> <base source> <addiotional source> [<another source source>...]
-                                    Examples:
-                                    {programName} 1000 gpkg geo.gpkg gpkg area1.gpkg gpkg area2.gpkg gpkg area3.gpkg
-                                    {programName} 1000 gpkg geo.gpkg s3 area1 s3 area2 s3 area3
-                                    {programName} 1000 s3 geo gpkg area1 s3 area2 gpkg area3 wmts http://wmtsSourceUrl/{{TileMatrix}}/{{TileCol}}/{{TileRow}}.png -180,-90,180,90 0 21
-
-                                    Resume: {programName} <path to status file>.
-                                    status file named 'status.json' will be created in running directory on incomplete merges.
-                                    **** please note ***
-                                    resuming partial merge with FS sources may result in incomplete data after merge as file order may not be consistent.
-                                    FS file order should be consistent at least in most use cases (os and fs type combination) but is not guaranteed to be.
-                                    Example:
-                                    {programName} status.json
-                                                             
-                                    Minimal requirement is supplying at least one source.");
+                PrintHelp(programName);
                 return;
             }
 
             PrepareStatusManger(ref args);
 
             int batchSize = int.Parse(args[1]);
-            int sourceIndex = 2;
-            int parameterCount = 0;
-            Data baseData;
+            List<Data> sources = parseSources(args, batchSize);
 
-            // Create base data source and make sure it exists
-            try
+            Data baseData = sources[0];
+            if (sources.Count < 2)
             {
-                baseData = CreateSource(args, batchSize, sourceIndex, true, out parameterCount);
-            }
-            catch
-            {
-                Console.WriteLine("Base data does not exist.");
+                Console.WriteLine("minimum of 2 sources is required");
+                PrintHelp(programName);
                 return;
             }
 
             try
             {
-                sourceIndex += parameterCount;
-
-                while (args.Length > sourceIndex + 1)
+                bool validate = bool.Parse(Configuration.Instance.GetConfiguration("GENERAL", "validate"));
+                for (int i = 1; i < sources.Count; i++)
                 {
-                    Data newData;
                     Stopwatch stopWatch = new Stopwatch();
                     stopWatch.Start();
-
-                    string newType = args[sourceIndex];
-                    string newPath = args[sourceIndex + 1];
-
-                    //skip completed layers on resume
-                    if (batchStatusManager.IsLayerCompleted(newPath))
+                    if (batchStatusManager.IsLayerCompleted(sources[i].path))
                     {
-                        sourceIndex += GetParameterCount(newType);
                         continue;
                     }
-
-                    // Create new data source and make sure it exists
-                    try
-                    {
-                        newData = CreateSource(args, batchSize, sourceIndex, false, out parameterCount);
-                    }
-                    catch
-                    {
-                        Console.WriteLine("New data does not exist");
-                        return;
-                    }
-
-                    Proccess.Start(baseData, newData, batchSize, batchStatusManager);
-
-                    // Do some calculation.
+                    Proccess.Start(baseData, sources[i], batchSize, batchStatusManager);
                     stopWatch.Stop();
 
                     // Get the elapsed time as a TimeSpan value.
                     ts = stopWatch.Elapsed;
-                    TimeUtils.PrintElapsedTime($"{newPath} merge runtime", ts);
+                    TimeUtils.PrintElapsedTime($"{sources[i].path} merge runtime", ts);
 
-                    bool validate = bool.Parse(Configuration.Instance.GetConfiguration("GENERAL", "validate"));
+
                     if (validate)
                     {
                         // Reset stopwatch for validation time measure
@@ -121,16 +65,13 @@ namespace MergerCli
                         stopWatch.Start();
 
                         Console.WriteLine("Validating merged data sources");
-                        Proccess.Validate(baseData, newData);
+                        Proccess.Validate(baseData, sources[i]);
 
                         stopWatch.Stop();
                         // Get the elapsed time as a TimeSpan value.
                         ts = stopWatch.Elapsed;
-                        TimeUtils.PrintElapsedTime($"{newPath} validation time", ts);
+                        TimeUtils.PrintElapsedTime($"{sources[i].path} validation time", ts);
                     }
-
-                    // Move to next source
-                    sourceIndex += parameterCount;
                 }
             }
             catch (Exception ex)
@@ -145,6 +86,38 @@ namespace MergerCli
             ts = totalTimeStopWatch.Elapsed;
             TimeUtils.PrintElapsedTime("Total runtime", ts);
             done = true;
+        }
+
+        private static void PrintHelp(string programName)
+        {
+            Console.WriteLine($@"Usage:
+
+                                    Supported sources parameters:
+                                        web sources (cant be base source):
+                                            <'xyz' / 'wmts' / 'tms'> <url template> < is 1x1 > <bbox - in format 'minX,minY,maxX,maxY'> <min zoom> <max zoom> 
+                                        file sources:
+                                            <'fs' / 's3' / 'gpkg'> <path> < is 1x1 >
+                                        **** please note all layers must be 2X1 EPSG:4326 layers ****
+                                    
+                                    merge sources: {programName} <batch_size> <base source> <addiotional source> [<another source source>...]
+                                    Examples:
+                                    {programName} 1000 gpkg area1.gpkg false gpkg area2.gpkg false
+                                    {programName} 1000 s3 /path1/on/s3 false s3 /path2/on/s3 false
+                                    {programName} 1000 s3 /path/on/s3 false gpkg geo.gpkg false
+                                    {programName} 1000 s3 /path/on/s3 xyz http://xyzSourceUrl/{{z}}/{{x}}/{{y}}.png -180,-90,180,90 0 21
+                                    {programName} 1000 gpkg geo.gpkg false gpkg 1x1.gpkg true gpkg area2.gpkg false gpkg area3.gpkg false
+                                    {programName} 1000 gpkg geo.gpkg false s3 area1 false s3 area2 false s3 area3 false
+                                    {programName} 1000 s3 geo false gpkg area1 false s3 1x1 true gpkg area3 false wmts http://wmtsSourceUrl/{{TileMatrix}}/{{TileCol}}/{{TileRow}}.png -180,-90,180,90 0 21 false
+
+                                    Resume: {programName} <path to status file>.
+                                    status file named 'status.json' will be created in running directory on incomplete merges.
+                                    **** please note ***
+                                    resuming partial merge with FS sources may result in incomplete data after merge as file order may not be consistent.
+                                    FS file order should be consistent at least in most use cases (os and fs type combination) but is not guaranteed to be.
+                                    Example:
+                                    {programName} status.json
+                                                             
+                                    Minimal requirement is supplying at least one source.");
         }
 
         private static void PrepareStatusManger(ref string[] args)
@@ -163,7 +136,7 @@ namespace MergerCli
                 foreach (var item in batchStatusManager.States)
                 {
                     Console.WriteLine($"{item.Key} {item.Value.BatchIdentifier}");
-                } 
+                }
             }
             else
             {
@@ -188,50 +161,94 @@ namespace MergerCli
             }
         }
 
-        private static Data CreateSource(string[] args,int batchSize, int startIndex, bool isBase, out int parameterCount)
+        private static List<Data> parseSources(string[] args, int batchSize)
         {
-            string sourceType = args[startIndex];
-            string sourcePath = args[startIndex + 1];
-            parameterCount = GetParameterCount(sourceType);
-            if( parameterCount == 2)
+            List<Data> sources = new List<Data>();
+            int idx = 2;
+            bool isBase = true;
+            while(idx < args.Length)
             {
-                return Data.CreateDatasource(sourceType, sourcePath, batchSize, isBase);
-            } else if ( parameterCount == 5)
-            {
-                string[] bboxParts = args[startIndex + 2].Split(',');
-                int minZoom = int.Parse(args[startIndex + 3]);
-                int maxZoom = int.Parse(args[startIndex + 4]);
-                Extent extent = new Extent
+                switch (args[idx].ToLower())
                 {
-                    minX = double.Parse(bboxParts[0]),
-                    minY = double.Parse(bboxParts[1]),
-                    maxX = double.Parse(bboxParts[2]),
-                    maxY = double.Parse(bboxParts[3])
-                };
-                return Data.CreateDatasource(sourceType, sourcePath, batchSize, isBase, extent, maxZoom, minZoom);
-            } else
-            {
-                throw new Exception($"Currently there is no support for the data type '{sourceType}'");
+                    case "fs":
+                    case "s3":
+                    case "gpkg":
+                        try
+                        {
+                            sources.Add(ParseFileSource(args, ref idx, batchSize, isBase));
+                        } catch
+                        {
+                            string source = isBase ? "base" : "new";
+                            Console.WriteLine($"{source} data does not exist.");
+                            Environment.Exit(1);
+                        }
+                        break;
+                    case "wmts":
+                    case "xyz":
+                    case "tms":
+                        try
+                        {
+                            sources.Add(ParseHttpSource(args, ref idx, batchSize, isBase));
+                        }
+                        catch
+                        {
+                            string source = isBase ? "base" : "new";
+                            Console.WriteLine($"{source} data does not exist.");
+                            Environment.Exit(1);
+                        }
+                        break;
+                    default:
+                        throw new Exception($"Currently there is no support for the data type '{args[idx]}'");
+                }
+                isBase = false;
             }
+            return sources;
         }
 
-        private static int GetParameterCount(string type)
+        private static Data ParseFileSource(string[] args, ref int idx, int batchSize, bool isBase)
         {
-            string lowerType = type.ToLower();
-            switch (lowerType)
-            {
-                case "fs":
-                case "s3":
-                case "gpkg":
-                    return 2;
-                case "wmts":
-                case "xyz":
-                case "tms":
-                    return 5;
-                default:
-                    throw new Exception($"Currently there is no support for the data type '{type}'");
-            }
+            const int paramCount = 3;
+            validateSourceLength(args, idx, paramCount);
+            string sourceType = args[idx];
+            string sourcePath = args[idx + 1];
+            bool isOneXOne = bool.Parse(args[idx + 2]);
+            idx += paramCount;
+            return Data.CreateDatasource(sourceType, sourcePath, batchSize, isOneXOne, isBase);
         }
 
+        private static Data ParseHttpSource(string[] args, ref int idx, int batchSize, bool isBase)
+        {
+            const int paramCount = 6;
+            validateSourceLength(args, idx, paramCount);
+            string sourceType = args[idx];
+            string sourcePath = args[idx + 1];
+            string[] bboxParts = args[idx + 2].Split(',');
+            int minZoom = int.Parse(args[idx + 3]);
+            int maxZoom = int.Parse(args[idx + 4]);
+            bool isOneXOne = bool.Parse(args[idx + 5]);
+            Extent extent = new Extent
+            {
+                minX = double.Parse(bboxParts[0]),
+                minY = double.Parse(bboxParts[1]),
+                maxX = double.Parse(bboxParts[2]),
+                maxY = double.Parse(bboxParts[3])
+            };
+            idx += paramCount;
+            return Data.CreateDatasource(sourceType, sourcePath, batchSize,isBase,extent,maxZoom,minZoom, isOneXOne);
+        }
+
+        private static HashSet<string> sourceTypes = new HashSet<string>(new[] { "fs", "s3", "gpkg", "wmts", "tms", "xyz" });
+        private static void validateSourceLength(string[] args, int startIdx, int expectedSourceLength)
+        {
+            for(int i = startIdx +1; i < startIdx + expectedSourceLength; i++)
+            {
+                if (sourceTypes.Contains(args[i].ToLower()))
+                {
+                    Console.WriteLine($"invalid source parameters for {args[startIdx]} {args[startIdx + 1]}");
+                    PrintHelp(args[0]);
+                    Environment.Exit(1);
+                }
+            }
+        }
     }
 }
