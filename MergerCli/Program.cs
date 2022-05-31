@@ -20,7 +20,7 @@ namespace MergerCli
             string programName = args[0];
 
             // Require input of wanted batch size and 2 types and paths (base and new gpkg)
-            if (args.Length < 8 && args.Length != 2)
+            if (args.Length < 6 && args.Length != 2)
             {
                 PrintHelp(programName);
                 return;
@@ -94,20 +94,20 @@ namespace MergerCli
 
                                     Supported sources parameters:
                                         web sources (cant be base source):
-                                            <'xyz' / 'wmts' / 'tms'> <url template> < is 1x1 > <bbox - in format 'minX,minY,maxX,maxY'> <min zoom> <max zoom> 
+                                            <'xyz' / 'wmts' / 'tms'> <url template> <bbox - in format 'minX,minY,maxX,maxY'> <min zoom> <max zoom> [--1x1]
                                         file sources:
-                                            <'fs' / 's3' / 'gpkg'> <path> < is 1x1 >
+                                            <'fs' / 's3' / 'gpkg'> <path> [--1x1]
                                         **** please note all layers must be 2X1 EPSG:4326 layers ****
                                     
                                     merge sources: {programName} <batch_size> <base source> <addiotional source> [<another source source>...]
                                     Examples:
-                                    {programName} 1000 gpkg area1.gpkg false gpkg area2.gpkg false
-                                    {programName} 1000 s3 /path1/on/s3 false s3 /path2/on/s3 false
-                                    {programName} 1000 s3 /path/on/s3 false gpkg geo.gpkg false
-                                    {programName} 1000 s3 /path/on/s3 xyz http://xyzSourceUrl/{{z}}/{{x}}/{{y}}.png -180,-90,180,90 0 21
-                                    {programName} 1000 gpkg geo.gpkg false gpkg 1x1.gpkg true gpkg area2.gpkg false gpkg area3.gpkg false
-                                    {programName} 1000 gpkg geo.gpkg false s3 area1 false s3 area2 false s3 area3 false
-                                    {programName} 1000 s3 geo false gpkg area1 false s3 1x1 true gpkg area3 false wmts http://wmtsSourceUrl/{{TileMatrix}}/{{TileCol}}/{{TileRow}}.png -180,-90,180,90 0 21 false
+                                    {programName} 1000 gpkg area1.gpkg gpkg area2.gpkg
+                                    {programName} 1000 s3 /path1/on/s3 s3 /path2/on/s3
+                                    {programName} 1000 s3 /path/on/s3 gpkg geo.gpkg
+                                    {programName} 1000 s3 /path/on/s3 xyz http://xyzSourceUrl/{{z}}/{{x}}/{{y}}.png -180,-90,180,90 0 21 --1x1
+                                    {programName} 1000 gpkg geo.gpkg gpkg 1x1.gpkg --1x1 gpkg area2.gpkg gpkg area3.gpkg
+                                    {programName} 1000 gpkg geo.gpkg s3 area1 s3 area2 s3 area3
+                                    {programName} 1000 s3 geo gpkg area1 s3 1x1 --1x1 gpkg area3 wmts http://wmtsSourceUrl/{{TileMatrix}}/{{TileCol}}/{{TileRow}}.png -180,-90,180,90 0 21
 
                                     Resume: {programName} <path to status file>.
                                     status file named 'status.json' will be created in running directory on incomplete merges.
@@ -166,7 +166,7 @@ namespace MergerCli
             List<Data> sources = new List<Data>();
             int idx = 2;
             bool isBase = true;
-            while(idx < args.Length)
+            while (idx < args.Length)
             {
                 switch (args[idx].ToLower())
                 {
@@ -176,7 +176,8 @@ namespace MergerCli
                         try
                         {
                             sources.Add(ParseFileSource(args, ref idx, batchSize, isBase));
-                        } catch
+                        }
+                        catch
                         {
                             string source = isBase ? "base" : "new";
                             Console.WriteLine($"{source} data does not exist.");
@@ -207,25 +208,42 @@ namespace MergerCli
 
         private static Data ParseFileSource(string[] args, ref int idx, int batchSize, bool isBase)
         {
-            const int paramCount = 3;
-            validateSourceLength(args, idx, paramCount);
+            const int requiredParamCount = 2;
+            const int optionalParamCount = 1;
+            int paramCount = ValidateAndGetSourceLength(args, idx, requiredParamCount, optionalParamCount);
             string sourceType = args[idx];
             string sourcePath = args[idx + 1];
-            bool isOneXOne = bool.Parse(args[idx + 2]);
+            bool isOneXOne = false;
+            // not using set as it allows optional prams with dynamic values aka. --minZoom 3 
+            var optionalParams = args.Skip(idx + requiredParamCount).Take(optionalParamCount).ToArray();
+            if (optionalParams.Contains("--1x1"))
+            {
+                isOneXOne = true;
+            }
             idx += paramCount;
             return Data.CreateDatasource(sourceType, sourcePath, batchSize, isOneXOne, isBase);
         }
 
         private static Data ParseHttpSource(string[] args, ref int idx, int batchSize, bool isBase)
         {
-            const int paramCount = 6;
-            validateSourceLength(args, idx, paramCount);
+            const int requiredParamCount = 5;
+            const int optionalParamCount = 1;
+            int paramCount = ValidateAndGetSourceLength(args, idx, requiredParamCount, optionalParamCount);
             string sourceType = args[idx];
             string sourcePath = args[idx + 1];
             string[] bboxParts = args[idx + 2].Split(',');
             int minZoom = int.Parse(args[idx + 3]);
             int maxZoom = int.Parse(args[idx + 4]);
-            bool isOneXOne = bool.Parse(args[idx + 5]);
+            bool isOneXOne = false;
+            if (paramCount > requiredParamCount)
+            {
+                // not using set as it allows optional prams with dynamic values aka. --minZoom 3 
+                var optionalParams = args.Skip(idx + requiredParamCount).Take(optionalParamCount).ToArray(); 
+                if (optionalParams.Contains("--1x1"))
+                {
+                    isOneXOne = true;
+                }
+            }
             Extent extent = new Extent
             {
                 minX = double.Parse(bboxParts[0]),
@@ -234,13 +252,13 @@ namespace MergerCli
                 maxY = double.Parse(bboxParts[3])
             };
             idx += paramCount;
-            return Data.CreateDatasource(sourceType, sourcePath, batchSize,isBase,extent,maxZoom,minZoom, isOneXOne);
+            return Data.CreateDatasource(sourceType, sourcePath, batchSize, isBase, extent, maxZoom, minZoom, isOneXOne);
         }
 
         private static HashSet<string> sourceTypes = new HashSet<string>(new[] { "fs", "s3", "gpkg", "wmts", "tms", "xyz" });
-        private static void validateSourceLength(string[] args, int startIdx, int expectedSourceLength)
+        private static int ValidateAndGetSourceLength(string[] args, int startIdx, int minExpectedParamCount, int optionalParamCount)
         {
-            for(int i = startIdx +1; i < startIdx + expectedSourceLength; i++)
+            for (int i = startIdx + 1; i < startIdx + minExpectedParamCount; i++)
             {
                 if (sourceTypes.Contains(args[i].ToLower()))
                 {
@@ -249,6 +267,17 @@ namespace MergerCli
                     Environment.Exit(1);
                 }
             }
+            for (int i = minExpectedParamCount; i <= minExpectedParamCount + optionalParamCount; i++)
+            {
+                if (sourceTypes.Contains(args[i].ToLower()))
+                {
+                    return i;
+                }
+            }
+            Console.WriteLine($"invalid source parameters for {args[startIdx]} {args[startIdx + 1]}");
+            PrintHelp(args[0]);
+            Environment.Exit(1);
+            return -1; // prevent compiler complaint that no value is return
         }
     }
 }
