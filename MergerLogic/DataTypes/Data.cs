@@ -20,7 +20,7 @@ namespace MergerLogic.DataTypes
 
         public readonly DataType type;
         public readonly string path;
-        public readonly bool IsOneXOne;
+        public readonly bool isOneXOne;
         protected readonly int batchSize;
         protected DataUtils utils;
         protected GetTileFromXYZFunction _getTile;
@@ -37,7 +37,7 @@ namespace MergerLogic.DataTypes
             this.path = path;
             this.batchSize = batchSize;
             this.utils = utils;
-            this.IsOneXOne = isOneXOne;
+            this.isOneXOne = isOneXOne;
             if (isOneXOne)
             {
                 this._oneXOneConvetor = new OneXOneConvetor();
@@ -104,7 +104,7 @@ namespace MergerLogic.DataTypes
         //lazy load get tile function on first call for compatibility with null utills in contractor
         protected Tile GetTileInitilaizer(int z, int x, int y)
         {
-            this._getTile = this.IsOneXOne ? this.GetOneXOneTile : this.utils.GetTile;
+            this._getTile = this.isOneXOne ? this.GetOneXOneTile : this.utils.GetTile;
             return this._getTile(z, x, y);
         }
 
