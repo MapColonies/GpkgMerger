@@ -66,7 +66,7 @@ namespace MergerLogic.DataTypes
             this._getTile = this.GetTileInitilaizer;
             if (origin == TileGridOrigin.LOWER_LEFT)
             {
-                _convertOrigin = tile =>
+                this._convertOrigin = tile =>
                 {
                     tile.FlipY();
                     return tile;
@@ -194,10 +194,10 @@ namespace MergerLogic.DataTypes
             switch (type.ToLower())
             {
                 case "gpkg":
-                    if(origin == null)
+                    if (origin == null)
                         data = new Gpkg(path, batchSize, isOneXOne);
                     else
-                        data = new Gpkg(path, batchSize, isOneXOne,origin.Value);
+                        data = new Gpkg(path, batchSize, isOneXOne, origin.Value);
                     break;
                 case "s3":
                     string s3Url = Configuration.Instance.GetConfiguration("S3", "url");
@@ -207,7 +207,7 @@ namespace MergerLogic.DataTypes
                     if (origin == null)
                         data = new S3(client, bucket, path, batchSize, isOneXOne);
                     else
-                        data = new S3(client, bucket, path, batchSize, isOneXOne,origin.Value);                   
+                        data = new S3(client, bucket, path, batchSize, isOneXOne, origin.Value);
                     break;
                 case "fs":
                     if (origin == null)
@@ -268,7 +268,7 @@ namespace MergerLogic.DataTypes
                     if (origin == null)
                         data = new TMS(DataType.TMS, path, batchSize, extent, maxZoom, minZoom, isOneXone);
                     else
-                        data = new TMS(DataType.TMS, path, batchSize, extent, maxZoom, minZoom, isOneXone,origin.Value);
+                        data = new TMS(DataType.TMS, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
                     break;
                 default:
                     throw new Exception($"Currently there is no support for the data type '{type}'");

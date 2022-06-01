@@ -47,14 +47,14 @@ namespace MergerLogic.Utils
         }
 
         public override Tile GetTile(int z, int x, int y)
-        {           
+        {
             string key = PathUtils.GetTilePath(this.path, z, x, y, true);
 
             byte[]? imageBytes = this.GetImageBytes(key);
             if (imageBytes == null)
             {
                 return null;
-            }           
+            }
             return new Tile(z, x, y, imageBytes);
         }
 

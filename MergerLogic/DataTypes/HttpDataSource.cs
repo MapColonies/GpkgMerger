@@ -8,8 +8,8 @@ namespace MergerLogic.DataTypes
         protected TileRange[] tileRanges;
         protected IEnumerator<Tile[]> batches;
         protected int batchIndex = 0;
-        protected HttpDataSource(DataType type, string path, int batchSize, Extent extent, TileGridOrigin origin, int maxZoom, int minZoom = 0, bool isOneXOne = false) 
-            : base(type, path, batchSize, null, isOneXOne,origin)
+        protected HttpDataSource(DataType type, string path, int batchSize, Extent extent, TileGridOrigin origin, int maxZoom, int minZoom = 0, bool isOneXOne = false)
+            : base(type, path, batchSize, null, isOneXOne, origin)
         {
             var patternUtils = new PathPatternUtils(path);
             this.utils = new httpUtils(path, patternUtils);
@@ -17,10 +17,10 @@ namespace MergerLogic.DataTypes
             minZoom = isOneXOne ? Math.Max(minZoom, 2) : minZoom;
             this.GenTileRanges(extent, origin, minZoom, maxZoom);
             if (isOneXOne)
-            {   
+            {
                 this._fromCurrentGrid = this._oneXOneConvetor.FromTwoXOne;
                 this._toCurrentGrid = this._oneXOneConvetor.ToTwoXOne;
-            }          
+            }
         }
 
         public override bool Exists()

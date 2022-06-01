@@ -20,7 +20,7 @@ namespace MergerLogic.DataTypes
             this.bucket = bucket;
             this.continuationToken = null;
             this.endOfRead = false;
-            this.client = S3.GetClient(serviceUrl);         
+            this.client = S3.GetClient(serviceUrl);
         }
 
         public S3(AmazonS3Client client, string bucket, string path, int batchSize, bool isOneXOne = false, TileGridOrigin origin = TileGridOrigin.LOWER_LEFT)
@@ -150,11 +150,11 @@ namespace MergerLogic.DataTypes
 
             return tileCount;
         }
-    
+
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
         {
             foreach (var tile in targetTiles)
-            {    
+            {
                 S3Utils.UpdateTile(this.client, this.bucket, this.path, tile);
             }
         }

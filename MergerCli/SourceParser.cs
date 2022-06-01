@@ -73,7 +73,7 @@ namespace MergerCli
             }
             if (optionalParams.Contains("--UL"))
             {
-                if(origin != null)
+                if (origin != null)
                 {
                     throw new Exception($"layer {sourceType} {sourcePath} cant be both UL and LL");
                 }
