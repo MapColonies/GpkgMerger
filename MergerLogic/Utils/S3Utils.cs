@@ -47,25 +47,20 @@ namespace MergerLogic.Utils
         }
 
         public override Tile GetTile(int z, int x, int y)
-        {
-            // Convert to TMS
-            y = GeoUtils.FlipY(z, y);
+        {           
             string key = PathUtils.GetTilePath(this.path, z, x, y, true);
 
             byte[]? imageBytes = this.GetImageBytes(key);
             if (imageBytes == null)
             {
                 return null;
-            }
-            // Convert from TMS
-            y = GeoUtils.FlipY(z, y);
+            }           
             return new Tile(z, x, y, imageBytes);
         }
 
         public static void UpdateTile(AmazonS3Client client, string bucket, string path, Tile tile)
         {
-            int y = GeoUtils.FlipY(tile);
-            string key = PathUtils.GetTilePath(path, tile.Z, tile.X, y, true);
+            string key = PathUtils.GetTilePath(path, tile.Z, tile.X, tile.Y, true);
 
             var request = new PutObjectRequest()
             {

@@ -8,34 +8,23 @@ namespace MergerLogic.DataTypes
 {
     public class S3 : Data
     {
-        private delegate Tile TileConvertorFunction(Tile Tile);
-
         private AmazonS3Client client;
         private string bucket;
         private string continuationToken;
         private bool endOfRead;
-        private GetTileFromCoordFunction _readTile;
-        private TileConvertorFunction _fromCurrentGrid;
 
-        public S3(string serviceUrl, string bucket, string path, int batchSize, bool isOneXOne = false) : base(DataType.S3, path, batchSize, new S3Utils(S3.GetClient(serviceUrl), bucket, path), isOneXOne)
+
+        public S3(string serviceUrl, string bucket, string path, int batchSize, bool isOneXOne = false, TileGridOrigin origin = TileGridOrigin.LOWER_LEFT)
+            : base(DataType.S3, path, batchSize, new S3Utils(S3.GetClient(serviceUrl), bucket, path), isOneXOne, origin)
         {
             this.bucket = bucket;
             this.continuationToken = null;
             this.endOfRead = false;
-            this.client = S3.GetClient(serviceUrl);
-            if (isOneXOne)
-            {
-                this._readTile = this.ReadOneXOneTile;
-                this._fromCurrentGrid = this._oneXOneConvetor.TryFromTwoXOne;
-            }
-            else
-            {
-                this._readTile = this.utils.GetTile;
-                this._fromCurrentGrid = tile => tile;
-            }
+            this.client = S3.GetClient(serviceUrl);         
         }
 
-        public S3(AmazonS3Client client, string bucket, string path, int batchSize, bool isOneXOne = false) : base(DataType.S3, path, batchSize, new S3Utils(client, bucket, path), isOneXOne)
+        public S3(AmazonS3Client client, string bucket, string path, int batchSize, bool isOneXOne = false, TileGridOrigin origin = TileGridOrigin.LOWER_LEFT)
+            : base(DataType.S3, path, batchSize, new S3Utils(client, bucket, path), isOneXOne, origin)
         {
             this.bucket = bucket;
             this.continuationToken = null;
@@ -100,10 +89,13 @@ namespace MergerLogic.DataTypes
                 foreach (S3Object item in response.S3Objects)
                 {
                     Coord coord = PathUtils.FromPath(item.Key, true);
-                    coord.flipY();
-                    Tile tile = this._readTile(coord);
-
-                    tiles.Add(tile);
+                    Tile tile = this.utils.GetTile(coord);
+                    tile = this._toCurrentGrid(tile);
+                    if (tile != null)
+                    {
+                        tile = this._convertOrigin(tile);
+                        tiles.Add(tile);
+                    }
                 }
                 this.continuationToken = response.NextContinuationToken;
             }
@@ -116,15 +108,6 @@ namespace MergerLogic.DataTypes
         public override void setBatchIdentifier(string batchIdentifier)
         {
             this.continuationToken = batchIdentifier;
-        }
-
-        public override void UpdateTiles(List<Tile> tiles)
-        {
-            foreach (var tile in tiles)
-            {
-                Tile convertedTile = this._fromCurrentGrid(tile);
-                S3Utils.UpdateTile(this.client, this.bucket, this.path, convertedTile);
-            }
         }
 
         public override bool Exists()
@@ -167,11 +150,13 @@ namespace MergerLogic.DataTypes
 
             return tileCount;
         }
-
-        private Tile ReadOneXOneTile(Coord cords)
+    
+        protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
         {
-            Tile tile = this.utils.GetTile(cords);
-            return tile != null ? this._oneXOneConvetor.TryToTwoXOne(tile) : null;
+            foreach (var tile in targetTiles)
+            {    
+                S3Utils.UpdateTile(this.client, this.bucket, this.path, tile);
+            }
         }
     }
 }

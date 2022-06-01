@@ -8,13 +8,19 @@ namespace MergerLogic.DataTypes
         protected TileRange[] tileRanges;
         protected IEnumerator<Tile[]> batches;
         protected int batchIndex = 0;
-        protected HttpDataSource(DataType type, string path, int batchSize, Extent extent, TileGridOrigin origin, int maxZoom, int minZoom = 0, bool isOneXOne = false) : base(type, path, batchSize, null, isOneXOne)
+        protected HttpDataSource(DataType type, string path, int batchSize, Extent extent, TileGridOrigin origin, int maxZoom, int minZoom = 0, bool isOneXOne = false) 
+            : base(type, path, batchSize, null, isOneXOne,origin)
         {
             var patternUtils = new PathPatternUtils(path);
             this.utils = new httpUtils(path, patternUtils);
             //ignore zoom level that cant be converted without image manipulation
             minZoom = isOneXOne ? Math.Max(minZoom, 2) : minZoom;
             this.GenTileRanges(extent, origin, minZoom, maxZoom);
+            if (isOneXOne)
+            {   
+                this._fromCurrentGrid = this._oneXOneConvetor.FromTwoXOne;
+                this._toCurrentGrid = this._oneXOneConvetor.ToTwoXOne;
+            }          
         }
 
         public override bool Exists()
@@ -60,11 +66,6 @@ namespace MergerLogic.DataTypes
             });
         }
 
-        public override void UpdateTiles(List<Tile> tiles)
-        {
-            throw new NotImplementedException();
-        }
-
         protected void GenTileRanges(Extent extent, TileGridOrigin origin, int minZoom, int maxZoom)
         {
             this.tileRanges = new TileRange[maxZoom - minZoom + 1];
@@ -98,5 +99,11 @@ namespace MergerLogic.DataTypes
             }
             return tile;
         }
+
+        protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
+        {
+            throw new NotImplementedException();
+        }
+
     }
 }

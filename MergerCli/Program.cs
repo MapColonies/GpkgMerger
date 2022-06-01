@@ -105,9 +105,9 @@ namespace MergerCli
 
                                     Supported sources parameters:
                                         web sources (cant be base source):
-                                            <'xyz' / 'wmts' / 'tms'> <url template> <bbox - in format 'minX,minY,maxX,maxY'> <min zoom> <max zoom> [--1x1]
+                                            <'xyz' / 'wmts' / 'tms'> <url template> <bbox - in format 'minX,minY,maxX,maxY'> <min zoom> <max zoom> [--1x1] [--UL / --LL] 
                                         file sources:
-                                            <'fs' / 's3' / 'gpkg'> <path> [--1x1]
+                                            <'fs' / 's3' / 'gpkg'> <path> [--1x1] [--UL / --LL] 
                                         **** please note all layers must be 2X1 EPSG:4326 layers ****
                                     
                                     merge sources: {programName} <batch_size> <base source> <addiotional source> [<another source source>...]

@@ -55,7 +55,7 @@ namespace MergerCli
         private Data ParseFileSource(string[] args, ref int idx, int batchSize, bool isBase)
         {
             const int requiredParamCount = 2;
-            const int optionalParamCount = 1;
+            const int optionalParamCount = 2;
             int paramCount = this.ValidateAndGetSourceLength(args, idx, requiredParamCount, optionalParamCount);
             string sourceType = args[idx];
             string sourcePath = args[idx + 1];
@@ -66,14 +66,28 @@ namespace MergerCli
             {
                 isOneXOne = true;
             }
+            TileGridOrigin? origin = null;
+            if (optionalParams.Contains("--UL"))
+            {
+                origin = TileGridOrigin.UPPER_LEFT;
+            }
+            if (optionalParams.Contains("--UL"))
+            {
+                if(origin != null)
+                {
+                    throw new Exception($"layer {sourceType} {sourcePath} cant be both UL and LL");
+                }
+                origin = TileGridOrigin.UPPER_LEFT;
+            }
+
             idx += paramCount;
-            return Data.CreateDatasource(sourceType, sourcePath, batchSize, isOneXOne, isBase);
+            return Data.CreateDatasource(sourceType, sourcePath, batchSize, isOneXOne, origin, isBase);
         }
 
         private Data ParseHttpSource(string[] args, ref int idx, int batchSize, bool isBase)
         {
             const int requiredParamCount = 5;
-            const int optionalParamCount = 1;
+            const int optionalParamCount = 2;
             int paramCount = this.ValidateAndGetSourceLength(args, idx, requiredParamCount, optionalParamCount);
             string sourceType = args[idx];
             string sourcePath = args[idx + 1];
@@ -88,6 +102,19 @@ namespace MergerCli
                 if (optionalParams.Contains("--1x1"))
                 {
                     isOneXOne = true;
+                }
+                TileGridOrigin? origin = null;
+                if (optionalParams.Contains("--UL"))
+                {
+                    origin = TileGridOrigin.UPPER_LEFT;
+                }
+                if (optionalParams.Contains("--UL"))
+                {
+                    if (origin != null)
+                    {
+                        throw new Exception($"layer {sourceType} {sourcePath} cant be both UL and LL");
+                    }
+                    origin = TileGridOrigin.UPPER_LEFT;
                 }
             }
             Extent extent = new Extent
