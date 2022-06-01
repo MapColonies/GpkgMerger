@@ -21,6 +21,7 @@ namespace MergerCli
             // Require input of wanted batch size and 2 types and paths (base and new gpkg)
             if (args.Length < 6 && args.Length != 2)
             {
+                Console.WriteLine("invalid command.");
                 PrintHelp(programName);
                 return;
             }
