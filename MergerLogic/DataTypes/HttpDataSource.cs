@@ -8,10 +8,12 @@ namespace MergerLogic.DataTypes
         protected TileRange[] tileRanges;
         protected IEnumerator<Tile[]> batches;
         protected int batchIndex = 0;
-        protected HttpDataSource(DataType type, string path, int batchSize, Extent extent, TileGridOrigin origin, int maxZoom, int minZoom = 0) : base(type, path, batchSize, null)
+        protected HttpDataSource(DataType type, string path, int batchSize, Extent extent, TileGridOrigin origin, int maxZoom, int minZoom = 0, bool isOneXOne = false) : base(type, path, batchSize, null, isOneXOne)
         {
             var patternUtils = new PathPatternUtils(path);
             this.utils = new httpUtils(path, patternUtils);
+            //ignore zoom level that cant be converted without image manipulation
+            minZoom = isOneXOne ? Math.Max(minZoom, 2) : minZoom;
             this.GenTileRanges(extent, origin, minZoom, maxZoom);
         }
 
@@ -80,10 +82,21 @@ namespace MergerLogic.DataTypes
                 {
                     for (int y = range.MinY; y < range.MaxY; y++)
                     {
-                        yield return this.utils.GetTile(range.Z, x, y);
+                        yield return this._getTile(range.Z, x, y);
                     }
                 }
             }
+        }
+
+        protected override Tile GetOneXOneTile(int z, int x, int y)
+        {
+            Coord oneXoneBaseCoords = this._oneXOneConvetor.FromTwoXOne(z, x, y);
+            Tile tile = this.utils.GetTile(oneXoneBaseCoords);
+            if (tile == null)
+            {
+                tile.SetCoords(z, x, y);
+            }
+            return tile;
         }
     }
 }

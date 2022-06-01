@@ -5,15 +5,29 @@ namespace MergerLogic.DataTypes
 {
     public class FS : Data
     {
+        private delegate string TilePathFunction(string path, Tile tile);
+
         private IEnumerator<Tile> tiles;
         private bool done;
         private int completedTiles;
+        private GetTileFromCoordFunction _readTile;
+        private TilePathFunction _getTilePath;
 
-        public FS(DataType type, string path, int batchSize, bool isBase = false) : base(type, path, batchSize, new FileUtils(path))
+        public FS(DataType type, string path, int batchSize, bool isOneXOne = false, bool isBase = false) : base(type, path, batchSize, new FileUtils(path), isOneXOne)
         {
             if (isBase)
             {
                 Directory.CreateDirectory(path);
+            }
+            if (isOneXOne)
+            {
+                this._readTile = this.ReadOneXOneTile;
+                this._getTilePath = this.GetOneXOneTilePath;
+            }
+            else
+            {
+                this._readTile = this.utils.GetTile;
+                this._getTilePath = PathUtils.GetTilePath;
             }
             this.Reset();
         }
@@ -49,10 +63,26 @@ namespace MergerLogic.DataTypes
             {
                 Coord coord = PathUtils.FromPath(filePath);
                 coord.flipY();
-                Tile tile = this.utils.GetTile(coord);
-                yield return tile;
+                Tile tile = this._readTile(coord);
+                if (tile != null)
+                {
+                    yield return tile;
+                }
             }
         }
+
+        private Tile ReadOneXOneTile(Coord cords)
+        {
+            Tile tile = this.utils.GetTile(cords);
+            return tile != null ? this._oneXOneConvetor.TryToTwoXOne(tile) : null;
+        }
+
+        private string GetOneXOneTilePath(string path, Tile tile)
+        {
+            Coord coords = this._oneXOneConvetor.TryFromTwoXOne(tile.Z, tile.X, tile.Y);
+            return coords != null ? PathUtils.GetTilePath(path, coords.z, coords.x, coords.y) : null;
+        }
+
 
         public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
@@ -101,7 +131,11 @@ namespace MergerLogic.DataTypes
             foreach (Tile tile in tiles)
             {
                 tile.FlipY();
-                string tilePath = PathUtils.GetTilePath(this.path, tile);
+                string tilePath = this._getTilePath(this.path, tile);
+                if (tilePath == null)
+                {
+                    continue;
+                }
                 byte[] buffer = tile.GetImageBytes();
                 using (var ms = new MemoryStream(buffer))
                 {

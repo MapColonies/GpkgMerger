@@ -57,7 +57,7 @@ namespace MergerCli
                 }
 
                 baseData.UpdateTiles(tiles);
-                
+
                 tileProgressCount += tiles.Count;
                 Console.WriteLine($"Tile Count: {tileProgressCount} / {totalTileCount}");
 
