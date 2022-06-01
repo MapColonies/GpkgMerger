@@ -60,26 +60,14 @@ namespace MergerCli
             string sourceType = args[idx];
             string sourcePath = args[idx + 1];
             bool isOneXOne = false;
-            // not using set as it allows optional prams with dynamic values aka. --minZoom 3 
-            var optionalParams = args.Skip(idx + requiredParamCount).Take(optionalParamCount).ToArray();
-            if (optionalParams.Contains("--1x1"))
-            {
-                isOneXOne = true;
-            }
             TileGridOrigin? origin = null;
-            if (optionalParams.Contains("--UL"))
+            if (paramCount > requiredParamCount)
             {
-                origin = TileGridOrigin.UPPER_LEFT;
-            }
-            if (optionalParams.Contains("--UL"))
-            {
-                if (origin != null)
-                {
-                    throw new Exception($"layer {sourceType} {sourcePath} cant be both UL and LL");
-                }
-                origin = TileGridOrigin.UPPER_LEFT;
-            }
+                // not using set as it allows optional prams with dynamic values aka. --minZoom 3 
+                var optionalParams = args.Skip(idx + requiredParamCount).Take(optionalParamCount).ToArray();
+                this.ParseOptionalParameters(sourceType, sourcePath, ref isOneXOne, ref origin, optionalParams);
 
+            }
             idx += paramCount;
             return Data.CreateDatasource(sourceType, sourcePath, batchSize, isOneXOne, origin, isBase);
         }
@@ -95,27 +83,12 @@ namespace MergerCli
             int minZoom = int.Parse(args[idx + 3]);
             int maxZoom = int.Parse(args[idx + 4]);
             bool isOneXOne = false;
+            TileGridOrigin? origin = null;
             if (paramCount > requiredParamCount)
             {
                 // not using set as it allows optional prams with dynamic values aka. --minZoom 3 
                 var optionalParams = args.Skip(idx + requiredParamCount).Take(optionalParamCount).ToArray();
-                if (optionalParams.Contains("--1x1"))
-                {
-                    isOneXOne = true;
-                }
-                TileGridOrigin? origin = null;
-                if (optionalParams.Contains("--UL"))
-                {
-                    origin = TileGridOrigin.UPPER_LEFT;
-                }
-                if (optionalParams.Contains("--UL"))
-                {
-                    if (origin != null)
-                    {
-                        throw new Exception($"layer {sourceType} {sourcePath} cant be both UL and LL");
-                    }
-                    origin = TileGridOrigin.UPPER_LEFT;
-                }
+                this.ParseOptionalParameters(sourceType, sourcePath, ref isOneXOne, ref origin, optionalParams);
             }
             Extent extent = new Extent
             {
@@ -125,7 +98,27 @@ namespace MergerCli
                 maxY = double.Parse(bboxParts[3])
             };
             idx += paramCount;
-            return Data.CreateDatasource(sourceType, sourcePath, batchSize, isBase, extent, maxZoom, minZoom, isOneXOne);
+            return Data.CreateDatasource(sourceType, sourcePath, batchSize, isBase, extent, maxZoom, minZoom, isOneXOne,origin);
+        }
+
+        private void ParseOptionalParameters(string sourceType, string sourcePath, ref bool isOneXOne, ref TileGridOrigin? origin, string[] optionalParams)
+        {
+            if (optionalParams.Contains("--1x1"))
+            {
+                isOneXOne = true;
+            }
+            if (optionalParams.Contains("--UL"))
+            {
+                origin = TileGridOrigin.UPPER_LEFT;
+            }
+            if (optionalParams.Contains("--LL"))
+            {
+                if (origin != null)
+                {
+                    throw new Exception($"layer {sourceType} {sourcePath} cant be both UL and LL");
+                }
+                origin = TileGridOrigin.LOWER_LEFT;
+            }
         }
 
         private int ValidateAndGetSourceLength(string[] args, int startIdx, int minExpectedParamCount, int optionalParamCount)
