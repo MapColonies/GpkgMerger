@@ -2,14 +2,12 @@ using Microsoft.Extensions.Configuration;
 
 namespace MergerLogic.Utils
 {
-    public class Configuration
+    public class ConfigurationManager : IConfigurationManager
     {
-        private static Configuration instance = null;
-
         private IConfiguration config;
 
         // From: https://stackoverflow.com/questions/27880433/using-iconfiguration-in-c-sharp-class-library
-        private Configuration()
+        public ConfigurationManager()
         {
             // Get configurations
             string basePath = System.AppContext.BaseDirectory;
@@ -29,17 +27,6 @@ namespace MergerLogic.Utils
             }
             return config[configPath[configPath.Length - 1]];
         }
-
-        public static Configuration Instance
-        {
-            get
-            {
-                if (instance == null)
-                {
-                    instance = new Configuration();
-                }
-                return instance;
-            }
-        }
+    
     }
 }

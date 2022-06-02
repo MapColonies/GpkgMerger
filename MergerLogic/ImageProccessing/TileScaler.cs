@@ -4,12 +4,12 @@ using MergerLogic.DataTypes;
 
 namespace MergerLogic.ImageProccessing
 {
-    public static class Upscaling
+    public class TileScaler : ITileScaler
     {
         private const int TileWidth = 256;
         private const int TileHeight = 256;
 
-        public static void Upscale(MagickImage baseImage, Tile baseTile, Coord targetCoords)
+        public void Upscale(MagickImage baseImage, Tile baseTile, Coord targetCoords)
         {
             int zoomLevelDiff = targetCoords.z - baseTile.Z;
             int scale = 1 << zoomLevelDiff;

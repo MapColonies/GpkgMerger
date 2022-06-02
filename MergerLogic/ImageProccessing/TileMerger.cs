@@ -4,13 +4,13 @@ using MergerLogic.DataTypes;
 
 namespace MergerLogic.ImageProccessing
 {
-    public static class Merge
+    public class TileMerger : ITileMerger
     {
 
-        public static byte[]? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords)
+        public byte[]? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords)
         {
             Tile lastProccessedTile;
-            var images = getImageList(tiles, targetCoords, out lastProccessedTile);
+            var images = this.getImageList(tiles, targetCoords, out lastProccessedTile);
             switch (images.Count)
             {
                 case 0:
@@ -34,7 +34,7 @@ namespace MergerLogic.ImageProccessing
             }
         }
 
-        private static List<MagickImage> getImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords, out Tile lastProccessedTile)
+        private List<MagickImage> getImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords, out Tile lastProccessedTile)
         {
             var images = new List<MagickImage>();
             lastProccessedTile = null;
@@ -57,7 +57,7 @@ namespace MergerLogic.ImageProccessing
                     tileImage = new MagickImage(tileBytes);
                     if (tile.Z < targetCoords.z)
                     {
-                        Upscaling.Upscale(tileImage, tile, targetCoords);
+                        TileScaler.Upscale(tileImage, tile, targetCoords);
                     }
                     images.Add(tileImage);
                     if (!tileImage.HasAlpha)
