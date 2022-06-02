@@ -10,24 +10,13 @@ namespace MergerLogic.DataTypes
         private IEnumerator<Tile> tiles;
         private bool done;
         private int completedTiles;
-        private GetTileFromCoordFunction _readTile;
-        private TilePathFunction _getTilePath;
 
-        public FS(DataType type, string path, int batchSize, bool isOneXOne = false, bool isBase = false) : base(type, path, batchSize, new FileUtils(path), isOneXOne)
+        public FS(DataType type, string path, int batchSize, bool isOneXOne = false, bool isBase = false, TileGridOrigin origin = TileGridOrigin.LOWER_LEFT)
+            : base(type, path, batchSize, new FileUtils(path), isOneXOne, origin)
         {
             if (isBase)
             {
                 Directory.CreateDirectory(path);
-            }
-            if (isOneXOne)
-            {
-                this._readTile = this.ReadOneXOneTile;
-                this._getTilePath = this.GetOneXOneTilePath;
-            }
-            else
-            {
-                this._readTile = this.utils.GetTile;
-                this._getTilePath = PathUtils.GetTilePath;
             }
             this.Reset();
         }
@@ -62,27 +51,15 @@ namespace MergerLogic.DataTypes
                                                     .Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
             {
                 Coord coord = PathUtils.FromPath(filePath);
-                coord.flipY();
-                Tile tile = this._readTile(coord);
+                Tile tile = this.utils.GetTile(coord);
+                tile = this._toCurrentGrid(tile);
                 if (tile != null)
                 {
+                    tile = this._convertOrigin(tile);
                     yield return tile;
                 }
             }
         }
-
-        private Tile ReadOneXOneTile(Coord cords)
-        {
-            Tile tile = this.utils.GetTile(cords);
-            return tile != null ? this._oneXOneConvetor.TryToTwoXOne(tile) : null;
-        }
-
-        private string GetOneXOneTilePath(string path, Tile tile)
-        {
-            Coord coords = this._oneXOneConvetor.TryFromTwoXOne(tile.Z, tile.X, tile.Y);
-            return coords != null ? PathUtils.GetTilePath(path, coords.z, coords.x, coords.y) : null;
-        }
-
 
         public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
@@ -126,16 +103,11 @@ namespace MergerLogic.DataTypes
             return Directory.EnumerateFiles(this.path, "*.*", SearchOption.AllDirectories).Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))).Count();
         }
 
-        public override void UpdateTiles(List<Tile> tiles)
+        protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
         {
-            foreach (Tile tile in tiles)
+            foreach (Tile tile in targetTiles)
             {
-                tile.FlipY();
-                string tilePath = this._getTilePath(this.path, tile);
-                if (tilePath == null)
-                {
-                    continue;
-                }
+                string tilePath = PathUtils.GetTilePath(this.path, tile);
                 byte[] buffer = tile.GetImageBytes();
                 using (var ms = new MemoryStream(buffer))
                 {
