@@ -110,7 +110,7 @@ namespace MergerCli
                                             <'fs' / 's3' / 'gpkg'> <path> [--1x1] [--UL / --LL] 
                                         **** please note all layers must be 2X1 EPSG:4326 layers ****
                                     
-                                    merge sources: {programName} <batch_size> <base source> <addiotional source> [<another source source>...]
+                                    merge sources: {programName} <batch_size> <base source> <addiotional source> [<another source>...]
                                     Examples:
                                     {programName} 1000 gpkg area1.gpkg gpkg area2.gpkg
                                     {programName} 1000 s3 /path1/on/s3 s3 /path2/on/s3
