@@ -17,37 +17,65 @@ namespace MergerLogic.DataTypes
     {
         protected delegate Tile GetTileFromXYZFunction(int z, int x, int y);
         protected delegate Tile GetTileFromCoordFunction(Coord coords);
+        protected delegate Tile TileConvertorFunction(Tile Tile);
 
         public readonly DataType type;
         public readonly string path;
         public readonly bool isOneXOne;
         protected readonly int batchSize;
+        public readonly TileGridOrigin origin;
+
         protected DataUtils utils;
         protected GetTileFromXYZFunction _getTile;
         protected GetTileFromCoordFunction _getLastExistingTile;
+
+        // tile grid converters
         protected OneXOneConvetor _oneXOneConvetor = null;
+        protected TileConvertorFunction _fromCurrentGrid;
+        protected TileConvertorFunction _toCurrentGrid;
+
+        //origin converters
+        protected TileConvertorFunction _convertOrigin;
+
 
         protected const int ZOOM_LEVEL_COUNT = 30;
 
         protected const int COORDS_FOR_ALL_ZOOM_LEVELS = ZOOM_LEVEL_COUNT << 1;
 
-        public Data(DataType type, string path, int batchSize, DataUtils utils, bool isOneXOne = false)
+        public Data(DataType type, string path, int batchSize, DataUtils utils, bool isOneXOne = false, TileGridOrigin origin = TileGridOrigin.UPPER_LEFT)
         {
             this.type = type;
             this.path = path;
             this.batchSize = batchSize;
             this.utils = utils;
             this.isOneXOne = isOneXOne;
+            this.origin = origin;
             if (isOneXOne)
             {
                 this._oneXOneConvetor = new OneXOneConvetor();
                 this._getLastExistingTile = this.getLastOneXoneExistingTile;
+                this._fromCurrentGrid = this._oneXOneConvetor.TryFromTwoXOne;
+                this._toCurrentGrid = this._oneXOneConvetor.TryToTwoXOne;
             }
             else
             {
                 this._getLastExistingTile = this.GetLastExistingTile;
+                this._fromCurrentGrid = tile => tile;
+                this._toCurrentGrid = tile => tile;
             }
             this._getTile = this.GetTileInitilaizer;
+            if (origin == TileGridOrigin.LOWER_LEFT)
+            {
+                this._convertOrigin = tile =>
+                {
+                    tile.FlipY();
+                    return tile;
+                };
+            }
+            else
+            {
+                this._convertOrigin = tile => tile;
+            }
         }
 
         public abstract void Reset();
@@ -104,7 +132,22 @@ namespace MergerLogic.DataTypes
         //lazy load get tile function on first call for compatibility with null utills in contractor
         protected Tile GetTileInitilaizer(int z, int x, int y)
         {
-            this._getTile = this.isOneXOne ? this.GetOneXOneTile : this.utils.GetTile;
+            GetTileFromXYZFunction fixedGridGetTileFuntion = this.isOneXOne ? this.GetOneXOneTile : this.utils.GetTile;
+            if (this.origin == TileGridOrigin.LOWER_LEFT)
+            {
+                this._getTile = (z, x, y) =>
+                {
+                    int newY = GeoUtils.FlipY(z, y);
+                    Tile tile = fixedGridGetTileFuntion(z, x, newY);
+                    //set cords to current origin
+                    tile.SetCoords(z, x, y);
+                    return tile;
+                };
+            }
+            else
+            {
+                this._getTile = fixedGridGetTileFuntion;
+            }
             return this._getTile(z, x, y);
         }
 
@@ -121,7 +164,18 @@ namespace MergerLogic.DataTypes
             return correspondingTile;
         }
 
-        public abstract void UpdateTiles(List<Tile> tiles);
+        public void UpdateTiles(IEnumerable<Tile> tiles)
+        {
+            var targetTiles = tiles.Select(tile =>
+            {
+                var targetTile = this._convertOrigin(tile);
+                targetTile = this._fromCurrentGrid(targetTile);
+                return targetTile;
+            }).Where(tile => tile != null);
+            this.InternalUpdateTiles(targetTiles);
+        }
+
+        protected abstract void InternalUpdateTiles(IEnumerable<Tile> targetTiles);
 
         public virtual void Wrapup()
         {
@@ -134,24 +188,32 @@ namespace MergerLogic.DataTypes
 
         public abstract void setBatchIdentifier(string batchIdentifier);
 
-        public static Data CreateDatasource(string type, string path, int batchSize, bool isOneXOne, bool isBase = false)
+        public static Data CreateDatasource(string type, string path, int batchSize, bool isOneXOne, TileGridOrigin? origin = null, bool isBase = false)
         {
             Data data;
             switch (type.ToLower())
             {
                 case "gpkg":
-                    data = new Gpkg(path, batchSize, isOneXOne);
+                    if (origin == null)
+                        data = new Gpkg(path, batchSize, isOneXOne);
+                    else
+                        data = new Gpkg(path, batchSize, isOneXOne, origin.Value);
                     break;
                 case "s3":
                     string s3Url = Configuration.Instance.GetConfiguration("S3", "url");
                     string bucket = Configuration.Instance.GetConfiguration("S3", "bucket");
-
                     var client = S3.GetClient(s3Url);
                     path = PathUtils.RemoveTrailingSlash(path);
-                    data = new S3(client, bucket, path, batchSize, isOneXOne);
+                    if (origin == null)
+                        data = new S3(client, bucket, path, batchSize, isOneXOne);
+                    else
+                        data = new S3(client, bucket, path, batchSize, isOneXOne, origin.Value);
                     break;
                 case "fs":
-                    data = new FS(DataType.FOLDER, path, batchSize, isOneXOne, isBase);
+                    if (origin == null)
+                        data = new FS(DataType.FOLDER, path, batchSize, isOneXOne, isBase);
+                    else
+                        data = new FS(DataType.FOLDER, path, batchSize, isOneXOne, isBase, origin.Value);
                     break;
                 case "wmts":
                 case "xyz":
@@ -173,7 +235,7 @@ namespace MergerLogic.DataTypes
             return data;
         }
 
-        public static Data CreateDatasource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0, bool isOneXone = false)
+        public static Data CreateDatasource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0, bool isOneXone = false, TileGridOrigin? origin = null)
         {
             Data data;
             type = type.ToLower();
@@ -182,7 +244,7 @@ namespace MergerLogic.DataTypes
                 case "gpkg":
                 case "s3":
                 case "fs":
-                    return CreateDatasource(type, path, batchSize, isOneXone, isBase);
+                    return CreateDatasource(type, path, batchSize, isOneXone, origin, isBase);
             };
             if (isBase)
             {
@@ -191,13 +253,22 @@ namespace MergerLogic.DataTypes
             switch (type)
             {
                 case "wmts":
-                    data = new WMTS(DataType.WMTS, path, batchSize, extent, maxZoom, minZoom, isOneXone);
+                    if (origin == null)
+                        data = new WMTS(DataType.WMTS, path, batchSize, extent, maxZoom, minZoom, isOneXone);
+                    else
+                        data = new WMTS(DataType.WMTS, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
                     break;
                 case "xyz":
-                    data = new XYZ(DataType.XYZ, path, batchSize, extent, maxZoom, minZoom, isOneXone);
+                    if (origin == null)
+                        data = new XYZ(DataType.XYZ, path, batchSize, extent, maxZoom, minZoom, isOneXone);
+                    else
+                        data = new XYZ(DataType.XYZ, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
                     break;
                 case "tms":
-                    data = new TMS(DataType.TMS, path, batchSize, extent, maxZoom, minZoom, isOneXone);
+                    if (origin == null)
+                        data = new TMS(DataType.TMS, path, batchSize, extent, maxZoom, minZoom, isOneXone);
+                    else
+                        data = new TMS(DataType.TMS, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
                     break;
                 default:
                     throw new Exception($"Currently there is no support for the data type '{type}'");
