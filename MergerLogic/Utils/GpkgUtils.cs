@@ -182,7 +182,7 @@ namespace MergerLogic.Utils
                         while (reader.Read())
                         {
                             var blob = reader.GetString(0);
-                            tile = new Tile(z, x, y, blob, blob.Length);
+                            tile = new BlobTile(z, x, y, blob, blob.Length);
                         }
                     }
                 }
@@ -232,8 +232,9 @@ namespace MergerLogic.Utils
                     {
                         foreach (Tile tile in tiles)
                         {
-                            SQLiteParameter blobParameter = new SQLiteParameter("$blob", System.Data.DbType.Binary, tile.BlobSize);
-                            blobParameter.Value = StringUtils.StringToByteArray(tile.Blob);
+                            byte[] tileBytes = tile.GetImageBytes();
+                            SQLiteParameter blobParameter = new SQLiteParameter("$blob", System.Data.DbType.Binary, tileBytes.Length);
+                            blobParameter.Value = tileBytes;
 
                             command.Parameters.AddWithValue("$z", tile.Z);
                             command.Parameters.AddWithValue("$x", tile.X);
@@ -271,7 +272,7 @@ namespace MergerLogic.Utils
                             var blob = reader.GetString(3);
                             var blobSize = reader.GetInt32(4);
 
-                            Tile tile = new Tile(z, x, y, blob, blobSize);
+                            Tile tile = new BlobTile(z, x, y, blob, blobSize);
                             tiles.Add(tile);
                         }
                     }
@@ -323,7 +324,7 @@ namespace MergerLogic.Utils
                         var y = reader.GetInt32(2);
                         var blob = reader.GetString(3);
                         var blobSize = reader.GetInt32(4);
-                        lastTile = new Tile(z, x, y, blob, blobSize);
+                        lastTile = new BlobTile(z, x, y, blob, blobSize);
                     }
                 }
             }

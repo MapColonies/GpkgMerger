@@ -1,14 +1,13 @@
 using ImageMagick;
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
-using MergerLogic.Utils;
 
 namespace MergerLogic.ImageProccessing
 {
     public static class Merge
     {
 
-        public static string MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords)
+        public static byte[]? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords)
         {
             Tile lastProccessedTile;
             var images = getImageList(tiles, targetCoords, out lastProccessedTile);
@@ -18,7 +17,7 @@ namespace MergerLogic.ImageProccessing
                     return null;
                 case 1:
                     images[0].Dispose();
-                    return lastProccessedTile?.Blob;
+                    return lastProccessedTile?.GetImageBytes();
                 default:
                     using (var imageCollection = new MagickImageCollection())
                     {
@@ -29,8 +28,7 @@ namespace MergerLogic.ImageProccessing
                         using (var mergedImage = imageCollection.Flatten())
                         {
                             var mergedImageBytes = mergedImage.ToByteArray();
-                            var blob = Convert.ToHexString(mergedImageBytes);
-                            return blob;
+                            return mergedImageBytes;
                         }
                     }
             }
@@ -55,7 +53,7 @@ namespace MergerLogic.ImageProccessing
                     {
                         throw new NotImplementedException("down scaling tiles is not supported");
                     }
-                    var tileBytes = StringUtils.StringToByteArray(tile.Blob);
+                    var tileBytes = tile.GetImageBytes();
                     tileImage = new MagickImage(tileBytes);
                     if (tile.Z < targetCoords.z)
                     {
@@ -69,7 +67,7 @@ namespace MergerLogic.ImageProccessing
                 }
                 catch
                 {
-                    //prevent memory leak in case of any exception while handeling images
+                    //prevent memory leak in case of any exception while handling images
                     images.ForEach(image => image.Dispose());
                     if (tileImage != null)
                         tileImage.Dispose();

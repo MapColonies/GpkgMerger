@@ -18,7 +18,7 @@ namespace MergerService.Src
                 sources.Add(Data.CreateDatasource(paths[0].Type, paths[0].Path, batchSize, true));
                 foreach (Source source in paths.Skip(1))
                 {
-                    sources.Add(Data.CreateDatasource(source.Type, source.Path, batchSize));
+                    sources.Add(Data.CreateDatasource(source.Type, source.Path, batchSize, source.IsOneXOne()));
                 }
             }
 
@@ -69,11 +69,11 @@ namespace MergerService.Src
                                 correspondingTileBuilders.Add(() => source.GetCorrespondingTile(coord, true));
                             }
 
-                            string blob = Merge.MergeTiles(correspondingTileBuilders, coord);
+                            byte[]? blob = Merge.MergeTiles(correspondingTileBuilders, coord);
 
                             if (blob != null)
                             {
-                                tiles.Add(new Tile(coord, blob, blob.Length));
+                                tiles.Add(new Tile(coord, blob));
                             }
 
                             tileProgressCount++;

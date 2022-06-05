@@ -1,3 +1,5 @@
+using MergerLogic.DataTypes;
+
 namespace MergerService.Controllers
 {
     public class Source
@@ -6,7 +8,7 @@ namespace MergerService.Controllers
 
         public string Type { get; }
 
-        public string Origin { get; }
+        public Origin Origin { get; }
 
         public string Grid { get; }
 
@@ -14,8 +16,13 @@ namespace MergerService.Controllers
         {
             this.Path = path;
             this.Type = type;
-            this.Origin = origin;
+            this.Origin = origin.ToLower() == "ul" ? Origin.UL : Origin.LL;
             this.Grid = grid;
+        }
+
+        public bool IsOneXOne()
+        {
+            return Grid.ToLower() == "1x1";
         }
     }
 }

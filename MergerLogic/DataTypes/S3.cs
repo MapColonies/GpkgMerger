@@ -13,7 +13,9 @@ namespace MergerLogic.DataTypes
         private string continuationToken;
         private bool endOfRead;
 
-        public S3(string serviceUrl, string bucket, string path, int batchSize) : base(DataType.S3, path, batchSize, new S3Utils(S3.GetClient(serviceUrl), bucket, path))
+
+        public S3(string serviceUrl, string bucket, string path, int batchSize, bool isOneXOne = false, TileGridOrigin origin = TileGridOrigin.LOWER_LEFT)
+            : base(DataType.S3, path, batchSize, new S3Utils(S3.GetClient(serviceUrl), bucket, path), isOneXOne, origin)
         {
             this.bucket = bucket;
             this.continuationToken = null;
@@ -21,7 +23,8 @@ namespace MergerLogic.DataTypes
             this.client = S3.GetClient(serviceUrl);
         }
 
-        public S3(AmazonS3Client client, string bucket, string path, int batchSize) : base(DataType.S3, path, batchSize, new S3Utils(client, bucket, path))
+        public S3(AmazonS3Client client, string bucket, string path, int batchSize, bool isOneXOne = false, TileGridOrigin origin = TileGridOrigin.LOWER_LEFT)
+            : base(DataType.S3, path, batchSize, new S3Utils(client, bucket, path), isOneXOne, origin)
         {
             this.bucket = bucket;
             this.continuationToken = null;
@@ -63,8 +66,9 @@ namespace MergerLogic.DataTypes
             return new AmazonS3Client(credentials, config);
         }
 
-        public override List<Tile> GetNextBatch()
+        public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
+            batchIdentifier = this.continuationToken;
             List<Tile> tiles = new List<Tile>();
 
             var listRequests = new ListObjectsV2Request
@@ -84,11 +88,14 @@ namespace MergerLogic.DataTypes
                 response.ContinuationToken = this.continuationToken;
                 foreach (S3Object item in response.S3Objects)
                 {
-                    string key = item.Key;
                     Coord coord = PathUtils.FromPath(item.Key, true);
-                    coord.flipY();
                     Tile tile = this.utils.GetTile(coord);
-                    tiles.Add(tile);
+                    tile = this._toCurrentGrid(tile);
+                    if (tile != null)
+                    {
+                        tile = this._convertOrigin(tile);
+                        tiles.Add(tile);
+                    }
                 }
                 this.continuationToken = response.NextContinuationToken;
             }
@@ -103,12 +110,9 @@ namespace MergerLogic.DataTypes
             return this.utils.TileExists(z, x, y);
         }
 
-        public override void UpdateTiles(List<Tile> tiles)
+        public override void setBatchIdentifier(string batchIdentifier)
         {
-            foreach (var tile in tiles)
-            {
-                S3Utils.UpdateTile(this.client, this.bucket, this.path, tile);
-            }
+            this.continuationToken = batchIdentifier;
         }
 
         public override bool Exists()
@@ -150,6 +154,14 @@ namespace MergerLogic.DataTypes
             } while (continuationToken != null);
 
             return tileCount;
+        }
+
+        protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
+        {
+            foreach (var tile in targetTiles)
+            {
+                S3Utils.UpdateTile(this.client, this.bucket, this.path, tile);
+            }
         }
     }
 }

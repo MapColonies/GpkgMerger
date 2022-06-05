@@ -5,10 +5,14 @@ namespace MergerLogic.DataTypes
 {
     public class FS : Data
     {
+        private delegate string TilePathFunction(string path, Tile tile);
+
         private IEnumerator<Tile> tiles;
         private bool done;
+        private int completedTiles;
 
-        public FS(DataType type, string path, int batchSize, bool isBase = false) : base(type, path, batchSize, new FileUtils(path))
+        public FS(DataType type, string path, int batchSize, bool isOneXOne = false, bool isBase = false, TileGridOrigin origin = TileGridOrigin.LOWER_LEFT)
+            : base(type, path, batchSize, new FileUtils(path), isOneXOne, origin)
         {
             if (isBase)
             {
@@ -22,6 +26,7 @@ namespace MergerLogic.DataTypes
             this.tiles = this.GetTiles();
             this.tiles.MoveNext();
             this.done = false;
+            this.completedTiles = 0;
         }
 
         public override void Wrapup()
@@ -47,7 +52,12 @@ namespace MergerLogic.DataTypes
             {
                 Coord coord = PathUtils.FromPath(filePath);
                 Tile tile = this.utils.GetTile(coord);
-                yield return tile;
+                tile = this._toCurrentGrid(tile);
+                if (tile != null)
+                {
+                    tile = this._convertOrigin(tile);
+                    yield return tile;
+                }
             }
         }
 
@@ -57,9 +67,10 @@ namespace MergerLogic.DataTypes
             return File.Exists(fullPath);
         }
 
-        public override List<Tile> GetNextBatch()
+        public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
-            List<Tile> tiles = new List<Tile>();
+            batchIdentifier = this.completedTiles.ToString();
+            List<Tile> tiles = new List<Tile>(this.batchSize);
 
             if (this.done)
             {
@@ -74,7 +85,20 @@ namespace MergerLogic.DataTypes
                 this.done = !this.tiles.MoveNext();
             }
 
+            this.completedTiles += tiles.Count;
+
             return tiles;
+        }
+
+        public override void setBatchIdentifier(string batchIdentifier)
+        {
+            this.completedTiles = int.Parse(batchIdentifier);
+            // uncomment to make this function work at any point of the run and not only after the source initialization
+            //this.tiles.Reset();
+            for (int i = 0; i < this.completedTiles; i++)
+            {
+                this.tiles.MoveNext();
+            }
         }
 
         public override int TileCount()
@@ -85,13 +109,12 @@ namespace MergerLogic.DataTypes
             return Directory.EnumerateFiles(this.path, "*.*", SearchOption.AllDirectories).Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))).Count();
         }
 
-        public override void UpdateTiles(List<Tile> tiles)
+        protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
         {
-            foreach (Tile tile in tiles)
+            foreach (Tile tile in targetTiles)
             {
-                tile.FlipY();
                 string tilePath = PathUtils.GetTilePath(this.path, tile);
-                byte[] buffer = StringUtils.StringToByteArray(tile.Blob);
+                byte[] buffer = tile.GetImageBytes();
                 using (var ms = new MemoryStream(buffer))
                 {
                     var file = new System.IO.FileInfo(tilePath);

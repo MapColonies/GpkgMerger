@@ -15,7 +15,7 @@ namespace MergerLogic.Utils
             this.bucket = bucket;
         }
 
-        private string GetImageHex(string key)
+        private byte[] GetImageBytes(string key)
         {
             try
             {
@@ -37,7 +37,7 @@ namespace MergerLogic.Utils
                     image = ms.ToArray();
                 }
 
-                return StringUtils.ByteArrayToString(image);
+                return image;
             }
             catch (AggregateException e)
             {
@@ -48,18 +48,14 @@ namespace MergerLogic.Utils
 
         public override Tile GetTile(int z, int x, int y)
         {
-            // Convert to TMS
-            y = GeoUtils.FlipY(z, y);
             string key = PathUtils.GetTilePath(this.path, z, x, y, true);
 
-            string blob = this.GetImageHex(key);
-            if (blob == null)
+            byte[]? imageBytes = this.GetImageBytes(key);
+            if (imageBytes == null)
             {
                 return null;
             }
-            // Convert from TMS
-            y = GeoUtils.FlipY(z, y);
-            return new Tile(z, x, y, blob, blob.Length);
+            return new Tile(z, x, y, imageBytes);
         }
 
         public override bool TileExists(int z, int x, int y)
@@ -85,8 +81,7 @@ namespace MergerLogic.Utils
 
         public static void UpdateTile(AmazonS3Client client, string bucket, string path, Tile tile)
         {
-            int y = GeoUtils.FlipY(tile);
-            string key = PathUtils.GetTilePath(path, tile.Z, tile.X, y, true);
+            string key = PathUtils.GetTilePath(path, tile.Z, tile.X, tile.Y, true);
 
             var request = new PutObjectRequest()
             {
@@ -95,7 +90,7 @@ namespace MergerLogic.Utils
                 Key = String.Format(key)
             };
 
-            byte[] buffer = StringUtils.StringToByteArray(tile.Blob);
+            byte[] buffer = tile.GetImageBytes();
             using (var ms = new MemoryStream(buffer))
             {
                 request.InputStream = ms;
