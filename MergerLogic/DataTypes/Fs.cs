@@ -51,6 +51,12 @@ namespace MergerLogic.DataTypes
             }
         }
 
+        public override bool TileExists(int z, int x, int y)
+        {
+            string fullPath = PathUtils.GetTilePathTMS(this.path, z, x, y);
+            return File.Exists(fullPath);
+        }
+
         public override List<Tile> GetNextBatch()
         {
             List<Tile> tiles = new List<Tile>();

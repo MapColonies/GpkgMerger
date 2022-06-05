@@ -60,6 +60,13 @@ namespace MergerLogic.DataTypes
             return lastTile;
         }
 
+        public abstract bool TileExists(int z, int x, int y);
+
+        public virtual bool TileExists(Coord coord)
+        {
+            return TileExists(coord.z, coord.x, coord.y);
+        }
+
         public abstract List<Tile> GetNextBatch();
 
         public Tile GetCorrespondingTile(Coord coords, bool upscale)

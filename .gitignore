@@ -5,6 +5,9 @@ output/
 .vscode
 *.sh
 
+Cache*
+User/
+
 
 Properties/launchSettings.json
 

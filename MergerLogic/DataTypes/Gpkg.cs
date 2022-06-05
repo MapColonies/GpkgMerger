@@ -106,6 +106,11 @@ namespace MergerLogic.DataTypes
             return lastTile;
         }
 
+        public override bool TileExists(int z, int x, int y)
+        {
+            return this.utils.TileExists(z, x, y);
+        }
+
         public override void UpdateTiles(List<Tile> tiles)
         {
             GpkgUtils.InsertTiles(this.path, this.tileCache, tiles);

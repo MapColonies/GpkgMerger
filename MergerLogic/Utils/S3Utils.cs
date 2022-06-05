@@ -62,6 +62,27 @@ namespace MergerLogic.Utils
             return new Tile(z, x, y, blob, blob.Length);
         }
 
+        public override bool TileExists(int z, int x, int y)
+        {
+            string key = PathUtils.GetTilePath(this.path, z, x, y, true);
+            var request = new GetObjectMetadataRequest()
+            {
+                BucketName = this.bucket,
+                Key = String.Format(key)
+            };
+
+            try
+            {
+                var task = this.client.GetObjectMetadataAsync(request);
+                _ = task.Result;
+                return true;
+            }
+            catch (AmazonS3Exception e)
+            {
+                return false;
+            }
+        }
+
         public static void UpdateTile(AmazonS3Client client, string bucket, string path, Tile tile)
         {
             int y = GeoUtils.FlipY(tile);
