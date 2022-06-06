@@ -21,8 +21,10 @@ namespace MergerLogic.DataTypes
 
     public abstract class Data
     {
+        protected delegate int ValFromCoordFunction(Coord coord);
         protected delegate Tile GetTileFromXYZFunction(int z, int x, int y);
-        protected delegate Tile GetTileFromCoordFunction(Coord coords);
+        protected delegate Coord GetCoordFromCoordFunction(Coord coord);
+        protected delegate Tile GetTileFromCoordFunction(Coord coord);
         protected delegate Tile TileConvertorFunction(Tile Tile);
 
         public readonly DataType type;
@@ -37,11 +39,13 @@ namespace MergerLogic.DataTypes
 
         // tile grid converters
         protected OneXOneConvetor _oneXOneConvetor = null;
-        protected TileConvertorFunction _fromCurrentGrid;
+        protected TileConvertorFunction _fromCurrentGridTile;
+        protected GetCoordFromCoordFunction _fromCurrentGridCoord;
         protected TileConvertorFunction _toCurrentGrid;
 
         //origin converters
-        protected TileConvertorFunction _convertOrigin;
+        protected TileConvertorFunction _convertOriginTile;
+        protected ValFromCoordFunction _convertOriginCoord;
 
 
         protected const int ZOOM_LEVEL_COUNT = 30;
@@ -56,31 +60,40 @@ namespace MergerLogic.DataTypes
             this.utils = utils;
             this.isOneXOne = isOneXOne;
             this.origin = origin;
+
+            // The following delegates are for code preformance and to reduce branching while handling tiles
             if (isOneXOne)
             {
                 this._oneXOneConvetor = new OneXOneConvetor();
                 this._getLastExistingTile = this.getLastOneXoneExistingTile;
-                this._fromCurrentGrid = this._oneXOneConvetor.TryFromTwoXOne;
+                this._fromCurrentGridTile = this._oneXOneConvetor.TryFromTwoXOne;
+                this._fromCurrentGridCoord = this._oneXOneConvetor.TryFromTwoXOne;
                 this._toCurrentGrid = this._oneXOneConvetor.TryToTwoXOne;
             }
             else
             {
                 this._getLastExistingTile = this.GetLastExistingTile;
-                this._fromCurrentGrid = tile => tile;
+                this._fromCurrentGridTile = tile => tile;
+                this._fromCurrentGridCoord = tile => tile;
                 this._toCurrentGrid = tile => tile;
             }
             this._getTile = this.GetTileInitilaizer;
             if (origin == GridOrigin.LOWER_LEFT)
             {
-                this._convertOrigin = tile =>
+                this._convertOriginTile = tile =>
                 {
                     tile.FlipY();
                     return tile;
                 };
+                this._convertOriginCoord = coord =>
+                {
+                    return GeoUtils.FlipY(coord);
+                };
             }
             else
             {
-                this._convertOrigin = tile => tile;
+                this._convertOriginTile = tile => tile;
+                this._convertOriginCoord = coord => coord.y;
             }
         }
 
@@ -115,12 +128,25 @@ namespace MergerLogic.DataTypes
             return lastTile;
         }
 
-        public abstract bool TileExists(int z, int x, int y);
-
-        public virtual bool TileExists(Coord coord)
+        public bool TileExists(Tile tile)
         {
-            return TileExists(coord.z, coord.x, coord.y);
+            return this.TileExists(tile.GetCoord());
         }
+
+        public bool TileExists(Coord coord)
+        {
+            coord.y = this._convertOriginCoord(coord);
+            coord = this._fromCurrentGridCoord(coord);
+
+            if (coord is null)
+            {
+                return false;
+            }
+
+            return this.InternalTileExists(coord.z, coord.x, coord.y);
+        }
+
+        protected abstract bool InternalTileExists(int z, int x, int y);
 
         //TODO: move to util after IOC
         protected Tile getLastOneXoneExistingTile(Coord coords)
@@ -181,8 +207,8 @@ namespace MergerLogic.DataTypes
         {
             var targetTiles = tiles.Select(tile =>
             {
-                var targetTile = this._convertOrigin(tile);
-                targetTile = this._fromCurrentGrid(targetTile);
+                var targetTile = this._convertOriginTile(tile);
+                targetTile = this._fromCurrentGridTile(targetTile);
                 return targetTile;
             }).Where(tile => tile != null);
             this.InternalUpdateTiles(targetTiles);

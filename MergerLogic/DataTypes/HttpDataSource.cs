@@ -18,7 +18,7 @@ namespace MergerLogic.DataTypes
             this.GenTileRanges(extent, origin, minZoom, maxZoom);
             if (isOneXOne)
             {
-                this._fromCurrentGrid = this._oneXOneConvetor.FromTwoXOne;
+                this._fromCurrentGridTile = this._oneXOneConvetor.FromTwoXOne;
                 this._toCurrentGrid = this._oneXOneConvetor.ToTwoXOne;
             }
         }
@@ -100,7 +100,7 @@ namespace MergerLogic.DataTypes
             return tile;
         }
 
-        public override bool TileExists(int z, int x, int y)
+        protected override bool InternalTileExists(int z, int x, int y)
         {
             return this.utils.TileExists(z, x, y);
         }

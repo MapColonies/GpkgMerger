@@ -55,13 +55,13 @@ namespace MergerLogic.DataTypes
                 tile = this._toCurrentGrid(tile);
                 if (tile != null)
                 {
-                    tile = this._convertOrigin(tile);
+                    tile = this._convertOriginTile(tile);
                     yield return tile;
                 }
             }
         }
 
-        public override bool TileExists(int z, int x, int y)
+        protected override bool InternalTileExists(int z, int x, int y)
         {
             string fullPath = PathUtils.GetTilePathTMS(this.path, z, x, y);
             return File.Exists(fullPath);

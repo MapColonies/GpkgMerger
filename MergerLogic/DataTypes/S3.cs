@@ -93,7 +93,7 @@ namespace MergerLogic.DataTypes
                     tile = this._toCurrentGrid(tile);
                     if (tile != null)
                     {
-                        tile = this._convertOrigin(tile);
+                        tile = this._convertOriginTile(tile);
                         tiles.Add(tile);
                     }
                 }
@@ -105,7 +105,7 @@ namespace MergerLogic.DataTypes
             return tiles;
         }
 
-        public override bool TileExists(int z, int x, int y)
+        protected override bool InternalTileExists(int z, int x, int y)
         {
             return this.utils.TileExists(z, x, y);
         }

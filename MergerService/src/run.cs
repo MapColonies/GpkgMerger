@@ -139,7 +139,8 @@ namespace MergerService.Src
             {
                 for (int y = bounds.MinY; y < bounds.MaxY; y++)
                 {
-                    if (target.TileExists(bounds.Zoom, x, y))
+                    Coord coord = new Coord(bounds.Zoom, x, y);
+                    if (target.TileExists(coord))
                     {
                         ++tilesChecked;
                     }

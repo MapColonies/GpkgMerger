@@ -11,6 +11,11 @@ namespace MergerLogic.Utils
             return (1 << z) - y - 1;
         }
 
+        public static int FlipY(Coord coord)
+        {
+            return FlipY(coord.z, coord.y);
+        }
+
         public static int FlipY(Tile tile)
         {
             return FlipY(tile.Z, tile.Y);

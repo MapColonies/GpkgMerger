@@ -87,7 +87,7 @@ namespace MergerLogic.DataTypes
             List<Tile> tiles = GpkgUtils.GetBatch(this.path, this.batchSize, this.offset, this.tileCache)
                 .Select(t =>
                 {
-                    Tile tile = this._convertOrigin(t);
+                    Tile tile = this._convertOriginTile(t);
                     tile = this._toCurrentGrid(tile);
                     counter++;
                     return tile;
@@ -127,7 +127,7 @@ namespace MergerLogic.DataTypes
             return lastTile;
         }
 
-        public override bool TileExists(int z, int x, int y)
+        protected override bool InternalTileExists(int z, int x, int y)
         {
             return this.utils.TileExists(z, x, y);
         }
