@@ -14,7 +14,7 @@ namespace MergerLogic.DataTypes
         private bool endOfRead;
 
 
-        public S3(string serviceUrl, string bucket, string path, int batchSize, bool isOneXOne = false, TileGridOrigin origin = TileGridOrigin.LOWER_LEFT)
+        public S3(string serviceUrl, string bucket, string path, int batchSize, bool isOneXOne = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
             : base(DataType.S3, path, batchSize, new S3Utils(S3.GetClient(serviceUrl), bucket, path), isOneXOne, origin)
         {
             this.bucket = bucket;
@@ -23,7 +23,7 @@ namespace MergerLogic.DataTypes
             this.client = S3.GetClient(serviceUrl);
         }
 
-        public S3(AmazonS3Client client, string bucket, string path, int batchSize, bool isOneXOne = false, TileGridOrigin origin = TileGridOrigin.LOWER_LEFT)
+        public S3(AmazonS3Client client, string bucket, string path, int batchSize, bool isOneXOne = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
             : base(DataType.S3, path, batchSize, new S3Utils(client, bucket, path), isOneXOne, origin)
         {
             this.bucket = bucket;

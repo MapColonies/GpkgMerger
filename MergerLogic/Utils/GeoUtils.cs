@@ -1,4 +1,5 @@
 using MergerLogic.Batching;
+using MergerLogic.DataTypes;
 
 namespace MergerLogic.Utils
 {
@@ -45,14 +46,14 @@ namespace MergerLogic.Utils
             return new Extent { minX = minX, minY = minY, maxX = maxX, maxY = maxY };
         }
 
-        public static TileRange ExtentToTileRange(Extent extent, int zoom, TileGridOrigin origin = TileGridOrigin.UPPER_LEFT)
+        public static Bounds ExtentToTileRange(Extent extent, int zoom, GridOrigin origin = GridOrigin.UPPER_LEFT)
         {
             extent = SnapExtentToTileGrid(extent, zoom);
             double tileSize = DegreesPerTile(zoom);
             double minYDeg = extent.minY;
             double maxYDeg = extent.maxY;
 
-            if (origin == TileGridOrigin.UPPER_LEFT)
+            if (origin == GridOrigin.UPPER_LEFT)
             {
                 // flip y
                 (minYDeg, maxYDeg) = (-maxYDeg, -minYDeg);
@@ -63,7 +64,7 @@ namespace MergerLogic.Utils
             int minY = (int)((minYDeg + 90) / tileSize);
             int maxY = (int)((maxYDeg + 90) / tileSize);
 
-            return new TileRange { MinX = minX, MinY = minY, MaxX = maxX, MaxY = maxY, Z = zoom };
+            return new Bounds(zoom, minX, maxX, minY, maxY);
         }
     }
 }

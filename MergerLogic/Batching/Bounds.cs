@@ -1,6 +1,4 @@
-using System.Text.Json.Serialization;
-
-namespace MergerService.Controllers
+namespace MergerLogic.Batching
 {
     public class Bounds
     {

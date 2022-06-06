@@ -11,7 +11,7 @@ namespace MergerLogic.DataTypes
         private bool done;
         private int completedTiles;
 
-        public FS(DataType type, string path, int batchSize, bool isOneXOne = false, bool isBase = false, TileGridOrigin origin = TileGridOrigin.LOWER_LEFT)
+        public FS(DataType type, string path, int batchSize, bool isOneXOne = false, bool isBase = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
             : base(type, path, batchSize, new FileUtils(path), isOneXOne, origin)
         {
             if (isBase)

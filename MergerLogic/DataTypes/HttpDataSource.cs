@@ -5,10 +5,10 @@ namespace MergerLogic.DataTypes
 {
     public abstract class HttpDataSource : Data
     {
-        protected TileRange[] tileRanges;
+        protected Bounds[] tileRanges;
         protected IEnumerator<Tile[]> batches;
         protected int batchIndex = 0;
-        protected HttpDataSource(DataType type, string path, int batchSize, Extent extent, TileGridOrigin origin, int maxZoom, int minZoom = 0, bool isOneXOne = false)
+        protected HttpDataSource(DataType type, string path, int batchSize, Extent extent, GridOrigin origin, int maxZoom, int minZoom = 0, bool isOneXOne = false)
             : base(type, path, batchSize, null, isOneXOne, origin)
         {
             var patternUtils = new PathPatternUtils(path);
@@ -66,9 +66,9 @@ namespace MergerLogic.DataTypes
             });
         }
 
-        protected void GenTileRanges(Extent extent, TileGridOrigin origin, int minZoom, int maxZoom)
+        protected void GenTileRanges(Extent extent, GridOrigin origin, int minZoom, int maxZoom)
         {
-            this.tileRanges = new TileRange[maxZoom - minZoom + 1];
+            this.tileRanges = new Bounds[maxZoom - minZoom + 1];
             for (int i = minZoom; i <= maxZoom; i++)
             {
                 this.tileRanges[i - minZoom] = GeoUtils.ExtentToTileRange(extent, i, origin);
@@ -83,7 +83,7 @@ namespace MergerLogic.DataTypes
                 {
                     for (int y = range.MinY; y < range.MaxY; y++)
                     {
-                        yield return this._getTile(range.Z, x, y);
+                        yield return this._getTile(range.Zoom, x, y);
                     }
                 }
             }

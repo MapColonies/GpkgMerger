@@ -5,12 +5,6 @@ namespace MergerLogic.Batching
 {
     public delegate Tile CorrespondingTileBuilder();
 
-    public enum TileGridOrigin
-    {
-        LOWER_LEFT,
-        UPPER_LEFT
-    }
-
     public class Tile
     {
         public int Z

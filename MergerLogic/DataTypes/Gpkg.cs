@@ -26,7 +26,7 @@ namespace MergerLogic.DataTypes
         private Extent extent;
         private CoordConvertorFunction _coordsFromCurrentGrid;
 
-        public Gpkg(string path, int batchSize, bool isOneXOne = false, TileGridOrigin origin = TileGridOrigin.UPPER_LEFT)
+        public Gpkg(string path, int batchSize, bool isOneXOne = false, GridOrigin origin = GridOrigin.UPPER_LEFT)
             : base(DataType.GPKG, path, batchSize, new GpkgUtils(path), isOneXOne, origin)
         {
             this.tileCache = GpkgUtils.GetTileCache(path);

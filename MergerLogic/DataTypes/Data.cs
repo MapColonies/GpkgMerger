@@ -13,10 +13,10 @@ namespace MergerLogic.DataTypes
         XYZ
     }
 
-    public enum Origin
+    public enum GridOrigin
     {
-        UL,
-        LL
+        LOWER_LEFT,
+        UPPER_LEFT
     }
 
     public abstract class Data
@@ -29,7 +29,7 @@ namespace MergerLogic.DataTypes
         public readonly string path;
         public readonly bool isOneXOne;
         protected readonly int batchSize;
-        public readonly TileGridOrigin origin;
+        public readonly GridOrigin origin;
 
         protected DataUtils utils;
         protected GetTileFromXYZFunction _getTile;
@@ -48,7 +48,7 @@ namespace MergerLogic.DataTypes
 
         protected const int COORDS_FOR_ALL_ZOOM_LEVELS = ZOOM_LEVEL_COUNT << 1;
 
-        public Data(DataType type, string path, int batchSize, DataUtils utils, bool isOneXOne = false, TileGridOrigin origin = TileGridOrigin.UPPER_LEFT)
+        public Data(DataType type, string path, int batchSize, DataUtils utils, bool isOneXOne = false, GridOrigin origin = GridOrigin.UPPER_LEFT)
         {
             this.type = type;
             this.path = path;
@@ -70,7 +70,7 @@ namespace MergerLogic.DataTypes
                 this._toCurrentGrid = tile => tile;
             }
             this._getTile = this.GetTileInitilaizer;
-            if (origin == TileGridOrigin.LOWER_LEFT)
+            if (origin == GridOrigin.LOWER_LEFT)
             {
                 this._convertOrigin = tile =>
                 {
@@ -146,7 +146,7 @@ namespace MergerLogic.DataTypes
         protected Tile GetTileInitilaizer(int z, int x, int y)
         {
             GetTileFromXYZFunction fixedGridGetTileFuntion = this.isOneXOne ? this.GetOneXOneTile : this.utils.GetTile;
-            if (this.origin == TileGridOrigin.LOWER_LEFT)
+            if (this.origin == GridOrigin.LOWER_LEFT)
             {
                 this._getTile = (z, x, y) =>
                 {
@@ -201,7 +201,7 @@ namespace MergerLogic.DataTypes
 
         public abstract void setBatchIdentifier(string batchIdentifier);
 
-        public static Data CreateDatasource(string type, string path, int batchSize, bool isOneXOne, TileGridOrigin? origin = null, bool isBase = false)
+        public static Data CreateDatasource(string type, string path, int batchSize, bool isOneXOne, GridOrigin? origin = null, bool isBase = false)
         {
             Data data;
             switch (type.ToLower())
@@ -248,7 +248,7 @@ namespace MergerLogic.DataTypes
             return data;
         }
 
-        public static Data CreateDatasource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0, bool isOneXone = false, TileGridOrigin? origin = null)
+        public static Data CreateDatasource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0, bool isOneXone = false, GridOrigin? origin = null)
         {
             Data data;
             type = type.ToLower();

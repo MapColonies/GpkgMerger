@@ -8,7 +8,7 @@ namespace MergerService.Controllers
 
         public string Type { get; }
 
-        public Origin Origin { get; }
+        public GridOrigin Origin { get; }
 
         public string Grid { get; }
 
@@ -16,7 +16,7 @@ namespace MergerService.Controllers
         {
             this.Path = path;
             this.Type = type;
-            this.Origin = origin.ToLower() == "ul" ? Origin.UL : Origin.LL;
+            this.Origin = origin.ToLower() == "ul" ? GridOrigin.UPPER_LEFT : GridOrigin.LOWER_LEFT;
             this.Grid = grid;
         }
 

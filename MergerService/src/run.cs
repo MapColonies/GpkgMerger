@@ -32,6 +32,9 @@ namespace MergerService.Src
 
             while (true)
             {
+                // Sleep for 0.5 sec so we won't send too many requests if there are no tasks available
+                Thread.Sleep(500);
+
                 MergeTask? task = MergeTask.GetTask();
 
                 // Guard clause in case there are no batches or sources

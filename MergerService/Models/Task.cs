@@ -1,3 +1,4 @@
+using MergerLogic.Batching;
 using MergerService.Utils;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -20,7 +21,7 @@ namespace MergerService.Controllers
 
         public static MergeTask? GetTask()
         {
-            string taskJson = SqlUtils.GetTask();
+            string taskJson = TaskUtils.GetTask();
 
             try
             {
