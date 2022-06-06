@@ -124,7 +124,7 @@ namespace MergerLogic.DataTypes
             }
 
             Tile lastTile = GpkgUtils.GetLastTile(this.path, this.tileCache, coords, baseCoords);
-            return lastTile;
+            return this._toCurrentGrid(lastTile);
         }
 
         protected override bool InternalTileExists(int z, int x, int y)
