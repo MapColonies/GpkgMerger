@@ -25,13 +25,15 @@ namespace MergerLogic.DataTypes
 
         private Extent extent;
         private CoordConvertorFunction _coordsFromCurrentGrid;
+        private IConfigurationManager _configManager;
 
-        public Gpkg(string path, int batchSize, bool isOneXOne = false, TileGridOrigin origin = TileGridOrigin.UPPER_LEFT)
+        public Gpkg(IConfigurationManager configuration, string path, int batchSize, bool isOneXOne = false, TileGridOrigin origin = TileGridOrigin.UPPER_LEFT)
             : base(DataType.GPKG, path, batchSize, new GpkgUtils(path), isOneXOne, origin)
         {
             this.tileCache = GpkgUtils.GetTileCache(path);
             this.offset = 0;
             this.extent = GpkgUtils.GetExtent(path);
+            this._configManager = configuration;
 
             if (isOneXOne)
             {
@@ -139,7 +141,7 @@ namespace MergerLogic.DataTypes
         {
             GpkgUtils.CreateTileIndex(this.path, this.tileCache);
 
-            bool vacuum = bool.Parse(Configuration.Instance.GetConfiguration("GPKG", "vacuum"));
+            bool vacuum = bool.Parse(this._configManager.GetConfiguration("GPKG", "vacuum"));
             if (vacuum)
             {
                 GpkgUtils.Vacuum(this.path);

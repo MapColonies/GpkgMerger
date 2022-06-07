@@ -5,10 +5,15 @@ using MergerLogic.ImageProccessing;
 
 namespace MergerCli
 {
-    internal static class Proccess
+    internal class Proccess : IProccess
     {
+        private ITileMerger _tileMerger;
+        public Proccess(ITileMerger tileMerger)
+        {
+            this._tileMerger = tileMerger;
+        }
 
-        public static void Start(Data baseData, Data newData, int batchSize, BatchStatusManager batchStatusManager)
+        public void Start(Data baseData, Data newData, int batchSize, BatchStatusManager batchStatusManager)
         {
             batchStatusManager.InitilaizeLayer(newData.path);
             List<Tile> tiles = new List<Tile>(batchSize);
@@ -47,7 +52,7 @@ namespace MergerCli
                         ()=> newTile
                     };
 
-                    byte[]? image = Merge.MergeTiles(correspondingTileBuilders, targetCoords);
+                    byte[]? image = this._tileMerger.MergeTiles(correspondingTileBuilders, targetCoords);
 
                     if (image != null)
                     {
@@ -68,7 +73,7 @@ namespace MergerCli
             newData.Reset();
         }
 
-        public static void Validate(Data baseData, Data newData)
+        public void Validate(Data baseData, Data newData)
         {
             List<Tile> newTiles;
             bool hasSameTiles = true;

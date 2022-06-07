@@ -8,22 +8,25 @@ namespace MergerLogic.Extentions
 {
     public static class ServiceCollectionExtentions
     {
-        public static void RegisterMergerLogicType(this IServiceCollection collection)
+        public static IServiceCollection RegisterMergerLogicType(this IServiceCollection collection)
         {
-            collection.RegisterImageProccessors();
-            collection.RegisterMergerUtils();
+            return collection
+                .RegisterImageProccessors()
+                .RegisterMergerUtils();
         }
 
-        public static void RegisterImageProccessors(this IServiceCollection collection)
+        public static IServiceCollection RegisterImageProccessors(this IServiceCollection collection)
         {
-            collection.AddSingleton<ITileMerger, TileMerger>();
-            collection.AddSingleton<ITileScaler, TileScaler>();
+            return collection
+                .AddSingleton<ITileMerger, TileMerger>()
+                .AddSingleton<ITileScaler, TileScaler>();
         }
 
-        public static void RegisterMergerUtils(this IServiceCollection collection)
+        public static IServiceCollection RegisterMergerUtils(this IServiceCollection collection)
         {
-            collection.AddSingleton<IConfigurationManager, ConfigurationManager>();
-            collection.
+            return collection
+                .AddSingleton<IConfigurationManager, ConfigurationManager>()
+                .AddSingleton<IDataFactory,DataFactory>();
         }
     }
 }

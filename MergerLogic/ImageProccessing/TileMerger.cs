@@ -6,6 +6,12 @@ namespace MergerLogic.ImageProccessing
 {
     public class TileMerger : ITileMerger
     {
+        private readonly ITileScaler _tileScaler;
+
+        public TileMerger(ITileScaler tileScaler)
+        {
+            this._tileScaler = tileScaler;
+        }
 
         public byte[]? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords)
         {
@@ -57,7 +63,7 @@ namespace MergerLogic.ImageProccessing
                     tileImage = new MagickImage(tileBytes);
                     if (tile.Z < targetCoords.z)
                     {
-                        TileScaler.Upscale(tileImage, tile, targetCoords);
+                        this._tileScaler.Upscale(tileImage, tile, targetCoords);
                     }
                     images.Add(tileImage);
                     if (!tileImage.HasAlpha)

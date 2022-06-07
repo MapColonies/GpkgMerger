@@ -1,6 +1,8 @@
 ﻿using MergerCli.Utils;
 using MergerLogic.DataTypes;
 using MergerLogic.Utils;
+using MergerLogic.Extentions;
+using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
 using System.Runtime.Loader;
 
@@ -25,6 +27,7 @@ namespace MergerCli
                 PrintHelp(programName);
                 return;
             }
+            ServiceProvider container = CreateContianer();
 
             PrepareStatusManger(ref args);
 
@@ -32,7 +35,7 @@ namespace MergerCli
             List<Data> sources;
             try
             {
-                var parser = new SourceParser();
+                var parser = container.GetRequiredService<ISourceParser>();
                 sources = parser.ParseSources(args, batchSize);
             }
             catch (Exception ex)
@@ -50,9 +53,11 @@ namespace MergerCli
                 return;
             }
 
+            var proccess = container.GetRequiredService<IProccess>();
             try
             {
-                bool validate = bool.Parse(Configuration.Instance.GetConfiguration("GENERAL", "validate"));
+                var config = container.GetService<IConfigurationManager>();
+                bool validate = bool.Parse(config.GetConfiguration("GENERAL", "validate"));
                 for (int i = 1; i < sources.Count; i++)
                 {
                     Stopwatch stopWatch = new Stopwatch();
@@ -61,7 +66,7 @@ namespace MergerCli
                     {
                         continue;
                     }
-                    Proccess.Start(baseData, sources[i], batchSize, batchStatusManager);
+                    proccess.Start(baseData, sources[i], batchSize, batchStatusManager);
                     stopWatch.Stop();
 
                     // Get the elapsed time as a TimeSpan value.
@@ -76,7 +81,7 @@ namespace MergerCli
                         stopWatch.Start();
 
                         Console.WriteLine("Validating merged data sources");
-                        Proccess.Validate(baseData, sources[i]);
+                        proccess.Validate(baseData, sources[i]);
 
                         stopWatch.Stop();
                         // Get the elapsed time as a TimeSpan value.
@@ -97,6 +102,15 @@ namespace MergerCli
             ts = totalTimeStopWatch.Elapsed;
             TimeUtils.PrintElapsedTime("Total runtime", ts);
             done = true;
+        }
+
+        private static ServiceProvider CreateContianer()
+        {
+            return new ServiceCollection()
+                .RegisterMergerLogicType()
+                .AddSingleton<IProccess, Proccess>()
+                .AddSingleton<ISourceParser, SourceParser>()
+                .BuildServiceProvider();
         }
 
         private static void PrintHelp(string programName)
