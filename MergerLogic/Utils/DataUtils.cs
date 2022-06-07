@@ -18,5 +18,7 @@ namespace MergerLogic.Utils
         {
             return this.GetTile(coord.z, coord.x, coord.y);
         }
+
+        public abstract bool TileExists(int z, int x, int y);
     }
 }

@@ -2,11 +2,11 @@
 
 namespace MergerLogic.Utils
 {
-    internal class httpUtils : DataUtils
+    internal class HttpUtils : DataUtils
     {
         private PathPatternUtils _pathPatternUtils;
         private HttpClient _httpClient;
-        public httpUtils(string path, PathPatternUtils pathPatternUtils) : base(path)
+        public HttpUtils(string path, PathPatternUtils pathPatternUtils) : base(path)
         {
             this._pathPatternUtils = pathPatternUtils;
             this._httpClient = new HttpClient();
@@ -30,6 +30,11 @@ namespace MergerLogic.Utils
             bodyTask.Wait();
             byte[] data = bodyTask.Result;
             return new Tile(z, x, y, data);
+        }
+
+        public override bool TileExists(int z, int x, int y)
+        {
+            return GetTile(z, x, y) is not null;
         }
     }
 }

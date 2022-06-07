@@ -26,7 +26,7 @@ namespace MergerLogic.DataTypes
         private Extent extent;
         private CoordConvertorFunction _coordsFromCurrentGrid;
 
-        public Gpkg(string path, int batchSize, bool isOneXOne = false, TileGridOrigin origin = TileGridOrigin.UPPER_LEFT)
+        public Gpkg(string path, int batchSize, bool isOneXOne = false, GridOrigin origin = GridOrigin.UPPER_LEFT)
             : base(DataType.GPKG, path, batchSize, new GpkgUtils(path), isOneXOne, origin)
         {
             this.tileCache = GpkgUtils.GetTileCache(path);
@@ -87,7 +87,7 @@ namespace MergerLogic.DataTypes
             List<Tile> tiles = GpkgUtils.GetBatch(this.path, this.batchSize, this.offset, this.tileCache)
                 .Select(t =>
                 {
-                    Tile tile = this._convertOrigin(t);
+                    Tile tile = this._convertOriginTile(t);
                     tile = this._toCurrentGrid(tile);
                     counter++;
                     return tile;
@@ -125,6 +125,11 @@ namespace MergerLogic.DataTypes
 
             Tile lastTile = GpkgUtils.GetLastTile(this.path, this.tileCache, coords, baseCoords);
             return this._toCurrentGrid(lastTile);
+        }
+
+        protected override bool InternalTileExists(int z, int x, int y)
+        {
+            return this.utils.TileExists(z, x, y);
         }
 
         public void PrintBatch(List<Tile> tiles)

@@ -191,6 +191,33 @@ namespace MergerLogic.Utils
             return tile;
         }
 
+        public override bool TileExists(int z, int x, int y)
+        {
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            {
+                connection.Open();
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = $"SELECT tile_row FROM {this.tileCache} where zoom_level=$z and tile_column=$x and tile_row=$y";
+                    command.Parameters.AddWithValue("$z", z);
+                    command.Parameters.AddWithValue("$x", x);
+                    command.Parameters.AddWithValue("$y", y);
+
+                    using (var reader = command.ExecuteReader(System.Data.CommandBehavior.SingleRow))
+                    {
+                        // Check if a row was returned
+                        if (reader.HasRows)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
         public static void InsertTiles(string path, string tileCache, List<Tile> tiles)
         {
             using (var connection = new SQLiteConnection($"Data Source={path}"))

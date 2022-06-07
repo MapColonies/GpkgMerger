@@ -13,17 +13,25 @@ namespace MergerLogic.DataTypes
         XYZ
     }
 
+    public enum GridOrigin
+    {
+        LOWER_LEFT,
+        UPPER_LEFT
+    }
+
     public abstract class Data
     {
+        protected delegate int ValFromCoordFunction(Coord coord);
         protected delegate Tile GetTileFromXYZFunction(int z, int x, int y);
-        protected delegate Tile GetTileFromCoordFunction(Coord coords);
+        protected delegate Coord GetCoordFromCoordFunction(Coord coord);
+        protected delegate Tile GetTileFromCoordFunction(Coord coord);
         protected delegate Tile TileConvertorFunction(Tile Tile);
 
         public readonly DataType type;
         public readonly string path;
         public readonly bool isOneXOne;
         protected readonly int batchSize;
-        public readonly TileGridOrigin origin;
+        public readonly GridOrigin origin;
 
         protected DataUtils utils;
         protected GetTileFromXYZFunction _getTile;
@@ -31,18 +39,20 @@ namespace MergerLogic.DataTypes
 
         // tile grid converters
         protected OneXOneConvetor _oneXOneConvetor = null;
-        protected TileConvertorFunction _fromCurrentGrid;
+        protected TileConvertorFunction _fromCurrentGridTile;
+        protected GetCoordFromCoordFunction _fromCurrentGridCoord;
         protected TileConvertorFunction _toCurrentGrid;
 
         //origin converters
-        protected TileConvertorFunction _convertOrigin;
+        protected TileConvertorFunction _convertOriginTile;
+        protected ValFromCoordFunction _convertOriginCoord;
 
 
         protected const int ZOOM_LEVEL_COUNT = 30;
 
         protected const int COORDS_FOR_ALL_ZOOM_LEVELS = ZOOM_LEVEL_COUNT << 1;
 
-        public Data(DataType type, string path, int batchSize, DataUtils utils, bool isOneXOne = false, TileGridOrigin origin = TileGridOrigin.UPPER_LEFT)
+        public Data(DataType type, string path, int batchSize, DataUtils utils, bool isOneXOne = false, GridOrigin origin = GridOrigin.UPPER_LEFT)
         {
             this.type = type;
             this.path = path;
@@ -50,31 +60,40 @@ namespace MergerLogic.DataTypes
             this.utils = utils;
             this.isOneXOne = isOneXOne;
             this.origin = origin;
+
+            // The following delegates are for code preformance and to reduce branching while handling tiles
             if (isOneXOne)
             {
                 this._oneXOneConvetor = new OneXOneConvetor();
                 this._getLastExistingTile = this.getLastOneXoneExistingTile;
-                this._fromCurrentGrid = this._oneXOneConvetor.TryFromTwoXOne;
+                this._fromCurrentGridTile = this._oneXOneConvetor.TryFromTwoXOne;
+                this._fromCurrentGridCoord = this._oneXOneConvetor.TryFromTwoXOne;
                 this._toCurrentGrid = this._oneXOneConvetor.TryToTwoXOne;
             }
             else
             {
                 this._getLastExistingTile = this.GetLastExistingTile;
-                this._fromCurrentGrid = tile => tile;
+                this._fromCurrentGridTile = tile => tile;
+                this._fromCurrentGridCoord = tile => tile;
                 this._toCurrentGrid = tile => tile;
             }
             this._getTile = this.GetTileInitilaizer;
-            if (origin == TileGridOrigin.LOWER_LEFT)
+            if (origin == GridOrigin.LOWER_LEFT)
             {
-                this._convertOrigin = tile =>
+                this._convertOriginTile = tile =>
                 {
                     tile.FlipY();
                     return tile;
                 };
+                this._convertOriginCoord = coord =>
+                {
+                    return GeoUtils.FlipY(coord);
+                };
             }
             else
             {
-                this._convertOrigin = tile => tile;
+                this._convertOriginTile = tile => tile;
+                this._convertOriginCoord = coord => coord.y;
             }
         }
 
@@ -109,6 +128,26 @@ namespace MergerLogic.DataTypes
             return lastTile;
         }
 
+        public bool TileExists(Tile tile)
+        {
+            return this.TileExists(tile.GetCoord());
+        }
+
+        public bool TileExists(Coord coord)
+        {
+            coord.y = this._convertOriginCoord(coord);
+            coord = this._fromCurrentGridCoord(coord);
+
+            if (coord is null)
+            {
+                return false;
+            }
+
+            return this.InternalTileExists(coord.z, coord.x, coord.y);
+        }
+
+        protected abstract bool InternalTileExists(int z, int x, int y);
+
         //TODO: move to util after IOC
         protected Tile getLastOneXoneExistingTile(Coord coords)
         {
@@ -133,7 +172,7 @@ namespace MergerLogic.DataTypes
         protected Tile GetTileInitilaizer(int z, int x, int y)
         {
             GetTileFromXYZFunction fixedGridGetTileFuntion = this.isOneXOne ? this.GetOneXOneTile : this.utils.GetTile;
-            if (this.origin == TileGridOrigin.LOWER_LEFT)
+            if (this.origin == GridOrigin.LOWER_LEFT)
             {
                 this._getTile = (z, x, y) =>
                 {
@@ -168,8 +207,8 @@ namespace MergerLogic.DataTypes
         {
             var targetTiles = tiles.Select(tile =>
             {
-                var targetTile = this._convertOrigin(tile);
-                targetTile = this._fromCurrentGrid(targetTile);
+                var targetTile = this._convertOriginTile(tile);
+                targetTile = this._fromCurrentGridTile(targetTile);
                 return targetTile;
             }).Where(tile => tile != null);
             this.InternalUpdateTiles(targetTiles);
@@ -188,7 +227,7 @@ namespace MergerLogic.DataTypes
 
         public abstract void setBatchIdentifier(string batchIdentifier);
 
-        public static Data CreateDatasource(string type, string path, int batchSize, bool isOneXOne, TileGridOrigin? origin = null, bool isBase = false)
+        public static Data CreateDatasource(string type, string path, int batchSize, bool isOneXOne, GridOrigin? origin = null, bool isBase = false)
         {
             Data data;
             switch (type.ToLower())
@@ -235,7 +274,7 @@ namespace MergerLogic.DataTypes
             return data;
         }
 
-        public static Data CreateDatasource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0, bool isOneXone = false, TileGridOrigin? origin = null)
+        public static Data CreateDatasource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0, bool isOneXone = false, GridOrigin? origin = null)
         {
             Data data;
             type = type.ToLower();
