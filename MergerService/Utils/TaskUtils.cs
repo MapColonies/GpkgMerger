@@ -1,7 +1,9 @@
 namespace MergerService.Utils
 {
+    // TODO: rename all utils to clients
     public class TaskUtils
     {
+        // TODO: add update progress method
         public static string GetTask()
         {
             return @"{
