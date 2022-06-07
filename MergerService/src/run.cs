@@ -18,7 +18,8 @@ namespace MergerService.Src
                 sources.Add(Data.CreateDatasource(paths[0].Type, paths[0].Path, batchSize, true));
                 foreach (Source source in paths.Skip(1))
                 {
-                    sources.Add(Data.CreateDatasource(source.Type, source.Path, batchSize, source.IsOneXOne()));
+                    // TODO: add support for HTTP
+                    sources.Add(Data.CreateDatasource(source.Type, source.Path, batchSize, source.IsOneXOne(), source.Origin));
                 }
             }
 
@@ -32,102 +33,133 @@ namespace MergerService.Src
 
             while (true)
             {
-                // Sleep for 0.5 sec so we won't send too many requests if there are no tasks available
-                Thread.Sleep(500);
+                MergeTask? task = null;
 
-                MergeTask? task = MergeTask.GetTask();
+                try
+                {
+                    task = MergeTask.GetTask();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Error in MergerService run - get task");
+                    Console.WriteLine(e.Message);
+                }
 
                 // Guard clause in case there are no batches or sources
                 if (task == null || task.Batches == null || task.Sources == null)
                 {
+                    // Sleep for 0.5 sec so we won't send too many requests if there are no tasks available
+                    // TODO: read from configuration
+                    Thread.Sleep(1000);
                     continue;
                 }
 
-                foreach (Bounds bounds in task.Batches)
+                // Log the task
+                task.Print();
+
+                try
                 {
-                    stopWatch.Reset();
-                    stopWatch.Start();
-
-                    int totalTileCount = bounds.Size();
-                    int tileProgressCount = 0;
-
-                    List<Data> sources = BuildDataList(task.Sources, totalTileCount);
-                    Data target = sources[0];
-
-                    List<Tile> tiles = new List<Tile>(totalTileCount);
-
-                    Console.WriteLine($"Total amount of tiles to merge: {totalTileCount}");
-
-                    // Go over the bounds of the current batch
-                    for (int x = bounds.MinX; x < bounds.MaxX; x++)
+                    foreach (TileBounds bounds in task.Batches)
                     {
-                        for (int y = bounds.MinY; y < bounds.MaxY; y++)
-                        {
-                            Coord coord = new Coord(bounds.Zoom, x, y);
-
-                            // Create tile builder list for current coord for all sources
-                            List<CorrespondingTileBuilder> correspondingTileBuilders = new List<CorrespondingTileBuilder>();
-                            foreach (Data source in sources)
-                            {
-                                correspondingTileBuilders.Add(() => source.GetCorrespondingTile(coord, true));
-                            }
-
-                            byte[]? blob = Merge.MergeTiles(correspondingTileBuilders, coord);
-
-                            if (blob != null)
-                            {
-                                tiles.Add(new Tile(coord, blob));
-                            }
-
-                            tileProgressCount++;
-
-                            // Show progress every 1000 tiles
-                            if (tileProgressCount % 1000 == 0)
-                            {
-                                Console.WriteLine($"Tile Count: {tileProgressCount} / {totalTileCount}");
-                            }
-                        }
-                    }
-
-                    target.UpdateTiles(tiles);
-
-                    foreach (Data data in sources)
-                    {
-                        target.UpdateMetadata(data);
-                    }
-
-                    Console.WriteLine($"Tile Count: {tileProgressCount} / {totalTileCount}");
-                    target.Wrapup();
-
-                    stopWatch.Stop();
-
-                    // Get the elapsed time as a TimeSpan value.
-                    ts = stopWatch.Elapsed;
-                    Console.WriteLine("Merged the following bounds:");
-                    bounds.Print();
-                    TimeUtils.PrintElapsedTime("Merge runtime", ts);
-
-                    // After merging, validate if requested
-                    bool validate = bool.Parse(MergerLogic.Utils.Configuration.Instance.GetConfiguration("GENERAL", "validate"));
-                    if (validate)
-                    {
-                        // Reset stopwatch for validation time measure
                         stopWatch.Reset();
                         stopWatch.Start();
 
-                        Console.WriteLine("Validating merged datasources");
-                        Validate(target, bounds);
+                        int totalTileCount = bounds.Size();
+                        int tileProgressCount = 0;
+
+                        // Skip if there are no tiles in the given bounds
+                        if (totalTileCount == 0)
+                        {
+                            continue;
+                        }
+
+                        List<Data> sources = BuildDataList(task.Sources, totalTileCount);
+                        Data target = sources[0];
+
+                        List<Tile> tiles = new List<Tile>(totalTileCount);
+
+                        Console.WriteLine($"Total amount of tiles to merge: {totalTileCount}");
+
+                        // Go over the bounds of the current batch
+                        for (int x = bounds.MinX; x < bounds.MaxX; x++)
+                        {
+                            for (int y = bounds.MinY; y < bounds.MaxY; y++)
+                            {
+                                Coord coord = new Coord(bounds.Zoom, x, y);
+
+                                // Create tile builder list for current coord for all sources
+                                List<CorrespondingTileBuilder> correspondingTileBuilders = new List<CorrespondingTileBuilder>();
+                                foreach (Data source in sources)
+                                {
+                                    correspondingTileBuilders.Add(() => source.GetCorrespondingTile(coord, true));
+                                }
+
+                                byte[]? blob = Merge.MergeTiles(correspondingTileBuilders, coord);
+
+                                if (blob != null)
+                                {
+                                    tiles.Add(new Tile(coord, blob));
+                                }
+
+                                tileProgressCount++;
+
+                                // Show progress every 1000 tiles
+                                if (tileProgressCount % 1000 == 0)
+                                {
+                                    Console.WriteLine($"Tile Count: {tileProgressCount} / {totalTileCount}");
+                                }
+                            }
+                        }
+
+                        target.UpdateTiles(tiles);
+
+                        foreach (Data data in sources)
+                        {
+                            target.UpdateMetadata(data);
+                        }
+
+                        Console.WriteLine($"Tile Count: {tileProgressCount} / {totalTileCount}");
+                        target.Wrapup();
 
                         stopWatch.Stop();
+
                         // Get the elapsed time as a TimeSpan value.
                         ts = stopWatch.Elapsed;
-                        TimeUtils.PrintElapsedTime($"Validation time", ts);
+                        Console.WriteLine("Merged the following bounds:");
+                        bounds.Print();
+                        TimeUtils.PrintElapsedTime("Merge runtime", ts);
+
+                        // After merging, validate if requested
+                        bool validate = bool.Parse(MergerLogic.Utils.Configuration.Instance.GetConfiguration("GENERAL", "validate"));
+                        if (validate)
+                        {
+                            // Reset stopwatch for validation time measure
+                            stopWatch.Reset();
+                            stopWatch.Start();
+
+                            Console.WriteLine("Validating merged datasources");
+                            Validate(target, bounds);
+
+                            stopWatch.Stop();
+                            // Get the elapsed time as a TimeSpan value.
+                            ts = stopWatch.Elapsed;
+                            TimeUtils.PrintElapsedTime($"Validation time", ts);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Validation not requested, skipping validation...");
+                        }
                     }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Error in MergerService run - bounds loop");
+                    Console.WriteLine(e.Message);
                 }
             }
         }
 
-        private static void Validate(Data target, Bounds bounds)
+        private static void Validate(Data target, TileBounds bounds)
         {
             int totalTileCount = bounds.Size();
             int tilesChecked = 0;

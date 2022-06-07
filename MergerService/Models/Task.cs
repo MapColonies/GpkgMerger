@@ -8,15 +8,40 @@ namespace MergerService.Controllers
     public class MergeTask
     {
         [JsonInclude]
-        public Bounds[]? Batches { get; }
+        public TileBounds[]? Batches { get; }
 
         [JsonInclude]
         public Source[]? Sources { get; }
 
-        public MergeTask(Bounds[] batches, Source[] sources)
+        public MergeTask(TileBounds[] batches, Source[] sources)
         {
             this.Batches = batches;
             this.Sources = sources;
+        }
+
+        public void Print()
+        {
+            if (Sources is null)
+            {
+                return;
+            }
+
+            Console.WriteLine("Sources:");
+            foreach (Source source in Sources)
+            {
+                source.Print();
+            }
+
+            if (Batches is null)
+            {
+                return;
+            }
+
+            Console.WriteLine("Batches:");
+            foreach (TileBounds bounds in Batches)
+            {
+                bounds.Print();
+            }
         }
 
         public static MergeTask? GetTask()

@@ -24,5 +24,13 @@ namespace MergerService.Controllers
         {
             return Grid.ToLower() == "1x1";
         }
+
+        public void Print()
+        {
+            Console.WriteLine($"Path: {Path}");
+            Console.WriteLine($"Type: {Type}");
+            Console.WriteLine($"Origin: {Origin}");
+            Console.WriteLine($"Grid: {Grid}");
+        }
     }
 }
