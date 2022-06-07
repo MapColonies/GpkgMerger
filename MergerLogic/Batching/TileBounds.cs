@@ -1,6 +1,6 @@
 namespace MergerLogic.Batching
 {
-    public class Bounds
+    public class TileBounds
     {
         public int Zoom { get; }
 
@@ -12,7 +12,7 @@ namespace MergerLogic.Batching
 
         public int MaxY { get; }
 
-        public Bounds(int zoom, int minX, int maxX, int minY, int maxY)
+        public TileBounds(int zoom, int minX, int maxX, int minY, int maxY)
         {
             this.Zoom = zoom;
             this.MinX = minX;
