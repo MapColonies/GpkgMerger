@@ -39,7 +39,7 @@ namespace MergerLogic.Utils
 
         public override bool TileExists(int z, int x, int y)
         {
-            return GetTile(z, x, y) is not null;
+            return this.GetTile(z, x, y) is not null;
         }
     }
 }

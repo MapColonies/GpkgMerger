@@ -13,7 +13,7 @@ namespace MergerLogic.Utils
         private IPathUtils _pathUtils;
         private IServiceProvider _container;
 
-        public DataFactory(IConfigurationManager configuration, IUtilsFactory utilsFactory, IOneXOneConvetor oneXOneConvetor,IPathUtils pathUtils, IServiceProvider container)
+        public DataFactory(IConfigurationManager configuration, IUtilsFactory utilsFactory, IOneXOneConvetor oneXOneConvetor, IPathUtils pathUtils, IServiceProvider container)
         {
             this._configurationManager = configuration;
             this._utilsFactory = utilsFactory;
@@ -37,13 +37,13 @@ namespace MergerLogic.Utils
                     string s3Url = this._configurationManager.GetConfiguration("S3", "url");
                     string bucket = this._configurationManager.GetConfiguration("S3", "bucket");
                     var client = this._container.GetService<IAmazonS3>();
-                    if(client is null)
+                    if (client is null)
                     {
                         throw new Exception("s3 configuration is required");
                     }
                     path = this._pathUtils.RemoveTrailingSlash(path);
                     if (origin == null)
-                        data = new S3(this._pathUtils,client, this._utilsFactory, this._oneXOneConvetor, bucket, path, batchSize, isOneXOne);
+                        data = new S3(this._pathUtils, client, this._utilsFactory, this._oneXOneConvetor, bucket, path, batchSize, isOneXOne);
                     else
                         data = new S3(this._pathUtils, client, this._utilsFactory, this._oneXOneConvetor, bucket, path, batchSize, isOneXOne, origin.Value);
                     break;

@@ -22,15 +22,15 @@ namespace MergerService.Controllers
 
         public bool IsOneXOne()
         {
-            return Grid.ToLower() == "1x1";
+            return this.Grid.ToLower() == "1x1";
         }
 
         public void Print()
         {
-            Console.WriteLine($"Path: {Path}");
-            Console.WriteLine($"Type: {Type}");
-            Console.WriteLine($"Origin: {Origin}");
-            Console.WriteLine($"Grid: {Grid}");
+            Console.WriteLine($"Path: {this.Path}");
+            Console.WriteLine($"Type: {this.Type}");
+            Console.WriteLine($"Origin: {this.Origin}");
+            Console.WriteLine($"Grid: {this.Grid}");
         }
     }
 }

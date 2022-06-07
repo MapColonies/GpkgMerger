@@ -8,7 +8,7 @@ namespace MergerLogic.Utils
         void CreateTileIndex(string tileCache);
         List<Tile> GetBatch(int batchSize, int offset, string tileCache);
         Extent GetExtent();
-        Tile GetLastTile(string tileCache, int[] coords, Coord baseCoords); 
+        Tile GetLastTile(string tileCache, int[] coords, Coord baseCoords);
         string GetTileCache();
         int GetTileCount(string tileCache);
         void InsertTiles(string tileCache, IEnumerable<Tile> tiles);

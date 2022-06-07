@@ -45,7 +45,7 @@ namespace MergerLogic.Utils
         {
             Extent extent = new Extent();
 
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
 
@@ -223,7 +223,7 @@ namespace MergerLogic.Utils
 
         public void InsertTiles(string tileCache, IEnumerable<Tile> tiles)
         {
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
 
@@ -352,7 +352,7 @@ namespace MergerLogic.Utils
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            Console.WriteLine($"Vacuuming GPKG {path}");
+            Console.WriteLine($"Vacuuming GPKG {this.path}");
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();

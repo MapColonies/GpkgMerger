@@ -1,6 +1,5 @@
 using MergerLogic.Extentions;
 using MergerService.Src;
-using System.Threading;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -11,7 +11,7 @@ namespace MergerLogic.Utils
 
         public UtilsFactory(IPathUtils pathUtils, ITimeUtils timeUtils, IServiceProvider container)
         {
-            _pathUtils = pathUtils;
+            this._pathUtils = pathUtils;
             this._container = container;
         }
 
@@ -19,7 +19,7 @@ namespace MergerLogic.Utils
 
         public IFileUtils GetFileUtiles(string path)
         {
-            return new FileUtils(path,this._pathUtils);
+            return new FileUtils(path, this._pathUtils);
         }
 
         public IGpkgUtils GetGpkgUtils(string path)
@@ -42,7 +42,7 @@ namespace MergerLogic.Utils
                 throw new Exception("S3 Data utills requires s3 client to be configured");
             }
 
-            return new S3Utils(client,this._pathUtils,bucket, path);
+            return new S3Utils(client, this._pathUtils, bucket, path);
         }
 
         public T GetDataUtils<T>(string path) where T : IDataUtils

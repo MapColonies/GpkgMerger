@@ -21,24 +21,24 @@ namespace MergerService.Controllers
 
         public void Print()
         {
-            if (Sources is null)
+            if (this.Sources is null)
             {
                 return;
             }
 
             Console.WriteLine("Sources:");
-            foreach (Source source in Sources)
+            foreach (Source source in this.Sources)
             {
                 source.Print();
             }
 
-            if (Batches is null)
+            if (this.Batches is null)
             {
                 return;
             }
 
             Console.WriteLine("Batches:");
-            foreach (TileBounds bounds in Batches)
+            foreach (TileBounds bounds in this.Batches)
             {
                 bounds.Print();
             }

@@ -1,8 +1,6 @@
-﻿using MergerLogic.Batching;
-
-namespace MergerLogic.Utils
+﻿namespace MergerLogic.Utils
 {
-    public interface IFileUtils: IDataUtils
+    public interface IFileUtils : IDataUtils
     {
     }
 }

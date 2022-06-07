@@ -27,7 +27,7 @@ namespace MergerLogic.DataTypes
         private CoordConvertorFunction _coordsFromCurrentGrid;
         private IConfigurationManager _configManager;
 
-        public Gpkg(IConfigurationManager configuration, IUtilsFactory utilsFactory, IOneXOneConvetor oneXOneConvetor, 
+        public Gpkg(IConfigurationManager configuration, IUtilsFactory utilsFactory, IOneXOneConvetor oneXOneConvetor,
             string path, int batchSize, bool isOneXOne = false, GridOrigin origin = GridOrigin.UPPER_LEFT)
             : base(utilsFactory, oneXOneConvetor, DataType.GPKG, path, batchSize, isOneXOne, origin)
         {

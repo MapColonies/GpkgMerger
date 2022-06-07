@@ -13,9 +13,9 @@ namespace MergerLogic.DataTypes
 
         private IPathUtils _pathUtils;
 
-        public FS(IPathUtils pathUtils, IUtilsFactory utilsFactory, IOneXOneConvetor oneXOneConvetor ,
+        public FS(IPathUtils pathUtils, IUtilsFactory utilsFactory, IOneXOneConvetor oneXOneConvetor,
             DataType type, string path, int batchSize, bool isOneXOne = false, bool isBase = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
-            : base(utilsFactory,oneXOneConvetor, type, path, batchSize, isOneXOne, origin)
+            : base(utilsFactory, oneXOneConvetor, type, path, batchSize, isOneXOne, origin)
         {
             this._pathUtils = pathUtils;
             if (isBase)

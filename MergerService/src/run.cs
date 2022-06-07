@@ -86,7 +86,7 @@ namespace MergerService.Src
                             continue;
                         }
 
-                        List<IData> sources = BuildDataList(task.Sources, totalTileCount);
+                        List<IData> sources = this.BuildDataList(task.Sources, totalTileCount);
                         IData target = sources[0];
 
                         List<Tile> tiles = new List<Tile>(totalTileCount);
@@ -151,7 +151,7 @@ namespace MergerService.Src
                             stopWatch.Start();
 
                             Console.WriteLine("Validating merged datasources");
-                            Validate(target, bounds);
+                            this.Validate(target, bounds);
 
                             stopWatch.Stop();
                             // Get the elapsed time as a TimeSpan value.

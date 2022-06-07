@@ -10,7 +10,7 @@ namespace MergerLogic.DataTypes
         protected int batchIndex = 0;
         protected HttpDataSource(IUtilsFactory utilsFactory, IOneXOneConvetor oneXOneConvetor,
             DataType type, string path, int batchSize, Extent extent, GridOrigin origin, int maxZoom, int minZoom = 0, bool isOneXOne = false)
-            : base(utilsFactory, oneXOneConvetor ,type, path, batchSize, isOneXOne, origin)
+            : base(utilsFactory, oneXOneConvetor, type, path, batchSize, isOneXOne, origin)
         {
             var patternUtils = new PathPatternUtils(path);
             this.utils = new HttpUtils(path, patternUtils);
