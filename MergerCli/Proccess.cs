@@ -92,9 +92,9 @@ namespace MergerCli
                 for (int i = 0; i < newTiles.Count; i++)
                 {
                     Tile newTile = newTiles[i];
-                    Tile baseTile = baseData.GetCorrespondingTile(newTile.GetCoord(), false);
+                    bool baseTileExists = baseData.TileExists(newTile.GetCoord());
 
-                    if (baseTile != null)
+                    if (baseTileExists)
                     {
                         ++baseMatchCount;
                     }

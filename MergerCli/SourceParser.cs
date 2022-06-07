@@ -67,7 +67,7 @@ namespace MergerCli
             string sourceType = args[idx];
             string sourcePath = args[idx + 1];
             bool isOneXOne = false;
-            TileGridOrigin? origin = null;
+            GridOrigin? origin = null;
             if (paramCount > requiredParamCount)
             {
                 // not using set as it allows optional prams with dynamic values aka. --minZoom 3 
@@ -90,7 +90,7 @@ namespace MergerCli
             int minZoom = int.Parse(args[idx + 3]);
             int maxZoom = int.Parse(args[idx + 4]);
             bool isOneXOne = false;
-            TileGridOrigin? origin = null;
+            GridOrigin? origin = null;
             if (paramCount > requiredParamCount)
             {
                 // not using set as it allows optional prams with dynamic values aka. --minZoom 3 
@@ -108,7 +108,7 @@ namespace MergerCli
             return this._dataFactory.CreateDatasource(sourceType, sourcePath, batchSize, isBase, extent, maxZoom, minZoom, isOneXOne, origin);
         }
 
-        private void ParseOptionalParameters(string sourceType, string sourcePath, ref bool isOneXOne, ref TileGridOrigin? origin, string[] optionalParams)
+        private void ParseOptionalParameters(string sourceType, string sourcePath, ref bool isOneXOne, ref GridOrigin? origin, string[] optionalParams)
         {
             if (optionalParams.Contains("--1x1"))
             {
@@ -116,7 +116,7 @@ namespace MergerCli
             }
             if (optionalParams.Contains("--UL"))
             {
-                origin = TileGridOrigin.UPPER_LEFT;
+                origin = GridOrigin.UPPER_LEFT;
             }
             if (optionalParams.Contains("--LL"))
             {
@@ -124,7 +124,7 @@ namespace MergerCli
                 {
                     throw new Exception($"layer {sourceType} {sourcePath} cant be both UL and LL");
                 }
-                origin = TileGridOrigin.LOWER_LEFT;
+                origin = GridOrigin.LOWER_LEFT;
             }
         }
 

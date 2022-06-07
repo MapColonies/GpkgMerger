@@ -11,7 +11,7 @@ namespace MergerLogic.DataTypes
         private bool done;
         private int completedTiles;
 
-        public FS(DataType type, string path, int batchSize, bool isOneXOne = false, bool isBase = false, TileGridOrigin origin = TileGridOrigin.LOWER_LEFT)
+        public FS(DataType type, string path, int batchSize, bool isOneXOne = false, bool isBase = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
             : base(type, path, batchSize, new FileUtils(path), isOneXOne, origin)
         {
             if (isBase)
@@ -55,10 +55,16 @@ namespace MergerLogic.DataTypes
                 tile = this._toCurrentGrid(tile);
                 if (tile != null)
                 {
-                    tile = this._convertOrigin(tile);
+                    tile = this._convertOriginTile(tile);
                     yield return tile;
                 }
             }
+        }
+
+        protected override bool InternalTileExists(int z, int x, int y)
+        {
+            string fullPath = PathUtils.GetTilePathTMS(this.path, z, x, y);
+            return File.Exists(fullPath);
         }
 
         public override List<Tile> GetNextBatch(out string batchIdentifier)
