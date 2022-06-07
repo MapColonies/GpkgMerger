@@ -2,9 +2,9 @@
 
 namespace MergerLogic.Utils
 {
-    public static class TimeUtils
+    public class TimeUtils : ITimeUtils
     {
-        public static void PrintElapsedTime(string prompt, TimeSpan ts)
+        public void PrintElapsedTime(string prompt, TimeSpan ts)
         {
             // Format and display the TimeSpan value.
             string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",

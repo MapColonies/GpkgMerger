@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace MergerLogic.Utils
 {
-    public class PathPatternUtils
+    public class PathPatternUtils : IPathPatternUtils
     {
         private string[] _pattern;
         private Dictionary<string, string> keyValues;

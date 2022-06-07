@@ -2,7 +2,7 @@
 
 namespace MergerLogic.Utils
 {
-    internal class httpUtils : DataUtils
+    public class httpUtils : DataUtils
     {
         private PathPatternUtils _pathPatternUtils;
         private HttpClient _httpClient;
