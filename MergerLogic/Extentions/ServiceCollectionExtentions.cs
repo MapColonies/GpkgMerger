@@ -26,7 +26,7 @@ namespace MergerLogic.Extentions
         {
             return collection
                 .AddSingleton<IConfigurationManager, ConfigurationManager>()
-                .AddSingleton<IDataFactory,DataFactory>();
+                .AddSingleton<IDataFactory, DataFactory>();
         }
     }
 }

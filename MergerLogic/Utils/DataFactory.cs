@@ -18,7 +18,7 @@ namespace MergerLogic.Utils
             {
                 case "gpkg":
                     if (origin == null)
-                        data = new Gpkg(this._configurationManager,path, batchSize, isOneXOne);
+                        data = new Gpkg(this._configurationManager, path, batchSize, isOneXOne);
                     else
                         data = new Gpkg(this._configurationManager, path, batchSize, isOneXOne, origin.Value);
                     break;

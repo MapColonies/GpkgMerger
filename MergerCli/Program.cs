@@ -1,7 +1,7 @@
 ﻿using MergerCli.Utils;
 using MergerLogic.DataTypes;
-using MergerLogic.Utils;
 using MergerLogic.Extentions;
+using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
 using System.Runtime.Loader;

@@ -27,6 +27,6 @@ namespace MergerLogic.Utils
             }
             return config[configPath[configPath.Length - 1]];
         }
-    
+
     }
 }
