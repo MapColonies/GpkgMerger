@@ -81,11 +81,6 @@ namespace MergerLogic.DataTypes
             return tiles;
         }
 
-        protected override bool InternalTileExists(int z, int x, int y)
-        {
-            return this.utils.TileExists(z, x, y);
-        }
-
         public override void setBatchIdentifier(string batchIdentifier)
         {
             this.continuationToken = batchIdentifier;
