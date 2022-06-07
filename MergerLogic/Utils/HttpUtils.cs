@@ -2,14 +2,19 @@
 
 namespace MergerLogic.Utils
 {
-    public class HttpUtils : DataUtils
+    public class HttpUtils : DataUtils, IHttpUtils
     {
-        private PathPatternUtils _pathPatternUtils;
+        private IPathPatternUtils _pathPatternUtils;
         private HttpClient _httpClient;
-        public HttpUtils(string path, PathPatternUtils pathPatternUtils) : base(path)
+        public HttpUtils(string path, IPathPatternUtils pathPatternUtils) : base(path)
         {
             this._pathPatternUtils = pathPatternUtils;
             this._httpClient = new HttpClient();
+        }
+
+        ~HttpUtils()
+        {
+            this._httpClient.Dispose();
         }
 
         public override Tile GetTile(int z, int x, int y)

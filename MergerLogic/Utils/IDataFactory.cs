@@ -5,7 +5,7 @@ namespace MergerLogic.Utils
 {
     public interface IDataFactory
     {
-        Data CreateDatasource(string type, string path, int batchSize, bool isOneXOne, TileGridOrigin? origin = null, bool isBase = false);
-        Data CreateDatasource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0, bool isOneXone = false, TileGridOrigin? origin = null);
+        IData CreateDatasource(string type, string path, int batchSize, bool isOneXOne, GridOrigin? origin = null, bool isBase = false);
+        IData CreateDatasource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0, bool isOneXone = false, GridOrigin? origin = null);
     }
 }

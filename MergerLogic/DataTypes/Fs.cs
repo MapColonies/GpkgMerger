@@ -3,7 +3,7 @@ using MergerLogic.Utils;
 
 namespace MergerLogic.DataTypes
 {
-    public class FS : Data
+    public class FS : Data<IFileUtils>
     {
         private delegate string TilePathFunction(string path, Tile tile);
 
@@ -11,9 +11,13 @@ namespace MergerLogic.DataTypes
         private bool done;
         private int completedTiles;
 
-        public FS(DataType type, string path, int batchSize, bool isOneXOne = false, bool isBase = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
-            : base(type, path, batchSize, new FileUtils(path), isOneXOne, origin)
+        private IPathUtils _pathUtils;
+
+        public FS(IPathUtils pathUtils, IUtilsFactory utilsFactory, IOneXOneConvetor oneXOneConvetor ,
+            DataType type, string path, int batchSize, bool isOneXOne = false, bool isBase = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
+            : base(utilsFactory,oneXOneConvetor, type, path, batchSize, isOneXOne, origin)
         {
+            this._pathUtils = pathUtils;
             if (isBase)
             {
                 Directory.CreateDirectory(path);
@@ -37,8 +41,8 @@ namespace MergerLogic.DataTypes
 
         public override bool Exists()
         {
-            Console.WriteLine($"Checking if exists, folder: {this.path}");
-            string fullPath = Path.GetFullPath(this.path);
+            Console.WriteLine($"Checking if exists, folder: {this.Path}");
+            string fullPath = System.IO.Path.GetFullPath(this.Path);
             return Directory.Exists(fullPath);
         }
 
@@ -47,10 +51,10 @@ namespace MergerLogic.DataTypes
             // From: https://stackoverflow.com/a/7430971/11915280 and https://stackoverflow.com/a/19961761/11915280
             string[] ext = { ".png", ".jpg" };
             // Go over directory and count png and jpg files
-            foreach (string filePath in Directory.EnumerateFiles(this.path, "*.*", SearchOption.AllDirectories)
+            foreach (string filePath in Directory.EnumerateFiles(this.Path, "*.*", SearchOption.AllDirectories)
                                                     .Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
             {
-                Coord coord = PathUtils.FromPath(filePath);
+                Coord coord = this._pathUtils.FromPath(filePath);
                 Tile tile = this.utils.GetTile(coord);
                 tile = this._toCurrentGrid(tile);
                 if (tile != null)
@@ -59,12 +63,6 @@ namespace MergerLogic.DataTypes
                     yield return tile;
                 }
             }
-        }
-
-        protected override bool InternalTileExists(int z, int x, int y)
-        {
-            string fullPath = PathUtils.GetTilePathTMS(this.path, z, x, y);
-            return File.Exists(fullPath);
         }
 
         public override List<Tile> GetNextBatch(out string batchIdentifier)
@@ -106,14 +104,14 @@ namespace MergerLogic.DataTypes
             // From: https://stackoverflow.com/a/7430971/11915280 and https://stackoverflow.com/a/19961761/11915280
             string[] ext = { ".png", ".jpg" };
             // Go over directory and count png and jpg files
-            return Directory.EnumerateFiles(this.path, "*.*", SearchOption.AllDirectories).Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))).Count();
+            return Directory.EnumerateFiles(this.Path, "*.*", SearchOption.AllDirectories).Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))).Count();
         }
 
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
         {
             foreach (Tile tile in targetTiles)
             {
-                string tilePath = PathUtils.GetTilePath(this.path, tile);
+                string tilePath = this._pathUtils.GetTilePath(this.Path, tile);
                 byte[] buffer = tile.GetImageBytes();
                 using (var ms = new MemoryStream(buffer))
                 {

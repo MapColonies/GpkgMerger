@@ -14,9 +14,9 @@ namespace MergerCli
             this._dataFactory = dataFactory;
         }
 
-        public List<Data> ParseSources(string[] args, int batchSize)
+        public List<IData> ParseSources(string[] args, int batchSize)
         {
-            List<Data> sources = new List<Data>();
+            List<IData> sources = new List<IData>();
             int idx = 2;
             bool isBase = true;
             while (idx < args.Length)
@@ -59,7 +59,7 @@ namespace MergerCli
             return sources;
         }
 
-        private Data ParseFileSource(string[] args, ref int idx, int batchSize, bool isBase)
+        private IData ParseFileSource(string[] args, ref int idx, int batchSize, bool isBase)
         {
             const int requiredParamCount = 2;
             const int optionalParamCount = 2;
@@ -79,7 +79,7 @@ namespace MergerCli
             return this._dataFactory.CreateDatasource(sourceType, sourcePath, batchSize, isOneXOne, origin, isBase);
         }
 
-        private Data ParseHttpSource(string[] args, ref int idx, int batchSize, bool isBase)
+        private IData ParseHttpSource(string[] args, ref int idx, int batchSize, bool isBase)
         {
             const int requiredParamCount = 5;
             const int optionalParamCount = 2;

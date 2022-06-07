@@ -3,7 +3,7 @@ using MergerLogic.DataTypes;
 
 namespace MergerLogic.Utils
 {
-    public abstract class DataUtils
+    public abstract class DataUtils : IDataUtils
     {
         protected readonly string path;
 
@@ -18,5 +18,7 @@ namespace MergerLogic.Utils
         {
             return this.GetTile(coord.z, coord.x, coord.y);
         }
+
+        public abstract bool TileExists(int z, int x, int y);
     }
 }

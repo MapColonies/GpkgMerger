@@ -6,20 +6,23 @@ using System.Text;
 
 namespace MergerLogic.Utils
 {
-    public class GpkgUtils : DataUtils
+    public class GpkgUtils : DataUtils, IGpkgUtils
     {
         private string tileCache;
 
-        public GpkgUtils(string path) : base(path)
+        private ITimeUtils _timeUtils;
+
+        public GpkgUtils(string path, ITimeUtils timeUtils) : base(path)
         {
-            this.tileCache = GpkgUtils.GetTileCache(path);
+            this.tileCache = this.GetTileCache();
+            this._timeUtils = timeUtils;
         }
 
-        public static string GetTileCache(string path)
+        public string GetTileCache()
         {
             string tileCache = "";
 
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
 
@@ -38,7 +41,7 @@ namespace MergerLogic.Utils
             return tileCache;
         }
 
-        public static Extent GetExtent(string path)
+        public Extent GetExtent()
         {
             Extent extent = new Extent();
 
@@ -64,11 +67,11 @@ namespace MergerLogic.Utils
             return extent;
         }
 
-        public static int GetTileCount(string path, string tileCache)
+        public int GetTileCount(string tileCache)
         {
             int tileCount = 0;
 
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
 
@@ -87,9 +90,9 @@ namespace MergerLogic.Utils
             return tileCount;
         }
 
-        public static void UpdateExtent(string path, Extent extent)
+        public void UpdateExtent(Extent extent)
         {
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
 
@@ -218,7 +221,7 @@ namespace MergerLogic.Utils
             return false;
         }
 
-        public static void InsertTiles(string path, string tileCache, List<Tile> tiles)
+        public void InsertTiles(string tileCache, IEnumerable<Tile> tiles)
         {
             using (var connection = new SQLiteConnection($"Data Source={path}"))
             {
@@ -248,11 +251,11 @@ namespace MergerLogic.Utils
             }
         }
 
-        public static List<Tile> GetBatch(string path, int batchSize, int offset, string tileCache)
+        public List<Tile> GetBatch(int batchSize, int offset, string tileCache)
         {
             List<Tile> tiles = new List<Tile>();
 
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
 
@@ -281,10 +284,10 @@ namespace MergerLogic.Utils
             return tiles;
         }
 
-        public static Tile GetLastTile(string path, string tileCache, int[] coords, Coord baseCoords)
+        public Tile GetLastTile(string tileCache, int[] coords, Coord baseCoords)
         {
             Tile lastTile = null;
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
 
@@ -331,9 +334,9 @@ namespace MergerLogic.Utils
             return lastTile;
         }
 
-        public static void CreateTileIndex(string path, string tileCache)
+        public void CreateTileIndex(string tileCache)
         {
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())
@@ -344,13 +347,13 @@ namespace MergerLogic.Utils
             }
         }
 
-        public static void Vacuum(string path)
+        public void Vacuum()
         {
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
 
             Console.WriteLine($"Vacuuming GPKG {path}");
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())
@@ -364,7 +367,7 @@ namespace MergerLogic.Utils
             // Get the elapsed time as a TimeSpan value.
             TimeSpan ts = stopWatch.Elapsed;
 
-            TimeUtils.PrintElapsedTime("Vacuum runtime", ts);
+            this._timeUtils.PrintElapsedTime("Vacuum runtime", ts);
         }
     }
 }

@@ -5,7 +5,7 @@ namespace MergerCli
 {
     internal interface IProccess
     {
-        void Start(Data baseData, Data newData, int batchSize, BatchStatusManager batchStatusManager);
-        void Validate(Data baseData, Data newData);
+        void Start(IData baseData, IData newData, int batchSize, BatchStatusManager batchStatusManager);
+        void Validate(IData baseData, IData newData);
     }
 }

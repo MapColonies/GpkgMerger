@@ -5,32 +5,35 @@ namespace MergerLogic.Utils
 {
     public class UtilsFactory : IUtilsFactory
     {
+        private IPathUtils _pathUtils;
+        private ITimeUtils _timeUtils;
         private IServiceProvider _container;
 
-        public UtilsFactory(IServiceProvider container)
+        public UtilsFactory(IPathUtils pathUtils, ITimeUtils timeUtils, IServiceProvider container)
         {
+            _pathUtils = pathUtils;
             this._container = container;
         }
 
         #region dataUtils
 
-        public FileUtils GetFileUtiles(string path)
+        public IFileUtils GetFileUtiles(string path)
         {
-            return new FileUtils(path);
+            return new FileUtils(path,this._pathUtils);
         }
 
-        public GpkgUtils GetGpkgUtils(string path)
+        public IGpkgUtils GetGpkgUtils(string path)
         {
-            return new GpkgUtils(path);
+            return new GpkgUtils(path, this._timeUtils);
         }
 
-        public httpUtils GetHttpUtils(string path)
+        public IHttpUtils GetHttpUtils(string path)
         {
             IPathPatternUtils pathPatternUtils = this.GetPathPatternUtils(path);
-            return new httpUtils(path, pathPatternUtils);
+            return new HttpUtils(path, pathPatternUtils);
         }
 
-        public S3Utils GetS3Utils(string path)
+        public IS3Utils GetS3Utils(string path)
         {
             string bucket = this._container.GetRequiredService<IConfigurationManager>().GetConfiguration("S3", "bucket");
             IAmazonS3? client = this._container.GetService<IAmazonS3>();
@@ -39,25 +42,25 @@ namespace MergerLogic.Utils
                 throw new Exception("S3 Data utills requires s3 client to be configured");
             }
 
-            return new S3Utils(client, path, bucket);
+            return new S3Utils(client,this._pathUtils,bucket, path);
         }
 
-        public T GetDataUtils<T>(string path) where T : DataUtils
+        public T GetDataUtils<T>(string path) where T : IDataUtils
         {
             //TODO: replace with interfaces
-            if (typeof(FileUtils).IsAssignableFrom(typeof(T)))
+            if (typeof(IFileUtils).IsAssignableFrom(typeof(T)))
             {
                 return (T)(Object)this.GetFileUtiles(path);
             }
-            if (typeof(GpkgUtils).IsAssignableFrom(typeof(T)))
+            if (typeof(IGpkgUtils).IsAssignableFrom(typeof(T)))
             {
                 return (T)(Object)this.GetGpkgUtils(path);
             }
-            if (typeof(httpUtils).IsAssignableFrom(typeof(T)))
+            if (typeof(IHttpUtils).IsAssignableFrom(typeof(T)))
             {
                 return (T)(Object)this.GetHttpUtils(path);
             }
-            if (typeof(S3Utils).IsAssignableFrom(typeof(T)))
+            if (typeof(IS3Utils).IsAssignableFrom(typeof(T)))
             {
                 return (T)(Object)this.GetS3Utils(path);
             }

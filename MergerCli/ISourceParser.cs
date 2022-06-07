@@ -4,6 +4,6 @@ namespace MergerCli
 {
     internal interface ISourceParser
     {
-        List<Data> ParseSources(string[] args, int batchSize);
+        List<IData> ParseSources(string[] args, int batchSize);
     }
 }

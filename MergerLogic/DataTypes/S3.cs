@@ -6,30 +6,24 @@ using MergerLogic.Utils;
 
 namespace MergerLogic.DataTypes
 {
-    public class S3 : Data
+    public class S3 : Data<IS3Utils>
     {
-        private AmazonS3Client client;
+        private IAmazonS3 client;
         private string bucket;
-        private string continuationToken;
+        private string? continuationToken;
         private bool endOfRead;
 
+        private IPathUtils _pathUtils;
 
-        public S3(string serviceUrl, string bucket, string path, int batchSize, bool isOneXOne = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
-            : base(DataType.S3, path, batchSize, new S3Utils(S3.GetClient(serviceUrl), bucket, path), isOneXOne, origin)
-        {
-            this.bucket = bucket;
-            this.continuationToken = null;
-            this.endOfRead = false;
-            this.client = S3.GetClient(serviceUrl);
-        }
-
-        public S3(AmazonS3Client client, string bucket, string path, int batchSize, bool isOneXOne = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
-            : base(DataType.S3, path, batchSize, new S3Utils(client, bucket, path), isOneXOne, origin)
+        public S3(IPathUtils pathUtils, IAmazonS3 client, IUtilsFactory utilsFactory, IOneXOneConvetor oneXOneConvetor,
+            string bucket, string path, int batchSize, bool isOneXOne = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
+            : base(utilsFactory, oneXOneConvetor, DataType.S3, path, batchSize, isOneXOne, origin)
         {
             this.bucket = bucket;
             this.continuationToken = null;
             this.endOfRead = false;
             this.client = client;
+            this._pathUtils = pathUtils;
         }
 
         ~S3()
@@ -49,23 +43,6 @@ namespace MergerLogic.DataTypes
             this.Reset();
         }
 
-        public static AmazonS3Client GetClient(string serviceUrl)
-        {
-            // Get s3 credentials
-            string accessKey = Environment.GetEnvironmentVariable("S3_ACCESS_KEY");
-            string secretKey = Environment.GetEnvironmentVariable("S3_SECRET_KEY");
-            var credentials = new BasicAWSCredentials(accessKey, secretKey);
-
-            var config = new AmazonS3Config
-            {
-                RegionEndpoint = Amazon.RegionEndpoint.USEast1,
-                ServiceURL = serviceUrl,
-                ForcePathStyle = true
-            };
-
-            return new AmazonS3Client(credentials, config);
-        }
-
         public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
             batchIdentifier = this.continuationToken;
@@ -74,8 +51,8 @@ namespace MergerLogic.DataTypes
             var listRequests = new ListObjectsV2Request
             {
                 BucketName = bucket,
-                Prefix = path,
-                StartAfter = path,
+                Prefix = Path,
+                StartAfter = Path,
                 MaxKeys = batchSize,
                 ContinuationToken = continuationToken
             };
@@ -88,7 +65,7 @@ namespace MergerLogic.DataTypes
                 response.ContinuationToken = this.continuationToken;
                 foreach (S3Object item in response.S3Objects)
                 {
-                    Coord coord = PathUtils.FromPath(item.Key, true);
+                    Coord coord = this._pathUtils.FromPath(item.Key, true);
                     Tile tile = this.utils.GetTile(coord);
                     tile = this._toCurrentGrid(tile);
                     if (tile != null)
@@ -120,12 +97,12 @@ namespace MergerLogic.DataTypes
             var listRequests = new ListObjectsV2Request
             {
                 BucketName = bucket,
-                Prefix = path,
-                StartAfter = path,
+                Prefix = Path,
+                StartAfter = Path,
                 MaxKeys = 1
             };
 
-            Console.WriteLine($"Checking if exists, bucket: {this.bucket}, path: {this.path}");
+            Console.WriteLine($"Checking if exists, bucket: {this.bucket}, path: {this.Path}");
             var task = this.client.ListObjectsV2Async(listRequests);
             var response = task.Result;
             return response.KeyCount > 0;
@@ -141,8 +118,8 @@ namespace MergerLogic.DataTypes
                 var listRequests = new ListObjectsV2Request
                 {
                     BucketName = bucket,
-                    Prefix = path,
-                    StartAfter = path,
+                    Prefix = Path,
+                    StartAfter = Path,
                     ContinuationToken = continuationToken
                 };
 
@@ -160,7 +137,7 @@ namespace MergerLogic.DataTypes
         {
             foreach (var tile in targetTiles)
             {
-                S3Utils.UpdateTile(this.client, this.bucket, this.path, tile);
+                this.utils.UpdateTile(tile);
             }
         }
     }

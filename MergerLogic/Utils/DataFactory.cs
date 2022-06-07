@@ -1,42 +1,57 @@
-﻿using MergerLogic.Batching;
+﻿using Amazon.S3;
+using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MergerLogic.Utils
 {
     public class DataFactory : IDataFactory
     {
         private IConfigurationManager _configurationManager;
-        public DataFactory(IConfigurationManager configuration)
+        private IUtilsFactory _utilsFactory;
+        private IOneXOneConvetor _oneXOneConvetor;
+        private IPathUtils _pathUtils;
+        private IServiceProvider _container;
+
+        public DataFactory(IConfigurationManager configuration, IUtilsFactory utilsFactory, IOneXOneConvetor oneXOneConvetor,IPathUtils pathUtils, IServiceProvider container)
         {
             this._configurationManager = configuration;
+            this._utilsFactory = utilsFactory;
+            this._oneXOneConvetor = oneXOneConvetor;
+            this._pathUtils = pathUtils;
+            this._container = container;
         }
 
-        public Data CreateDatasource(string type, string path, int batchSize, bool isOneXOne, TileGridOrigin? origin = null, bool isBase = false)
+        public IData CreateDatasource(string type, string path, int batchSize, bool isOneXOne, GridOrigin? origin = null, bool isBase = false)
         {
-            Data data;
+            IData data;
             switch (type.ToLower())
             {
                 case "gpkg":
                     if (origin == null)
-                        data = new Gpkg(this._configurationManager, path, batchSize, isOneXOne);
+                        data = new Gpkg(this._configurationManager, this._utilsFactory, this._oneXOneConvetor, path, batchSize, isOneXOne);
                     else
-                        data = new Gpkg(this._configurationManager, path, batchSize, isOneXOne, origin.Value);
+                        data = new Gpkg(this._configurationManager, this._utilsFactory, this._oneXOneConvetor, path, batchSize, isOneXOne, origin.Value);
                     break;
                 case "s3":
                     string s3Url = this._configurationManager.GetConfiguration("S3", "url");
                     string bucket = this._configurationManager.GetConfiguration("S3", "bucket");
-                    var client = S3.GetClient(s3Url);
-                    path = PathUtils.RemoveTrailingSlash(path);
+                    var client = this._container.GetService<IAmazonS3>();
+                    if(client is null)
+                    {
+                        throw new Exception("s3 configuration is required");
+                    }
+                    path = this._pathUtils.RemoveTrailingSlash(path);
                     if (origin == null)
-                        data = new S3(client, bucket, path, batchSize, isOneXOne);
+                        data = new S3(this._pathUtils,client, this._utilsFactory, this._oneXOneConvetor, bucket, path, batchSize, isOneXOne);
                     else
-                        data = new S3(client, bucket, path, batchSize, isOneXOne, origin.Value);
+                        data = new S3(this._pathUtils, client, this._utilsFactory, this._oneXOneConvetor, bucket, path, batchSize, isOneXOne, origin.Value);
                     break;
                 case "fs":
                     if (origin == null)
-                        data = new FS(DataType.FOLDER, path, batchSize, isOneXOne, isBase);
+                        data = new FS(this._pathUtils, this._utilsFactory, this._oneXOneConvetor, DataType.FOLDER, path, batchSize, isOneXOne, isBase);
                     else
-                        data = new FS(DataType.FOLDER, path, batchSize, isOneXOne, isBase, origin.Value);
+                        data = new FS(this._pathUtils, this._utilsFactory, this._oneXOneConvetor, DataType.FOLDER, path, batchSize, isOneXOne, isBase, origin.Value);
                     break;
                 case "wmts":
                 case "xyz":
@@ -58,9 +73,9 @@ namespace MergerLogic.Utils
             return data;
         }
 
-        public Data CreateDatasource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0, bool isOneXone = false, TileGridOrigin? origin = null)
+        public IData CreateDatasource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0, bool isOneXone = false, GridOrigin? origin = null)
         {
-            Data data;
+            IData data;
             type = type.ToLower();
             switch (type)
             {
@@ -77,21 +92,21 @@ namespace MergerLogic.Utils
             {
                 case "wmts":
                     if (origin == null)
-                        data = new WMTS(DataType.WMTS, path, batchSize, extent, maxZoom, minZoom, isOneXone);
+                        data = new WMTS(this._utilsFactory, this._oneXOneConvetor, DataType.WMTS, path, batchSize, extent, maxZoom, minZoom, isOneXone);
                     else
-                        data = new WMTS(DataType.WMTS, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
+                        data = new WMTS(this._utilsFactory, this._oneXOneConvetor, DataType.WMTS, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
                     break;
                 case "xyz":
                     if (origin == null)
-                        data = new XYZ(DataType.XYZ, path, batchSize, extent, maxZoom, minZoom, isOneXone);
+                        data = new XYZ(this._utilsFactory, this._oneXOneConvetor, DataType.XYZ, path, batchSize, extent, maxZoom, minZoom, isOneXone);
                     else
-                        data = new XYZ(DataType.XYZ, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
+                        data = new XYZ(this._utilsFactory, this._oneXOneConvetor, DataType.XYZ, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
                     break;
                 case "tms":
                     if (origin == null)
-                        data = new TMS(DataType.TMS, path, batchSize, extent, maxZoom, minZoom, isOneXone);
+                        data = new TMS(this._utilsFactory, this._oneXOneConvetor, DataType.TMS, path, batchSize, extent, maxZoom, minZoom, isOneXone);
                     else
-                        data = new TMS(DataType.TMS, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
+                        data = new TMS(this._utilsFactory, this._oneXOneConvetor, DataType.TMS, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
                     break;
                 default:
                     throw new Exception($"Currently there is no support for the data type '{type}'");

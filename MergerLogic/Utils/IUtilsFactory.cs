@@ -2,11 +2,11 @@
 {
     public interface IUtilsFactory
     {
-        T GetDataUtils<T>(string path) where T : DataUtils;
-        FileUtils GetFileUtiles(string path);
-        GpkgUtils GetGpkgUtils(string path);
-        httpUtils GetHttpUtils(string path);
+        T GetDataUtils<T>(string path) where T : IDataUtils;
+        IFileUtils GetFileUtiles(string path);
+        IGpkgUtils GetGpkgUtils(string path);
+        IHttpUtils GetHttpUtils(string path);
         IPathPatternUtils GetPathPatternUtils(string pattern);
-        S3Utils GetS3Utils(string path);
+        IS3Utils GetS3Utils(string path);
     }
 }
