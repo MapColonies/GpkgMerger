@@ -34,11 +34,11 @@ namespace MergerLogic.Extentions
             return collection
                 .AddSingleton<IConfigurationManager, ConfigurationManager>()
                 .AddSingleton<IDataFactory, DataFactory>()
-                .AddSingleton<IOneXOneConvetor,OneXOneConvetor>()
-                .AddSingleton<IPathUtils,PathUtils>()
-                .AddSingleton<IStringUtils,StringUtils>()
-                .AddSingleton<ITimeUtils,TimeUtils>()
-                .AddSingleton<IUtilsFactory,UtilsFactory>();
+                .AddSingleton<IOneXOneConvetor, OneXOneConvetor>()
+                .AddSingleton<IPathUtils, PathUtils>()
+                .AddSingleton<IStringUtils, StringUtils>()
+                .AddSingleton<ITimeUtils, TimeUtils>()
+                .AddSingleton<IUtilsFactory, UtilsFactory>();
         }
 
         public static IServiceCollection RegisterServiceProvider(this IServiceCollection collection)
@@ -55,7 +55,7 @@ namespace MergerLogic.Extentions
                 string accessKey = Environment.GetEnvironmentVariable("S3_ACCESS_KEY");
                 string secretKey = Environment.GetEnvironmentVariable("S3_SECRET_KEY");
 
-                if(string.IsNullOrEmpty(s3Url) || string.IsNullOrEmpty(accessKey) || string.IsNullOrEmpty(secretKey))
+                if (string.IsNullOrEmpty(s3Url) || string.IsNullOrEmpty(accessKey) || string.IsNullOrEmpty(secretKey))
                 {
                     throw new Exception("s3 configuration is required");
                 }
