@@ -53,7 +53,7 @@ namespace MergerCli
                 return;
             }
 
-            var proccess = container.GetRequiredService<IProccess>();
+            var proccess = container.GetRequiredService<IProcess>();
             var timeUtils = container.GetRequiredService<ITimeUtils>();
             try
             {
@@ -109,7 +109,7 @@ namespace MergerCli
         {
             return new ServiceCollection()
                 .RegisterMergerLogicType()
-                .AddSingleton<IProccess, Proccess>()
+                .AddSingleton<IProcess, Process>()
                 .AddSingleton<ISourceParser, SourceParser>()
                 .BuildServiceProvider();
         }

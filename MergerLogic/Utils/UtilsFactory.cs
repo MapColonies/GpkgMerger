@@ -47,7 +47,6 @@ namespace MergerLogic.Utils
 
         public T GetDataUtils<T>(string path) where T : IDataUtils
         {
-            //TODO: replace with interfaces
             if (typeof(IFileUtils).IsAssignableFrom(typeof(T)))
             {
                 return (T)(Object)this.GetFileUtils(path);

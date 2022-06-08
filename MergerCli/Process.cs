@@ -5,10 +5,10 @@ using MergerLogic.ImageProccessing;
 
 namespace MergerCli
 {
-    internal class Proccess : IProccess
+    internal class Process : IProcess
     {
         private ITileMerger _tileMerger;
-        public Proccess(ITileMerger tileMerger)
+        public Process(ITileMerger tileMerger)
         {
             this._tileMerger = tileMerger;
         }
