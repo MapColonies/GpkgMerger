@@ -22,7 +22,7 @@ namespace MergerLogic.DataTypes
     public abstract class Data
     {
         protected delegate int ValFromCoordFunction(Coord coord);
-        protected delegate Tile GetTileFromXYZFunction(int z, int x, int y);
+        protected delegate Tile? GetTileFromXYZFunction(int z, int x, int y);
         protected delegate Coord GetCoordFromCoordFunction(Coord coord);
         protected delegate Tile GetTileFromCoordFunction(Coord coord);
         protected delegate Tile TileConvertorFunction(Tile Tile);
@@ -168,8 +168,8 @@ namespace MergerLogic.DataTypes
         }
 
 
-        //lazy load get tile function on first call for compatibility with null utills in contractor
-        protected Tile GetTileInitilaizer(int z, int x, int y)
+        // lazy load get tile function on first call for compatibility with null utills in contractor
+        protected Tile? GetTileInitilaizer(int z, int x, int y)
         {
             GetTileFromXYZFunction fixedGridGetTileFuntion = this.isOneXOne ? this.GetOneXOneTile : this.utils.GetTile;
             if (this.origin == GridOrigin.LOWER_LEFT)
@@ -177,9 +177,9 @@ namespace MergerLogic.DataTypes
                 this._getTile = (z, x, y) =>
                 {
                     int newY = GeoUtils.FlipY(z, y);
-                    Tile tile = fixedGridGetTileFuntion(z, x, newY);
+                    Tile? tile = fixedGridGetTileFuntion(z, x, newY);
                     //set cords to current origin
-                    tile.SetCoords(z, x, y);
+                    tile?.SetCoords(z, x, y);
                     return tile;
                 };
             }
