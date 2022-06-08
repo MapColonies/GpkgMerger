@@ -6,11 +6,11 @@ namespace MergerLogic.Utils
     public class PathPatternUtils : IPathPatternUtils
     {
         private string[] _pattern;
-        private Dictionary<string, string> keyValues;
+        private Dictionary<string, string> _keyValues;
 
         public PathPatternUtils(string pattern)
         {
-            this.keyValues = new Dictionary<string, string>(9);
+            this._keyValues = new Dictionary<string, string>(9);
             this.compilePattern(pattern);
         }
 
@@ -29,28 +29,28 @@ namespace MergerLogic.Utils
                 throw new Exception("invalid url pattern.");
             }
         }
-        public string renderUrlTemplate(Coord coords)
+        public string RenderUrlTemplate(Coord coords)
         {
-            return this.renderUrlTemplate(coords.x, coords.y, coords.z);
+            return this.RenderUrlTemplate(coords.x, coords.y, coords.z);
         }
 
-        public string renderUrlTemplate(int x, int y, int z)
+        public string RenderUrlTemplate(int x, int y, int z)
         {
             this.prepareDictionary(x.ToString(), y.ToString(), z.ToString());
-            return $"{this._pattern[0]}{this.keyValues[this._pattern[1]]}{this._pattern[2]}{this.keyValues[this._pattern[3]]}{this._pattern[4]}{this.keyValues[this._pattern[5]]}{this._pattern[6]}";
+            return $"{this._pattern[0]}{this._keyValues[this._pattern[1]]}{this._pattern[2]}{this._keyValues[this._pattern[3]]}{this._pattern[4]}{this._keyValues[this._pattern[5]]}{this._pattern[6]}";
         }
 
         private void prepareDictionary(string x, string y, string z)
         {
-            this.keyValues["x"] = x;
-            this.keyValues["X"] = x;
-            this.keyValues["TileCol"] = x;
-            this.keyValues["y"] = y;
-            this.keyValues["Y"] = y;
-            this.keyValues["TileRow"] = y;
-            this.keyValues["z"] = z;
-            this.keyValues["Z"] = z;
-            this.keyValues["TileMatrix"] = z;
+            this._keyValues["x"] = x;
+            this._keyValues["X"] = x;
+            this._keyValues["TileCol"] = x;
+            this._keyValues["y"] = y;
+            this._keyValues["Y"] = y;
+            this._keyValues["TileRow"] = y;
+            this._keyValues["z"] = z;
+            this._keyValues["Z"] = z;
+            this._keyValues["TileMatrix"] = z;
         }
     }
 }

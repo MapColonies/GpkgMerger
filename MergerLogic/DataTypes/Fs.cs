@@ -7,15 +7,15 @@ namespace MergerLogic.DataTypes
     {
         private delegate string TilePathFunction(string path, Tile tile);
 
-        private IEnumerator<Tile> tiles;
-        private bool done;
-        private int completedTiles;
+        private IEnumerator<Tile> _tiles;
+        private bool _done;
+        private int _completedTiles;
 
         private IPathUtils _pathUtils;
 
         public FS(IPathUtils pathUtils, IUtilsFactory utilsFactory, IOneXOneConvetor oneXOneConvetor,
-            DataType type, string path, int batchSize, bool isOneXOne = false, bool isBase = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
-            : base(utilsFactory, oneXOneConvetor, type, path, batchSize, isOneXOne, origin)
+            string path, int batchSize, bool isOneXOne = false, bool isBase = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
+            : base(utilsFactory, oneXOneConvetor, DataType.FOLDER, path, batchSize, isOneXOne, origin)
         {
             this._pathUtils = pathUtils;
             if (isBase)
@@ -27,10 +27,10 @@ namespace MergerLogic.DataTypes
 
         public override void Reset()
         {
-            this.tiles = this.GetTiles();
-            this.tiles.MoveNext();
-            this.done = false;
-            this.completedTiles = 0;
+            this._tiles = this.GetTiles();
+            this._tiles.MoveNext();
+            this._done = false;
+            this._completedTiles = 0;
         }
 
         public override void Wrapup()
@@ -67,35 +67,35 @@ namespace MergerLogic.DataTypes
 
         public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
-            batchIdentifier = this.completedTiles.ToString();
+            batchIdentifier = this._completedTiles.ToString();
             List<Tile> tiles = new List<Tile>(this.batchSize);
 
-            if (this.done)
+            if (this._done)
             {
                 this.Reset();
                 return tiles;
             }
 
-            while (!this.done && tiles.Count < this.batchSize)
+            while (!this._done && tiles.Count < this.batchSize)
             {
-                Tile tile = this.tiles.Current;
+                Tile tile = this._tiles.Current;
                 tiles.Add(tile);
-                this.done = !this.tiles.MoveNext();
+                this._done = !this._tiles.MoveNext();
             }
 
-            this.completedTiles += tiles.Count;
+            this._completedTiles += tiles.Count;
 
             return tiles;
         }
 
         public override void setBatchIdentifier(string batchIdentifier)
         {
-            this.completedTiles = int.Parse(batchIdentifier);
+            this._completedTiles = int.Parse(batchIdentifier);
             // uncomment to make this function work at any point of the run and not only after the source initialization
             //this.tiles.Reset();
-            for (int i = 0; i < this.completedTiles; i++)
+            for (int i = 0; i < this._completedTiles; i++)
             {
-                this.tiles.MoveNext();
+                this._tiles.MoveNext();
             }
         }
 

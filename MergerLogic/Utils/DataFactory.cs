@@ -49,9 +49,9 @@ namespace MergerLogic.Utils
                     break;
                 case "fs":
                     if (origin == null)
-                        data = new FS(this._pathUtils, this._utilsFactory, this._oneXOneConvetor, DataType.FOLDER, path, batchSize, isOneXOne, isBase);
+                        data = new FS(this._pathUtils, this._utilsFactory, this._oneXOneConvetor, path, batchSize, isOneXOne, isBase);
                     else
-                        data = new FS(this._pathUtils, this._utilsFactory, this._oneXOneConvetor, DataType.FOLDER, path, batchSize, isOneXOne, isBase, origin.Value);
+                        data = new FS(this._pathUtils, this._utilsFactory, this._oneXOneConvetor, path, batchSize, isOneXOne, isBase, origin.Value);
                     break;
                 case "wmts":
                 case "xyz":
@@ -92,21 +92,21 @@ namespace MergerLogic.Utils
             {
                 case "wmts":
                     if (origin == null)
-                        data = new WMTS(this._utilsFactory, this._oneXOneConvetor, DataType.WMTS, path, batchSize, extent, maxZoom, minZoom, isOneXone);
+                        data = new WMTS(this._utilsFactory, this._oneXOneConvetor, path, batchSize, extent, maxZoom, minZoom, isOneXone);
                     else
-                        data = new WMTS(this._utilsFactory, this._oneXOneConvetor, DataType.WMTS, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
+                        data = new WMTS(this._utilsFactory, this._oneXOneConvetor, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
                     break;
                 case "xyz":
                     if (origin == null)
-                        data = new XYZ(this._utilsFactory, this._oneXOneConvetor, DataType.XYZ, path, batchSize, extent, maxZoom, minZoom, isOneXone);
+                        data = new XYZ(this._utilsFactory, this._oneXOneConvetor, path, batchSize, extent, maxZoom, minZoom, isOneXone);
                     else
-                        data = new XYZ(this._utilsFactory, this._oneXOneConvetor, DataType.XYZ, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
+                        data = new XYZ(this._utilsFactory, this._oneXOneConvetor, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
                     break;
                 case "tms":
                     if (origin == null)
-                        data = new TMS(this._utilsFactory, this._oneXOneConvetor, DataType.TMS, path, batchSize, extent, maxZoom, minZoom, isOneXone);
+                        data = new TMS(this._utilsFactory, this._oneXOneConvetor, path, batchSize, extent, maxZoom, minZoom, isOneXone);
                     else
-                        data = new TMS(this._utilsFactory, this._oneXOneConvetor, DataType.TMS, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
+                        data = new TMS(this._utilsFactory, this._oneXOneConvetor, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
                     break;
                 default:
                     throw new Exception($"Currently there is no support for the data type '{type}'");

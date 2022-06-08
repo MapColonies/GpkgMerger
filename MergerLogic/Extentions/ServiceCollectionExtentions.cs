@@ -1,6 +1,4 @@
-﻿
-
-using Amazon.Runtime;
+﻿using Amazon.Runtime;
 using Amazon.S3;
 using MergerLogic.ImageProccessing;
 using MergerLogic.Utils;

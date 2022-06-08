@@ -19,7 +19,7 @@ namespace MergerLogic.Utils
 
         public override Tile GetTile(int z, int x, int y)
         {
-            string url = this._pathPatternUtils.renderUrlTemplate(x, y, z);
+            string url = this._pathPatternUtils.RenderUrlTemplate(x, y, z);
             var resTask = this._httpClient.GetAsync(url);
             resTask.Wait();
             var httpRes = resTask.Result;

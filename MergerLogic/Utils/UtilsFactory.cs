@@ -17,7 +17,7 @@ namespace MergerLogic.Utils
 
         #region dataUtils
 
-        public IFileUtils GetFileUtiles(string path)
+        public IFileUtils GetFileUtils(string path)
         {
             return new FileUtils(path, this._pathUtils);
         }
@@ -50,7 +50,7 @@ namespace MergerLogic.Utils
             //TODO: replace with interfaces
             if (typeof(IFileUtils).IsAssignableFrom(typeof(T)))
             {
-                return (T)(Object)this.GetFileUtiles(path);
+                return (T)(Object)this.GetFileUtils(path);
             }
             if (typeof(IGpkgUtils).IsAssignableFrom(typeof(T)))
             {

@@ -8,12 +8,12 @@ namespace MergerLogic.Utils
     {
         private string bucket;
 
-        private IAmazonS3 client;
+        private IAmazonS3 _client;
         private IPathUtils _pathUtils;
 
         public S3Utils(IAmazonS3 client, IPathUtils pathUtils, string bucket, string path) : base(path)
         {
-            this.client = client;
+            this._client = client;
             this.bucket = bucket;
             this._pathUtils = pathUtils;
         }
@@ -27,7 +27,7 @@ namespace MergerLogic.Utils
                     BucketName = bucket,
                     Key = key
                 };
-                var getObjectTask = this.client.GetObjectAsync(request);
+                var getObjectTask = this._client.GetObjectAsync(request);
                 GetObjectResponse res = getObjectTask.Result;
 
                 byte[] image;
@@ -72,7 +72,7 @@ namespace MergerLogic.Utils
 
             try
             {
-                var task = this.client.GetObjectMetadataAsync(request);
+                var task = this._client.GetObjectMetadataAsync(request);
                 _ = task.Result;
                 return true;
             }
@@ -97,7 +97,7 @@ namespace MergerLogic.Utils
             using (var ms = new MemoryStream(buffer))
             {
                 request.InputStream = ms;
-                var task = this.client.PutObjectAsync(request);
+                var task = this._client.PutObjectAsync(request);
                 var res = task.Result;
             }
         }

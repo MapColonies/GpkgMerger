@@ -8,13 +8,13 @@ namespace MergerLogic.Utils
 {
     public class GpkgUtils : DataUtils, IGpkgUtils
     {
-        private string tileCache;
+        private string _tileCache;
 
         private ITimeUtils _timeUtils;
 
         public GpkgUtils(string path, ITimeUtils timeUtils) : base(path)
         {
-            this.tileCache = this.GetTileCache();
+            this._tileCache = this.GetTileCache();
             this._timeUtils = timeUtils;
         }
 
@@ -175,7 +175,7 @@ namespace MergerLogic.Utils
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT hex(tile_data) FROM {this.tileCache} where zoom_level=$z and tile_column=$x and tile_row=$y";
+                    command.CommandText = $"SELECT hex(tile_data) FROM {this._tileCache} where zoom_level=$z and tile_column=$x and tile_row=$y";
                     command.Parameters.AddWithValue("$z", z);
                     command.Parameters.AddWithValue("$x", x);
                     command.Parameters.AddWithValue("$y", y);
@@ -202,7 +202,7 @@ namespace MergerLogic.Utils
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT tile_row FROM {this.tileCache} where zoom_level=$z and tile_column=$x and tile_row=$y";
+                    command.CommandText = $"SELECT tile_row FROM {this._tileCache} where zoom_level=$z and tile_column=$x and tile_row=$y";
                     command.Parameters.AddWithValue("$z", z);
                     command.Parameters.AddWithValue("$x", x);
                     command.Parameters.AddWithValue("$y", y);

@@ -3,7 +3,7 @@
     public interface IUtilsFactory
     {
         T GetDataUtils<T>(string path) where T : IDataUtils;
-        IFileUtils GetFileUtiles(string path);
+        IFileUtils GetFileUtils(string path);
         IGpkgUtils GetGpkgUtils(string path);
         IHttpUtils GetHttpUtils(string path);
         IPathPatternUtils GetPathPatternUtils(string pattern);

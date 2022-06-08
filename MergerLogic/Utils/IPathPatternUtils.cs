@@ -4,7 +4,7 @@ namespace MergerLogic.Utils
 {
     public interface IPathPatternUtils
     {
-        string renderUrlTemplate(Coord coords);
-        string renderUrlTemplate(int x, int y, int z);
+        string RenderUrlTemplate(Coord coords);
+        string RenderUrlTemplate(int x, int y, int z);
     }
 }
