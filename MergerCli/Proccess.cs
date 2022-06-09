@@ -7,7 +7,6 @@ namespace MergerCli
 {
     internal static class Proccess
     {
-
         public static void Start(Data baseData, Data newData, int batchSize, BatchStatusManager batchStatusManager)
         {
             batchStatusManager.InitilaizeLayer(newData.path);
@@ -75,7 +74,8 @@ namespace MergerCli
 
             int totalTileCount = newData.TileCount();
             int tilesChecked = 0;
-            Console.WriteLine($"Base tile Count: {baseData.TileCount()}, New tile count: {newData.TileCount()}");
+
+            Console.WriteLine($"New tile count: {totalTileCount}");
 
             do
             {
