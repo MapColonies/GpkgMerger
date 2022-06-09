@@ -5,13 +5,13 @@ namespace MergerLogic.Utils
 {
     public interface IGpkgUtils : IDataUtils
     {
-        void CreateTileIndex(string tileCache);
-        List<Tile> GetBatch(int batchSize, int offset, string tileCache);
+        void CreateTileIndex();
+        List<Tile> GetBatch(int batchSize, int offset);
         Extent GetExtent();
-        Tile GetLastTile(string tileCache, int[] coords, Coord baseCoords);
+        Tile GetLastTile(int[] coords, Coord baseCoords);
         string GetTileCache();
-        int GetTileCount(string tileCache);
-        void InsertTiles(string tileCache, IEnumerable<Tile> tiles);
+        int GetTileCount();
+        void InsertTiles(IEnumerable<Tile> tiles);
         void UpdateExtent(Extent extent);
         void Vacuum();
     }
