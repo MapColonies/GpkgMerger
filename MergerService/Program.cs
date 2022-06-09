@@ -1,5 +1,5 @@
+using MergerLogic.Extentions;
 using MergerService.Src;
-using System.Threading;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +9,8 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.RegisterMergerLogicType();
+builder.Services.AddSingleton<IRun, Run>();
 
 var app = builder.Build();
 
@@ -28,4 +30,4 @@ new Thread(() =>
     app.Run();
 });
 
-Run.Start();
+app.Services.GetRequiredService<IRun>().Start();

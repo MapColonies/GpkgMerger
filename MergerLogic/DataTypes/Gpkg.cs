@@ -15,7 +15,7 @@ namespace MergerLogic.DataTypes
         public double pixleYSize;
     }
 
-    public class Gpkg : Data
+    public class Gpkg : Data<IGpkgUtils>
     {
         private delegate Coord CoordConvertorFunction(Coord cords);
 
@@ -25,13 +25,16 @@ namespace MergerLogic.DataTypes
 
         private Extent extent;
         private CoordConvertorFunction _coordsFromCurrentGrid;
+        private IConfigurationManager _configManager;
 
-        public Gpkg(string path, int batchSize, bool isOneXOne = false, GridOrigin origin = GridOrigin.UPPER_LEFT)
-            : base(DataType.GPKG, path, batchSize, new GpkgUtils(path), isOneXOne, origin)
+        public Gpkg(IConfigurationManager configuration, IUtilsFactory utilsFactory, IOneXOneConvetor oneXOneConvetor,
+            string path, int batchSize, bool isOneXOne = false, GridOrigin origin = GridOrigin.UPPER_LEFT)
+            : base(utilsFactory, oneXOneConvetor, DataType.GPKG, path, batchSize, isOneXOne, origin)
         {
-            this.tileCache = GpkgUtils.GetTileCache(path);
+            this.tileCache = this.utils.GetTileCache();
             this.offset = 0;
-            this.extent = GpkgUtils.GetExtent(path);
+            this.extent = this.utils.GetExtent();
+            this._configManager = configuration;
 
             if (isOneXOne)
             {
@@ -48,9 +51,9 @@ namespace MergerLogic.DataTypes
             this.offset = 0;
         }
 
-        public override void UpdateMetadata(Data data)
+        public override void UpdateMetadata(IData data)
         {
-            if (data.type != DataType.GPKG)
+            if (data.Type != DataType.GPKG)
             {
                 return;
             }
@@ -71,12 +74,12 @@ namespace MergerLogic.DataTypes
             combinedExtent.maxY = Math.Max(this.extent.maxY, extent.maxY);
 
             this.extent = combinedExtent;
-            GpkgUtils.UpdateExtent(this.path, combinedExtent);
+            this.utils.UpdateExtent(combinedExtent);
         }
 
         private void UpdateTileMatrix(Gpkg gpkg)
         {
-            GpkgUtils.CopyTileMatrix(this.path, gpkg.path, this.tileCache);
+            GpkgUtils.CopyTileMatrix(this.Path, gpkg.Path, this.tileCache);
         }
 
         public override List<Tile> GetNextBatch(out string batchIdentifier)
@@ -84,7 +87,7 @@ namespace MergerLogic.DataTypes
             batchIdentifier = this.offset.ToString();
             //TODO: optimize after IOC refactoring
             int counter = 0;
-            List<Tile> tiles = GpkgUtils.GetBatch(this.path, this.batchSize, this.offset, this.tileCache)
+            List<Tile> tiles = this.utils.GetBatch(this.batchSize, this.offset, this.tileCache)
                 .Select(t =>
                 {
                     Tile tile = this._convertOriginTile(t);
@@ -123,13 +126,8 @@ namespace MergerLogic.DataTypes
                 coords[arrayIterator + 1] = baseTileY;
             }
 
-            Tile lastTile = GpkgUtils.GetLastTile(this.path, this.tileCache, coords, baseCoords);
+            Tile lastTile = this.utils.GetLastTile(this.tileCache, coords, baseCoords);
             return this._toCurrentGrid(lastTile);
-        }
-
-        protected override bool InternalTileExists(int z, int x, int y)
-        {
-            return this.utils.TileExists(z, x, y);
         }
 
         public void PrintBatch(List<Tile> tiles)
@@ -142,12 +140,12 @@ namespace MergerLogic.DataTypes
 
         public override void Wrapup()
         {
-            GpkgUtils.CreateTileIndex(this.path, this.tileCache);
+            this.utils.CreateTileIndex(this.tileCache);
 
-            bool vacuum = bool.Parse(Configuration.Instance.GetConfiguration("GPKG", "vacuum"));
+            bool vacuum = bool.Parse(this._configManager.GetConfiguration("GPKG", "vacuum"));
             if (vacuum)
             {
-                GpkgUtils.Vacuum(this.path);
+                this.utils.Vacuum();
             }
 
             this.Reset();
@@ -155,21 +153,20 @@ namespace MergerLogic.DataTypes
 
         public override bool Exists()
         {
-            Console.WriteLine($"Checking if exists, gpkg: {this.path}");
+            Console.WriteLine($"Checking if exists, gpkg: {this.Path}");
             // Get full path to gpkg file
-            string fullPath = Path.GetFullPath(this.path);
+            string fullPath = System.IO.Path.GetFullPath(this.Path);
             return File.Exists(fullPath);
         }
 
         public override int TileCount()
         {
-            return GpkgUtils.GetTileCount(this.path, this.tileCache);
+            return this.utils.GetTileCount(this.tileCache);
         }
 
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
         {
-            //TODO: optimize after IOC refactoring
-            GpkgUtils.InsertTiles(this.path, this.tileCache, targetTiles.ToList());
+            this.utils.InsertTiles(this.tileCache, targetTiles);
         }
     }
 }

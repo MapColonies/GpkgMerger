@@ -1,6 +1,8 @@
 ﻿using MergerCli.Utils;
 using MergerLogic.DataTypes;
+using MergerLogic.Extentions;
 using MergerLogic.Utils;
+using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
 using System.Runtime.Loader;
 
@@ -25,14 +27,15 @@ namespace MergerCli
                 PrintHelp(programName);
                 return;
             }
+            ServiceProvider container = CreateContianer();
 
             PrepareStatusManger(ref args);
 
             int batchSize = int.Parse(args[1]);
-            List<Data> sources;
+            List<IData> sources;
             try
             {
-                var parser = new SourceParser();
+                var parser = container.GetRequiredService<ISourceParser>();
                 sources = parser.ParseSources(args, batchSize);
             }
             catch (Exception ex)
@@ -42,7 +45,7 @@ namespace MergerCli
                 return;
             }
 
-            Data baseData = sources[0];
+            IData baseData = sources[0];
             if (sources.Count < 2)
             {
                 Console.WriteLine("minimum of 2 sources is required");
@@ -50,23 +53,26 @@ namespace MergerCli
                 return;
             }
 
+            var proccess = container.GetRequiredService<IProcess>();
+            var timeUtils = container.GetRequiredService<ITimeUtils>();
             try
             {
-                bool validate = bool.Parse(Configuration.Instance.GetConfiguration("GENERAL", "validate"));
+                var config = container.GetService<IConfigurationManager>();
+                bool validate = bool.Parse(config.GetConfiguration("GENERAL", "validate"));
                 for (int i = 1; i < sources.Count; i++)
                 {
                     Stopwatch stopWatch = new Stopwatch();
                     stopWatch.Start();
-                    if (batchStatusManager.IsLayerCompleted(sources[i].path))
+                    if (batchStatusManager.IsLayerCompleted(sources[i].Path))
                     {
                         continue;
                     }
-                    Proccess.Start(baseData, sources[i], batchSize, batchStatusManager);
+                    proccess.Start(baseData, sources[i], batchSize, batchStatusManager);
                     stopWatch.Stop();
 
                     // Get the elapsed time as a TimeSpan value.
                     ts = stopWatch.Elapsed;
-                    TimeUtils.PrintElapsedTime($"{sources[i].path} merge runtime", ts);
+                    timeUtils.PrintElapsedTime($"{sources[i].Path} merge runtime", ts);
 
 
                     if (validate)
@@ -76,12 +82,12 @@ namespace MergerCli
                         stopWatch.Start();
 
                         Console.WriteLine("Validating merged data sources");
-                        Proccess.Validate(baseData, sources[i]);
+                        proccess.Validate(baseData, sources[i]);
 
                         stopWatch.Stop();
                         // Get the elapsed time as a TimeSpan value.
                         ts = stopWatch.Elapsed;
-                        TimeUtils.PrintElapsedTime($"{sources[i].path} validation time", ts);
+                        timeUtils.PrintElapsedTime($"{sources[i].Path} validation time", ts);
                     }
                 }
             }
@@ -95,8 +101,17 @@ namespace MergerCli
             totalTimeStopWatch.Stop();
             // Get the elapsed time as a TimeSpan value.
             ts = totalTimeStopWatch.Elapsed;
-            TimeUtils.PrintElapsedTime("Total runtime", ts);
+            timeUtils.PrintElapsedTime("Total runtime", ts);
             done = true;
+        }
+
+        private static ServiceProvider CreateContianer()
+        {
+            return new ServiceCollection()
+                .RegisterMergerLogicType()
+                .AddSingleton<IProcess, Process>()
+                .AddSingleton<ISourceParser, SourceParser>()
+                .BuildServiceProvider();
         }
 
         private static void PrintHelp(string programName)

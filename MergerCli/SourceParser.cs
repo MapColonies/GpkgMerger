@@ -1,15 +1,22 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using MergerLogic.Utils;
 
 namespace MergerCli
 {
-    internal class SourceParser
+    internal class SourceParser : ISourceParser
     {
         private readonly HashSet<string> sourceTypes = new HashSet<string>(new[] { "fs", "s3", "gpkg", "wmts", "tms", "xyz" });
+        private readonly IDataFactory _dataFactory;
 
-        public List<Data> ParseSources(string[] args, int batchSize)
+        public SourceParser(IDataFactory dataFactory)
         {
-            List<Data> sources = new List<Data>();
+            this._dataFactory = dataFactory;
+        }
+
+        public List<IData> ParseSources(string[] args, int batchSize)
+        {
+            List<IData> sources = new List<IData>();
             int idx = 2;
             bool isBase = true;
             while (idx < args.Length)
@@ -52,7 +59,7 @@ namespace MergerCli
             return sources;
         }
 
-        private Data ParseFileSource(string[] args, ref int idx, int batchSize, bool isBase)
+        private IData ParseFileSource(string[] args, ref int idx, int batchSize, bool isBase)
         {
             const int requiredParamCount = 2;
             const int optionalParamCount = 2;
@@ -69,10 +76,10 @@ namespace MergerCli
 
             }
             idx += paramCount;
-            return Data.CreateDatasource(sourceType, sourcePath, batchSize, isOneXOne, origin, isBase);
+            return this._dataFactory.CreateDatasource(sourceType, sourcePath, batchSize, isOneXOne, origin, isBase);
         }
 
-        private Data ParseHttpSource(string[] args, ref int idx, int batchSize, bool isBase)
+        private IData ParseHttpSource(string[] args, ref int idx, int batchSize, bool isBase)
         {
             const int requiredParamCount = 5;
             const int optionalParamCount = 2;
@@ -98,7 +105,7 @@ namespace MergerCli
                 maxY = double.Parse(bboxParts[3])
             };
             idx += paramCount;
-            return Data.CreateDatasource(sourceType, sourcePath, batchSize, isBase, extent, maxZoom, minZoom, isOneXOne, origin);
+            return this._dataFactory.CreateDatasource(sourceType, sourcePath, batchSize, isBase, extent, maxZoom, minZoom, isOneXOne, origin);
         }
 
         private void ParseOptionalParameters(string sourceType, string sourcePath, ref bool isOneXOne, ref GridOrigin? origin, string[] optionalParams)

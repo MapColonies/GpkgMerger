@@ -23,16 +23,16 @@ namespace MergerLogic.Batching
 
         public int Size()
         {
-            return (MaxX - MinX) * (MaxY - MinY);
+            return (this.MaxX - this.MinX) * (this.MaxY - this.MinY);
         }
 
         public void Print()
         {
-            Console.WriteLine($"Zoom: {Zoom}");
-            Console.WriteLine($"mixX: {MinX}");
-            Console.WriteLine($"maxX: {MaxX}");
-            Console.WriteLine($"minY: {MinY}");
-            Console.WriteLine($"maxY: {MaxY}");
+            Console.WriteLine($"Zoom: {this.Zoom}");
+            Console.WriteLine($"mixX: {this.MinX}");
+            Console.WriteLine($"maxX: {this.MaxX}");
+            Console.WriteLine($"minY: {this.MinY}");
+            Console.WriteLine($"maxY: {this.MaxY}");
         }
     }
 }

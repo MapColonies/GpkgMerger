@@ -19,7 +19,7 @@ namespace MergerLogic.DataTypes
         UPPER_LEFT
     }
 
-    public abstract class Data
+    public abstract class Data<UtilsType> : IData where UtilsType : IDataUtils
     {
         protected delegate int ValFromCoordFunction(Coord coord);
         protected delegate Tile GetTileFromXYZFunction(int z, int x, int y);
@@ -27,21 +27,22 @@ namespace MergerLogic.DataTypes
         protected delegate Tile GetTileFromCoordFunction(Coord coord);
         protected delegate Tile TileConvertorFunction(Tile Tile);
 
-        public readonly DataType type;
-        public readonly string path;
+        public DataType Type { get; }
+        public string Path { get; }
         public readonly bool isOneXOne;
         protected readonly int batchSize;
         public readonly GridOrigin origin;
 
-        protected DataUtils utils;
+        protected UtilsType utils;
         protected GetTileFromXYZFunction _getTile;
         protected GetTileFromCoordFunction _getLastExistingTile;
 
-        // tile grid converters
-        protected OneXOneConvetor _oneXOneConvetor = null;
+        #region tile grid converters
+        protected IOneXOneConvetor _oneXOneConvetor = null;
         protected TileConvertorFunction _fromCurrentGridTile;
         protected GetCoordFromCoordFunction _fromCurrentGridCoord;
         protected TileConvertorFunction _toCurrentGrid;
+        #endregion tile grid converters
 
         //origin converters
         protected TileConvertorFunction _convertOriginTile;
@@ -52,19 +53,19 @@ namespace MergerLogic.DataTypes
 
         protected const int COORDS_FOR_ALL_ZOOM_LEVELS = ZOOM_LEVEL_COUNT << 1;
 
-        public Data(DataType type, string path, int batchSize, DataUtils utils, bool isOneXOne = false, GridOrigin origin = GridOrigin.UPPER_LEFT)
+        public Data(IUtilsFactory utilsFactory, IOneXOneConvetor oneXOneConvetor, DataType type, string path, int batchSize, bool isOneXOne = false, GridOrigin origin = GridOrigin.UPPER_LEFT)
         {
-            this.type = type;
-            this.path = path;
+            this.Type = type;
+            this.Path = path;
             this.batchSize = batchSize;
-            this.utils = utils;
+            this.utils = utilsFactory.GetDataUtils<UtilsType>(path);
             this.isOneXOne = isOneXOne;
             this.origin = origin;
 
-            // The following delegates are for code preformance and to reduce branching while handling tiles
+            // The following delegates are for code performance and to reduce branching while handling tiles
             if (isOneXOne)
             {
-                this._oneXOneConvetor = new OneXOneConvetor();
+                this._oneXOneConvetor = oneXOneConvetor;
                 this._getLastExistingTile = this.getLastOneXoneExistingTile;
                 this._fromCurrentGridTile = this._oneXOneConvetor.TryFromTwoXOne;
                 this._fromCurrentGridCoord = this._oneXOneConvetor.TryFromTwoXOne;
@@ -99,9 +100,9 @@ namespace MergerLogic.DataTypes
 
         public abstract void Reset();
 
-        public virtual void UpdateMetadata(Data data)
+        public virtual void UpdateMetadata(IData data)
         {
-            Console.WriteLine($"{this.type} source, skipping metadata update");
+            Console.WriteLine($"{this.Type} source, skipping metadata update");
         }
 
         protected virtual Tile GetLastExistingTile(Coord coords)
@@ -143,10 +144,8 @@ namespace MergerLogic.DataTypes
                 return false;
             }
 
-            return this.InternalTileExists(coord.z, coord.x, coord.y);
+            return this.utils.TileExists(coord.z, coord.x, coord.y);
         }
-
-        protected abstract bool InternalTileExists(int z, int x, int y);
 
         //TODO: move to util after IOC
         protected Tile getLastOneXoneExistingTile(Coord coords)
@@ -218,7 +217,7 @@ namespace MergerLogic.DataTypes
 
         public virtual void Wrapup()
         {
-            Console.WriteLine($"{this.type} source, skipping wrapup phase");
+            Console.WriteLine($"{this.Type} source, skipping wrapup phase");
         }
 
         public abstract bool Exists();
@@ -227,102 +226,5 @@ namespace MergerLogic.DataTypes
 
         public abstract void setBatchIdentifier(string batchIdentifier);
 
-        public static Data CreateDatasource(string type, string path, int batchSize, bool isOneXOne, GridOrigin? origin = null, bool isBase = false)
-        {
-            Data data;
-            switch (type.ToLower())
-            {
-                case "gpkg":
-                    if (origin == null)
-                        data = new Gpkg(path, batchSize, isOneXOne);
-                    else
-                        data = new Gpkg(path, batchSize, isOneXOne, origin.Value);
-                    break;
-                case "s3":
-                    string s3Url = Configuration.Instance.GetConfiguration("S3", "url");
-                    string bucket = Configuration.Instance.GetConfiguration("S3", "bucket");
-                    var client = S3.GetClient(s3Url);
-                    path = PathUtils.RemoveTrailingSlash(path);
-                    if (origin == null)
-                        data = new S3(client, bucket, path, batchSize, isOneXOne);
-                    else
-                        data = new S3(client, bucket, path, batchSize, isOneXOne, origin.Value);
-                    break;
-                case "fs":
-                    if (origin == null)
-                        data = new FS(DataType.FOLDER, path, batchSize, isOneXOne, isBase);
-                    else
-                        data = new FS(DataType.FOLDER, path, batchSize, isOneXOne, isBase, origin.Value);
-                    break;
-                case "wmts":
-                case "xyz":
-                case "tms":
-                    throw new Exception("web tile source requires extent, and zoom restrictions");
-                default:
-                    throw new Exception($"Currently there is no support for the data type '{type}'");
-            }
-
-            if (!data.Exists())
-            {
-                //skip existence validation for base data to allow creation of new data for FS and S3
-                if (isBase)
-                    Console.WriteLine($"base data at path '{path}' does not exists and will be created");
-                else
-                    throw new Exception($"path '{path}' to data does not exist.");
-            }
-
-            return data;
-        }
-
-        public static Data CreateDatasource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0, bool isOneXone = false, GridOrigin? origin = null)
-        {
-            Data data;
-            type = type.ToLower();
-            switch (type)
-            {
-                case "gpkg":
-                case "s3":
-                case "fs":
-                    return CreateDatasource(type, path, batchSize, isOneXone, origin, isBase);
-            };
-            if (isBase)
-            {
-                throw new Exception("web tile source cannot be used as base (target) layer");
-            }
-            switch (type)
-            {
-                case "wmts":
-                    if (origin == null)
-                        data = new WMTS(DataType.WMTS, path, batchSize, extent, maxZoom, minZoom, isOneXone);
-                    else
-                        data = new WMTS(DataType.WMTS, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
-                    break;
-                case "xyz":
-                    if (origin == null)
-                        data = new XYZ(DataType.XYZ, path, batchSize, extent, maxZoom, minZoom, isOneXone);
-                    else
-                        data = new XYZ(DataType.XYZ, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
-                    break;
-                case "tms":
-                    if (origin == null)
-                        data = new TMS(DataType.TMS, path, batchSize, extent, maxZoom, minZoom, isOneXone);
-                    else
-                        data = new TMS(DataType.TMS, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
-                    break;
-                default:
-                    throw new Exception($"Currently there is no support for the data type '{type}'");
-            }
-
-            if (!data.Exists())
-            {
-                //skip existence validation for base data to allow creation of new data for FS and S3
-                if (isBase)
-                    Console.WriteLine($"base data at path '{path}' does not exists and will be created");
-                else
-                    throw new Exception($"path '{path}' to data does not exist.");
-            }
-
-            return data;
-        }
     }
 }

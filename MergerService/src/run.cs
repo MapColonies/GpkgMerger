@@ -7,26 +7,39 @@ using System.Diagnostics;
 
 namespace MergerService.Src
 {
-    public class Run
+    public class Run : IRun
     {
-        private static List<Data> BuildDataList(Source[] paths, int batchSize)
+        private IDataFactory _dataFactory;
+        private ITileMerger _tileMerger;
+        private ITimeUtils _timeUtils;
+        private IConfigurationManager _configurationManager;
+
+        public Run(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, IConfigurationManager configurationManager)
         {
-            List<Data> sources = new List<Data>();
+            this._dataFactory = dataFactory;
+            this._tileMerger = tileMerger;
+            this._timeUtils = timeUtils;
+            this._configurationManager = configurationManager;
+        }
+
+        private List<IData> BuildDataList(Source[] paths, int batchSize)
+        {
+            List<IData> sources = new List<IData>();
 
             if (paths.Length != 0)
             {
-                sources.Add(Data.CreateDatasource(paths[0].Type, paths[0].Path, batchSize, true));
+                sources.Add(this._dataFactory.CreateDatasource(paths[0].Type, paths[0].Path, batchSize, true));
                 foreach (Source source in paths.Skip(1))
                 {
                     // TODO: add support for HTTP
-                    sources.Add(Data.CreateDatasource(source.Type, source.Path, batchSize, source.IsOneXOne(), source.Origin));
+                    sources.Add(this._dataFactory.CreateDatasource(source.Type, source.Path, batchSize, source.IsOneXOne(), source.Origin));
                 }
             }
 
             return sources;
         }
 
-        public static void Start()
+        public void Start()
         {
             Stopwatch stopWatch = new Stopwatch();
             TimeSpan ts;
@@ -73,8 +86,8 @@ namespace MergerService.Src
                             continue;
                         }
 
-                        List<Data> sources = BuildDataList(task.Sources, totalTileCount);
-                        Data target = sources[0];
+                        List<IData> sources = this.BuildDataList(task.Sources, totalTileCount);
+                        IData target = sources[0];
 
                         List<Tile> tiles = new List<Tile>(totalTileCount);
 
@@ -89,12 +102,12 @@ namespace MergerService.Src
 
                                 // Create tile builder list for current coord for all sources
                                 List<CorrespondingTileBuilder> correspondingTileBuilders = new List<CorrespondingTileBuilder>();
-                                foreach (Data source in sources)
+                                foreach (IData source in sources)
                                 {
                                     correspondingTileBuilders.Add(() => source.GetCorrespondingTile(coord, true));
                                 }
 
-                                byte[]? blob = Merge.MergeTiles(correspondingTileBuilders, coord);
+                                byte[]? blob = this._tileMerger.MergeTiles(correspondingTileBuilders, coord);
 
                                 if (blob != null)
                                 {
@@ -113,7 +126,7 @@ namespace MergerService.Src
 
                         target.UpdateTiles(tiles);
 
-                        foreach (Data data in sources)
+                        foreach (IData data in sources)
                         {
                             target.UpdateMetadata(data);
                         }
@@ -127,10 +140,10 @@ namespace MergerService.Src
                         ts = stopWatch.Elapsed;
                         Console.WriteLine("Merged the following bounds:");
                         bounds.Print();
-                        TimeUtils.PrintElapsedTime("Merge runtime", ts);
+                        this._timeUtils.PrintElapsedTime("Merge runtime", ts);
 
                         // After merging, validate if requested
-                        bool validate = bool.Parse(MergerLogic.Utils.Configuration.Instance.GetConfiguration("GENERAL", "validate"));
+                        bool validate = bool.Parse(this._configurationManager.GetConfiguration("GENERAL", "validate"));
                         if (validate)
                         {
                             // Reset stopwatch for validation time measure
@@ -138,12 +151,12 @@ namespace MergerService.Src
                             stopWatch.Start();
 
                             Console.WriteLine("Validating merged datasources");
-                            Validate(target, bounds);
+                            this.Validate(target, bounds);
 
                             stopWatch.Stop();
                             // Get the elapsed time as a TimeSpan value.
                             ts = stopWatch.Elapsed;
-                            TimeUtils.PrintElapsedTime($"Validation time", ts);
+                            this._timeUtils.PrintElapsedTime($"Validation time", ts);
                         }
                         else
                         {
@@ -159,7 +172,7 @@ namespace MergerService.Src
             }
         }
 
-        private static void Validate(Data target, TileBounds bounds)
+        private void Validate(IData target, TileBounds bounds)
         {
             int totalTileCount = bounds.Size();
             int tilesChecked = 0;
