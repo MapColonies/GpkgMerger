@@ -4,19 +4,15 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ .Values.rasterCommon.storage.fs.ingestionSourcePvc.name }}
   labels:
-    app: "ingestion"
-    component: "ingestion"
-    environment: "development"
+    app: {{ template "gpkg-merger.name" . }}
+    component: "gpkg-merger"
+    environment: {{ .Values.environment }}
+    release: {{ .Release.Name }}
 spec:
-  selector: 
-    matchLabels: 
-      app: "ingestion"
-      component: "ingestion"
-      environment: "development"
-  storageClassName: host-path
+  storageClassName: {{ .Values.local.storage.storageClassName }}
   accessModes:
-    - ReadWriteOnce
+    - {{ .Values.local.storage.accessModes }}
   resources:
     requests:
-      storage: 4Gi
+      storage: {{ .Values.local.storage.ingestionSourcePvc.storage }}
 {{- end -}}

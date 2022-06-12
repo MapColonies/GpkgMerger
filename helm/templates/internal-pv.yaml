@@ -3,16 +3,12 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: {{ .Values.local.storage.internalPv.name }}
-  labels:
-    app: "internal"
-    component: "internal"
-    environment: "development"
 spec:
-  storageClassName: host-path
+  storageClassName: {{ .Values.local.storage.storageClassName }}
   capacity:
-    storage:  15Gi
+    storage:  {{ .Values.local.storage.internalPv.storage }}
   accessModes:
-    - ReadWriteOnce
+    - {{ .Values.local.storage.accessModes }}
   hostPath:
-    path: {{ .Values.local.storage.internalPv.directory }}
+    path: {{ .Values.local.storage.internalPv.hostPath }}
 {{- end -}}

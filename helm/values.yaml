@@ -27,15 +27,25 @@ local:
       accessKeyId: minikube
       secretAccessKey: minikube
   storage:
+    
     internalPv:
       create: false #for local deployment only
       name: local-tiles-pv
-      directory: '/tiles' #tiles hostPatch
+      storage: 5Gi
+      hostPath: '/tiles' #tiles hostPatch
+    ingestionPv:
+      create: false #for local deployment only
+      name: local-sources-pv
+      storage: 5Gi
+      hostPath: /layerSources
     internalPvc:
       create: false #for local deployment only
+      storage: 4Gi
     ingestionSourcePvc:
-      name: local-sources-pv
       create: false #for local deployment only
+      storage: 4Gi
+    accessModes: ReadWriteOnce
+    storageClassName: host-path
 
 rasterCommon:
   serviceUrls:
@@ -53,12 +63,8 @@ rasterCommon:
       secretName: "s3-secret"
 
 env:
-  port: 80
-  targetPort: 8080
-  protocol: TCP
   general:
     validate: true
-    outputDir: "/"
   taskType: ""
   jobType: ""
   pollingTime: "1000"
@@ -66,10 +72,9 @@ env:
     logLevel:
       default: "Information"
       aspNetCore: "Warning"
-  allowedHosts: "*"
 
 resources:
-  enabled: false
+  enabled: true
   value:
     limits:
       cpu: "100m"

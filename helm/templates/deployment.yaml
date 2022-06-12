@@ -55,7 +55,11 @@ spec:
           {{- end }}
           env:
             - name: SERVER_PORT
-              value: {{ .Values.env.targetPort | quote }}
+              value: 8080
+            - name: GENERAL__outputBasePath
+              value: /tiles
+            - name: GENERAL__sourcesBasePath
+              value: /layerSources
             - name: S3_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
@@ -71,8 +75,8 @@ spec:
                 name: {{ $releaseName }}-{{ $chartName }}-configmap
           ports:
             - name: http
-              containerPort: {{ .Values.env.targetPort }}
-              protocol: {{ .Values.env.protocol }}
+              containerPort: 8080
+              protocol: TCP
           volumeMounts:
             - name: ingestion-storage
               mountPath: /layerSources

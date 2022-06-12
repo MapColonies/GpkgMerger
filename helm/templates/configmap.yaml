@@ -7,7 +7,9 @@ metadata:
   name: {{ .Release.Name }}-{{ $chartName }}-configmap
 data:
   GENERAL__validate: {{ .Values.env.general.validate | quote }}
-  GENERAL__outputDir: {{ .Values.env.general.outputDir | quote }}
+  GENERAL__jobManagerUrl: {{ .Values.rasterCommon.serviceUrls.jobManager | quote }}
+  GENERAL__outputBasePath: {{ .Values.env.general.outputBasePath | quote }}
+  GENERAL__sourcesBasePath: {{ .Values.env.general.sorucesBasePath | quote }}
   TASK__types__taskType: {{ .Values.env.taskType | quote }}
   TASK__types__jobType: {{ .Values.env.jobType | quote }}
   TASK__pollingTime: {{ .Values.env.pollingTime | quote }}
@@ -15,5 +17,4 @@ data:
   S3__bucket: {{ .Values.rasterCommon.storage.s3.tilesBucket | quote }}
   Logging__LogLevel__Default: {{ .Values.env.logging.logLevel.default | quote }}
   Logging__Microsoft.AspNetCore: {{ .Values.env.logging.logLevel.aspNetCore | quote }}
-  AllowedHosts: {{ .Values.env.allowedHosts | quote }}
 {{- end -}}

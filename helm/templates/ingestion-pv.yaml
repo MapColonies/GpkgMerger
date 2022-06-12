@@ -1,18 +1,14 @@
-{{- if .Values.local.storage.internalPvc.create -}}
+{{- if .Values.local.storage.ingestionPv.create -}}
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: {{ .Values.local.storage.ingestionSourcePvc.name }}
-  labels:
-    app: "ingestion"
-    component: "ingestion"
-    environment: "development"
+  name: {{ .Values.local.storage.ingestionPv.name }}
 spec:
-  storageClassName: host-path
+  storageClassName: {{ .Values.local.storage.storageClassName }}
   capacity:
-    storage:  15Gi
+    storage: {{ .Values.local.storage.ingestionPv.storage }}
   accessModes:
-    - ReadWriteOnce
+    - {{ .Values.local.storage.accessModes }}
   hostPath:
-    path: {{ .Values.local.storage.internalPv.directory }}
+    path: {{ .Values.local.storage.ingestionPv.hostPath }}
 {{- end -}}
