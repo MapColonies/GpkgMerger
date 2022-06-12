@@ -1,0 +1,91 @@
+global:
+  cloudProvider: {}
+  tracing: {}
+  metrics: {}
+  environment: {}
+
+enabled: true
+environment: development
+replicaCount: 1
+initialDelaySeconds: 60
+resetOnConfigChange: true
+
+cloudProvider:
+  dockerRegistryUrl: 'my-registry'
+  imagePullSecretName: 'my-registry-secret'
+  flavor: openshift
+
+image:
+  repository: gpkg-merge
+  tag: 'latest'
+
+local:
+  s3:
+    secret:
+      create: false
+      accessKeyId: minikube
+      secretAccessKey: minikube
+  storage:
+    internalPv:
+      create: false #for local deployment only
+      name: local-tiles-pv
+      storage: 5Gi
+      hostPath: '/tiles' #tiles hostPatch
+    ingestionPv:
+      create: false #for local deployment only
+      name: local-sources-pv
+      storage: 5Gi
+      hostPath: /layerSources
+    internalPvc:
+      create: false #for local deployment only
+      storage: 4Gi
+    ingestionSourcePvc:
+      create: false #for local deployment only
+      storage: 4Gi
+    accessModes: ReadWriteOnce
+    storageClassName: host-path
+
+rasterCommon:
+  serviceUrls:
+    jobManager: http://localhost:8084
+  storage:
+    fs:
+      ingestionSourcePvc:
+        name: ingestion-source-pvc
+      internalPvc:
+        name: "internal-pvc"
+        tilesSubPath: tiles
+    s3:
+      endpointUrl: localhost:9000"
+      tilesBucket: ""
+      secretName: "s3-secret"
+
+env:
+  general:
+    validate: true
+  TASK:
+    types: [
+      {
+        taskType: "tilesMerging",
+        jobType: "Ingestion_Update"
+      },
+      {
+        taskType: "tilesMerging",
+        jobType: "Ingestion_New"
+      }
+    ]
+  logging:
+    logLevel:
+      default: "Information"
+      aspNetCore: "Warning"
+
+resources:
+  enabled: true
+  value:
+    limits:
+      cpu: "100m"
+      memory: "128Mi"
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+
