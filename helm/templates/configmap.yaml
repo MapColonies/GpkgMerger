@@ -9,7 +9,6 @@ data:
   GENERAL__validate: {{ .Values.env.general.validate | quote }}
   GENERAL__jobManagerUrl: {{ .Values.rasterCommon.serviceUrls.jobManager | quote }}
   TASK__types: {{ .Values.env.TASK.types | quote }}
-  TASK__pollingTime: {{ .Values.env.pollingTime | quote }}
   S3__url: {{ .Values.rasterCommon.storage.s3.endpointUrl | quote }}
   S3__bucket: {{ .Values.rasterCommon.storage.s3.tilesBucket | quote }}
   Logging__LogLevel__Default: {{ .Values.env.logging.logLevel.default | quote }}
