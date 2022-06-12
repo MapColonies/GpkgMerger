@@ -87,7 +87,7 @@ namespace MergerLogic.DataTypes
             batchIdentifier = this.offset.ToString();
             //TODO: optimize after IOC refactoring
             int counter = 0;
-            List<Tile> tiles = this.utils.GetBatch(this.batchSize, this.offset, this.tileCache)
+            List<Tile> tiles = this.utils.GetBatch(this.batchSize, this.offset)
                 .Select(t =>
                 {
                     Tile tile = this._convertOriginTile(t);
@@ -126,7 +126,7 @@ namespace MergerLogic.DataTypes
                 coords[arrayIterator + 1] = baseTileY;
             }
 
-            Tile lastTile = this.utils.GetLastTile(this.tileCache, coords, baseCoords);
+            Tile lastTile = this.utils.GetLastTile(coords, baseCoords);
             return this._toCurrentGrid(lastTile);
         }
 
@@ -140,7 +140,7 @@ namespace MergerLogic.DataTypes
 
         public override void Wrapup()
         {
-            this.utils.CreateTileIndex(this.tileCache);
+            this.utils.CreateTileIndex();
 
             bool vacuum = bool.Parse(this._configManager.GetConfiguration("GPKG", "vacuum"));
             if (vacuum)
@@ -154,19 +154,17 @@ namespace MergerLogic.DataTypes
         public override bool Exists()
         {
             Console.WriteLine($"Checking if exists, gpkg: {this.Path}");
-            // Get full path to gpkg file
-            string fullPath = System.IO.Path.GetFullPath(this.Path);
-            return File.Exists(fullPath);
+            return this.utils.Exist();
         }
 
         public override int TileCount()
         {
-            return this.utils.GetTileCount(this.tileCache);
+            return this.utils.GetTileCount();
         }
 
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
         {
-            this.utils.InsertTiles(this.tileCache, targetTiles);
+            this.utils.InsertTiles(targetTiles);
         }
     }
 }
