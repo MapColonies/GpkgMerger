@@ -1,3 +1,4 @@
+## refers to MergerService ##
 apiVersion: v2
 name: gpkg-merger
 description: A Helm chart for gpkg-merger service

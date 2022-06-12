@@ -1,3 +1,4 @@
+## refers to MergerService ##
 {{- $releaseName := .Release.Name -}}
 {{- $chartName := include "gpkg-merger.name" . -}}
 {{- $cloudProviderFlavor := include "gpkg-merger.cloudProviderFlavor" . -}}
