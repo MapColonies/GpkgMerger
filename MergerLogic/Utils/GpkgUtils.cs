@@ -387,9 +387,12 @@ namespace MergerLogic.Utils
                     CreateExtentionTable(connection);
                     CreateTileTable(connection,extent);
                     Add2X1Data(connection, maxZoom);
+                    CreateTileMatrixValidationTriggers(connection);
                     transaction.Commit();
                 }
             }
+            // Vacuum is required is page size pragma is changed
+            //Vacuum();
         }
 
         private void CreateSpatialRefTable(SQLiteConnection connection)
@@ -511,11 +514,12 @@ namespace MergerLogic.Utils
 
         private void SetPragma(SQLiteConnection connection)
         {
-            //TODO: add gpkg pragma
             using (var command = connection.CreateCommand())
             {
-                command.CommandText = "PRAGMA application_id = 1196444487;" //+
-                    //"PRAGMA user_version = ";
+                command.CommandText = "PRAGMA application_id = 1196444487; " // gpkg v1.2 +
+                //command.CommandText = "PRAGMA application_id = 1196437808; " // gpkg v1.0 or 1.1
+                    + "PRAGMA user_version = 10201; "; // gpkg version number in the form MMmmPP (MM = major version, mm = minor version, PP = patch). aka 10000 is 1.0.0
+                // + "PRAGMA page_size = 1024; "; //set sqlite page size, must be power of 2. current default is 4096 - changing the default requires vacuum
                 command.ExecuteNonQuery();
             }
         }
@@ -545,6 +549,7 @@ namespace MergerLogic.Utils
 
         private void Add2X1Data(SQLiteConnection connection, int maxZoom)
         {
+            //TODO: add support for 1x1? (copy this function and change grid bbox and base zoom parameters)
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = "INSERT INTO \"gpkg_tile_matrix_set\" VALUES " +
@@ -574,6 +579,94 @@ namespace MergerLogic.Utils
                     "(\"table_name\",\"data_type\",\"identifier\",\"min_x\",\"min_y\",\"max_x\",\"max_y\",\"srs_id\") VALUES " +
                     $"({this._tileCache},'tiles',{this._tileCache},${extent.minX},${extent.minY},{extent.maxX},{extent.maxY},4326);";
                 command.ExecuteNonQuery();
+            }
+        }
+
+        private void CreateTileMatrixValidationTriggers(SQLiteConnection connection)
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = 
+                    "CREATE TRIGGER 'gpkg_tile_matrix_zoom_level_insert' BEFORE INSERT ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'insert on table ''gpkg_tile_matrix'' violates constraint: zoom_level cannot be less than 0') WHERE (NEW.zoom_level < 0); END;" +
+                    "CREATE TRIGGER 'gpkg_tile_matrix_zoom_level_update' BEFORE UPDATE of zoom_level ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'update on table ''gpkg_tile_matrix'' violates constraint: zoom_level cannot be less than 0') WHERE(NEW.zoom_level < 0); END; " +
+                    "CREATE TRIGGER 'gpkg_tile_matrix_matrix_width_insert' BEFORE INSERT ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'insert on table ''gpkg_tile_matrix'' violates constraint: matrix_width cannot be less than 1') WHERE(NEW.matrix_width < 1); END; " +
+                    "CREATE TRIGGER 'gpkg_tile_matrix_matrix_width_update' BEFORE UPDATE OF matrix_width ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'update on table ''gpkg_tile_matrix'' violates constraint: matrix_width cannot be less than 1') WHERE(NEW.matrix_width < 1); END; " +
+                    "CREATE TRIGGER 'gpkg_tile_matrix_matrix_height_insert' BEFORE INSERT ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'insert on table ''gpkg_tile_matrix'' violates constraint: matrix_height cannot be less than 1') WHERE(NEW.matrix_height < 1); END; " +
+                    "CREATE TRIGGER 'gpkg_tile_matrix_matrix_height_update' BEFORE UPDATE OF matrix_height ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'update on table ''gpkg_tile_matrix'' violates constraint: matrix_height cannot be less than 1') WHERE(NEW.matrix_height < 1); END; " +
+                    "CREATE TRIGGER 'gpkg_tile_matrix_pixel_x_size_insert' BEFORE INSERT ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'insert on table ''gpkg_tile_matrix'' violates constraint: pixel_x_size must be greater than 0') WHERE NOT(NEW.pixel_x_size > 0); END; " +
+                    "CREATE TRIGGER 'gpkg_tile_matrix_pixel_x_size_update' BEFORE UPDATE OF pixel_x_size ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'update on table ''gpkg_tile_matrix'' violates constraint: pixel_x_size must be greater than 0') WHERE NOT(NEW.pixel_x_size > 0); END; " +
+                    "CREATE TRIGGER 'gpkg_tile_matrix_pixel_y_size_insert' BEFORE INSERT ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'insert on table ''gpkg_tile_matrix'' violates constraint: pixel_y_size must be greater than 0') WHERE NOT(NEW.pixel_y_size > 0); END; " +
+                    "CREATE TRIGGER 'gpkg_tile_matrix_pixel_y_size_update' BEFORE UPDATE OF pixel_y_size ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'update on table ''gpkg_tile_matrix'' violates constraint: pixel_y_size must be greater than 0') WHERE NOT(NEW.pixel_y_size > 0); END; ";
+                command.ExecuteNonQuery();
+            }
+        }
+
+        public void CreateTileCacheValidationTriggers()
+        {
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            {
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText =
+                        $"CREATE TRIGGER \"{this._tileCache}_tile_column_insert\" BEFORE INSERT ON \"{this._tileCache}\" " +
+                            "FOR EACH ROW BEGIN " +
+                                $"SELECT RAISE(ABORT, 'insert on table ''{this._tileCache}'' violates constraint: tile_column cannot be < 0') " +
+                                "WHERE(NEW.tile_column < 0); " +
+                                $"SELECT RAISE(ABORT, 'insert on table ''{this._tileCache}'' violates constraint: tile_column must by < matrix_width specified for table and zoom level in gpkg_tile_matrix') " +
+                                $"WHERE NOT(NEW.tile_column<(SELECT matrix_width FROM gpkg_tile_matrix WHERE lower(table_name) = lower('{this._tileCache}') AND zoom_level = NEW.zoom_level)); END; " +
+                        $"CREATE TRIGGER \"{this._tileCache}_tile_column_update\" BEFORE UPDATE OF tile_column ON \"{this._tileCache}\" " +
+                            "FOR EACH ROW BEGIN " +
+                                $"SELECT RAISE(ABORT, 'update on table ''{this._tileCache}'' violates constraint: tile_column cannot be < 0') " +
+                                "WHERE(NEW.tile_column < 0); " +
+                                $"SELECT RAISE(ABORT, 'update on table ''{this._tileCache}'' violates constraint: tile_column must by < matrix_width specified for table and zoom level in gpkg_tile_matrix') " +
+                                $"WHERE NOT(NEW.tile_column<(SELECT matrix_width FROM gpkg_tile_matrix WHERE lower(table_name) = lower('{this._tileCache}') AND zoom_level = NEW.zoom_level)); END; " +
+                        $"CREATE TRIGGER \"{this._tileCache}_tile_row_insert\" BEFORE INSERT ON \"{this._tileCache}\" " +
+                            "FOR EACH ROW BEGIN " +
+                                $"SELECT RAISE(ABORT, 'insert on table ''{this._tileCache}'' violates constraint: tile_row cannot be < 0') " +
+                                "WHERE(NEW.tile_row < 0); " +
+                                $"SELECT RAISE(ABORT, 'insert on table ''{this._tileCache}'' violates constraint: tile_row must by < matrix_height specified for table and zoom level in gpkg_tile_matrix') " +
+                                $"WHERE NOT(NEW.tile_row<(SELECT matrix_height FROM gpkg_tile_matrix WHERE lower(table_name) = lower('{this._tileCache}') AND zoom_level = NEW.zoom_level)); END; " +
+                        $"CREATE TRIGGER \"{this._tileCache}_tile_row_update\" BEFORE UPDATE OF tile_row ON \"{this._tileCache}\" " +
+                            "FOR EACH ROW BEGIN " +
+                                $"SELECT RAISE(ABORT, 'update on table ''{this._tileCache}'' violates constraint: tile_row cannot be < 0') " +
+                                "WHERE(NEW.tile_row < 0); " +
+                                $"SELECT RAISE(ABORT, 'update on table ''{this._tileCache}'' violates constraint: tile_row must by < matrix_height specified for table and zoom level in gpkg_tile_matrix') " +
+                                $"WHERE NOT(NEW.tile_row<(SELECT matrix_height FROM gpkg_tile_matrix WHERE lower(table_name) = lower('{this._tileCache}') AND zoom_level = NEW.zoom_level)); END; " +
+                        $"CREATE TRIGGER \"{this._tileCache}_zoom_insert\" BEFORE INSERT ON \"{this._tileCache}\" " +
+                            "FOR EACH ROW BEGIN " +
+                                "SELECT RAISE(ABORT, 'insert on table ''{this._tileCache}'' violates constraint: zoom_level not specified for table in gpkg_tile_matrix') " +
+                                $"WHERE NOT(NEW.zoom_level IN (SELECT zoom_level FROM gpkg_tile_matrix WHERE lower(table_name) = lower('{this._tileCache}'))) ; END; " +
+                        $"CREATE TRIGGER \"{this._tileCache}_zoom_update\" BEFORE UPDATE OF zoom_level ON \"{this._tileCache}\" " +
+                            "FOR EACH ROW BEGIN " +
+                                $"SELECT RAISE(ABORT, 'update on table ''{_tileCache}'' violates constraint: zoom_level not specified for table in gpkg_tile_matrix') " +
+                                $"WHERE NOT (NEW.zoom_level IN (SELECT zoom_level FROM gpkg_tile_matrix WHERE lower(table_name) = lower('{this._tileCache}'))) ; END; ";
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public void DeleteTileTableTriggers()
+        {
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            {
+                var cmdBuilder = new StringBuilder();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = $"select name from sqlite_master where type = 'trigger' and tbl_name = '{this._tileCache}';";
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            string trigger = reader.GetString(0);
+                            cmdBuilder.Append("DROP TRIGGER IF EXISTS \"{this.trigger}\"; ");
+                        }
+                    }
+                }
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = cmdBuilder.ToString();
+                    command.ExecuteNonQuery();
+                }
             }
         }
     }
