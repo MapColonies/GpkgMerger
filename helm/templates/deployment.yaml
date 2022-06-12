@@ -1,4 +1,3 @@
-## refers to MergerService ##
 {{- $releaseName := .Release.Name -}}
 {{- $chartName := include "gpkg-merger.name" . -}}
 {{- $cloudProviderFlavor := include "gpkg-merger.cloudProviderFlavor" . -}}
@@ -56,9 +55,9 @@ spec:
           {{- end }}
           env:
             - name: SERVER_PORT
-              value: 8080
+              value: "8080"
             - name: GENERAL__outputBasePath
-              value: /tiles
+              value: /app/tiles_outputs
             - name: GENERAL__sourcesBasePath
               value: /layerSources
             - name: S3_ACCESS_KEY

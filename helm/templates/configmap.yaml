@@ -8,8 +8,6 @@ metadata:
 data:
   GENERAL__validate: {{ .Values.env.general.validate | quote }}
   GENERAL__jobManagerUrl: {{ .Values.rasterCommon.serviceUrls.jobManager | quote }}
-  GENERAL__outputBasePath: {{ .Values.env.general.outputBasePath | quote }}
-  GENERAL__sourcesBasePath: {{ .Values.env.general.sorucesBasePath | quote }}
   TASK__types__taskType: {{ .Values.env.taskType | quote }}
   TASK__types__jobType: {{ .Values.env.jobType | quote }}
   TASK__pollingTime: {{ .Values.env.pollingTime | quote }}
