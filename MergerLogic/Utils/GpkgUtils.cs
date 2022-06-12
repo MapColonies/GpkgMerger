@@ -370,8 +370,9 @@ namespace MergerLogic.Utils
             this._timeUtils.PrintElapsedTime("Vacuum runtime", ts);
         }
 
-        public void Create(Extent extent,int maxZoom)
+        public void Create(Extent extent, int maxZoom)
         {
+            Console.WriteLine($"creating new gpkg: {this.path}");
             SQLiteConnection.CreateFile(this.path);
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
@@ -385,13 +386,13 @@ namespace MergerLogic.Utils
                     CreateTileMatrixSetTable(connection);
                     CreateTileMatrixTable(connection);
                     CreateExtentionTable(connection);
-                    CreateTileTable(connection,extent);
+                    CreateTileTable(connection, extent);
                     Add2X1Data(connection, maxZoom);
                     CreateTileMatrixValidationTriggers(connection);
                     transaction.Commit();
                 }
             }
-            // Vacuum is required is page size pragma is changed
+            // Vacuum is required if page size pragma is changed
             //Vacuum();
         }
 
@@ -527,7 +528,7 @@ namespace MergerLogic.Utils
         private void CreateSqureGrid(SQLiteConnection connection, int maxZoom, int baseWidth, int baseHeight, double baseRes, int zoomMultipiler, int tileSize)
         {
             StringBuilder gridBuilder = new StringBuilder("INSERT INTO \"gpkg_tile_matrix\" VALUES ");
-            
+
             int width = baseWidth;
             int height = baseHeight;
             double res = baseRes;
@@ -556,7 +557,7 @@ namespace MergerLogic.Utils
                     $"({this._tileCache},4326,-180,-90,180,90);";
                 command.ExecuteNonQuery();
             }
-            CreateSqureGrid(connection, maxZoom,1,2, 0.703125,2,256);//creates 2X1 grid
+            CreateSqureGrid(connection, maxZoom, 1, 2, 0.703125, 2, 256);//creates 2X1 grid
         }
 
         private void CreateTileTable(SQLiteConnection connection, Extent extent)
@@ -586,7 +587,7 @@ namespace MergerLogic.Utils
         {
             using (var command = connection.CreateCommand())
             {
-                command.CommandText = 
+                command.CommandText =
                     "CREATE TRIGGER 'gpkg_tile_matrix_zoom_level_insert' BEFORE INSERT ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'insert on table ''gpkg_tile_matrix'' violates constraint: zoom_level cannot be less than 0') WHERE (NEW.zoom_level < 0); END;" +
                     "CREATE TRIGGER 'gpkg_tile_matrix_zoom_level_update' BEFORE UPDATE of zoom_level ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'update on table ''gpkg_tile_matrix'' violates constraint: zoom_level cannot be less than 0') WHERE(NEW.zoom_level < 0); END; " +
                     "CREATE TRIGGER 'gpkg_tile_matrix_matrix_width_insert' BEFORE INSERT ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'insert on table ''gpkg_tile_matrix'' violates constraint: matrix_width cannot be less than 1') WHERE(NEW.matrix_width < 1); END; " +
