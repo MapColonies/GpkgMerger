@@ -8,8 +8,7 @@ metadata:
 data:
   GENERAL__validate: {{ .Values.env.general.validate | quote }}
   GENERAL__jobManagerUrl: {{ .Values.rasterCommon.serviceUrls.jobManager | quote }}
-  TASK__types__taskType: {{ .Values.env.taskType | quote }}
-  TASK__types__jobType: {{ .Values.env.jobType | quote }}
+  TASK__types: {{ .Values.env.TASK.types | quote }}
   TASK__pollingTime: {{ .Values.env.pollingTime | quote }}
   S3__url: {{ .Values.rasterCommon.storage.s3.endpointUrl | quote }}
   S3__bucket: {{ .Values.rasterCommon.storage.s3.tilesBucket | quote }}

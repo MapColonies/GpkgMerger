@@ -1,3 +1,4 @@
+
 global:
   cloudProvider: {}
   tracing: {}
@@ -8,7 +9,6 @@ enabled: true
 environment: development
 replicaCount: 1
 initialDelaySeconds: 60
-nodePort: 30022 #for minikube deployment only
 resetOnConfigChange: true
 
 cloudProvider:
@@ -27,7 +27,6 @@ local:
       accessKeyId: minikube
       secretAccessKey: minikube
   storage:
-    
     internalPv:
       create: false #for local deployment only
       name: local-tiles-pv
@@ -65,8 +64,17 @@ rasterCommon:
 env:
   general:
     validate: true
-  taskType: ""
-  jobType: ""
+  TASK:
+    types: [
+      {
+        taskType: "tilesMerging",
+        jobType: "Ingestion_Update"
+      },
+      {
+        taskType: "tilesMerging",
+        jobType: "Ingestion_New"
+      }
+    ]
   pollingTime: "1000"
   logging:
     logLevel:
