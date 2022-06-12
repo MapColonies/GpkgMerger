@@ -154,9 +154,7 @@ namespace MergerLogic.DataTypes
         public override bool Exists()
         {
             Console.WriteLine($"Checking if exists, gpkg: {this.Path}");
-            // Get full path to gpkg file
-            string fullPath = System.IO.Path.GetFullPath(this.Path);
-            return File.Exists(fullPath);
+            return this.utils.Exist();
         }
 
         public override int TileCount()

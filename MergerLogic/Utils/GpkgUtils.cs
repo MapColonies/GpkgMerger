@@ -12,7 +12,7 @@ namespace MergerLogic.Utils
 
         private ITimeUtils _timeUtils;
 
-        public GpkgUtils(string path, ITimeUtils timeUtils) : base(path)
+        public GpkgUtils(string path, ITimeUtils timeUtils, bool create = false) : base(path)
         {
             this._tileCache = this.GetTileCache();
             this._timeUtils = timeUtils;
@@ -20,6 +20,11 @@ namespace MergerLogic.Utils
 
         public string GetTileCache()
         {
+            if (!this.Exist())
+            {
+                return Path.GetFileNameWithoutExtension(this.path);
+            }
+
             string tileCache = "";
 
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
@@ -669,6 +674,13 @@ namespace MergerLogic.Utils
                     command.ExecuteNonQuery();
                 }
             }
+        }
+
+        public bool Exist()
+        {
+            // Get full path to gpkg file
+            string fullPath = Path.GetFullPath(this.path);
+            return File.Exists(fullPath);
         }
     }
 }

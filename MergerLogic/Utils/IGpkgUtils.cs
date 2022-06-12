@@ -14,5 +14,6 @@ namespace MergerLogic.Utils
         void InsertTiles(IEnumerable<Tile> tiles);
         void UpdateExtent(Extent extent);
         void Vacuum();
+        public bool Exist();
     }
 }
