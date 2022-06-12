@@ -1,0 +1,86 @@
+{{- $releaseName := .Release.Name -}}
+{{- $chartName := include "gpkg-merger.name" . -}}
+{{- $cloudProviderFlavor := include "gpkg-merger.cloudProviderFlavor" . -}}
+{{- $cloudProviderDockerRegistryUrl := include "gpkg-merger.cloudProviderDockerRegistryUrl" . -}}
+{{- $cloudProviderImagePullSecretName := include "gpkg-merger.cloudProviderImagePullSecretName" . -}}
+{{- $imageTag := include "gpkg-merger.tag" . -}}
+{{- if .Values.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $releaseName }}-{{ $chartName }}
+  labels:
+    app: {{ $chartName }}
+    component: {{ $chartName }}
+    environment: {{ include "gpkg-merger.environment" . }}
+    release: {{ $releaseName }}
+    {{- include "gpkg-merger.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ $chartName }}
+      release: {{ $releaseName }}
+      run: {{ $releaseName }}-{{ $chartName }}
+      {{- include "gpkg-merger.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: {{ $chartName }}
+        release: {{ $releaseName }}
+        run: {{ $releaseName }}-{{ $chartName }}
+        {{- include "gpkg-merger.selectorLabels" . | nindent 8 }}
+      {{- if .Values.resetOnConfigChange }}
+      annotations:
+        checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      {{- end }}
+    spec:
+    {{- if $cloudProviderImagePullSecretName }}
+      imagePullSecrets:
+        - name: {{ $cloudProviderImagePullSecretName | quote }}
+    {{- end }}
+      volumes:
+      - name: ingestion-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.rasterCommon.storage.fs.ingestionSourcePvc.name }}
+      - name: tiles-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.rasterCommon.storage.fs.internalPvc.name }}
+    #   nodeSelector:
+    #     knownNode: eastus-1-node-1
+      containers:
+        - name: {{ $releaseName }}-{{ $chartName }}-deployment
+          {{- with .Values.image }}
+          image: {{ $cloudProviderDockerRegistryUrl }}{{ .repository }}:{{ .tag }}
+          {{- end }}
+          env:
+            - name: SERVER_PORT
+              value: {{ .Values.env.targetPort | quote }}
+            - name: S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.rasterCommon.storage.s3.secretName }}
+                  key: accessKeyId
+            - name: S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.rasterCommon.storage.s3.secretName }}
+                  key: secretAccessKey
+          envFrom:
+            - configMapRef:
+                name: {{ $releaseName }}-{{ $chartName }}-configmap
+          ports:
+            - name: http
+              containerPort: {{ .Values.env.targetPort }}
+              protocol: {{ .Values.env.protocol }}
+          volumeMounts:
+            - name: ingestion-storage
+              mountPath: /layerSources
+            - name: tiles-storage
+              mountPath: /app/tiles_outputs
+              subPath: {{ .Values.rasterCommon.storage.fs.internalPvc.tilesSubPath }}
+          {{- if .Values.resources.enabled }}
+          resources:
+            {{- toYaml .Values.resources.value | nindent 12 }}
+         {{- end }}
+{{- end -}}

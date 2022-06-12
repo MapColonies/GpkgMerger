@@ -1,0 +1,80 @@
+global:
+  cloudProvider: {}
+  tracing: {}
+  metrics: {}
+  environment: {}
+
+enabled: true
+environment: development
+replicaCount: 1
+initialDelaySeconds: 60
+nodePort: 30022 #for minikube deployment only
+resetOnConfigChange: true
+
+cloudProvider:
+  dockerRegistryUrl: 'my-registry'
+  imagePullSecretName: 'my-registry-secret'
+  flavor: openshift
+
+image:
+  repository: gpkg-merge
+  tag: 'latest'
+
+local:
+  s3:
+    secret:
+      create: false
+      accessKeyId: minikube
+      secretAccessKey: minikube
+  storage:
+    internalPv:
+      create: false #for local deployment only
+      name: local-tiles-pv
+      directory: '/tiles' #tiles hostPatch
+    internalPvc:
+      create: false #for local deployment only
+    ingestionSourcePvc:
+      name: local-sources-pv
+      create: false #for local deployment only
+
+rasterCommon:
+  serviceUrls:
+    jobManager: http://localhost:8084
+  storage:
+    fs:
+      ingestionSourcePvc:
+        name: ingestion-source-pvc
+      internalPvc:
+        name: "internal-pvc"
+        tilesSubPath: tiles
+    s3:
+      endpointUrl: localhost:9000"
+      tilesBucket: ""
+      secretName: "s3-secret"
+
+env:
+  port: 80
+  targetPort: 8080
+  protocol: TCP
+  general:
+    validate: true
+    outputDir: "/"
+  taskType: ""
+  jobType: ""
+  pollingTime: "1000"
+  logging:
+    logLevel:
+      default: "Information"
+      aspNetCore: "Warning"
+  allowedHosts: "*"
+
+resources:
+  enabled: false
+  value:
+    limits:
+      cpu: "100m"
+      memory: "128Mi"
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+

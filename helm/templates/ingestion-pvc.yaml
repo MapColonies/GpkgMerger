@@ -1,0 +1,22 @@
+{{- if .Values.local.storage.ingestionSourcePvc.create -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.rasterCommon.storage.fs.ingestionSourcePvc.name }}
+  labels:
+    app: "ingestion"
+    component: "ingestion"
+    environment: "development"
+spec:
+  selector: 
+    matchLabels: 
+      app: "ingestion"
+      component: "ingestion"
+      environment: "development"
+  storageClassName: host-path
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 4Gi
+{{- end -}}
