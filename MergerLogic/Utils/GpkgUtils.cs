@@ -524,7 +524,7 @@ namespace MergerLogic.Utils
             }
         }
 
-        private void CreateSqureGrid(SQLiteConnection connection, int maxZoom, int baseWidth, int baseHeight, double baseRes,int zoomMultipiler,int tileSize)
+        private void CreateSqureGrid(SQLiteConnection connection, int maxZoom, int baseWidth, int baseHeight, double baseRes, int zoomMultipiler, int tileSize)
         {
             StringBuilder gridBuilder = new StringBuilder("INSERT INTO \"gpkg_tile_matrix\" VALUES ");
             
