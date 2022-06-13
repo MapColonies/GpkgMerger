@@ -143,7 +143,7 @@ namespace MergerCli
             // check optional parameters
             for (; i <= startIdx + minExpectedParamCount + optionalParamCount; i++)
             {
-                if (this.sourceTypes.Contains(args[i].ToLower()) || i == args.Length -1)
+                if (i == args.Length || this.sourceTypes.Contains(args[i].ToLower()) )
                 {
                     return i - startIdx;
                 }
