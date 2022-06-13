@@ -8,16 +8,12 @@ namespace MergerLogic.Utils
     public class DataFactory : IDataFactory
     {
         private IConfigurationManager _configurationManager;
-        private IUtilsFactory _utilsFactory;
-        private IOneXOneConvetor _oneXOneConvetor;
         private IPathUtils _pathUtils;
         private IServiceProvider _container;
 
-        public DataFactory(IConfigurationManager configuration, IUtilsFactory utilsFactory, IOneXOneConvetor oneXOneConvetor, IPathUtils pathUtils, IServiceProvider container)
+        public DataFactory(IConfigurationManager configuration, IPathUtils pathUtils, IServiceProvider container)
         {
             this._configurationManager = configuration;
-            this._utilsFactory = utilsFactory;
-            this._oneXOneConvetor = oneXOneConvetor;
             this._pathUtils = pathUtils;
             this._container = container;
         }
@@ -29,9 +25,9 @@ namespace MergerLogic.Utils
             {
                 case "gpkg":
                     if (origin == null)
-                        data = new Gpkg(this._configurationManager, this._utilsFactory, this._oneXOneConvetor, path, batchSize, isOneXOne);
+                        data = new Gpkg(this._configurationManager, this._container, path, batchSize,isBase, isOneXOne);
                     else
-                        data = new Gpkg(this._configurationManager, this._utilsFactory, this._oneXOneConvetor, path, batchSize, isOneXOne, origin.Value);
+                        data = new Gpkg(this._configurationManager, this._container, path, batchSize,isBase, isOneXOne, origin.Value);
                     break;
                 case "s3":
                     string s3Url = this._configurationManager.GetConfiguration("S3", "url");
@@ -43,15 +39,15 @@ namespace MergerLogic.Utils
                     }
                     path = this._pathUtils.RemoveTrailingSlash(path);
                     if (origin == null)
-                        data = new S3(this._pathUtils, client, this._utilsFactory, this._oneXOneConvetor, bucket, path, batchSize, isOneXOne);
+                        data = new S3(this._pathUtils, client, this._container, bucket, path, batchSize, isOneXOne);
                     else
-                        data = new S3(this._pathUtils, client, this._utilsFactory, this._oneXOneConvetor, bucket, path, batchSize, isOneXOne, origin.Value);
+                        data = new S3(this._pathUtils, client, this._container, bucket, path, batchSize, isOneXOne, origin.Value);
                     break;
                 case "fs":
                     if (origin == null)
-                        data = new FS(this._pathUtils, this._utilsFactory, this._oneXOneConvetor, path, batchSize, isOneXOne, isBase);
+                        data = new FS(this._pathUtils, this._container, path, batchSize, isOneXOne, isBase);
                     else
-                        data = new FS(this._pathUtils, this._utilsFactory, this._oneXOneConvetor, path, batchSize, isOneXOne, isBase, origin.Value);
+                        data = new FS(this._pathUtils, this._container, path, batchSize, isOneXOne, isBase, origin.Value);
                     break;
                 case "wmts":
                 case "xyz":
@@ -92,21 +88,21 @@ namespace MergerLogic.Utils
             {
                 case "wmts":
                     if (origin == null)
-                        data = new WMTS(this._utilsFactory, this._oneXOneConvetor, path, batchSize, extent, maxZoom, minZoom, isOneXone);
+                        data = new WMTS(this._container, path, batchSize, extent, maxZoom, minZoom, isOneXone);
                     else
-                        data = new WMTS(this._utilsFactory, this._oneXOneConvetor, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
+                        data = new WMTS(this._container, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
                     break;
                 case "xyz":
                     if (origin == null)
-                        data = new XYZ(this._utilsFactory, this._oneXOneConvetor, path, batchSize, extent, maxZoom, minZoom, isOneXone);
+                        data = new XYZ(this._container, path, batchSize, extent, maxZoom, minZoom, isOneXone);
                     else
-                        data = new XYZ(this._utilsFactory, this._oneXOneConvetor, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
+                        data = new XYZ(this._container, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
                     break;
                 case "tms":
                     if (origin == null)
-                        data = new TMS(this._utilsFactory, this._oneXOneConvetor, path, batchSize, extent, maxZoom, minZoom, isOneXone);
+                        data = new TMS(this._container, path, batchSize, extent, maxZoom, minZoom, isOneXone);
                     else
-                        data = new TMS(this._utilsFactory, this._oneXOneConvetor, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
+                        data = new TMS(this._container, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
                     break;
                 default:
                     throw new Exception($"Currently there is no support for the data type '{type}'");

@@ -130,21 +130,22 @@ namespace MergerCli
 
         private int ValidateAndGetSourceLength(string[] args, int startIdx, int minExpectedParamCount, int optionalParamCount)
         {
+            int i = startIdx + 1;
             // check required parameters
-            for (int i = startIdx + 1; i < startIdx + minExpectedParamCount; i++)
+            for (; i < startIdx + minExpectedParamCount; i++)
             {
-                if (this.sourceTypes.Contains(args[i].ToLower()))
+                if (i >= args.Length || this.sourceTypes.Contains(args[i].ToLower()))
                 {
                     throw new Exception($"invalid source parameters for {args[startIdx]} {args[startIdx + 1]}");
                 }
             }
 
             // check optional parameters
-            for (int i = minExpectedParamCount; i <= minExpectedParamCount + optionalParamCount; i++)
+            for (; i <= startIdx + minExpectedParamCount + optionalParamCount; i++)
             {
-                if (this.sourceTypes.Contains(args[i].ToLower()))
+                if (this.sourceTypes.Contains(args[i].ToLower()) || i == args.Length -1)
                 {
-                    return i;
+                    return i - startIdx;
                 }
             }
             throw new Exception($"invalid source parameters for {args[startIdx]} {args[startIdx + 1]}");

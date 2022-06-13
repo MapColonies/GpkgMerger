@@ -15,5 +15,7 @@ namespace MergerLogic.Utils
         void UpdateExtent(Extent extent);
         void Vacuum();
         public bool Exist();
+        public void Create(Extent extent, int maxZoom);
+        public void RemoveUnusedTileMatrix(IEnumerable<int> usedZooms);
     }
 }

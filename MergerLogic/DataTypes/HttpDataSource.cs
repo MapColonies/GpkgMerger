@@ -8,9 +8,9 @@ namespace MergerLogic.DataTypes
         protected TileBounds[] tileRanges;
         protected IEnumerator<Tile[]> batches;
         protected int batchIndex = 0;
-        protected HttpDataSource(IUtilsFactory utilsFactory, IOneXOneConvetor oneXOneConvetor,
+        protected HttpDataSource(IServiceProvider container,
             DataType type, string path, int batchSize, Extent extent, GridOrigin origin, int maxZoom, int minZoom = 0, bool isOneXOne = false)
-            : base(utilsFactory, oneXOneConvetor, type, path, batchSize, isOneXOne, origin)
+            : base(container, type, path, batchSize, isOneXOne, origin)
         {
             var patternUtils = new PathPatternUtils(path);
             this.utils = new HttpUtils(path, patternUtils);

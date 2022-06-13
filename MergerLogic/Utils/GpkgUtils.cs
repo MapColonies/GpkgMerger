@@ -14,11 +14,16 @@ namespace MergerLogic.Utils
 
         public GpkgUtils(string path, ITimeUtils timeUtils, bool create = false) : base(path)
         {
-            this._tileCache = this.GetTileCache();
+            this._tileCache = this.InternalGetTileCache();
             this._timeUtils = timeUtils;
         }
 
         public string GetTileCache()
+        {
+            return this._tileCache;
+        }
+
+        private string InternalGetTileCache()
         {
             if (!this.Exist())
             {
@@ -401,6 +406,20 @@ namespace MergerLogic.Utils
             //Vacuum();
         }
 
+        public void RemoveUnusedTileMatrix(IEnumerable<int> usedZooms)
+        {
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "DELETE FROM \"gpkg_tile_matrix\" " +
+                        $"WHERE \"table_name\" = '{this._tileCache}' AND  \"zoom_level\" NOT IN ({string.Join(',', usedZooms)});";
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+
         private void CreateSpatialRefTable(SQLiteConnection connection)
         {
             using (var command = connection.CreateCommand())
@@ -553,13 +572,14 @@ namespace MergerLogic.Utils
             }
         }
 
+
         private void Add2X1Data(SQLiteConnection connection, int maxZoom)
         {
             //TODO: add support for 1x1? (copy this function and change grid bbox and base zoom parameters)
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = "INSERT INTO \"gpkg_tile_matrix_set\" VALUES " +
-                    $"({this._tileCache},4326,-180,-90,180,90);";
+                    $"('{this._tileCache}',4326,-180,-90,180,90);";
                 command.ExecuteNonQuery();
             }
             CreateSqureGrid(connection, maxZoom, 1, 2, 0.703125, 2, 256);//creates 2X1 grid
@@ -583,7 +603,7 @@ namespace MergerLogic.Utils
             {
                 command.CommandText = "INSERT INTO \"gpkg_contents\" " +
                     "(\"table_name\",\"data_type\",\"identifier\",\"min_x\",\"min_y\",\"max_x\",\"max_y\",\"srs_id\") VALUES " +
-                    $"({this._tileCache},'tiles',{this._tileCache},${extent.minX},${extent.minY},{extent.maxX},{extent.maxY},4326);";
+                    $"('{this._tileCache}','tiles','{this._tileCache}',{extent.minX},{extent.minY},{extent.maxX},{extent.maxY},4326);";
                 command.ExecuteNonQuery();
             }
         }

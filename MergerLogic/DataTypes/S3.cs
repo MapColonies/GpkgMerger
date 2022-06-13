@@ -14,9 +14,9 @@ namespace MergerLogic.DataTypes
 
         private IPathUtils _pathUtils;
 
-        public S3(IPathUtils pathUtils, IAmazonS3 client, IUtilsFactory utilsFactory, IOneXOneConvetor oneXOneConvetor,
+        public S3(IPathUtils pathUtils, IAmazonS3 client, IServiceProvider containter,
             string bucket, string path, int batchSize, bool isOneXOne = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
-            : base(utilsFactory, oneXOneConvetor, DataType.S3, path, batchSize, isOneXOne, origin)
+            : base(containter, DataType.S3, path, batchSize, isOneXOne, origin)
         {
             this.bucket = bucket;
             this.continuationToken = null;
