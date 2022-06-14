@@ -13,7 +13,7 @@ namespace MergerLogic.DataTypes
 
         private IPathUtils _pathUtils;
 
-        public FS(IPathUtils pathUtils, IServiceProvider container, 
+        public FS(IPathUtils pathUtils, IServiceProvider container,
             string path, int batchSize, bool isOneXOne = false, bool isBase = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
             : base(container, DataType.FOLDER, path, batchSize, isOneXOne, origin)
         {

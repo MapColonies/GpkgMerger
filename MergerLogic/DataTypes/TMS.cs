@@ -1,5 +1,4 @@
 ﻿using MergerLogic.Batching;
-using MergerLogic.Utils;
 
 namespace MergerLogic.DataTypes
 {

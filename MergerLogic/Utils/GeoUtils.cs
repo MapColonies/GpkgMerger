@@ -6,7 +6,7 @@ namespace MergerLogic.Utils
     //TODO: convert static to DI singleton
     public static class GeoUtils
     {
-         public const int SRID = 4326;
+        public const int SRID = 4326;
 
         public static int FlipY(int z, int y)
         {

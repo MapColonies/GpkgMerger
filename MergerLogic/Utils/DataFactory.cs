@@ -75,7 +75,7 @@ namespace MergerLogic.Utils
             type = type.ToLower();
             switch (type)
             {
-                
+
                 case "s3":
                 case "fs":
                     return this.CreateDatasource(type, path, batchSize, isOneXone, origin, isBase);

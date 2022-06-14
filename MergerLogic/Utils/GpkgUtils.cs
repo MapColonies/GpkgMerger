@@ -389,23 +389,23 @@ namespace MergerLogic.Utils
                 connection.Open();
                 using (var transaction = connection.BeginTransaction())
                 {
-                    SetPragma(connection);
-                    CreateSpatialRefTable(connection);
-                    CreateContentsTable(connection);
-                    CreateGeometryColumnsTable(connection);
-                    CreateTileMatrixSetTable(connection);
-                    CreateTileMatrixTable(connection);
-                    CreateExtentionTable(connection);
-                    CreateTileTable(connection, extent);
+                    this.SetPragma(connection);
+                    this.CreateSpatialRefTable(connection);
+                    this.CreateContentsTable(connection);
+                    this.CreateGeometryColumnsTable(connection);
+                    this.CreateTileMatrixSetTable(connection);
+                    this.CreateTileMatrixTable(connection);
+                    this.CreateExtentionTable(connection);
+                    this.CreateTileTable(connection, extent);
                     if (isOneXOne)
                     {
-                        Add1X1Data(connection, maxZoom);
+                        this.Add1X1Data(connection, maxZoom);
                     }
                     else
                     {
-                        Add2X1Data(connection, maxZoom);
+                        this.Add2X1Data(connection, maxZoom);
                     }
-                    CreateTileMatrixValidationTriggers(connection);
+                    this.CreateTileMatrixValidationTriggers(connection);
                     transaction.Commit();
                 }
             }
@@ -589,7 +589,7 @@ namespace MergerLogic.Utils
                     $"('{this._tileCache}',{GeoUtils.SRID},-180,-90,180,90);";
                 command.ExecuteNonQuery();
             }
-            CreateSqureGrid(connection, maxZoom, 2, 1, TWO_X_ONE_ZOOM_0_RES, 2, 256);//creates 2X1 grid
+            this.CreateSqureGrid(connection, maxZoom, 2, 1, TWO_X_ONE_ZOOM_0_RES, 2, 256);//creates 2X1 grid
         }
 
         private void Add1X1Data(SQLiteConnection connection, int maxZoom)
@@ -601,7 +601,7 @@ namespace MergerLogic.Utils
                     $"('{this._tileCache}',{GeoUtils.SRID},-180,-180,180,180);";
                 command.ExecuteNonQuery();
             }
-            CreateSqureGrid(connection, maxZoom, 1, 1, ONE_X_ONE_ZOOM_0_RES, 2, 256);//creates 1X1 grid
+            this.CreateSqureGrid(connection, maxZoom, 1, 1, ONE_X_ONE_ZOOM_0_RES, 2, 256);//creates 1X1 grid
         }
 
         private void CreateTileTable(SQLiteConnection connection, Extent extent)
@@ -683,7 +683,7 @@ namespace MergerLogic.Utils
                                 $"WHERE NOT(NEW.zoom_level IN (SELECT zoom_level FROM gpkg_tile_matrix WHERE lower(table_name) = lower('{this._tileCache}'))) ; END; " +
                         $"CREATE TRIGGER \"{this._tileCache}_zoom_update\" BEFORE UPDATE OF zoom_level ON \"{this._tileCache}\" " +
                             "FOR EACH ROW BEGIN " +
-                                $"SELECT RAISE(ABORT, 'update on table ''{_tileCache}'' violates constraint: zoom_level not specified for table in gpkg_tile_matrix') " +
+                                $"SELECT RAISE(ABORT, 'update on table ''{this._tileCache}'' violates constraint: zoom_level not specified for table in gpkg_tile_matrix') " +
                                 $"WHERE NOT (NEW.zoom_level IN (SELECT zoom_level FROM gpkg_tile_matrix WHERE lower(table_name) = lower('{this._tileCache}'))) ; END; ";
                     command.ExecuteNonQuery();
                 }

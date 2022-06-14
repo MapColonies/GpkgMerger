@@ -54,13 +54,13 @@ namespace MergerLogic.DataTypes
         }
 
         public override void UpdateMetadata(IData data) //TODO: check if should be moved to wrapup?
-        {  
+        {
             //TODO: support update old gpkg with known extent 
             if (data.Type != DataType.GPKG)
             {
                 return;
             }
-            
+
             Gpkg gpkg = (Gpkg)data;
             this.UpdateExtent(gpkg);
             this.UpdateTileMatrix(gpkg); //TODO: replace with sql based update by zoom level
@@ -130,7 +130,7 @@ namespace MergerLogic.DataTypes
             }
 
             Tile lastTile = this.utils.GetLastTile(coords, baseCoords);
-            if(lastTile is not null)
+            if (lastTile is not null)
             {
                 lastTile = this._toCurrentGrid(lastTile);
             }

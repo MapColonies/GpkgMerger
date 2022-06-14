@@ -108,7 +108,7 @@ namespace MergerCli
                 int parsedOptionals = this.ParseOptionalParameters(sourceType, sourcePath, ref isOneXOne, ref origin, optionalParams);
                 if (paramCount - requiredParamCount - parsedOptionals == 2)
                 {
-                    extent = parseExtent(args[idx + 2]);
+                    extent = this.parseExtent(args[idx + 2]);
                     maxZoom = int.Parse(args[idx + 3]);
                 }
             }
