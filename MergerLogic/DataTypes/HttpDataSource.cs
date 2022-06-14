@@ -91,7 +91,7 @@ namespace MergerLogic.DataTypes
         {
             Coord oneXoneBaseCoords = this._oneXOneConvetor.FromTwoXOne(z, x, y);
             Tile tile = this.utils.GetTile(oneXoneBaseCoords);
-            if (tile == null)
+            if (tile != null)
             {
                 tile.SetCoords(z, x, y);
             }

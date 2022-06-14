@@ -27,12 +27,12 @@ namespace MergerLogic.DataTypes
         private IConfigurationManager _configManager;
 
         public Gpkg(IConfigurationManager configuration, IServiceProvider container,
-            string path, int batchSize, bool isBase = false, bool isOneXOne = false, GridOrigin origin = GridOrigin.UPPER_LEFT)
+            string path, int batchSize, bool isBase = false, bool isOneXOne = false, Extent? extent = null, int? maxZoom = null, GridOrigin origin = GridOrigin.UPPER_LEFT)
             : base(container, DataType.GPKG, path, batchSize, isOneXOne, origin)
         {
             this.tileCache = this.utils.GetTileCache();
             this.offset = 0;
-            this._configManager = configuration;     
+            this._configManager = configuration;
 
             if (isOneXOne)
             {
@@ -41,11 +41,11 @@ namespace MergerLogic.DataTypes
             else
             {
                 this._coordsFromCurrentGrid = cords => cords;
-            };
-            if (!this.utils.Exist() && isBase)
+            }
+            if (!this.utils.Exist() && isBase && maxZoom is not null && extent is not null)
             {
                 // extent and tile matrix will be properly set after merge
-                this.utils.Create(new Extent() { minX = -180, minY = -90, maxX = 180, maxY = 90 }, 23);
+                this.utils.Create(extent.Value, maxZoom.Value, isOneXOne);
             }
         }
 
@@ -131,7 +131,7 @@ namespace MergerLogic.DataTypes
             }
 
             Tile lastTile = this.utils.GetLastTile(coords, baseCoords);
-            return this._toCurrentGrid(lastTile);
+            return lastTile is not null ? this._toCurrentGrid(lastTile) : null;
         }
 
         public void PrintBatch(List<Tile> tiles)

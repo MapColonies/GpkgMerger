@@ -178,9 +178,9 @@ namespace MergerLogic.DataTypes
                 this._getTile = (z, x, y) =>
                 {
                     int newY = GeoUtils.FlipY(z, y);
-                    Tile tile = fixedGridGetTileFuntion(z, x, newY);
+                    Tile? tile = fixedGridGetTileFuntion(z, x, newY);
                     //set cords to current origin
-                    tile.SetCoords(z, x, y);
+                    tile?.SetCoords(z, x, y);
                     return tile;
                 };
             }

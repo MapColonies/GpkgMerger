@@ -66,11 +66,14 @@ namespace MergerLogic.DataTypes
                 {
                     Coord coord = this._pathUtils.FromPath(item.Key, true);
                     Tile tile = this.utils.GetTile(coord);
-                    tile = this._toCurrentGrid(tile);
                     if (tile != null)
                     {
-                        tile = this._convertOriginTile(tile);
-                        tiles.Add(tile);
+                        tile = this._toCurrentGrid(tile);
+                        if (tile != null)
+                        {
+                            tile = this._convertOriginTile(tile);
+                            tiles.Add(tile);
+                        }
                     }
                 }
                 this.continuationToken = response.NextContinuationToken;

@@ -87,7 +87,7 @@ namespace MergerLogic.Utils
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT count(*) FROM {this._tileCache}";
+                    command.CommandText = $"SELECT count(*) FROM \"{this._tileCache}\"";
 
                     using (var reader = command.ExecuteReader(System.Data.CommandBehavior.SingleRow))
                     {
@@ -185,7 +185,7 @@ namespace MergerLogic.Utils
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT hex(tile_data) FROM {this._tileCache} where zoom_level=$z and tile_column=$x and tile_row=$y";
+                    command.CommandText = $"SELECT hex(tile_data) FROM \"{this._tileCache}\" where zoom_level=$z and tile_column=$x and tile_row=$y";
                     command.Parameters.AddWithValue("$z", z);
                     command.Parameters.AddWithValue("$x", x);
                     command.Parameters.AddWithValue("$y", y);
@@ -212,7 +212,7 @@ namespace MergerLogic.Utils
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT tile_row FROM {this._tileCache} where zoom_level=$z and tile_column=$x and tile_row=$y";
+                    command.CommandText = $"SELECT tile_row FROM \"{this._tileCache}\" where zoom_level=$z and tile_column=$x and tile_row=$y";
                     command.Parameters.AddWithValue("$z", z);
                     command.Parameters.AddWithValue("$x", x);
                     command.Parameters.AddWithValue("$y", y);
@@ -239,7 +239,7 @@ namespace MergerLogic.Utils
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"REPLACE INTO {this._tileCache} (zoom_level, tile_column, tile_row, tile_data) VALUES ($z, $x, $y, $blob)";
+                    command.CommandText = $"REPLACE INTO \"{this._tileCache}\" (zoom_level, tile_column, tile_row, tile_data) VALUES ($z, $x, $y, $blob)";
 
                     using (var transaction = connection.BeginTransaction())
                     {
@@ -271,7 +271,7 @@ namespace MergerLogic.Utils
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM {this._tileCache} limit $limit offset $offset";
+                    command.CommandText = $"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM \"{this._tileCache}\" limit $limit offset $offset";
                     command.Parameters.AddWithValue("$limit", batchSize);
                     command.Parameters.AddWithValue("$offset", offset);
 
@@ -305,7 +305,7 @@ namespace MergerLogic.Utils
                 {
 
                     // Build command
-                    StringBuilder commandBuilder = new StringBuilder($"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM {this._tileCache} where ");
+                    StringBuilder commandBuilder = new StringBuilder($"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM \"{this._tileCache}\" where ");
 
                     int zoomLevel = baseCoords.z;
                     int maxZoomLevel = zoomLevel - 1;
@@ -351,7 +351,7 @@ namespace MergerLogic.Utils
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"CREATE UNIQUE INDEX IF NOT EXISTS index_tiles on {this._tileCache} (zoom_level, tile_row, tile_column)";
+                    command.CommandText = $"CREATE UNIQUE INDEX IF NOT EXISTS index_tiles on \"{this._tileCache}\" (zoom_level, tile_row, tile_column)";
                     command.ExecuteNonQuery();
                 }
             }
@@ -380,7 +380,7 @@ namespace MergerLogic.Utils
             this._timeUtils.PrintElapsedTime("Vacuum runtime", ts);
         }
 
-        public void Create(Extent extent, int maxZoom)
+        public void Create(Extent extent, int maxZoom, bool isOneXOne = false)
         {
             Console.WriteLine($"creating new gpkg: {this.path}");
             SQLiteConnection.CreateFile(this.path);
@@ -397,7 +397,14 @@ namespace MergerLogic.Utils
                     CreateTileMatrixTable(connection);
                     CreateExtentionTable(connection);
                     CreateTileTable(connection, extent);
-                    Add2X1Data(connection, maxZoom);
+                    if (isOneXOne)
+                    {
+                        Add1X1Data(connection, maxZoom);
+                    }
+                    else
+                    {
+                        Add2X1Data(connection, maxZoom);
+                    }
                     CreateTileMatrixValidationTriggers(connection);
                     transaction.Commit();
                 }
@@ -582,7 +589,19 @@ namespace MergerLogic.Utils
                     $"('{this._tileCache}',4326,-180,-90,180,90);";
                 command.ExecuteNonQuery();
             }
-            CreateSqureGrid(connection, maxZoom, 1, 2, 0.703125, 2, 256);//creates 2X1 grid
+            CreateSqureGrid(connection, maxZoom, 2, 1, 0.703125, 2, 256);//creates 2X1 grid
+        }
+
+        private void Add1X1Data(SQLiteConnection connection, int maxZoom)
+        {
+            //TODO: add support for 1x1? (copy this function and change grid bbox and base zoom parameters)
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "INSERT INTO \"gpkg_tile_matrix_set\" VALUES " +
+                    $"('{this._tileCache}',4326,-180,-180,180,180);";
+                command.ExecuteNonQuery();
+            }
+            CreateSqureGrid(connection, maxZoom, 1, 1, 1.40625, 2, 256);//creates 2X1 grid
         }
 
         private void CreateTileTable(SQLiteConnection connection, Extent extent)

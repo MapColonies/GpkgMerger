@@ -23,9 +23,20 @@ namespace MergerCli
             {
                 switch (args[idx].ToLower())
                 {
+                    case "gpkg":
+                        try
+                        {
+                            sources.Add(this.ParseGpkgSource(args, ref idx, batchSize, isBase));
+                        }
+                        catch
+                        {
+                            string source = isBase ? "base" : "new";
+                            Console.WriteLine($"{source} data does not exist.");
+                            Environment.Exit(1);
+                        }
+                        break;
                     case "fs":
                     case "s3":
-                    case "gpkg":
                         try
                         {
                             sources.Add(this.ParseFileSource(args, ref idx, batchSize, isBase));
@@ -79,6 +90,39 @@ namespace MergerCli
             return this._dataFactory.CreateDatasource(sourceType, sourcePath, batchSize, isOneXOne, origin, isBase);
         }
 
+        private IData ParseGpkgSource(string[] args, ref int idx, int batchSize, bool isBase)
+        {
+            const int requiredParamCount = 2;
+            const int optionalParamCount = 4;
+            int paramCount = this.ValidateAndGetSourceLength(args, idx, requiredParamCount, optionalParamCount);
+            string sourceType = args[idx];
+            string sourcePath = args[idx + 1];
+            bool isOneXOne = false;
+            GridOrigin? origin = null;
+            Extent? extent = null;
+            int? maxZoom = null;
+            if (paramCount > requiredParamCount)
+            {
+                // not using set as it allows optional prams with dynamic values aka. --minZoom 3 
+                var optionalParams = args.Skip(idx + requiredParamCount).Take(optionalParamCount).ToArray();
+                int parsedOptionals = this.ParseOptionalParameters(sourceType, sourcePath, ref isOneXOne, ref origin, optionalParams);
+                if (paramCount - requiredParamCount - parsedOptionals == 2)
+                {
+                    extent = parseExtent(args[idx + 2]);
+                    maxZoom = int.Parse(args[idx + 3]);
+                }
+            }
+            idx += paramCount;
+            if (extent is not null && maxZoom is not null)
+            {
+                return this._dataFactory.CreateDatasource(sourceType, sourcePath, batchSize, isBase, extent.Value, maxZoom.Value, 0, isOneXOne, origin);
+            }
+            else
+            {
+                return this._dataFactory.CreateDatasource(sourceType, sourcePath, batchSize, isOneXOne, origin, isBase);
+            }
+        }
+
         private IData ParseHttpSource(string[] args, ref int idx, int batchSize, bool isBase)
         {
             const int requiredParamCount = 5;
@@ -86,7 +130,7 @@ namespace MergerCli
             int paramCount = this.ValidateAndGetSourceLength(args, idx, requiredParamCount, optionalParamCount);
             string sourceType = args[idx];
             string sourcePath = args[idx + 1];
-            string[] bboxParts = args[idx + 2].Split(',');
+            Extent extent = this.parseExtent(args[idx + 2]);
             int minZoom = int.Parse(args[idx + 3]);
             int maxZoom = int.Parse(args[idx + 4]);
             bool isOneXOne = false;
@@ -97,6 +141,13 @@ namespace MergerCli
                 var optionalParams = args.Skip(idx + requiredParamCount).Take(optionalParamCount).ToArray();
                 this.ParseOptionalParameters(sourceType, sourcePath, ref isOneXOne, ref origin, optionalParams);
             }
+            idx += paramCount;
+            return this._dataFactory.CreateDatasource(sourceType, sourcePath, batchSize, isBase, extent, maxZoom, minZoom, isOneXOne, origin);
+        }
+
+        private Extent parseExtent(string extentString)
+        {
+            string[] bboxParts = extentString.Split(',');
             Extent extent = new Extent
             {
                 minX = double.Parse(bboxParts[0]),
@@ -104,19 +155,21 @@ namespace MergerCli
                 maxX = double.Parse(bboxParts[2]),
                 maxY = double.Parse(bboxParts[3])
             };
-            idx += paramCount;
-            return this._dataFactory.CreateDatasource(sourceType, sourcePath, batchSize, isBase, extent, maxZoom, minZoom, isOneXOne, origin);
+            return extent;
         }
 
-        private void ParseOptionalParameters(string sourceType, string sourcePath, ref bool isOneXOne, ref GridOrigin? origin, string[] optionalParams)
+        private int ParseOptionalParameters(string sourceType, string sourcePath, ref bool isOneXOne, ref GridOrigin? origin, string[] optionalParams)
         {
+            int parsed = 0;
             if (optionalParams.Contains("--1x1"))
             {
                 isOneXOne = true;
+                parsed++;
             }
             if (optionalParams.Contains("--UL"))
             {
                 origin = GridOrigin.UPPER_LEFT;
+                parsed++;
             }
             if (optionalParams.Contains("--LL"))
             {
@@ -125,7 +178,9 @@ namespace MergerCli
                     throw new Exception($"layer {sourceType} {sourcePath} cant be both UL and LL");
                 }
                 origin = GridOrigin.LOWER_LEFT;
+                parsed++;
             }
+            return parsed;
         }
 
         private int ValidateAndGetSourceLength(string[] args, int startIdx, int minExpectedParamCount, int optionalParamCount)
@@ -143,7 +198,7 @@ namespace MergerCli
             // check optional parameters
             for (; i <= startIdx + minExpectedParamCount + optionalParamCount; i++)
             {
-                if (i == args.Length || this.sourceTypes.Contains(args[i].ToLower()) )
+                if (i == args.Length || this.sourceTypes.Contains(args[i].ToLower()))
                 {
                     return i - startIdx;
                 }

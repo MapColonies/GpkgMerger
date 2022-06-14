@@ -25,9 +25,9 @@ namespace MergerLogic.Utils
             {
                 case "gpkg":
                     if (origin == null)
-                        data = new Gpkg(this._configurationManager, this._container, path, batchSize,isBase, isOneXOne);
+                        data = new Gpkg(this._configurationManager, this._container, path, batchSize, isBase, isOneXOne);
                     else
-                        data = new Gpkg(this._configurationManager, this._container, path, batchSize,isBase, isOneXOne, origin.Value);
+                        data = new Gpkg(this._configurationManager, this._container, path, batchSize, isBase, isOneXOne, null, null, origin.Value);
                     break;
                 case "s3":
                     string s3Url = this._configurationManager.GetConfiguration("S3", "url");
@@ -75,17 +75,23 @@ namespace MergerLogic.Utils
             type = type.ToLower();
             switch (type)
             {
-                case "gpkg":
+                
                 case "s3":
                 case "fs":
                     return this.CreateDatasource(type, path, batchSize, isOneXone, origin, isBase);
             };
-            if (isBase)
+            if (isBase && type != "gpkg")
             {
                 throw new Exception("web tile source cannot be used as base (target) layer");
             }
             switch (type)
             {
+                case "gpkg":
+                    if (origin == null)
+                        data = new Gpkg(this._configurationManager, this._container, path, batchSize, isBase, isOneXone, extent, maxZoom);
+                    else
+                        data = new Gpkg(this._configurationManager, this._container, path, batchSize, isBase, isOneXone, extent, maxZoom, origin.Value);
+                    break;
                 case "wmts":
                     if (origin == null)
                         data = new WMTS(this._container, path, batchSize, extent, maxZoom, minZoom, isOneXone);
