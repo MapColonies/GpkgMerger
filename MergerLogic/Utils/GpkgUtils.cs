@@ -582,26 +582,26 @@ namespace MergerLogic.Utils
 
         private void Add2X1Data(SQLiteConnection connection, int maxZoom)
         {
-            //TODO: add support for 1x1? (copy this function and change grid bbox and base zoom parameters)
+            const double TWO_X_ONE_ZOOM_0_RES = 0.703125;
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = "INSERT INTO \"gpkg_tile_matrix_set\" VALUES " +
-                    $"('{this._tileCache}',4326,-180,-90,180,90);";
+                    $"('{this._tileCache}',{GeoUtils.SRID},-180,-90,180,90);";
                 command.ExecuteNonQuery();
             }
-            CreateSqureGrid(connection, maxZoom, 2, 1, 0.703125, 2, 256);//creates 2X1 grid
+            CreateSqureGrid(connection, maxZoom, 2, 1, TWO_X_ONE_ZOOM_0_RES, 2, 256);//creates 2X1 grid
         }
 
         private void Add1X1Data(SQLiteConnection connection, int maxZoom)
         {
-            //TODO: add support for 1x1? (copy this function and change grid bbox and base zoom parameters)
+            const double ONE_X_ONE_ZOOM_0_RES = 1.40625;
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = "INSERT INTO \"gpkg_tile_matrix_set\" VALUES " +
-                    $"('{this._tileCache}',4326,-180,-180,180,180);";
+                    $"('{this._tileCache}',{GeoUtils.SRID},-180,-180,180,180);";
                 command.ExecuteNonQuery();
             }
-            CreateSqureGrid(connection, maxZoom, 1, 1, 1.40625, 2, 256);//creates 2X1 grid
+            CreateSqureGrid(connection, maxZoom, 1, 1, ONE_X_ONE_ZOOM_0_RES, 2, 256);//creates 1X1 grid
         }
 
         private void CreateTileTable(SQLiteConnection connection, Extent extent)
@@ -622,7 +622,7 @@ namespace MergerLogic.Utils
             {
                 command.CommandText = "INSERT INTO \"gpkg_contents\" " +
                     "(\"table_name\",\"data_type\",\"identifier\",\"min_x\",\"min_y\",\"max_x\",\"max_y\",\"srs_id\") VALUES " +
-                    $"('{this._tileCache}','tiles','{this._tileCache}',{extent.minX},{extent.minY},{extent.maxX},{extent.maxY},4326);";
+                    $"('{this._tileCache}','tiles','{this._tileCache}',{extent.minX},{extent.minY},{extent.maxX},{extent.maxY},{GeoUtils.SRID});";
                 command.ExecuteNonQuery();
             }
         }

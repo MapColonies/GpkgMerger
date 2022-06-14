@@ -44,7 +44,6 @@ namespace MergerLogic.DataTypes
             }
             if (!this.utils.Exist() && isBase && maxZoom is not null && extent is not null)
             {
-                // extent and tile matrix will be properly set after merge
                 this.utils.Create(extent.Value, maxZoom.Value, isOneXOne);
             }
         }
@@ -131,7 +130,11 @@ namespace MergerLogic.DataTypes
             }
 
             Tile lastTile = this.utils.GetLastTile(coords, baseCoords);
-            return lastTile is not null ? this._toCurrentGrid(lastTile) : null;
+            if(lastTile is not null)
+            {
+                lastTile = this._toCurrentGrid(lastTile);
+            }
+            return lastTile;
         }
 
         public void PrintBatch(List<Tile> tiles)

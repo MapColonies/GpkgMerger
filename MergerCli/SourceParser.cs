@@ -99,8 +99,8 @@ namespace MergerCli
             string sourcePath = args[idx + 1];
             bool isOneXOne = false;
             GridOrigin? origin = null;
-            Extent? extent = null;
-            int? maxZoom = null;
+            Extent? extent = null; // this affects only the gpkg_tile_matrix table
+            int? maxZoom = null; // this affects only the gpkg_tile_matrix table
             if (paramCount > requiredParamCount)
             {
                 // not using set as it allows optional prams with dynamic values aka. --minZoom 3 
