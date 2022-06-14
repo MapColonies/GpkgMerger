@@ -23,17 +23,15 @@ namespace MergerLogic.DataTypes
 
         private int offset;
 
-        private Extent extent;
         private CoordConvertorFunction _coordsFromCurrentGrid;
         private IConfigurationManager _configManager;
 
-        public Gpkg(IConfigurationManager configuration, IUtilsFactory utilsFactory, IOneXOneConvetor oneXOneConvetor,
-            string path, int batchSize, bool isOneXOne = false, GridOrigin origin = GridOrigin.UPPER_LEFT)
-            : base(utilsFactory, oneXOneConvetor, DataType.GPKG, path, batchSize, isOneXOne, origin)
+        public Gpkg(IConfigurationManager configuration, IServiceProvider container,
+            string path, int batchSize, bool isBase = false, bool isOneXOne = false, Extent? extent = null, int? maxZoom = null, GridOrigin origin = GridOrigin.UPPER_LEFT)
+            : base(container, DataType.GPKG, path, batchSize, isOneXOne, origin)
         {
             this.tileCache = this.utils.GetTileCache();
             this.offset = 0;
-            this.extent = this.utils.GetExtent();
             this._configManager = configuration;
 
             if (isOneXOne)
@@ -43,7 +41,11 @@ namespace MergerLogic.DataTypes
             else
             {
                 this._coordsFromCurrentGrid = cords => cords;
-            };
+            }
+            if (!this.utils.Exist() && isBase && maxZoom is not null && extent is not null)
+            {
+                this.utils.Create(extent.Value, maxZoom.Value, isOneXOne);
+            }
         }
 
         public override void Reset()
@@ -51,8 +53,9 @@ namespace MergerLogic.DataTypes
             this.offset = 0;
         }
 
-        public override void UpdateMetadata(IData data)
+        public override void UpdateMetadata(IData data) //TODO: check if should be moved to wrapup?
         {
+            //TODO: support update old gpkg with known extent 
             if (data.Type != DataType.GPKG)
             {
                 return;
@@ -60,20 +63,20 @@ namespace MergerLogic.DataTypes
 
             Gpkg gpkg = (Gpkg)data;
             this.UpdateExtent(gpkg);
-            this.UpdateTileMatrix(gpkg);
+            this.UpdateTileMatrix(gpkg); //TODO: replace with sql based update by zoom level
         }
 
         private void UpdateExtent(Gpkg gpkg)
         {
-            Extent extent = gpkg.extent;
+            Extent baseExtent = this.utils.GetExtent();
+            Extent extent = gpkg.utils.GetExtent();
             Extent combinedExtent = new Extent();
 
-            combinedExtent.minX = Math.Min(this.extent.minX, extent.minX);
-            combinedExtent.minY = Math.Min(this.extent.minY, extent.minY);
-            combinedExtent.maxX = Math.Max(this.extent.maxX, extent.maxX);
-            combinedExtent.maxY = Math.Max(this.extent.maxY, extent.maxY);
+            combinedExtent.minX = Math.Min(baseExtent.minX, extent.minX);
+            combinedExtent.minY = Math.Min(baseExtent.minY, extent.minY);
+            combinedExtent.maxX = Math.Max(baseExtent.maxX, extent.maxX);
+            combinedExtent.maxY = Math.Max(baseExtent.maxY, extent.maxY);
 
-            this.extent = combinedExtent;
             this.utils.UpdateExtent(combinedExtent);
         }
 
@@ -127,7 +130,11 @@ namespace MergerLogic.DataTypes
             }
 
             Tile lastTile = this.utils.GetLastTile(coords, baseCoords);
-            return this._toCurrentGrid(lastTile);
+            if (lastTile is not null)
+            {
+                lastTile = this._toCurrentGrid(lastTile);
+            }
+            return lastTile;
         }
 
         public void PrintBatch(List<Tile> tiles)
@@ -140,6 +147,7 @@ namespace MergerLogic.DataTypes
 
         public override void Wrapup()
         {
+            //TODO: update extent and tile grid?
             this.utils.CreateTileIndex();
 
             bool vacuum = bool.Parse(this._configManager.GetConfiguration("GPKG", "vacuum"));

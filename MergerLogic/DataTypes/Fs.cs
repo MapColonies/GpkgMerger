@@ -13,9 +13,9 @@ namespace MergerLogic.DataTypes
 
         private IPathUtils _pathUtils;
 
-        public FS(IPathUtils pathUtils, IUtilsFactory utilsFactory, IOneXOneConvetor oneXOneConvetor,
+        public FS(IPathUtils pathUtils, IServiceProvider container,
             string path, int batchSize, bool isOneXOne = false, bool isBase = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
-            : base(utilsFactory, oneXOneConvetor, DataType.FOLDER, path, batchSize, isOneXOne, origin)
+            : base(container, DataType.FOLDER, path, batchSize, isOneXOne, origin)
         {
             this._pathUtils = pathUtils;
             if (isBase)
@@ -56,11 +56,14 @@ namespace MergerLogic.DataTypes
             {
                 Coord coord = this._pathUtils.FromPath(filePath);
                 Tile tile = this.utils.GetTile(coord);
-                tile = this._toCurrentGrid(tile);
                 if (tile != null)
                 {
-                    tile = this._convertOriginTile(tile);
-                    yield return tile;
+                    tile = this._toCurrentGrid(tile);
+                    if (tile != null)
+                    {
+                        tile = this._convertOriginTile(tile);
+                        yield return tile;
+                    }
                 }
             }
         }

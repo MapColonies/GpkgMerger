@@ -1,5 +1,6 @@
 using MergerLogic.Batching;
 using MergerLogic.Utils;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MergerLogic.DataTypes
 {
@@ -53,11 +54,12 @@ namespace MergerLogic.DataTypes
 
         protected const int COORDS_FOR_ALL_ZOOM_LEVELS = ZOOM_LEVEL_COUNT << 1;
 
-        public Data(IUtilsFactory utilsFactory, IOneXOneConvetor oneXOneConvetor, DataType type, string path, int batchSize, bool isOneXOne = false, GridOrigin origin = GridOrigin.UPPER_LEFT)
+        public Data(IServiceProvider container, DataType type, string path, int batchSize, bool isOneXOne = false, GridOrigin origin = GridOrigin.UPPER_LEFT)
         {
             this.Type = type;
             this.Path = path;
             this.batchSize = batchSize;
+            var utilsFactory = container.GetRequiredService<IUtilsFactory>();
             this.utils = utilsFactory.GetDataUtils<UtilsType>(path);
             this.isOneXOne = isOneXOne;
             this.origin = origin;
@@ -65,7 +67,7 @@ namespace MergerLogic.DataTypes
             // The following delegates are for code performance and to reduce branching while handling tiles
             if (isOneXOne)
             {
-                this._oneXOneConvetor = oneXOneConvetor;
+                this._oneXOneConvetor = container.GetRequiredService<IOneXOneConvetor>();
                 this._getLastExistingTile = this.getLastOneXoneExistingTile;
                 this._fromCurrentGridTile = this._oneXOneConvetor.TryFromTwoXOne;
                 this._fromCurrentGridCoord = this._oneXOneConvetor.TryFromTwoXOne;
@@ -176,9 +178,9 @@ namespace MergerLogic.DataTypes
                 this._getTile = (z, x, y) =>
                 {
                     int newY = GeoUtils.FlipY(z, y);
-                    Tile tile = fixedGridGetTileFuntion(z, x, newY);
+                    Tile? tile = fixedGridGetTileFuntion(z, x, newY);
                     //set cords to current origin
-                    tile.SetCoords(z, x, y);
+                    tile?.SetCoords(z, x, y);
                     return tile;
                 };
             }

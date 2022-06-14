@@ -14,11 +14,16 @@ namespace MergerLogic.Utils
 
         public GpkgUtils(string path, ITimeUtils timeUtils, bool create = false) : base(path)
         {
-            this._tileCache = this.GetTileCache();
+            this._tileCache = this.InternalGetTileCache();
             this._timeUtils = timeUtils;
         }
 
         public string GetTileCache()
+        {
+            return this._tileCache;
+        }
+
+        private string InternalGetTileCache()
         {
             if (!this.Exist())
             {
@@ -82,7 +87,7 @@ namespace MergerLogic.Utils
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT count(*) FROM {this._tileCache}";
+                    command.CommandText = $"SELECT count(*) FROM \"{this._tileCache}\"";
 
                     using (var reader = command.ExecuteReader(System.Data.CommandBehavior.SingleRow))
                     {
@@ -180,7 +185,7 @@ namespace MergerLogic.Utils
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT hex(tile_data) FROM {this._tileCache} where zoom_level=$z and tile_column=$x and tile_row=$y";
+                    command.CommandText = $"SELECT hex(tile_data) FROM \"{this._tileCache}\" where zoom_level=$z and tile_column=$x and tile_row=$y";
                     command.Parameters.AddWithValue("$z", z);
                     command.Parameters.AddWithValue("$x", x);
                     command.Parameters.AddWithValue("$y", y);
@@ -207,7 +212,7 @@ namespace MergerLogic.Utils
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT tile_row FROM {this._tileCache} where zoom_level=$z and tile_column=$x and tile_row=$y";
+                    command.CommandText = $"SELECT tile_row FROM \"{this._tileCache}\" where zoom_level=$z and tile_column=$x and tile_row=$y";
                     command.Parameters.AddWithValue("$z", z);
                     command.Parameters.AddWithValue("$x", x);
                     command.Parameters.AddWithValue("$y", y);
@@ -234,7 +239,7 @@ namespace MergerLogic.Utils
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"REPLACE INTO {this._tileCache} (zoom_level, tile_column, tile_row, tile_data) VALUES ($z, $x, $y, $blob)";
+                    command.CommandText = $"REPLACE INTO \"{this._tileCache}\" (zoom_level, tile_column, tile_row, tile_data) VALUES ($z, $x, $y, $blob)";
 
                     using (var transaction = connection.BeginTransaction())
                     {
@@ -266,7 +271,7 @@ namespace MergerLogic.Utils
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM {this._tileCache} limit $limit offset $offset";
+                    command.CommandText = $"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM \"{this._tileCache}\" limit $limit offset $offset";
                     command.Parameters.AddWithValue("$limit", batchSize);
                     command.Parameters.AddWithValue("$offset", offset);
 
@@ -300,7 +305,7 @@ namespace MergerLogic.Utils
                 {
 
                     // Build command
-                    StringBuilder commandBuilder = new StringBuilder($"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM {this._tileCache} where ");
+                    StringBuilder commandBuilder = new StringBuilder($"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM \"{this._tileCache}\" where ");
 
                     int zoomLevel = baseCoords.z;
                     int maxZoomLevel = zoomLevel - 1;
@@ -346,7 +351,7 @@ namespace MergerLogic.Utils
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"CREATE UNIQUE INDEX IF NOT EXISTS index_tiles on {this._tileCache} (zoom_level, tile_row, tile_column)";
+                    command.CommandText = $"CREATE UNIQUE INDEX IF NOT EXISTS index_tiles on \"{this._tileCache}\" (zoom_level, tile_row, tile_column)";
                     command.ExecuteNonQuery();
                 }
             }
@@ -375,7 +380,7 @@ namespace MergerLogic.Utils
             this._timeUtils.PrintElapsedTime("Vacuum runtime", ts);
         }
 
-        public void Create(Extent extent, int maxZoom)
+        public void Create(Extent extent, int maxZoom, bool isOneXOne = false)
         {
             Console.WriteLine($"creating new gpkg: {this.path}");
             SQLiteConnection.CreateFile(this.path);
@@ -384,21 +389,42 @@ namespace MergerLogic.Utils
                 connection.Open();
                 using (var transaction = connection.BeginTransaction())
                 {
-                    SetPragma(connection);
-                    CreateSpatialRefTable(connection);
-                    CreateContentsTable(connection);
-                    CreateGeometryColumnsTable(connection);
-                    CreateTileMatrixSetTable(connection);
-                    CreateTileMatrixTable(connection);
-                    CreateExtentionTable(connection);
-                    CreateTileTable(connection, extent);
-                    Add2X1Data(connection, maxZoom);
-                    CreateTileMatrixValidationTriggers(connection);
+                    this.SetPragma(connection);
+                    this.CreateSpatialRefTable(connection);
+                    this.CreateContentsTable(connection);
+                    this.CreateGeometryColumnsTable(connection);
+                    this.CreateTileMatrixSetTable(connection);
+                    this.CreateTileMatrixTable(connection);
+                    this.CreateExtentionTable(connection);
+                    this.CreateTileTable(connection, extent);
+                    if (isOneXOne)
+                    {
+                        this.Add1X1Data(connection, maxZoom);
+                    }
+                    else
+                    {
+                        this.Add2X1Data(connection, maxZoom);
+                    }
+                    this.CreateTileMatrixValidationTriggers(connection);
                     transaction.Commit();
                 }
             }
             // Vacuum is required if page size pragma is changed
             //Vacuum();
+        }
+
+        public void RemoveUnusedTileMatrix(IEnumerable<int> usedZooms)
+        {
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "DELETE FROM \"gpkg_tile_matrix\" " +
+                        $"WHERE \"table_name\" = '{this._tileCache}' AND  \"zoom_level\" NOT IN ({string.Join(',', usedZooms)});";
+                    command.ExecuteNonQuery();
+                }
+            }
         }
 
         private void CreateSpatialRefTable(SQLiteConnection connection)
@@ -553,16 +579,29 @@ namespace MergerLogic.Utils
             }
         }
 
+
         private void Add2X1Data(SQLiteConnection connection, int maxZoom)
         {
-            //TODO: add support for 1x1? (copy this function and change grid bbox and base zoom parameters)
+            const double TWO_X_ONE_ZOOM_0_RES = 0.703125;
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = "INSERT INTO \"gpkg_tile_matrix_set\" VALUES " +
-                    $"({this._tileCache},4326,-180,-90,180,90);";
+                    $"('{this._tileCache}',{GeoUtils.SRID},-180,-90,180,90);";
                 command.ExecuteNonQuery();
             }
-            CreateSqureGrid(connection, maxZoom, 1, 2, 0.703125, 2, 256);//creates 2X1 grid
+            this.CreateSqureGrid(connection, maxZoom, 2, 1, TWO_X_ONE_ZOOM_0_RES, 2, 256);//creates 2X1 grid
+        }
+
+        private void Add1X1Data(SQLiteConnection connection, int maxZoom)
+        {
+            const double ONE_X_ONE_ZOOM_0_RES = 1.40625;
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "INSERT INTO \"gpkg_tile_matrix_set\" VALUES " +
+                    $"('{this._tileCache}',{GeoUtils.SRID},-180,-180,180,180);";
+                command.ExecuteNonQuery();
+            }
+            this.CreateSqureGrid(connection, maxZoom, 1, 1, ONE_X_ONE_ZOOM_0_RES, 2, 256);//creates 1X1 grid
         }
 
         private void CreateTileTable(SQLiteConnection connection, Extent extent)
@@ -583,7 +622,7 @@ namespace MergerLogic.Utils
             {
                 command.CommandText = "INSERT INTO \"gpkg_contents\" " +
                     "(\"table_name\",\"data_type\",\"identifier\",\"min_x\",\"min_y\",\"max_x\",\"max_y\",\"srs_id\") VALUES " +
-                    $"({this._tileCache},'tiles',{this._tileCache},${extent.minX},${extent.minY},{extent.maxX},{extent.maxY},4326);";
+                    $"('{this._tileCache}','tiles','{this._tileCache}',{extent.minX},{extent.minY},{extent.maxX},{extent.maxY},{GeoUtils.SRID});";
                 command.ExecuteNonQuery();
             }
         }
@@ -644,7 +683,7 @@ namespace MergerLogic.Utils
                                 $"WHERE NOT(NEW.zoom_level IN (SELECT zoom_level FROM gpkg_tile_matrix WHERE lower(table_name) = lower('{this._tileCache}'))) ; END; " +
                         $"CREATE TRIGGER \"{this._tileCache}_zoom_update\" BEFORE UPDATE OF zoom_level ON \"{this._tileCache}\" " +
                             "FOR EACH ROW BEGIN " +
-                                $"SELECT RAISE(ABORT, 'update on table ''{_tileCache}'' violates constraint: zoom_level not specified for table in gpkg_tile_matrix') " +
+                                $"SELECT RAISE(ABORT, 'update on table ''{this._tileCache}'' violates constraint: zoom_level not specified for table in gpkg_tile_matrix') " +
                                 $"WHERE NOT (NEW.zoom_level IN (SELECT zoom_level FROM gpkg_tile_matrix WHERE lower(table_name) = lower('{this._tileCache}'))) ; END; ";
                     command.ExecuteNonQuery();
                 }
