@@ -673,7 +673,7 @@ namespace MergerLogic.Utils
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT  MAX(zoom_level) AS maxZoom FROM \"{this._tileCache}\"; ";
+                    command.CommandText = $"SELECT  MAX(zoom_level) AS maxZoom FROM \"{this._tileCache}\";";
                     maxZoom = int.Parse(command.ExecuteScalar().ToString());
                 }
                 if (isOneXOne)

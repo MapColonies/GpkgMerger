@@ -27,17 +27,12 @@ namespace MergerLogic.DataTypes
             {
                 this._coordsFromCurrentGrid = cords => cords;
             }
-            if (isBase && extent is null)
-            {
-                //throw error if extent is missing in base
-                throw new Exception($"path '{path}' to data does not exist.");
-            }
             if (isBase)
             {
                 if (extent is null)
                 {
                     //throw error if extent is missing in base
-                    throw new Exception($"path '{path}' to data does not exist.");
+                    throw new Exception($" base gpkg '{path}' must have extent");
                 }
 
                 if (!this.utils.Exist())
