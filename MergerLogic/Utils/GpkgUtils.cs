@@ -120,61 +120,6 @@ namespace MergerLogic.Utils
             }
         }
 
-        public static void CopyTileMatrix(string target, string source, string tileCache)
-        {
-            using (var connection = new SQLiteConnection($"Data Source={source}"))
-            {
-                connection.Open();
-
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "SELECT * FROM gpkg_tile_matrix";
-
-                    using (var reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            TileMatrix tileMatrix = new TileMatrix();
-                            tileMatrix.tableName = tileCache;
-                            tileMatrix.zoomLevel = reader.GetInt32(1);
-                            tileMatrix.matrixWidth = reader.GetInt32(2);
-                            tileMatrix.matrixHeight = reader.GetInt32(3);
-                            tileMatrix.tileWidth = reader.GetInt32(4);
-                            tileMatrix.tileHeight = reader.GetInt32(5);
-                            tileMatrix.pixleXSize = reader.GetDouble(6);
-                            tileMatrix.pixleYSize = reader.GetDouble(7);
-
-                            InsertTileMatrixRow(target, tileMatrix);
-                        }
-                    }
-                }
-            }
-        }
-
-        private static void InsertTileMatrixRow(string path, TileMatrix tileMatrix)
-        {
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
-            {
-                connection.Open();
-
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "REPLACE INTO gpkg_tile_matrix (table_name, zoom_level, matrix_width, matrix_height, tile_width, tile_height, pixel_x_size, pixel_y_size) VALUES ($tableName, $zoomLevel, $matrixWidth, $matrixHeight, $tileWidth, $tileHeight, $pixleXSize, $pixleYSize)";
-
-                    command.Parameters.AddWithValue("$tableName", tileMatrix.tableName);
-                    command.Parameters.AddWithValue("$zoomLevel", tileMatrix.zoomLevel);
-                    command.Parameters.AddWithValue("$matrixWidth", tileMatrix.matrixWidth);
-                    command.Parameters.AddWithValue("$matrixHeight", tileMatrix.matrixHeight);
-                    command.Parameters.AddWithValue("$tileWidth", tileMatrix.tileWidth);
-                    command.Parameters.AddWithValue("$tileHeight", tileMatrix.tileHeight);
-                    command.Parameters.AddWithValue("$pixleXSize", tileMatrix.pixleXSize);
-                    command.Parameters.AddWithValue("$pixleYSize", tileMatrix.pixleYSize);
-
-                    command.ExecuteNonQuery();
-                }
-            }
-        }
-
         public override Tile GetTile(int z, int x, int y)
         {
             Tile tile = null;
@@ -380,7 +325,7 @@ namespace MergerLogic.Utils
             this._timeUtils.PrintElapsedTime("Vacuum runtime", ts);
         }
 
-        public void Create(Extent extent, int maxZoom, bool isOneXOne = false)
+        public void Create(Extent extent, bool isOneXOne = false)
         {
             Console.WriteLine($"creating new gpkg: {this.path}");
             SQLiteConnection.CreateFile(this.path);
@@ -399,11 +344,11 @@ namespace MergerLogic.Utils
                     this.CreateTileTable(connection, extent);
                     if (isOneXOne)
                     {
-                        this.Add1X1Data(connection, maxZoom);
+                        this.Add1X1MatrixSet(connection);
                     }
                     else
                     {
-                        this.Add2X1Data(connection, maxZoom);
+                        this.Add2X1MatrixSet(connection);
                     }
                     this.CreateTileMatrixValidationTriggers(connection);
                     transaction.Commit();
@@ -556,14 +501,15 @@ namespace MergerLogic.Utils
             }
         }
 
-        private void CreateSqureGrid(SQLiteConnection connection, int maxZoom, int baseWidth, int baseHeight, double baseRes, int zoomMultipiler, int tileSize)
+        private void CreateSqureGrid(SQLiteConnection connection, int minZoom, int maxZoom, int baseWidth, int baseHeight, int yAxisSizeDeg, int zoomMultipiler, int tileSize)
         {
-            StringBuilder gridBuilder = new StringBuilder("INSERT INTO \"gpkg_tile_matrix\" VALUES ");
+            StringBuilder gridBuilder = new StringBuilder("INSERT OR REPLACE INTO \"gpkg_tile_matrix\" VALUES ");
 
-            int width = baseWidth;
-            int height = baseHeight;
-            double res = baseRes;
-            for (int z = 0; z <= maxZoom; z++)
+            int startZoomMultiplier = (int)Math.Pow(zoomMultipiler, minZoom);
+            int width = baseWidth * startZoomMultiplier;
+            int height = baseHeight * startZoomMultiplier;
+            double res = (double)yAxisSizeDeg / height / 256;
+            for (int z = minZoom; z <= maxZoom; z++)
             {
                 gridBuilder.Append($"('{this._tileCache}',{z},{width},{height},{tileSize},{tileSize},{res},{res}),");
                 width *= zoomMultipiler;
@@ -580,28 +526,24 @@ namespace MergerLogic.Utils
         }
 
 
-        private void Add2X1Data(SQLiteConnection connection, int maxZoom)
+        private void Add2X1MatrixSet(SQLiteConnection connection)
         {
-            const double TWO_X_ONE_ZOOM_0_RES = 0.703125;
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = "INSERT INTO \"gpkg_tile_matrix_set\" VALUES " +
                     $"('{this._tileCache}',{GeoUtils.SRID},-180,-90,180,90);";
                 command.ExecuteNonQuery();
             }
-            this.CreateSqureGrid(connection, maxZoom, 2, 1, TWO_X_ONE_ZOOM_0_RES, 2, 256);//creates 2X1 grid
         }
 
-        private void Add1X1Data(SQLiteConnection connection, int maxZoom)
+        private void Add1X1MatrixSet(SQLiteConnection connection)
         {
-            const double ONE_X_ONE_ZOOM_0_RES = 1.40625;
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = "INSERT INTO \"gpkg_tile_matrix_set\" VALUES " +
                     $"('{this._tileCache}',{GeoUtils.SRID},-180,-180,180,180);";
                 command.ExecuteNonQuery();
             }
-            this.CreateSqureGrid(connection, maxZoom, 1, 1, ONE_X_ONE_ZOOM_0_RES, 2, 256);//creates 1X1 grid
         }
 
         private void CreateTileTable(SQLiteConnection connection, Extent extent)
@@ -650,6 +592,7 @@ namespace MergerLogic.Utils
         {
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
+                connection.Open();
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText =
@@ -720,6 +663,28 @@ namespace MergerLogic.Utils
             // Get full path to gpkg file
             string fullPath = Path.GetFullPath(this.path);
             return File.Exists(fullPath);
+        }
+
+        public void UpdateTileMatrixTable(bool isOneXOne = false)
+        {
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            {
+                int maxZoom;
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = $"SELECT  MAX(zoom_level) AS maxZoom FROM \"{this._tileCache}\"; ";
+                    maxZoom = int.Parse(command.ExecuteScalar().ToString());
+                }
+                if (isOneXOne)
+                {
+                    this.CreateSqureGrid(connection, 0, maxZoom, 1, 1, 360, 2, 256);//creates 1X1 grid
+                }
+                else
+                {
+                    this.CreateSqureGrid(connection, 0, maxZoom, 2, 1, 180, 2, 256);//creates 2X1 grid
+                }
+            }
         }
     }
 }

@@ -3,23 +3,9 @@ using MergerLogic.Utils;
 
 namespace MergerLogic.DataTypes
 {
-    public struct TileMatrix
-    {
-        public string tableName;
-        public int zoomLevel;
-        public int matrixWidth;
-        public int matrixHeight;
-        public int tileWidth;
-        public int tileHeight;
-        public double pixleXSize;
-        public double pixleYSize;
-    }
-
     public class Gpkg : Data<IGpkgUtils>
     {
         private delegate Coord CoordConvertorFunction(Coord cords);
-
-        private string tileCache;
 
         private int offset;
 
@@ -27,10 +13,9 @@ namespace MergerLogic.DataTypes
         private IConfigurationManager _configManager;
 
         public Gpkg(IConfigurationManager configuration, IServiceProvider container,
-            string path, int batchSize, bool isBase = false, bool isOneXOne = false, Extent? extent = null, int? maxZoom = null, GridOrigin origin = GridOrigin.UPPER_LEFT)
+            string path, int batchSize, bool isBase = false, bool isOneXOne = false, Extent? extent = null, GridOrigin origin = GridOrigin.UPPER_LEFT)
             : base(container, DataType.GPKG, path, batchSize, isOneXOne, origin)
         {
-            this.tileCache = this.utils.GetTileCache();
             this.offset = 0;
             this._configManager = configuration;
 
@@ -42,47 +27,34 @@ namespace MergerLogic.DataTypes
             {
                 this._coordsFromCurrentGrid = cords => cords;
             }
-            if (!this.utils.Exist() && isBase && maxZoom is not null && extent is not null)
+            if (isBase && extent is null)
             {
-                this.utils.Create(extent.Value, maxZoom.Value, isOneXOne);
+                //throw error if extent is missing in base
+                throw new Exception($"path '{path}' to data does not exist.");
+            }
+            if (isBase)
+            {
+                if (extent is null)
+                {
+                    //throw error if extent is missing in base
+                    throw new Exception($"path '{path}' to data does not exist.");
+                }
+
+                if (!this.utils.Exist())
+                {
+                    this.utils.Create(extent.Value, isOneXOne);
+                }
+                else
+                {
+                    this.utils.DeleteTileTableTriggers();
+                }
+                this.utils.UpdateExtent(extent.Value);
             }
         }
 
         public override void Reset()
         {
             this.offset = 0;
-        }
-
-        public override void UpdateMetadata(IData data) //TODO: check if should be moved to wrapup?
-        {
-            //TODO: support update old gpkg with known extent 
-            if (data.Type != DataType.GPKG)
-            {
-                return;
-            }
-
-            Gpkg gpkg = (Gpkg)data;
-            this.UpdateExtent(gpkg);
-            this.UpdateTileMatrix(gpkg); //TODO: replace with sql based update by zoom level
-        }
-
-        private void UpdateExtent(Gpkg gpkg)
-        {
-            Extent baseExtent = this.utils.GetExtent();
-            Extent extent = gpkg.utils.GetExtent();
-            Extent combinedExtent = new Extent();
-
-            combinedExtent.minX = Math.Min(baseExtent.minX, extent.minX);
-            combinedExtent.minY = Math.Min(baseExtent.minY, extent.minY);
-            combinedExtent.maxX = Math.Max(baseExtent.maxX, extent.maxX);
-            combinedExtent.maxY = Math.Max(baseExtent.maxY, extent.maxY);
-
-            this.utils.UpdateExtent(combinedExtent);
-        }
-
-        private void UpdateTileMatrix(Gpkg gpkg)
-        {
-            GpkgUtils.CopyTileMatrix(this.Path, gpkg.Path, this.tileCache);
         }
 
         public override List<Tile> GetNextBatch(out string batchIdentifier)
@@ -147,8 +119,9 @@ namespace MergerLogic.DataTypes
 
         public override void Wrapup()
         {
-            //TODO: update extent and tile grid?
             this.utils.CreateTileIndex();
+            this.utils.UpdateTileMatrixTable(this.isOneXOne);
+            this.utils.CreateTileCacheValidationTriggers();
 
             bool vacuum = bool.Parse(this._configManager.GetConfiguration("GPKG", "vacuum"));
             if (vacuum)
