@@ -87,31 +87,40 @@ namespace MergerCli
 
             }
             idx += paramCount;
-            return this._dataFactory.CreateDatasource(sourceType, sourcePath, batchSize, isOneXOne, origin, null, isBase);
+            return this._dataFactory.CreateDatasource(sourceType, sourcePath, batchSize, isOneXOne, origin, isBase);
         }
 
         private IData ParseGpkgSource(string[] args, ref int idx, int batchSize, bool isBase)
         {
             const int requiredParamCount = 2;
-            const int optionalParamCount = 3;
+            const int optionalParamCount = 4;
             int paramCount = this.ValidateAndGetSourceLength(args, idx, requiredParamCount, optionalParamCount);
             string sourceType = args[idx];
             string sourcePath = args[idx + 1];
             bool isOneXOne = false;
             GridOrigin? origin = null;
-            Extent? extent = null; // this set extent for base gpkg
+            Extent? extent = null; // this affects only the gpkg_tile_matrix table
+            int? maxZoom = null; // this affects only the gpkg_tile_matrix table
             if (paramCount > requiredParamCount)
             {
-                // not using set as it allows optional prams with dynamic values aka. --minZoom 3
+                // not using set as it allows optional prams with dynamic values aka. --minZoom 3 
                 var optionalParams = args.Skip(idx + requiredParamCount).Take(optionalParamCount).ToArray();
                 int parsedOptionals = this.ParseOptionalParameters(sourceType, sourcePath, ref isOneXOne, ref origin, optionalParams);
-                if (paramCount - requiredParamCount - parsedOptionals == 1)
+                if (paramCount - requiredParamCount - parsedOptionals == 2)
                 {
                     extent = this.parseExtent(args[idx + 2]);
+                    maxZoom = int.Parse(args[idx + 3]);
                 }
             }
             idx += paramCount;
-            return this._dataFactory.CreateDatasource(sourceType, sourcePath, batchSize, isOneXOne, origin, extent, isBase);
+            if (extent is not null && maxZoom is not null)
+            {
+                return this._dataFactory.CreateDatasource(sourceType, sourcePath, batchSize, isBase, extent.Value, maxZoom.Value, 0, isOneXOne, origin);
+            }
+            else
+            {
+                return this._dataFactory.CreateDatasource(sourceType, sourcePath, batchSize, isOneXOne, origin, isBase);
+            }
         }
 
         private IData ParseHttpSource(string[] args, ref int idx, int batchSize, bool isBase)

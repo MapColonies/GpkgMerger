@@ -123,7 +123,7 @@ namespace MergerCli
                         <'xyz' / 'wmts' / 'tms'> <url template> <bbox - in format 'minX,minY,maxX,maxY'> <min zoom> <max zoom> [--1x1] [--UL / --LL] 
                     file sources:
                         <'fs' / 's3'> <path> [--1x1] [--UL / --LL] 
-                        gpkg <path>  [bbox - in format 'minX,minY,maxX,maxY' - required base] [--1x1] [--UL / --LL] 
+                        gpkg <path>  [bbox - in format 'minX,minY,maxX,maxY' - required for creating new gpkg] [max zoom - required for creating new gpkg] [--1x1] [--UL / --LL] 
                     **** please note all layers must be 2X1 EPSG:4326 layers ****
                                     
                 merge sources: {programName} <batch_size> <base source> <addiotional source> [<another source>...]

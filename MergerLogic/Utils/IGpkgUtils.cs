@@ -15,10 +15,7 @@ namespace MergerLogic.Utils
         void UpdateExtent(Extent extent);
         void Vacuum();
         public bool Exist();
-        public void Create(Extent extent, bool isOneXOne = false);
+        public void Create(Extent extent, int maxZoom, bool isOneXOne = false);
         public void RemoveUnusedTileMatrix(IEnumerable<int> usedZooms);
-        public void DeleteTileTableTriggers();
-        public void CreateTileCacheValidationTriggers();
-        public void UpdateTileMatrixTable(bool isOneXOne = false);
     }
 }
