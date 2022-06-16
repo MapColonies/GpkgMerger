@@ -2,19 +2,24 @@
 
 namespace MergerLogic.Utils
 {
-    internal class HttpUtils : DataUtils
+    public class HttpUtils : DataUtils, IHttpUtils
     {
-        private PathPatternUtils _pathPatternUtils;
+        private IPathPatternUtils _pathPatternUtils;
         private HttpClient _httpClient;
-        public HttpUtils(string path, PathPatternUtils pathPatternUtils) : base(path)
+        public HttpUtils(string path, IPathPatternUtils pathPatternUtils) : base(path)
         {
             this._pathPatternUtils = pathPatternUtils;
             this._httpClient = new HttpClient();
         }
 
+        ~HttpUtils()
+        {
+            this._httpClient.Dispose();
+        }
+
         public override Tile GetTile(int z, int x, int y)
         {
-            string url = this._pathPatternUtils.renderUrlTemplate(x, y, z);
+            string url = this._pathPatternUtils.RenderUrlTemplate(x, y, z);
             var resTask = this._httpClient.GetAsync(url);
             resTask.Wait();
             var httpRes = resTask.Result;
@@ -34,7 +39,7 @@ namespace MergerLogic.Utils
 
         public override bool TileExists(int z, int x, int y)
         {
-            return GetTile(z, x, y) is not null;
+            return this.GetTile(z, x, y) is not null;
         }
     }
 }

@@ -6,20 +6,33 @@ using System.Text;
 
 namespace MergerLogic.Utils
 {
-    public class GpkgUtils : DataUtils
+    public class GpkgUtils : DataUtils, IGpkgUtils
     {
-        private string tileCache;
+        private string _tileCache;
 
-        public GpkgUtils(string path) : base(path)
+        private ITimeUtils _timeUtils;
+
+        public GpkgUtils(string path, ITimeUtils timeUtils, bool create = false) : base(path)
         {
-            this.tileCache = GpkgUtils.GetTileCache(path);
+            this._tileCache = this.InternalGetTileCache();
+            this._timeUtils = timeUtils;
         }
 
-        public static string GetTileCache(string path)
+        public string GetTileCache()
         {
+            return this._tileCache;
+        }
+
+        private string InternalGetTileCache()
+        {
+            if (!this.Exist())
+            {
+                return Path.GetFileNameWithoutExtension(this.path);
+            }
+
             string tileCache = "";
 
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
 
@@ -38,11 +51,11 @@ namespace MergerLogic.Utils
             return tileCache;
         }
 
-        public static Extent GetExtent(string path)
+        public Extent GetExtent()
         {
             Extent extent = new Extent();
 
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
 
@@ -64,17 +77,17 @@ namespace MergerLogic.Utils
             return extent;
         }
 
-        public static int GetTileCount(string path, string tileCache)
+        public int GetTileCount()
         {
             int tileCount = 0;
 
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT count(*) FROM {tileCache}";
+                    command.CommandText = $"SELECT count(*) FROM \"{this._tileCache}\"";
 
                     using (var reader = command.ExecuteReader(System.Data.CommandBehavior.SingleRow))
                     {
@@ -87,9 +100,9 @@ namespace MergerLogic.Utils
             return tileCount;
         }
 
-        public static void UpdateExtent(string path, Extent extent)
+        public void UpdateExtent(Extent extent)
         {
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
 
@@ -107,61 +120,6 @@ namespace MergerLogic.Utils
             }
         }
 
-        public static void CopyTileMatrix(string target, string source, string tileCache)
-        {
-            using (var connection = new SQLiteConnection($"Data Source={source}"))
-            {
-                connection.Open();
-
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "SELECT * FROM gpkg_tile_matrix";
-
-                    using (var reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            TileMatrix tileMatrix = new TileMatrix();
-                            tileMatrix.tableName = tileCache;
-                            tileMatrix.zoomLevel = reader.GetInt32(1);
-                            tileMatrix.matrixWidth = reader.GetInt32(2);
-                            tileMatrix.matrixHeight = reader.GetInt32(3);
-                            tileMatrix.tileWidth = reader.GetInt32(4);
-                            tileMatrix.tileHeight = reader.GetInt32(5);
-                            tileMatrix.pixleXSize = reader.GetDouble(6);
-                            tileMatrix.pixleYSize = reader.GetDouble(7);
-
-                            InsertTileMatrixRow(target, tileMatrix);
-                        }
-                    }
-                }
-            }
-        }
-
-        private static void InsertTileMatrixRow(string path, TileMatrix tileMatrix)
-        {
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
-            {
-                connection.Open();
-
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "REPLACE INTO gpkg_tile_matrix (table_name, zoom_level, matrix_width, matrix_height, tile_width, tile_height, pixel_x_size, pixel_y_size) VALUES ($tableName, $zoomLevel, $matrixWidth, $matrixHeight, $tileWidth, $tileHeight, $pixleXSize, $pixleYSize)";
-
-                    command.Parameters.AddWithValue("$tableName", tileMatrix.tableName);
-                    command.Parameters.AddWithValue("$zoomLevel", tileMatrix.zoomLevel);
-                    command.Parameters.AddWithValue("$matrixWidth", tileMatrix.matrixWidth);
-                    command.Parameters.AddWithValue("$matrixHeight", tileMatrix.matrixHeight);
-                    command.Parameters.AddWithValue("$tileWidth", tileMatrix.tileWidth);
-                    command.Parameters.AddWithValue("$tileHeight", tileMatrix.tileHeight);
-                    command.Parameters.AddWithValue("$pixleXSize", tileMatrix.pixleXSize);
-                    command.Parameters.AddWithValue("$pixleYSize", tileMatrix.pixleYSize);
-
-                    command.ExecuteNonQuery();
-                }
-            }
-        }
-
         public override Tile GetTile(int z, int x, int y)
         {
             Tile tile = null;
@@ -172,7 +130,7 @@ namespace MergerLogic.Utils
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT hex(tile_data) FROM {this.tileCache} where zoom_level=$z and tile_column=$x and tile_row=$y";
+                    command.CommandText = $"SELECT hex(tile_data) FROM \"{this._tileCache}\" where zoom_level=$z and tile_column=$x and tile_row=$y";
                     command.Parameters.AddWithValue("$z", z);
                     command.Parameters.AddWithValue("$x", x);
                     command.Parameters.AddWithValue("$y", y);
@@ -199,7 +157,7 @@ namespace MergerLogic.Utils
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT tile_row FROM {this.tileCache} where zoom_level=$z and tile_column=$x and tile_row=$y";
+                    command.CommandText = $"SELECT tile_row FROM \"{this._tileCache}\" where zoom_level=$z and tile_column=$x and tile_row=$y";
                     command.Parameters.AddWithValue("$z", z);
                     command.Parameters.AddWithValue("$x", x);
                     command.Parameters.AddWithValue("$y", y);
@@ -218,15 +176,15 @@ namespace MergerLogic.Utils
             return false;
         }
 
-        public static void InsertTiles(string path, string tileCache, List<Tile> tiles)
+        public void InsertTiles(IEnumerable<Tile> tiles)
         {
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"REPLACE INTO {tileCache} (zoom_level, tile_column, tile_row, tile_data) VALUES ($z, $x, $y, $blob)";
+                    command.CommandText = $"REPLACE INTO \"{this._tileCache}\" (zoom_level, tile_column, tile_row, tile_data) VALUES ($z, $x, $y, $blob)";
 
                     using (var transaction = connection.BeginTransaction())
                     {
@@ -248,17 +206,17 @@ namespace MergerLogic.Utils
             }
         }
 
-        public static List<Tile> GetBatch(string path, int batchSize, int offset, string tileCache)
+        public List<Tile> GetBatch(int batchSize, int offset)
         {
             List<Tile> tiles = new List<Tile>();
 
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM {tileCache} limit $limit offset $offset";
+                    command.CommandText = $"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM \"{this._tileCache}\" limit $limit offset $offset";
                     command.Parameters.AddWithValue("$limit", batchSize);
                     command.Parameters.AddWithValue("$offset", offset);
 
@@ -281,10 +239,10 @@ namespace MergerLogic.Utils
             return tiles;
         }
 
-        public static Tile GetLastTile(string path, string tileCache, int[] coords, Coord baseCoords)
+        public Tile GetLastTile(int[] coords, Coord baseCoords)
         {
             Tile lastTile = null;
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
 
@@ -292,7 +250,7 @@ namespace MergerLogic.Utils
                 {
 
                     // Build command
-                    StringBuilder commandBuilder = new StringBuilder($"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM {tileCache} where ");
+                    StringBuilder commandBuilder = new StringBuilder($"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM \"{this._tileCache}\" where ");
 
                     int zoomLevel = baseCoords.z;
                     int maxZoomLevel = zoomLevel - 1;
@@ -331,26 +289,26 @@ namespace MergerLogic.Utils
             return lastTile;
         }
 
-        public static void CreateTileIndex(string path, string tileCache)
+        public void CreateTileIndex()
         {
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"CREATE UNIQUE INDEX IF NOT EXISTS index_tiles on {tileCache} (zoom_level, tile_row, tile_column)";
+                    command.CommandText = $"CREATE UNIQUE INDEX IF NOT EXISTS index_tiles on \"{this._tileCache}\" (zoom_level, tile_row, tile_column)";
                     command.ExecuteNonQuery();
                 }
             }
         }
 
-        public static void Vacuum(string path)
+        public void Vacuum()
         {
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            Console.WriteLine($"Vacuuming GPKG {path}");
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            Console.WriteLine($"Vacuuming GPKG {this.path}");
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())
@@ -364,7 +322,369 @@ namespace MergerLogic.Utils
             // Get the elapsed time as a TimeSpan value.
             TimeSpan ts = stopWatch.Elapsed;
 
-            TimeUtils.PrintElapsedTime("Vacuum runtime", ts);
+            this._timeUtils.PrintElapsedTime("Vacuum runtime", ts);
+        }
+
+        public void Create(Extent extent, bool isOneXOne = false)
+        {
+            Console.WriteLine($"creating new gpkg: {this.path}");
+            SQLiteConnection.CreateFile(this.path);
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    this.SetPragma(connection);
+                    this.CreateSpatialRefTable(connection);
+                    this.CreateContentsTable(connection);
+                    this.CreateGeometryColumnsTable(connection);
+                    this.CreateTileMatrixSetTable(connection);
+                    this.CreateTileMatrixTable(connection);
+                    this.CreateExtentionTable(connection);
+                    this.CreateTileTable(connection, extent);
+                    if (isOneXOne)
+                    {
+                        this.Add1X1MatrixSet(connection);
+                    }
+                    else
+                    {
+                        this.Add2X1MatrixSet(connection);
+                    }
+                    this.CreateTileMatrixValidationTriggers(connection);
+                    transaction.Commit();
+                }
+            }
+            // Vacuum is required if page size pragma is changed
+            //Vacuum();
+        }
+
+        public void RemoveUnusedTileMatrix(IEnumerable<int> usedZooms)
+        {
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "DELETE FROM \"gpkg_tile_matrix\" " +
+                        $"WHERE \"table_name\" = '{this._tileCache}' AND  \"zoom_level\" NOT IN ({string.Join(',', usedZooms)});";
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+
+        private void CreateSpatialRefTable(SQLiteConnection connection)
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "CREATE TABLE \"gpkg_spatial_ref_sys\" (" +
+                    "\"srs_name\" TEXT NOT NULL," +
+                    "\"srs_id\" INTEGER NOT NULL," +
+                    "\"organization\" TEXT NOT NULL," +
+                    "\"organization_coordsys_id\" INTEGER NOT NULL," +
+                    "\"definition\" TEXT NOT NULL," +
+                    "\"description\" TEXT," +
+                    "PRIMARY KEY(\"srs_id\"));";
+                command.ExecuteNonQuery();
+            }
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "INSERT INTO \"gpkg_spatial_ref_sys\" VALUES " +
+                    "('Undefined cartesian SRS',-1,'NONE',-1,'undefined','undefined cartesian coordinate reference system')," +
+                    "('Undefined geographic SRS',0,'NONE',0,'undefined','undefined geographic coordinate reference system')," +
+                    "('WGS 84 geodetic',4326,'EPSG',4326,'GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]]," +
+                    "AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]]," +
+                    "AUTHORITY[\"EPSG\",\"4326\"]]','longitude/latitude coordinates in decimal degrees on the WGS 84 spheroid');";
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private void CreateContentsTable(SQLiteConnection connection)
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "CREATE TABLE \"gpkg_contents\" (" +
+                    "\"table_name\" TEXT NOT NULL," +
+                    "\"data_type\" TEXT NOT NULL," +
+                    "\"identifier\" TEXT UNIQUE," +
+                    "\"description\" TEXT DEFAULT ''," +
+                    "\"last_change\" DATETIME NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))," +
+                    "\"min_x\" DOUBLE," +
+                    "\"min_y\" DOUBLE," +
+                    "\"max_x\" DOUBLE," +
+                    "\"max_y\" DOUBLE," +
+                    "\"srs_id\"	INTEGER," +
+                    "CONSTRAINT \"fk_gc_r_srs_id\" FOREIGN KEY(\"srs_id\") REFERENCES \"gpkg_spatial_ref_sys\"(\"srs_id\")," +
+                    "PRIMARY KEY(\"table_name\"));";
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private void CreateGeometryColumnsTable(SQLiteConnection connection)
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "CREATE TABLE \"gpkg_geometry_columns\" (" +
+                    "\"table_name\" TEXT NOT NULL," +
+                    "\"column_name\" TEXT NOT NULL," +
+                    "\"geometry_type_name\" TEXT NOT NULL," +
+                    "\"srs_id\" INTEGER NOT NULL," +
+                    "\"z\" TINYINT NOT NULL," +
+                    "\"m\" TINYINT NOT NULL," +
+                    "CONSTRAINT \"pk_geom_cols\" PRIMARY KEY(\"table_name\",\"column_name\")," +
+                    "CONSTRAINT \"fk_gc_srs\" FOREIGN KEY(\"srs_id\") REFERENCES \"gpkg_spatial_ref_sys\"(\"srs_id\")," +
+                    "CONSTRAINT \"fk_gc_tn\" FOREIGN KEY(\"table_name\") REFERENCES \"gpkg_contents\"(\"table_name\"));";
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private void CreateTileMatrixSetTable(SQLiteConnection connection)
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "CREATE TABLE \"gpkg_tile_matrix_set\" (" +
+                    "\"table_name\" TEXT NOT NULL," +
+                    "\"srs_id\" INTEGER NOT NULL," +
+                    "\"min_x\" DOUBLE NOT NULL," +
+                    "\"min_y\" DOUBLE NOT NULL," +
+                    "\"max_x\" DOUBLE NOT NULL," +
+                    "\"max_y\" DOUBLE NOT NULL," +
+                    "PRIMARY KEY(\"table_name\")," +
+                    "CONSTRAINT \"fk_gtms_srs\" FOREIGN KEY(\"srs_id\") REFERENCES \"gpkg_spatial_ref_sys\"(\"srs_id\")," +
+                    "CONSTRAINT \"fk_gtms_table_name\" FOREIGN KEY(\"table_name\") REFERENCES \"gpkg_contents\"(\"table_name\"));";
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private void CreateTileMatrixTable(SQLiteConnection connection)
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "CREATE TABLE \"gpkg_tile_matrix\" (" +
+                    "\"table_name\" TEXT NOT NULL," +
+                    "\"zoom_level\" INTEGER NOT NULL," +
+                    "\"matrix_width\" INTEGER NOT NULL," +
+                    "\"matrix_height\" INTEGER NOT NULL," +
+                    "\"tile_width\" INTEGER NOT NULL," +
+                    "\"tile_height\" INTEGER NOT NULL," +
+                    "\"pixel_x_size\" DOUBLE NOT NULL," +
+                    "\"pixel_y_size\" DOUBLE NOT NULL," +
+                    "CONSTRAINT \"pk_ttm\" PRIMARY KEY(\"table_name\",\"zoom_level\")," +
+                    "CONSTRAINT \"fk_tmm_table_name\" FOREIGN KEY(\"table_name\") REFERENCES \"gpkg_contents\"(\"table_name\"));";
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private void CreateExtentionTable(SQLiteConnection connection)
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "CREATE TABLE \"gpkg_extensions\" (" +
+                    "\"table_name\" TEXT," +
+                    "\"column_name\" TEXT," +
+                    "\"extension_name\" TEXT NOT NULL," +
+                    "\"definition\"TEXT NOT NULL," +
+                    "\"scope\" TEXT NOT NULL," +
+                    "CONSTRAINT \"ge_tce\" UNIQUE(\"table_name\",\"column_name\",\"extension_name\"));";
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private void SetPragma(SQLiteConnection connection)
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "PRAGMA application_id = 1196444487; " // gpkg v1.2 +
+                //command.CommandText = "PRAGMA application_id = 1196437808; " // gpkg v1.0 or 1.1
+                    + "PRAGMA user_version = 10201; "; // gpkg version number in the form MMmmPP (MM = major version, mm = minor version, PP = patch). aka 10000 is 1.0.0
+                // + "PRAGMA page_size = 1024; "; //set sqlite page size, must be power of 2. current default is 4096 - changing the default requires vacuum
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private void CreateSqureGrid(SQLiteConnection connection, int minZoom, int maxZoom, int baseWidth, int baseHeight, int yAxisSizeDeg, int zoomMultipiler, int tileSize)
+        {
+            StringBuilder gridBuilder = new StringBuilder("INSERT OR REPLACE INTO \"gpkg_tile_matrix\" VALUES ");
+
+            int startZoomMultiplier = (int)Math.Pow(zoomMultipiler, minZoom);
+            int width = baseWidth * startZoomMultiplier;
+            int height = baseHeight * startZoomMultiplier;
+            double res = (double)yAxisSizeDeg / height / 256;
+            for (int z = minZoom; z <= maxZoom; z++)
+            {
+                gridBuilder.Append($"('{this._tileCache}',{z},{width},{height},{tileSize},{tileSize},{res},{res}),");
+                width *= zoomMultipiler;
+                height *= zoomMultipiler;
+                res /= zoomMultipiler;
+            }
+            gridBuilder.Remove(gridBuilder.Length - 1, 1);
+            gridBuilder.Append(";");
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = gridBuilder.ToString();
+                command.ExecuteNonQuery();
+            }
+        }
+
+
+        private void Add2X1MatrixSet(SQLiteConnection connection)
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "INSERT INTO \"gpkg_tile_matrix_set\" VALUES " +
+                    $"('{this._tileCache}',{GeoUtils.SRID},-180,-90,180,90);";
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private void Add1X1MatrixSet(SQLiteConnection connection)
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "INSERT INTO \"gpkg_tile_matrix_set\" VALUES " +
+                    $"('{this._tileCache}',{GeoUtils.SRID},-180,-180,180,180);";
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private void CreateTileTable(SQLiteConnection connection, Extent extent)
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = $"CREATE TABLE \"{this._tileCache}\" (" +
+                    "\"id\" INTEGER," +
+                    "\"zoom_level\" INTEGER NOT NULL," +
+                    "\"tile_column\" INTEGER NOT NULL," +
+                    "\"tile_row\" INTEGER NOT NULL," +
+                    "\"tile_data\" BLOB NOT NULL," +
+                    "UNIQUE(\"zoom_level\",\"tile_column\",\"tile_row\")," +
+                    "PRIMARY KEY(\"id\" AUTOINCREMENT));";
+                command.ExecuteNonQuery();
+            }
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "INSERT INTO \"gpkg_contents\" " +
+                    "(\"table_name\",\"data_type\",\"identifier\",\"min_x\",\"min_y\",\"max_x\",\"max_y\",\"srs_id\") VALUES " +
+                    $"('{this._tileCache}','tiles','{this._tileCache}',{extent.minX},{extent.minY},{extent.maxX},{extent.maxY},{GeoUtils.SRID});";
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private void CreateTileMatrixValidationTriggers(SQLiteConnection connection)
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText =
+                    "CREATE TRIGGER 'gpkg_tile_matrix_zoom_level_insert' BEFORE INSERT ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'insert on table ''gpkg_tile_matrix'' violates constraint: zoom_level cannot be less than 0') WHERE (NEW.zoom_level < 0); END;" +
+                    "CREATE TRIGGER 'gpkg_tile_matrix_zoom_level_update' BEFORE UPDATE of zoom_level ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'update on table ''gpkg_tile_matrix'' violates constraint: zoom_level cannot be less than 0') WHERE(NEW.zoom_level < 0); END; " +
+                    "CREATE TRIGGER 'gpkg_tile_matrix_matrix_width_insert' BEFORE INSERT ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'insert on table ''gpkg_tile_matrix'' violates constraint: matrix_width cannot be less than 1') WHERE(NEW.matrix_width < 1); END; " +
+                    "CREATE TRIGGER 'gpkg_tile_matrix_matrix_width_update' BEFORE UPDATE OF matrix_width ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'update on table ''gpkg_tile_matrix'' violates constraint: matrix_width cannot be less than 1') WHERE(NEW.matrix_width < 1); END; " +
+                    "CREATE TRIGGER 'gpkg_tile_matrix_matrix_height_insert' BEFORE INSERT ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'insert on table ''gpkg_tile_matrix'' violates constraint: matrix_height cannot be less than 1') WHERE(NEW.matrix_height < 1); END; " +
+                    "CREATE TRIGGER 'gpkg_tile_matrix_matrix_height_update' BEFORE UPDATE OF matrix_height ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'update on table ''gpkg_tile_matrix'' violates constraint: matrix_height cannot be less than 1') WHERE(NEW.matrix_height < 1); END; " +
+                    "CREATE TRIGGER 'gpkg_tile_matrix_pixel_x_size_insert' BEFORE INSERT ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'insert on table ''gpkg_tile_matrix'' violates constraint: pixel_x_size must be greater than 0') WHERE NOT(NEW.pixel_x_size > 0); END; " +
+                    "CREATE TRIGGER 'gpkg_tile_matrix_pixel_x_size_update' BEFORE UPDATE OF pixel_x_size ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'update on table ''gpkg_tile_matrix'' violates constraint: pixel_x_size must be greater than 0') WHERE NOT(NEW.pixel_x_size > 0); END; " +
+                    "CREATE TRIGGER 'gpkg_tile_matrix_pixel_y_size_insert' BEFORE INSERT ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'insert on table ''gpkg_tile_matrix'' violates constraint: pixel_y_size must be greater than 0') WHERE NOT(NEW.pixel_y_size > 0); END; " +
+                    "CREATE TRIGGER 'gpkg_tile_matrix_pixel_y_size_update' BEFORE UPDATE OF pixel_y_size ON 'gpkg_tile_matrix' FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'update on table ''gpkg_tile_matrix'' violates constraint: pixel_y_size must be greater than 0') WHERE NOT(NEW.pixel_y_size > 0); END; ";
+                command.ExecuteNonQuery();
+            }
+        }
+
+        public void CreateTileCacheValidationTriggers()
+        {
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText =
+                        $"CREATE TRIGGER \"{this._tileCache}_tile_column_insert\" BEFORE INSERT ON \"{this._tileCache}\" " +
+                            "FOR EACH ROW BEGIN " +
+                                $"SELECT RAISE(ABORT, 'insert on table ''{this._tileCache}'' violates constraint: tile_column cannot be < 0') " +
+                                "WHERE(NEW.tile_column < 0); " +
+                                $"SELECT RAISE(ABORT, 'insert on table ''{this._tileCache}'' violates constraint: tile_column must by < matrix_width specified for table and zoom level in gpkg_tile_matrix') " +
+                                $"WHERE NOT(NEW.tile_column<(SELECT matrix_width FROM gpkg_tile_matrix WHERE lower(table_name) = lower('{this._tileCache}') AND zoom_level = NEW.zoom_level)); END; " +
+                        $"CREATE TRIGGER \"{this._tileCache}_tile_column_update\" BEFORE UPDATE OF tile_column ON \"{this._tileCache}\" " +
+                            "FOR EACH ROW BEGIN " +
+                                $"SELECT RAISE(ABORT, 'update on table ''{this._tileCache}'' violates constraint: tile_column cannot be < 0') " +
+                                "WHERE(NEW.tile_column < 0); " +
+                                $"SELECT RAISE(ABORT, 'update on table ''{this._tileCache}'' violates constraint: tile_column must by < matrix_width specified for table and zoom level in gpkg_tile_matrix') " +
+                                $"WHERE NOT(NEW.tile_column<(SELECT matrix_width FROM gpkg_tile_matrix WHERE lower(table_name) = lower('{this._tileCache}') AND zoom_level = NEW.zoom_level)); END; " +
+                        $"CREATE TRIGGER \"{this._tileCache}_tile_row_insert\" BEFORE INSERT ON \"{this._tileCache}\" " +
+                            "FOR EACH ROW BEGIN " +
+                                $"SELECT RAISE(ABORT, 'insert on table ''{this._tileCache}'' violates constraint: tile_row cannot be < 0') " +
+                                "WHERE(NEW.tile_row < 0); " +
+                                $"SELECT RAISE(ABORT, 'insert on table ''{this._tileCache}'' violates constraint: tile_row must by < matrix_height specified for table and zoom level in gpkg_tile_matrix') " +
+                                $"WHERE NOT(NEW.tile_row<(SELECT matrix_height FROM gpkg_tile_matrix WHERE lower(table_name) = lower('{this._tileCache}') AND zoom_level = NEW.zoom_level)); END; " +
+                        $"CREATE TRIGGER \"{this._tileCache}_tile_row_update\" BEFORE UPDATE OF tile_row ON \"{this._tileCache}\" " +
+                            "FOR EACH ROW BEGIN " +
+                                $"SELECT RAISE(ABORT, 'update on table ''{this._tileCache}'' violates constraint: tile_row cannot be < 0') " +
+                                "WHERE(NEW.tile_row < 0); " +
+                                $"SELECT RAISE(ABORT, 'update on table ''{this._tileCache}'' violates constraint: tile_row must by < matrix_height specified for table and zoom level in gpkg_tile_matrix') " +
+                                $"WHERE NOT(NEW.tile_row<(SELECT matrix_height FROM gpkg_tile_matrix WHERE lower(table_name) = lower('{this._tileCache}') AND zoom_level = NEW.zoom_level)); END; " +
+                        $"CREATE TRIGGER \"{this._tileCache}_zoom_insert\" BEFORE INSERT ON \"{this._tileCache}\" " +
+                            "FOR EACH ROW BEGIN " +
+                                "SELECT RAISE(ABORT, 'insert on table ''{this._tileCache}'' violates constraint: zoom_level not specified for table in gpkg_tile_matrix') " +
+                                $"WHERE NOT(NEW.zoom_level IN (SELECT zoom_level FROM gpkg_tile_matrix WHERE lower(table_name) = lower('{this._tileCache}'))) ; END; " +
+                        $"CREATE TRIGGER \"{this._tileCache}_zoom_update\" BEFORE UPDATE OF zoom_level ON \"{this._tileCache}\" " +
+                            "FOR EACH ROW BEGIN " +
+                                $"SELECT RAISE(ABORT, 'update on table ''{this._tileCache}'' violates constraint: zoom_level not specified for table in gpkg_tile_matrix') " +
+                                $"WHERE NOT (NEW.zoom_level IN (SELECT zoom_level FROM gpkg_tile_matrix WHERE lower(table_name) = lower('{this._tileCache}'))) ; END; ";
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public void DeleteTileTableTriggers()
+        {
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            {
+                var cmdBuilder = new StringBuilder();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = $"select name from sqlite_master where type = 'trigger' and tbl_name = '{this._tileCache}';";
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            string trigger = reader.GetString(0);
+                            cmdBuilder.Append("DROP TRIGGER IF EXISTS \"{this.trigger}\"; ");
+                        }
+                    }
+                }
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = cmdBuilder.ToString();
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public bool Exist()
+        {
+            // Get full path to gpkg file
+            string fullPath = Path.GetFullPath(this.path);
+            return File.Exists(fullPath);
+        }
+
+        public void UpdateTileMatrixTable(bool isOneXOne = false)
+        {
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            {
+                int maxZoom;
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = $"SELECT  MAX(zoom_level) AS maxZoom FROM \"{this._tileCache}\";";
+                    maxZoom = int.Parse(command.ExecuteScalar().ToString());
+                }
+                if (isOneXOne)
+                {
+                    this.CreateSqureGrid(connection, 0, maxZoom, 1, 1, 360, 2, 256);//creates 1X1 grid
+                }
+                else
+                {
+                    this.CreateSqureGrid(connection, 0, maxZoom, 2, 1, 180, 2, 256);//creates 2X1 grid
+                }
+            }
         }
     }
 }

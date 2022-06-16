@@ -5,21 +5,27 @@ using MergerLogic.ImageProccessing;
 
 namespace MergerCli
 {
-    internal static class Proccess
+    internal class Process : IProcess
     {
-        public static void Start(Data baseData, Data newData, int batchSize, BatchStatusManager batchStatusManager)
+        private ITileMerger _tileMerger;
+        public Process(ITileMerger tileMerger)
         {
-            batchStatusManager.InitilaizeLayer(newData.path);
+            this._tileMerger = tileMerger;
+        }
+
+        public void Start(IData baseData, IData newData, int batchSize, BatchStatusManager batchStatusManager)
+        {
+            batchStatusManager.InitilaizeLayer(newData.Path);
             List<Tile> tiles = new List<Tile>(batchSize);
             int totalTileCount = newData.TileCount();
             int tileProgressCount = 0;
 
-            string? resumeBatchIdentifier = batchStatusManager.GetLayerBatchIdentifier(newData.path);
+            string? resumeBatchIdentifier = batchStatusManager.GetLayerBatchIdentifier(newData.Path);
             if (resumeBatchIdentifier != null)
             {
                 newData.setBatchIdentifier(resumeBatchIdentifier);
                 // fix resume progress bug for gpkg, fs and web, fixing it for s3 requires storing additional data.
-                if (newData.type != DataType.S3)
+                if (newData.Type != DataType.S3)
                 {
                     tileProgressCount = int.Parse(resumeBatchIdentifier);
                 }
@@ -33,7 +39,7 @@ namespace MergerCli
             do
             {
                 List<Tile> newTiles = newData.GetNextBatch(out string batchIdentifier);
-                batchStatusManager.SetCurrentBatch(newData.path, batchIdentifier);
+                batchStatusManager.SetCurrentBatch(newData.Path, batchIdentifier);
 
                 tiles.Clear();
                 for (int i = 0; i < newTiles.Count; i++)
@@ -46,7 +52,7 @@ namespace MergerCli
                         () => newTile
                     };
 
-                    byte[]? image = Merge.MergeTiles(correspondingTileBuilders, targetCoords);
+                    byte[]? image = this._tileMerger.MergeTiles(correspondingTileBuilders, targetCoords);
 
                     if (image != null)
                     {
@@ -62,12 +68,12 @@ namespace MergerCli
 
             } while (tiles.Count == batchSize);
 
-            batchStatusManager.CompleteLayer(newData.path);
+            batchStatusManager.CompleteLayer(newData.Path);
             baseData.Wrapup();
             newData.Reset();
         }
 
-        public static void Validate(Data baseData, Data newData)
+        public void Validate(IData baseData, IData newData)
         {
             List<Tile> newTiles;
             bool hasSameTiles = true;
@@ -107,7 +113,6 @@ namespace MergerCli
 
             } while (hasSameTiles && newTiles.Count > 0);
 
-            baseData.Wrapup();
             newData.Reset();
 
             Console.WriteLine($"Target's valid: {hasSameTiles}");

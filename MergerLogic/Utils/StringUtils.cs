@@ -2,7 +2,7 @@ using System.Text;
 
 namespace MergerLogic.Utils
 {
-    public static class StringUtils
+    public class StringUtils : IStringUtils
     {
         // From: https://stackoverflow.com/questions/321370/how-can-i-convert-a-hex-string-to-a-byte-array
         public static byte[] StringToByteArray(string hex)
@@ -13,7 +13,7 @@ namespace MergerLogic.Utils
                              .ToArray();
         }
 
-        public static string ByteArrayToString(byte[] ba)
+        public string ByteArrayToString(byte[] ba)
         {
             StringBuilder hex = new StringBuilder(ba.Length * 2);
             foreach (byte b in ba)

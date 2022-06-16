@@ -2,13 +2,18 @@ using MergerLogic.Batching;
 
 namespace MergerLogic.Utils
 {
-    public class FileUtils : DataUtils
+    public class FileUtils : DataUtils, IFileUtils
     {
-        public FileUtils(string path) : base(path) { }
+        private IPathUtils _pathUtils;
+
+        public FileUtils(string path, IPathUtils pathUtils) : base(path)
+        {
+            this._pathUtils = pathUtils;
+        }
 
         public override Tile GetTile(int z, int x, int y)
         {
-            string tilePath = PathUtils.GetTilePath(this.path, z, x, y);
+            string tilePath = this._pathUtils.GetTilePath(this.path, z, x, y);
             if (File.Exists(tilePath))
             {
                 byte[] fileBytes = File.ReadAllBytes(tilePath);
@@ -22,7 +27,7 @@ namespace MergerLogic.Utils
 
         public override bool TileExists(int z, int x, int y)
         {
-            string fullPath = PathUtils.GetTilePath(this.path, z, x, y);
+            string fullPath = this._pathUtils.GetTilePath(this.path, z, x, y);
             return File.Exists(fullPath);
         }
     }

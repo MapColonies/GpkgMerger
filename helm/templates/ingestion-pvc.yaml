@@ -1,0 +1,18 @@
+{{- if .Values.local.storage.ingestionSourcePvc.create -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.rasterCommon.storage.fs.ingestionSourcePvc.name }}
+  labels:
+    app: {{ template "gpkg-merger.name" . }}
+    component: "gpkg-merger"
+    environment: {{ .Values.environment }}
+    release: {{ .Release.Name }}
+spec:
+  storageClassName: {{ .Values.local.storage.storageClassName }}
+  accessModes:
+    - {{ .Values.local.storage.accessModes }}
+  resources:
+    requests:
+      storage: {{ .Values.local.storage.ingestionSourcePvc.storage }}
+{{- end -}}

@@ -1,0 +1,14 @@
+{{- if .Values.local.storage.ingestionPv.create -}}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.local.storage.ingestionPv.name }}
+spec:
+  storageClassName: {{ .Values.local.storage.storageClassName }}
+  capacity:
+    storage: {{ .Values.local.storage.ingestionPv.storage }}
+  accessModes:
+    - {{ .Values.local.storage.accessModes }}
+  hostPath:
+    path: {{ .Values.local.storage.ingestionPv.hostPath }}
+{{- end -}}

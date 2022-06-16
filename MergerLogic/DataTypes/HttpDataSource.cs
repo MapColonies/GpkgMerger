@@ -3,13 +3,14 @@ using MergerLogic.Utils;
 
 namespace MergerLogic.DataTypes
 {
-    public abstract class HttpDataSource : Data
+    public abstract class HttpDataSource : Data<IHttpUtils>
     {
         protected TileBounds[] tileRanges;
         protected IEnumerator<Tile[]> batches;
         protected int batchIndex = 0;
-        protected HttpDataSource(DataType type, string path, int batchSize, Extent extent, GridOrigin origin, int maxZoom, int minZoom = 0, bool isOneXOne = false)
-            : base(type, path, batchSize, null, isOneXOne, origin)
+        protected HttpDataSource(IServiceProvider container,
+            DataType type, string path, int batchSize, Extent extent, GridOrigin origin, int maxZoom, int minZoom = 0, bool isOneXOne = false)
+            : base(container, type, path, batchSize, isOneXOne, origin)
         {
             var patternUtils = new PathPatternUtils(path);
             this.utils = new HttpUtils(path, patternUtils);
@@ -60,10 +61,7 @@ namespace MergerLogic.DataTypes
 
         public override int TileCount()
         {
-            return this.tileRanges.Sum(range =>
-            {
-                return (range.MaxX - range.MinX) * (range.MaxY - range.MinY);
-            });
+            return this.tileRanges.Sum(range => range.Size());
         }
 
         protected void GenTileRanges(Extent extent, GridOrigin origin, int minZoom, int maxZoom)
@@ -93,16 +91,11 @@ namespace MergerLogic.DataTypes
         {
             Coord oneXoneBaseCoords = this._oneXOneConvetor.FromTwoXOne(z, x, y);
             Tile tile = this.utils.GetTile(oneXoneBaseCoords);
-            if (tile == null)
+            if (tile != null)
             {
                 tile.SetCoords(z, x, y);
             }
             return tile;
-        }
-
-        protected override bool InternalTileExists(int z, int x, int y)
-        {
-            return this.utils.TileExists(z, x, y);
         }
 
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)

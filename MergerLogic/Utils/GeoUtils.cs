@@ -3,8 +3,11 @@ using MergerLogic.DataTypes;
 
 namespace MergerLogic.Utils
 {
+    //TODO: convert static to DI singleton
     public static class GeoUtils
     {
+        public const int SRID = 4326;
+
         public static int FlipY(int z, int y)
         {
             // Convert to and from TMS
@@ -70,6 +73,16 @@ namespace MergerLogic.Utils
             int maxY = (int)((maxYDeg + 90) / tileSize);
 
             return new TileBounds(zoom, minX, maxX, minY, maxY);
+        }
+
+        public static Extent TileRangeToExtent(TileBounds bounds)
+        {
+            double tileSizeDeg = DegreesPerTile(bounds.Zoom);
+            double minX = (tileSizeDeg * bounds.MinX) - 180;
+            double minY = (tileSizeDeg * bounds.MinY) - 90;
+            double maxX = (tileSizeDeg * bounds.MaxX) - 180;
+            double maxY = (tileSizeDeg * bounds.MaxY) - 90;
+            return new Extent() { minX = minX, minY = minY, maxX = maxX, maxY = maxY };
         }
     }
 }

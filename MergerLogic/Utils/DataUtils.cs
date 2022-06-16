@@ -3,7 +3,7 @@ using MergerLogic.DataTypes;
 
 namespace MergerLogic.Utils
 {
-    public abstract class DataUtils
+    public abstract class DataUtils : IDataUtils
     {
         protected readonly string path;
 
