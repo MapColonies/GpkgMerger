@@ -112,7 +112,6 @@ namespace MergerCli
 
             } while (hasSameTiles && newTiles.Count > 0);
 
-            baseData.Wrapup();
             newData.Reset();
 
             Console.WriteLine($"Target's valid: {hasSameTiles}");
