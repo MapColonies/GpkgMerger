@@ -6,13 +6,14 @@ namespace MergerLogic.Utils
 {
     public class UtilsFactory : IUtilsFactory
     {
-        private IPathUtils _pathUtils;
-        private ITimeUtils _timeUtils;
-        private IServiceProvider _container;
+        private readonly IPathUtils _pathUtils;
+        private readonly ITimeUtils _timeUtils;
+        private readonly IServiceProvider _container;
 
         public UtilsFactory(IPathUtils pathUtils, ITimeUtils timeUtils, IServiceProvider container)
         {
             this._pathUtils = pathUtils;
+            this._timeUtils = timeUtils;
             this._container = container;
         }
 
