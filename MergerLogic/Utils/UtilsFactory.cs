@@ -1,5 +1,6 @@
 ﻿using Amazon.S3;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace MergerLogic.Utils
 {
@@ -24,7 +25,8 @@ namespace MergerLogic.Utils
 
         public IGpkgUtils GetGpkgUtils(string path)
         {
-            return new GpkgUtils(path, this._timeUtils);
+            var logger = this._container.GetRequiredService<ILogger<GpkgUtils>>();
+            return new GpkgUtils(path, this._timeUtils, logger);
         }
 
         public IHttpUtils GetHttpUtils(string path)
@@ -39,7 +41,7 @@ namespace MergerLogic.Utils
             IAmazonS3? client = this._container.GetService<IAmazonS3>();
             if (client is null || bucket == string.Empty)
             {
-                throw new Exception("S3 Data utills requires s3 client to be configured");
+                throw new Exception("S3 Data utils requires s3 client to be configured");
             }
 
             return new S3Utils(client, this._pathUtils, bucket, path);

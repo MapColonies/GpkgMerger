@@ -34,5 +34,10 @@ namespace MergerLogic.Batching
             Console.WriteLine($"minY: {this.MinY}");
             Console.WriteLine($"maxY: {this.MaxY}");
         }
+
+        public override string ToString()
+        {
+            return $"min x: {MinX}, min y: {MinY}, max x: {MaxX}, max y: {MaxY}";
+        }
     }
 }

@@ -1,6 +1,7 @@
 using MergerLogic.Batching;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace MergerLogic.DataTypes
 {
@@ -30,12 +31,12 @@ namespace MergerLogic.DataTypes
 
         public DataType Type { get; }
         public string Path { get; }
-        public readonly bool isOneXOne;
-        protected readonly int batchSize;
-        public readonly GridOrigin origin;
+        public readonly bool IsOneXOne;
+        protected readonly int BatchSize;
+        public readonly GridOrigin Origin;
 
-        protected UtilsType utils;
-        protected GetTileFromXYZFunction _getTile;
+        protected UtilsType Utils;
+        protected GetTileFromXYZFunction GetTile;
         protected GetTileFromCoordFunction _getLastExistingTile;
 
         #region tile grid converters
@@ -58,11 +59,11 @@ namespace MergerLogic.DataTypes
         {
             this.Type = type;
             this.Path = path;
-            this.batchSize = batchSize;
+            this.BatchSize = batchSize;
             var utilsFactory = container.GetRequiredService<IUtilsFactory>();
-            this.utils = utilsFactory.GetDataUtils<UtilsType>(path);
-            this.isOneXOne = isOneXOne;
-            this.origin = origin;
+            this.Utils = utilsFactory.GetDataUtils<UtilsType>(path);
+            this.IsOneXOne = isOneXOne;
+            this.Origin = origin;
 
             // The following delegates are for code performance and to reduce branching while handling tiles
             if (isOneXOne)
@@ -80,7 +81,7 @@ namespace MergerLogic.DataTypes
                 this._fromCurrentGridCoord = tile => tile;
                 this._toCurrentGrid = tile => tile;
             }
-            this._getTile = this.GetTileInitilaizer;
+            this.GetTile = this.GetTileInitilaizer;
             if (origin == GridOrigin.LOWER_LEFT)
             {
                 this._convertOriginTile = tile =>
@@ -102,11 +103,6 @@ namespace MergerLogic.DataTypes
 
         public abstract void Reset();
 
-        public virtual void UpdateMetadata(IData data)
-        {
-            Console.WriteLine($"{this.Type} source, skipping metadata update");
-        }
-
         protected virtual Tile GetLastExistingTile(Coord coords)
         {
             int z = coords.z;
@@ -121,7 +117,7 @@ namespace MergerLogic.DataTypes
                 baseTileX >>= 1; // Divide by 2
                 baseTileY >>= 1; // Divide by 2
 
-                lastTile = this.utils.GetTile(i, baseTileX, baseTileY);
+                lastTile = this.Utils.GetTile(i, baseTileX, baseTileY);
                 if (lastTile != null)
                 {
                     break;
@@ -146,7 +142,7 @@ namespace MergerLogic.DataTypes
                 return false;
             }
 
-            return this.utils.TileExists(coord.z, coord.x, coord.y);
+            return this.Utils.TileExists(coord.z, coord.x, coord.y);
         }
 
         //TODO: move to util after IOC
@@ -164,7 +160,7 @@ namespace MergerLogic.DataTypes
             {
                 return null;
             }
-            Tile tile = this.utils.GetTile(oneXoneBaseCoords);
+            Tile tile = this.Utils.GetTile(oneXoneBaseCoords);
             return tile != null ? this._oneXOneConvetor.ToTwoXOne(tile) : null;
         }
 
@@ -172,10 +168,10 @@ namespace MergerLogic.DataTypes
         //lazy load get tile function on first call for compatibility with null utills in contractor
         protected Tile GetTileInitilaizer(int z, int x, int y)
         {
-            GetTileFromXYZFunction fixedGridGetTileFuntion = this.isOneXOne ? this.GetOneXOneTile : this.utils.GetTile;
-            if (this.origin == GridOrigin.LOWER_LEFT)
+            GetTileFromXYZFunction fixedGridGetTileFuntion = this.IsOneXOne ? this.GetOneXOneTile : this.Utils.GetTile;
+            if (this.Origin == GridOrigin.LOWER_LEFT)
             {
-                this._getTile = (z, x, y) =>
+                this.GetTile = (z, x, y) =>
                 {
                     int newY = GeoUtils.FlipY(z, y);
                     Tile? tile = fixedGridGetTileFuntion(z, x, newY);
@@ -186,16 +182,16 @@ namespace MergerLogic.DataTypes
             }
             else
             {
-                this._getTile = fixedGridGetTileFuntion;
+                this.GetTile = fixedGridGetTileFuntion;
             }
-            return this._getTile(z, x, y);
+            return this.GetTile(z, x, y);
         }
 
         public abstract List<Tile> GetNextBatch(out string batchIdentifier);
 
         public Tile GetCorrespondingTile(Coord coords, bool upscale)
         {
-            Tile correspondingTile = this._getTile(coords.z, coords.x, coords.y);
+            Tile correspondingTile = this.GetTile(coords.z, coords.x, coords.y);
 
             if (upscale && correspondingTile == null)
             {

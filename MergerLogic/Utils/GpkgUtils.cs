@@ -1,5 +1,6 @@
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using Microsoft.Extensions.Logging;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.Text;
@@ -8,14 +9,16 @@ namespace MergerLogic.Utils
 {
     public class GpkgUtils : DataUtils, IGpkgUtils
     {
-        private string _tileCache;
+        private readonly string _tileCache;
 
-        private ITimeUtils _timeUtils;
+        private readonly ITimeUtils _timeUtils;
+        private readonly ILogger _logger;
 
-        public GpkgUtils(string path, ITimeUtils timeUtils, bool create = false) : base(path)
+        public GpkgUtils(string path, ITimeUtils timeUtils, ILogger<GpkgUtils> logger, bool create = false) : base(path)
         {
             this._tileCache = this.InternalGetTileCache();
             this._timeUtils = timeUtils;
+            this._logger = logger;
         }
 
         public string GetTileCache()
@@ -307,7 +310,7 @@ namespace MergerLogic.Utils
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            Console.WriteLine($"Vacuuming GPKG {this.path}");
+            this._logger.LogInformation($"Vacuuming GPKG {this.path}");
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
@@ -317,12 +320,13 @@ namespace MergerLogic.Utils
                     command.ExecuteNonQuery();
                 }
             }
-            Console.WriteLine("Done vacuuming GPKG");
+            this._logger.LogInformation("Done vacuuming GPKG");
 
             // Get the elapsed time as a TimeSpan value.
             TimeSpan ts = stopWatch.Elapsed;
 
-            this._timeUtils.PrintElapsedTime("Vacuum runtime", ts);
+            string elapsedMessage = this._timeUtils.FormatElapsedTime("Vacuum runtime", ts);
+            this._logger.LogInformation(elapsedMessage);
         }
 
         public void Create(Extent extent, bool isOneXOne = false)

@@ -1,7 +1,7 @@
 using MergerCli.Utils;
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
-using MergerLogic.ImageProccessing;
+using MergerLogic.ImageProcessing;
 
 namespace MergerCli
 {
@@ -32,9 +32,6 @@ namespace MergerCli
             }
 
             Console.WriteLine($"Total amount of tiles to merge: {totalTileCount}");
-
-            // Update base metadata according to new data
-            baseData.UpdateMetadata(newData);
 
             do
             {

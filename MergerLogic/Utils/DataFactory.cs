@@ -2,24 +2,28 @@
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace MergerLogic.Utils
 {
     public class DataFactory : IDataFactory
     {
-        private IConfigurationManager _configurationManager;
-        private IPathUtils _pathUtils;
-        private IServiceProvider _container;
+        private readonly IConfigurationManager _configurationManager;
+        private readonly IPathUtils _pathUtils;
+        private readonly IServiceProvider _container;
+        private readonly ILogger _logger;
 
-        public DataFactory(IConfigurationManager configuration, IPathUtils pathUtils, IServiceProvider container)
+        public DataFactory(IConfigurationManager configuration, IPathUtils pathUtils, IServiceProvider container, ILogger<DataFactory> logger)
         {
             this._configurationManager = configuration;
             this._pathUtils = pathUtils;
             this._container = container;
+            this._logger = logger;
         }
 
-        public IData CreateDatasource(string type, string path, int batchSize, bool isOneXOne, GridOrigin? origin = null, Extent? extent = null, bool isBase = false)
+        public IData CreateDataSource(string type, string path, int batchSize, bool isOneXOne, GridOrigin? origin = null, Extent? extent = null, bool isBase = false)
         {
+            //TODO add tracing and logging
             IData data;
             switch (type.ToLower())
             {
@@ -61,7 +65,7 @@ namespace MergerLogic.Utils
             {
                 //skip existence validation for base data to allow creation of new data for FS and S3
                 if (isBase)
-                    Console.WriteLine($"base data at path '{path}' does not exists and will be created");
+                    this._logger.LogInformation($"base data at path '{path}' does not exists and will be created");
                 else
                     throw new Exception($"path '{path}' to data does not exist.");
             }
@@ -69,7 +73,7 @@ namespace MergerLogic.Utils
             return data;
         }
 
-        public IData CreateDatasource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0, bool isOneXone = false, GridOrigin? origin = null)
+        public IData CreateDataSource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0, bool isOneXone = false, GridOrigin? origin = null)
         {
             IData data;
             type = type.ToLower();
@@ -78,7 +82,7 @@ namespace MergerLogic.Utils
                 case "gpkg":
                 case "s3":
                 case "fs":
-                    return this.CreateDatasource(type, path, batchSize, isOneXone, origin, extent, isBase);
+                    return this.CreateDataSource(type, path, batchSize, isOneXone, origin, extent, isBase);
             };
             if (isBase)
             {
@@ -112,7 +116,7 @@ namespace MergerLogic.Utils
             {
                 //skip existence validation for base data to allow creation of new data for FS and S3
                 if (isBase)
-                    Console.WriteLine($"base data at path '{path}' does not exists and will be created");
+                    this._logger.LogInformation($"base data at path '{path}' does not exists and will be created");
                 else
                     throw new Exception($"path '{path}' to data does not exist.");
             }

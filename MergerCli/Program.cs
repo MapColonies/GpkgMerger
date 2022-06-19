@@ -1,8 +1,9 @@
 ﻿using MergerCli.Utils;
 using MergerLogic.DataTypes;
-using MergerLogic.Extentions;
+using MergerLogic.Extensions;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Runtime.Loader;
 
@@ -27,7 +28,7 @@ namespace MergerCli
                 PrintHelp(programName);
                 return;
             }
-            ServiceProvider container = CreateContianer();
+            ServiceProvider container = CreateContainer();
 
             PrepareStatusManger(ref args);
 
@@ -72,7 +73,7 @@ namespace MergerCli
 
                     // Get the elapsed time as a TimeSpan value.
                     ts = stopWatch.Elapsed;
-                    timeUtils.PrintElapsedTime($"{sources[i].Path} merge runtime", ts);
+                    Console.WriteLine(timeUtils.FormatElapsedTime($"{sources[i].Path} merge runtime", ts));
 
 
                     if (validate)
@@ -87,7 +88,7 @@ namespace MergerCli
                         stopWatch.Stop();
                         // Get the elapsed time as a TimeSpan value.
                         ts = stopWatch.Elapsed;
-                        timeUtils.PrintElapsedTime($"{sources[i].Path} validation time", ts);
+                        Console.WriteLine(timeUtils.FormatElapsedTime($"{sources[i].Path} validation time", ts));
                     }
                 }
             }
@@ -101,11 +102,11 @@ namespace MergerCli
             totalTimeStopWatch.Stop();
             // Get the elapsed time as a TimeSpan value.
             ts = totalTimeStopWatch.Elapsed;
-            timeUtils.PrintElapsedTime("Total runtime", ts);
+            Console.WriteLine(timeUtils.FormatElapsedTime("Total runtime", ts));
             done = true;
         }
 
-        private static ServiceProvider CreateContianer()
+        private static ServiceProvider CreateContainer()
         {
             return new ServiceCollection()
                 .RegisterMergerLogicType()
@@ -126,7 +127,7 @@ namespace MergerCli
                         gpkg <path>  [bbox - in format 'minX,minY,maxX,maxY' - required base] [--1x1] [--UL / --LL] 
                     **** please note all layers must be 2X1 EPSG:4326 layers ****
                                     
-                merge sources: {programName} <batch_size> <base source> <addiotional source> [<another source>...]
+                merge sources: {programName} <batch_size> <base source> <additional source> [<another source>...]
                 Examples:
                 {programName} 1000 gpkg area1.gpkg gpkg area2.gpkg
                 {programName} 1000 s3 /path1/on/s3 s3 /path2/on/s3
