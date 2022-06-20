@@ -18,7 +18,7 @@ namespace MergerService.Src
         private readonly ActivitySource _activitySource;
 
         public Run(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, IConfigurationManager configurationManager,
-            ILogger<Run> logger, ILogger<MergeTask> mergeTaskLogger ,ActivitySource activitySource)
+            ILogger<Run> logger, ILogger<MergeTask> mergeTaskLogger, ActivitySource activitySource)
         {
             this._dataFactory = dataFactory;
             this._tileMerger = tileMerger;

@@ -18,7 +18,7 @@ namespace MergerLogic.Monitoring
         {
             foreach (var logRecord in batch)
             {
-                string log = MCTextFormat(logRecord);
+                string log = this.MCTextFormat(logRecord);
                 this.WriteLine(log);
             }
             return ExportResult.Success;
