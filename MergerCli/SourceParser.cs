@@ -1,6 +1,7 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 using MergerLogic.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace MergerCli
 {
@@ -8,10 +9,12 @@ namespace MergerCli
     {
         private readonly HashSet<string> sourceTypes = new HashSet<string>(new[] { "fs", "s3", "gpkg", "wmts", "tms", "xyz" });
         private readonly IDataFactory _dataFactory;
+        private readonly ILogger _logger;
 
-        public SourceParser(IDataFactory dataFactory)
+        public SourceParser(IDataFactory dataFactory, ILogger<SourceParser> logger)
         {
             this._dataFactory = dataFactory;
+            this._logger = logger;
         }
 
         public List<IData> ParseSources(string[] args, int batchSize)
@@ -31,7 +34,7 @@ namespace MergerCli
                         catch
                         {
                             string source = isBase ? "base" : "new";
-                            Console.WriteLine($"{source} data does not exist.");
+                            this._logger.LogError($"{source} data does not exist.");
                             Environment.Exit(1);
                         }
                         break;
@@ -44,7 +47,7 @@ namespace MergerCli
                         catch
                         {
                             string source = isBase ? "base" : "new";
-                            Console.WriteLine($"{source} data does not exist.");
+                            this._logger.LogError($"{source} data does not exist.");
                             Environment.Exit(1);
                         }
                         break;
@@ -58,7 +61,7 @@ namespace MergerCli
                         catch
                         {
                             string source = isBase ? "base" : "new";
-                            Console.WriteLine($"{source} data does not exist.");
+                            this._logger.LogError($"{source} data does not exist.");
                             Environment.Exit(1);
                         }
                         break;

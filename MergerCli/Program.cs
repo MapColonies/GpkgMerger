@@ -29,8 +29,9 @@ namespace MergerCli
                 return;
             }
             ServiceProvider container = CreateContainer();
+            ILogger logger = container.GetRequiredService<ILogger<Program>>();
 
-            PrepareStatusManger(ref args);
+            PrepareStatusManger(ref args,logger);
 
             int batchSize = int.Parse(args[1]);
             List<IData> sources;
@@ -41,7 +42,7 @@ namespace MergerCli
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                logger.LogError(ex.Message);
                 PrintHelp(args[0]);
                 return;
             }
@@ -59,7 +60,7 @@ namespace MergerCli
             try
             {
                 var config = container.GetService<IConfigurationManager>();
-                bool validate = bool.Parse(config.GetConfiguration("GENERAL", "validate"));
+                bool validate = config.GetConfiguration<bool>("GENERAL", "validate");
                 for (int i = 1; i < sources.Count; i++)
                 {
                     Stopwatch stopWatch = new Stopwatch();
@@ -73,7 +74,7 @@ namespace MergerCli
 
                     // Get the elapsed time as a TimeSpan value.
                     ts = stopWatch.Elapsed;
-                    Console.WriteLine(timeUtils.FormatElapsedTime($"{sources[i].Path} merge runtime", ts));
+                    logger.LogInformation(timeUtils.FormatElapsedTime($"{sources[i].Path} merge runtime", ts));
 
 
                     if (validate)
@@ -82,13 +83,13 @@ namespace MergerCli
                         stopWatch.Reset();
                         stopWatch.Start();
 
-                        Console.WriteLine("Validating merged data sources");
+                        logger.LogInformation("Validating merged data sources");
                         proccess.Validate(baseData, sources[i]);
 
                         stopWatch.Stop();
                         // Get the elapsed time as a TimeSpan value.
                         ts = stopWatch.Elapsed;
-                        Console.WriteLine(timeUtils.FormatElapsedTime($"{sources[i].Path} validation time", ts));
+                        logger.LogInformation(timeUtils.FormatElapsedTime($"{sources[i].Path} validation time", ts));
                     }
                 }
             }
@@ -96,13 +97,13 @@ namespace MergerCli
             {
                 //save status on unhandled exceptions
                 OnFailure();
-                Console.WriteLine(ex.ToString());
+                logger.LogError(ex.ToString());
                 return;
             }
             totalTimeStopWatch.Stop();
             // Get the elapsed time as a TimeSpan value.
             ts = totalTimeStopWatch.Elapsed;
-            Console.WriteLine(timeUtils.FormatElapsedTime("Total runtime", ts));
+            logger.LogInformation(timeUtils.FormatElapsedTime("Total runtime", ts));
             done = true;
         }
 
@@ -148,22 +149,22 @@ namespace MergerCli
                 Minimal requirement is supplying at least one source.");
         }
 
-        private static void PrepareStatusManger(ref string[] args)
+        private static void PrepareStatusManger(ref string[] args, ILogger logger)
         {
             if (args.Length == 2)
             {
                 if (!File.Exists(args[1]))
                 {
-                    Console.WriteLine($"invalid status file {args[1]}");
+                    logger.LogError($"invalid status file {args[1]}");
                     Environment.Exit(-1);
                 }
                 string json = File.ReadAllText(args[1]);
                 batchStatusManager = BatchStatusManager.FromJson(json);
                 args = batchStatusManager.Command;
-                Console.WriteLine("resuming layers merge operation. layers progress:");
+                logger.LogInformation("resuming layers merge operation. layers progress:");
                 foreach (var item in batchStatusManager.States)
                 {
-                    Console.WriteLine($"{item.Key} {item.Value.BatchIdentifier}");
+                    logger.LogInformation($"{item.Key} {item.Value.BatchIdentifier}");
                 }
             }
             else
