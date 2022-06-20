@@ -1,4 +1,6 @@
 {{- $chartName := include "gpkg-merger.name" . -}}
+{{- $tracingUrl := include "gpkg-merger.tracingUrl" . -}}
+{{- $metricsUrl := include "gpkg-merger.metricsUrl" . -}}
 
 {{- if .Values.enabled -}}
 apiVersion: v1
@@ -13,4 +15,14 @@ data:
   S3__bucket: {{ .Values.rasterCommon.storage.s3.tilesBucket | quote }}
   Logging__LogLevel__Default: {{ .Values.env.logging.logLevel.default | quote }}
   Logging__Microsoft.AspNetCore: {{ .Values.env.logging.logLevel.aspNetCore | quote }}
+  {{ if .Values.env.tracing.enabled }}
+  TRACING__enabled: 'true'
+  TRACING__url: {{ $tracingUrl }}
+  TRACING__ratio: {{ .Values.env.tracing.ratio }} 
+  {{ end }}
+  {{ if .Values.env.metrics.enabled }}
+  METRICS__enabled: 'true'
+  METRICS__url: {{ $metricsUrl }}
+  METRICS__interval: {{ .Values.env.metrics.interval }}
+  {{ end }}
 {{- end -}}
