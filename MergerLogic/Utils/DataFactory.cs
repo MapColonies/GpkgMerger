@@ -23,7 +23,6 @@ namespace MergerLogic.Utils
 
         public IData CreateDataSource(string type, string path, int batchSize, bool isOneXOne, GridOrigin? origin = null, Extent? extent = null, bool isBase = false)
         {
-            //TODO add tracing and logging
             IData data;
             switch (type.ToLower())
             {

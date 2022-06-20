@@ -1,13 +1,12 @@
 ﻿using Amazon.Runtime;
 using Amazon.S3;
 using MergerLogic.ImageProcessing;
+using MergerLogic.Monitoring;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Exporter;
-using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -88,23 +87,25 @@ namespace MergerLogic.Extensions
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
             ConfigurationManager _config = new ConfigurationManager(null);
-
-            #region Logger
-            var loggerFactory = LoggerFactory.Create(builder =>
-                {
-                    builder.AddOpenTelemetry(options =>
-                    {
-                        options.AddConsoleExporter();
-                    });
-                });
-            collection.Replace(new ServiceDescriptor(typeof(ILoggerFactory), loggerFactory));
-            #endregion Logger
-
             var appInfo = Assembly.GetEntryAssembly()?.GetName();
-            string serviceName = appInfo?.FullName ?? "TileMerger";
+            string serviceName = appInfo?.Name ?? "TileMerger";
             string serviceVersion = appInfo?.Version?.ToString() ?? "v0.0.0";
             var resourceBuilder = ResourceBuilder.CreateDefault()
                 .AddService(serviceName, serviceVersion: serviceVersion);
+
+            #region Logger
+            collection.AddLogging(configure =>
+            {
+                configure.ClearProviders();
+                configure.AddOpenTelemetry(options =>
+                    {
+                        //options.AddConsoleExporter();
+                        options.AddProcessor(
+                            new SimpleLogRecordExportProcessor(new OpenTelemetryFormattedConsoleExporter(new ConsoleExporterOptions())));
+                        options.SetResourceBuilder(resourceBuilder);
+                    });
+            });
+            #endregion Logger
 
             #region Tracing
             bool tracingEnabled = _config.GetConfiguration<bool>("TRACING", "enabled");
@@ -125,8 +126,8 @@ namespace MergerLogic.Extensions
                         })
                         .SetSampler(new ParentBasedSampler(new TraceIdRatioBasedSampler(traceRatio)));
                 });
-                collection.AddSingleton(new ActivitySource(serviceName));
             }
+            collection.AddSingleton(new ActivitySource(serviceName));
             #endregion Tracing
 
             #region Metrics

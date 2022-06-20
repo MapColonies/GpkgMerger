@@ -13,11 +13,12 @@ namespace MergerService.Src
         private readonly ITileMerger _tileMerger;
         private readonly ITimeUtils _timeUtils;
         private readonly IConfigurationManager _configurationManager;
-        private ILogger _logger;
+        private readonly ILogger _logger;
+        private readonly ILogger<MergeTask> _mergeTaskLogger;
         private readonly ActivitySource _activitySource;
 
         public Run(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, IConfigurationManager configurationManager,
-            ILogger<Run> logger, ActivitySource activitySource)
+            ILogger<Run> logger, ILogger<MergeTask> mergeTaskLogger ,ActivitySource activitySource)
         {
             this._dataFactory = dataFactory;
             this._tileMerger = tileMerger;
@@ -25,6 +26,7 @@ namespace MergerService.Src
             this._configurationManager = configurationManager;
             this._logger = logger;
             this._activitySource = activitySource;
+            this._mergeTaskLogger = mergeTaskLogger;
         }
 
         private List<IData> BuildDataList(Source[] paths, int batchSize)
@@ -53,19 +55,18 @@ namespace MergerService.Src
         {
             Stopwatch stopWatch = new Stopwatch();
             TimeSpan ts;
-
+            this._logger.LogInformation("starting task polling loop");
             while (true)
             {
                 MergeTask? task = null;
 
                 try
                 {
-                    task = MergeTask.GetTask();
+                    task = MergeTask.GetTask(this._mergeTaskLogger);
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Error in MergerService run - get task");
-                    Console.WriteLine(e.Message);
+                    this._logger.LogError($"Error in MergerService run - get task: {e.Message}");
                 }
 
                 // Guard clause in case there are no batches or sources

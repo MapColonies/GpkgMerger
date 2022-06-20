@@ -642,6 +642,7 @@ namespace MergerLogic.Utils
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 var cmdBuilder = new StringBuilder();
+                connection.Open();
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = $"select name from sqlite_master where type = 'trigger' and tbl_name = '{this._tileCache}';";
@@ -650,7 +651,7 @@ namespace MergerLogic.Utils
                         while (reader.Read())
                         {
                             string trigger = reader.GetString(0);
-                            cmdBuilder.Append("DROP TRIGGER IF EXISTS \"{this.trigger}\"; ");
+                            cmdBuilder.Append($"DROP TRIGGER IF EXISTS \"{trigger}\"; ");
                         }
                     }
                 }
