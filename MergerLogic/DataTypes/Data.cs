@@ -1,7 +1,6 @@
 using MergerLogic.Batching;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace MergerLogic.DataTypes
 {

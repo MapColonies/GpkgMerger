@@ -37,7 +37,7 @@ namespace MergerLogic.Batching
 
         public override string ToString()
         {
-            return $"min x: {MinX}, min y: {MinY}, max x: {MaxX}, max y: {MaxY}";
+            return $"min x: {this.MinX}, min y: {this.MinY}, max x: {this.MaxX}, max y: {this.MaxY}";
         }
     }
 }

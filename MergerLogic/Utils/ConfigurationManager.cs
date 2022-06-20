@@ -46,9 +46,9 @@ namespace MergerLogic.Utils
             }
             catch (Exception e)
             {
-                string message = $"failed to parse configuration {string.Join('.',configPath)}.";
+                string message = $"failed to parse configuration {string.Join('.', configPath)}.";
                 this._logger?.LogError(message);
-                throw new Exception(message,e);
+                throw new Exception(message, e);
             }
         }
 

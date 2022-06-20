@@ -5,12 +5,12 @@ using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using OpenTelemetry.Logs;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Trace;
 using OpenTelemetry;
 using OpenTelemetry.Exporter;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using System.Diagnostics;
 using System.Reflection;
 

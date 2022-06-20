@@ -31,7 +31,7 @@ namespace MergerCli
             ServiceProvider container = CreateContainer();
             ILogger logger = container.GetRequiredService<ILogger<Program>>();
 
-            PrepareStatusManger(ref args,logger);
+            PrepareStatusManger(ref args, logger);
 
             int batchSize = int.Parse(args[1]);
             List<IData> sources;

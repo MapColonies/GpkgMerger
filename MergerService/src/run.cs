@@ -161,7 +161,7 @@ namespace MergerService.Src
                                 ts = stopWatch.Elapsed;
                                 string elapsedMessage = this._timeUtils.FormatElapsedTime("Merge runtime: ", ts);
                                 this._logger.LogInformation($"Merged the following bounds: {bounds}. {elapsedMessage}");
-                                
+
                                 // After merging, validate if requested
                                 bool validate = this._configurationManager.GetConfiguration<bool>("GENERAL", "validate");
                                 if (validate)

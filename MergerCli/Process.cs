@@ -106,7 +106,7 @@ namespace MergerCli
 
                 newTileCount += newTiles.Count;
                 tilesChecked += newTiles.Count;
-                this._logger.LogInformation( $"Total tiles checked: {tilesChecked}/{totalTileCount}");
+                this._logger.LogInformation($"Total tiles checked: {tilesChecked}/{totalTileCount}");
                 hasSameTiles = newTileCount == baseMatchCount;
 
             } while (hasSameTiles && newTiles.Count > 0);
