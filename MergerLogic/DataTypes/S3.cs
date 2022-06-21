@@ -1,4 +1,3 @@
-using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
 using MergerLogic.Batching;
@@ -6,27 +5,24 @@ using MergerLogic.Utils;
 
 namespace MergerLogic.DataTypes
 {
-    public class S3 : Data
+    public class S3 : Data<IS3Utils>
     {
-        private AmazonS3Client client;
+        private IAmazonS3 client;
         private string bucket;
-        private string continuationToken;
+        private string? continuationToken;
         private bool endOfRead;
 
-        public S3(string serviceUrl, string bucket, string path, int batchSize) : base(DataType.S3, path, batchSize, new S3Utils(S3.GetClient(serviceUrl), bucket, path))
-        {
-            this.bucket = bucket;
-            this.continuationToken = null;
-            this.endOfRead = false;
-            this.client = S3.GetClient(serviceUrl);
-        }
+        private IPathUtils _pathUtils;
 
-        public S3(AmazonS3Client client, string bucket, string path, int batchSize) : base(DataType.S3, path, batchSize, new S3Utils(client, bucket, path))
+        public S3(IPathUtils pathUtils, IAmazonS3 client, IServiceProvider containter,
+            string bucket, string path, int batchSize, bool isOneXOne = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
+            : base(containter, DataType.S3, path, batchSize, isOneXOne, origin)
         {
             this.bucket = bucket;
             this.continuationToken = null;
             this.endOfRead = false;
             this.client = client;
+            this._pathUtils = pathUtils;
         }
 
         ~S3()
@@ -46,32 +42,16 @@ namespace MergerLogic.DataTypes
             this.Reset();
         }
 
-        public static AmazonS3Client GetClient(string serviceUrl)
+        public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
-            // Get s3 credentials
-            string accessKey = Environment.GetEnvironmentVariable("S3_ACCESS_KEY");
-            string secretKey = Environment.GetEnvironmentVariable("S3_SECRET_KEY");
-            var credentials = new BasicAWSCredentials(accessKey, secretKey);
-
-            var config = new AmazonS3Config
-            {
-                RegionEndpoint = Amazon.RegionEndpoint.USEast1,
-                ServiceURL = serviceUrl,
-                ForcePathStyle = true
-            };
-
-            return new AmazonS3Client(credentials, config);
-        }
-
-        public override List<Tile> GetNextBatch()
-        {
+            batchIdentifier = this.continuationToken;
             List<Tile> tiles = new List<Tile>();
 
             var listRequests = new ListObjectsV2Request
             {
                 BucketName = bucket,
-                Prefix = path,
-                StartAfter = path,
+                Prefix = Path,
+                StartAfter = Path,
                 MaxKeys = batchSize,
                 ContinuationToken = continuationToken
             };
@@ -84,11 +64,17 @@ namespace MergerLogic.DataTypes
                 response.ContinuationToken = this.continuationToken;
                 foreach (S3Object item in response.S3Objects)
                 {
-                    string key = item.Key;
-                    Coord coord = PathUtils.FromPath(item.Key, true);
-                    coord.flipY();
+                    Coord coord = this._pathUtils.FromPath(item.Key, true);
                     Tile tile = this.utils.GetTile(coord);
-                    tiles.Add(tile);
+                    if (tile != null)
+                    {
+                        tile = this._toCurrentGrid(tile);
+                        if (tile != null)
+                        {
+                            tile = this._convertOriginTile(tile);
+                            tiles.Add(tile);
+                        }
+                    }
                 }
                 this.continuationToken = response.NextContinuationToken;
             }
@@ -98,12 +84,9 @@ namespace MergerLogic.DataTypes
             return tiles;
         }
 
-        public override void UpdateTiles(List<Tile> tiles)
+        public override void setBatchIdentifier(string batchIdentifier)
         {
-            foreach (var tile in tiles)
-            {
-                S3Utils.UpdateTile(this.client, this.bucket, this.path, tile);
-            }
+            this.continuationToken = batchIdentifier;
         }
 
         public override bool Exists()
@@ -111,12 +94,12 @@ namespace MergerLogic.DataTypes
             var listRequests = new ListObjectsV2Request
             {
                 BucketName = bucket,
-                Prefix = path,
-                StartAfter = path,
+                Prefix = Path,
+                StartAfter = Path,
                 MaxKeys = 1
             };
 
-            Console.WriteLine($"Checking if exists, bucket: {this.bucket}, path: {this.path}");
+            Console.WriteLine($"Checking if exists, bucket: {this.bucket}, path: {this.Path}");
             var task = this.client.ListObjectsV2Async(listRequests);
             var response = task.Result;
             return response.KeyCount > 0;
@@ -132,8 +115,8 @@ namespace MergerLogic.DataTypes
                 var listRequests = new ListObjectsV2Request
                 {
                     BucketName = bucket,
-                    Prefix = path,
-                    StartAfter = path,
+                    Prefix = Path,
+                    StartAfter = Path,
                     ContinuationToken = continuationToken
                 };
 
@@ -145,6 +128,14 @@ namespace MergerLogic.DataTypes
             } while (continuationToken != null);
 
             return tileCount;
+        }
+
+        protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
+        {
+            foreach (var tile in targetTiles)
+            {
+                this.utils.UpdateTile(tile);
+            }
         }
     }
 }

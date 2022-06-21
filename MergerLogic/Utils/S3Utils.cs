@@ -4,18 +4,21 @@ using MergerLogic.Batching;
 
 namespace MergerLogic.Utils
 {
-    public class S3Utils : DataUtils
+    public class S3Utils : DataUtils, IS3Utils
     {
-        private AmazonS3Client client;
         private string bucket;
 
-        public S3Utils(AmazonS3Client client, string bucket, string path) : base(path)
+        private IAmazonS3 _client;
+        private IPathUtils _pathUtils;
+
+        public S3Utils(IAmazonS3 client, IPathUtils pathUtils, string bucket, string path) : base(path)
         {
-            this.client = client;
+            this._client = client;
             this.bucket = bucket;
+            this._pathUtils = pathUtils;
         }
 
-        private string GetImageHex(string key)
+        private byte[] GetImageBytes(string key)
         {
             try
             {
@@ -24,7 +27,7 @@ namespace MergerLogic.Utils
                     BucketName = bucket,
                     Key = key
                 };
-                var getObjectTask = this.client.GetObjectAsync(request);
+                var getObjectTask = this._client.GetObjectAsync(request);
                 GetObjectResponse res = getObjectTask.Result;
 
                 byte[] image;
@@ -37,7 +40,7 @@ namespace MergerLogic.Utils
                     image = ms.ToArray();
                 }
 
-                return StringUtils.ByteArrayToString(image);
+                return image;
             }
             catch (AggregateException e)
             {
@@ -48,37 +51,53 @@ namespace MergerLogic.Utils
 
         public override Tile GetTile(int z, int x, int y)
         {
-            // Convert to TMS
-            y = GeoUtils.FlipY(z, y);
-            string key = PathUtils.GetTilePath(this.path, z, x, y, true);
+            string key = this._pathUtils.GetTilePath(this.path, z, x, y, true);
 
-            string blob = this.GetImageHex(key);
-            if (blob == null)
+            byte[]? imageBytes = this.GetImageBytes(key);
+            if (imageBytes == null)
             {
                 return null;
             }
-            // Convert from TMS
-            y = GeoUtils.FlipY(z, y);
-            return new Tile(z, x, y, blob, blob.Length);
+            return new Tile(z, x, y, imageBytes);
         }
 
-        public static void UpdateTile(AmazonS3Client client, string bucket, string path, Tile tile)
+        public override bool TileExists(int z, int x, int y)
         {
-            int y = GeoUtils.FlipY(tile);
-            string key = PathUtils.GetTilePath(path, tile.Z, tile.X, y, true);
+            string key = this._pathUtils.GetTilePath(this.path, z, x, y, true);
+            var request = new GetObjectMetadataRequest()
+            {
+                BucketName = this.bucket,
+                Key = String.Format(key)
+            };
+
+            try
+            {
+                var task = this._client.GetObjectMetadataAsync(request);
+                _ = task.Result;
+                return true;
+            }
+            catch (AmazonS3Exception e)
+            {
+                return false;
+            }
+        }
+
+        public void UpdateTile(Tile tile)
+        {
+            string key = this._pathUtils.GetTilePath(this.path, tile.Z, tile.X, tile.Y, true);
 
             var request = new PutObjectRequest()
             {
-                BucketName = bucket,
+                BucketName = this.bucket,
                 CannedACL = S3CannedACL.PublicRead,
                 Key = String.Format(key)
             };
 
-            byte[] buffer = StringUtils.StringToByteArray(tile.Blob);
+            byte[] buffer = tile.GetImageBytes();
             using (var ms = new MemoryStream(buffer))
             {
                 request.InputStream = ms;
-                var task = client.PutObjectAsync(request);
+                var task = this._client.PutObjectAsync(request);
                 var res = task.Result;
             }
         }

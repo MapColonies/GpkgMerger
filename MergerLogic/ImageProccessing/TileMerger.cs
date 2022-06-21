@@ -1,24 +1,29 @@
 using ImageMagick;
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
-using MergerLogic.Utils;
 
 namespace MergerLogic.ImageProccessing
 {
-    public static class Merge
+    public class TileMerger : ITileMerger
     {
+        private readonly ITileScaler _tileScaler;
 
-        public static string MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords)
+        public TileMerger(ITileScaler tileScaler)
+        {
+            this._tileScaler = tileScaler;
+        }
+
+        public byte[]? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords)
         {
             Tile lastProccessedTile;
-            var images = getImageList(tiles, targetCoords, out lastProccessedTile);
+            var images = this.getImageList(tiles, targetCoords, out lastProccessedTile);
             switch (images.Count)
             {
                 case 0:
                     return null;
                 case 1:
                     images[0].Dispose();
-                    return lastProccessedTile?.Blob;
+                    return lastProccessedTile?.GetImageBytes();
                 default:
                     using (var imageCollection = new MagickImageCollection())
                     {
@@ -29,14 +34,13 @@ namespace MergerLogic.ImageProccessing
                         using (var mergedImage = imageCollection.Flatten())
                         {
                             var mergedImageBytes = mergedImage.ToByteArray();
-                            var blob = Convert.ToHexString(mergedImageBytes);
-                            return blob;
+                            return mergedImageBytes;
                         }
                     }
             }
         }
 
-        private static List<MagickImage> getImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords, out Tile lastProccessedTile)
+        private List<MagickImage> getImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords, out Tile lastProccessedTile)
         {
             var images = new List<MagickImage>();
             lastProccessedTile = null;
@@ -55,11 +59,11 @@ namespace MergerLogic.ImageProccessing
                     {
                         throw new NotImplementedException("down scaling tiles is not supported");
                     }
-                    var tileBytes = StringUtils.StringToByteArray(tile.Blob);
+                    var tileBytes = tile.GetImageBytes();
                     tileImage = new MagickImage(tileBytes);
                     if (tile.Z < targetCoords.z)
                     {
-                        Upscaling.Upscale(tileImage, tile, targetCoords);
+                        this._tileScaler.Upscale(tileImage, tile, targetCoords);
                     }
                     images.Add(tileImage);
                     if (!tileImage.HasAlpha)
@@ -69,7 +73,7 @@ namespace MergerLogic.ImageProccessing
                 }
                 catch
                 {
-                    //prevent memory leak in case of any exception while handeling images
+                    //prevent memory leak in case of any exception while handling images
                     images.ForEach(image => image.Dispose());
                     if (tileImage != null)
                         tileImage.Dispose();

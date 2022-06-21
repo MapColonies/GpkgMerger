@@ -3,13 +3,21 @@ using MergerLogic.Utils;
 
 namespace MergerLogic.DataTypes
 {
-    public class FS : Data
+    public class FS : Data<IFileUtils>
     {
-        private IEnumerator<Tile> tiles;
-        private bool done;
+        private delegate string TilePathFunction(string path, Tile tile);
 
-        public FS(DataType type, string path, int batchSize, bool isBase = false) : base(type, path, batchSize, new FileUtils(path))
+        private IEnumerator<Tile> _tiles;
+        private bool _done;
+        private int _completedTiles;
+
+        private IPathUtils _pathUtils;
+
+        public FS(IPathUtils pathUtils, IServiceProvider container,
+            string path, int batchSize, bool isOneXOne = false, bool isBase = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
+            : base(container, DataType.FOLDER, path, batchSize, isOneXOne, origin)
         {
+            this._pathUtils = pathUtils;
             if (isBase)
             {
                 Directory.CreateDirectory(path);
@@ -19,9 +27,10 @@ namespace MergerLogic.DataTypes
 
         public override void Reset()
         {
-            this.tiles = this.GetTiles();
-            this.tiles.MoveNext();
-            this.done = false;
+            this._tiles = this.GetTiles();
+            this._tiles.MoveNext();
+            this._done = false;
+            this._completedTiles = 0;
         }
 
         public override void Wrapup()
@@ -32,8 +41,8 @@ namespace MergerLogic.DataTypes
 
         public override bool Exists()
         {
-            Console.WriteLine($"Checking if exists, folder: {this.path}");
-            string fullPath = Path.GetFullPath(this.path);
+            Console.WriteLine($"Checking if exists, folder: {this.Path}");
+            string fullPath = System.IO.Path.GetFullPath(this.Path);
             return Directory.Exists(fullPath);
         }
 
@@ -42,33 +51,55 @@ namespace MergerLogic.DataTypes
             // From: https://stackoverflow.com/a/7430971/11915280 and https://stackoverflow.com/a/19961761/11915280
             string[] ext = { ".png", ".jpg" };
             // Go over directory and count png and jpg files
-            foreach (string filePath in Directory.EnumerateFiles(this.path, "*.*", SearchOption.AllDirectories)
+            foreach (string filePath in Directory.EnumerateFiles(this.Path, "*.*", SearchOption.AllDirectories)
                                                     .Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
             {
-                Coord coord = PathUtils.FromPath(filePath);
+                Coord coord = this._pathUtils.FromPath(filePath);
                 Tile tile = this.utils.GetTile(coord);
-                yield return tile;
+                if (tile != null)
+                {
+                    tile = this._toCurrentGrid(tile);
+                    if (tile != null)
+                    {
+                        tile = this._convertOriginTile(tile);
+                        yield return tile;
+                    }
+                }
             }
         }
 
-        public override List<Tile> GetNextBatch()
+        public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
-            List<Tile> tiles = new List<Tile>();
+            batchIdentifier = this._completedTiles.ToString();
+            List<Tile> tiles = new List<Tile>(this.batchSize);
 
-            if (this.done)
+            if (this._done)
             {
                 this.Reset();
                 return tiles;
             }
 
-            while (!this.done && tiles.Count < this.batchSize)
+            while (!this._done && tiles.Count < this.batchSize)
             {
-                Tile tile = this.tiles.Current;
+                Tile tile = this._tiles.Current;
                 tiles.Add(tile);
-                this.done = !this.tiles.MoveNext();
+                this._done = !this._tiles.MoveNext();
             }
 
+            this._completedTiles += tiles.Count;
+
             return tiles;
+        }
+
+        public override void setBatchIdentifier(string batchIdentifier)
+        {
+            this._completedTiles = int.Parse(batchIdentifier);
+            // uncomment to make this function work at any point of the run and not only after the source initialization
+            //this.tiles.Reset();
+            for (int i = 0; i < this._completedTiles; i++)
+            {
+                this._tiles.MoveNext();
+            }
         }
 
         public override int TileCount()
@@ -76,16 +107,15 @@ namespace MergerLogic.DataTypes
             // From: https://stackoverflow.com/a/7430971/11915280 and https://stackoverflow.com/a/19961761/11915280
             string[] ext = { ".png", ".jpg" };
             // Go over directory and count png and jpg files
-            return Directory.EnumerateFiles(this.path, "*.*", SearchOption.AllDirectories).Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))).Count();
+            return Directory.EnumerateFiles(this.Path, "*.*", SearchOption.AllDirectories).Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))).Count();
         }
 
-        public override void UpdateTiles(List<Tile> tiles)
+        protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
         {
-            foreach (Tile tile in tiles)
+            foreach (Tile tile in targetTiles)
             {
-                tile.FlipY();
-                string tilePath = PathUtils.GetTilePath(this.path, tile);
-                byte[] buffer = StringUtils.StringToByteArray(tile.Blob);
+                string tilePath = this._pathUtils.GetTilePath(this.Path, tile);
+                byte[] buffer = tile.GetImageBytes();
                 using (var ms = new MemoryStream(buffer))
                 {
                     var file = new System.IO.FileInfo(tilePath);

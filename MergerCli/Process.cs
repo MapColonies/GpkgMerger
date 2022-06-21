@@ -1,17 +1,35 @@
+using MergerCli.Utils;
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 using MergerLogic.ImageProccessing;
 
 namespace MergerCli
 {
-    public static class Proccess
+    internal class Process : IProcess
     {
-
-        public static void Start(Data baseData, Data newData, int batchSize)
+        private ITileMerger _tileMerger;
+        public Process(ITileMerger tileMerger)
         {
+            this._tileMerger = tileMerger;
+        }
+
+        public void Start(IData baseData, IData newData, int batchSize, BatchStatusManager batchStatusManager)
+        {
+            batchStatusManager.InitilaizeLayer(newData.Path);
             List<Tile> tiles = new List<Tile>(batchSize);
             int totalTileCount = newData.TileCount();
             int tileProgressCount = 0;
+
+            string? resumeBatchIdentifier = batchStatusManager.GetLayerBatchIdentifier(newData.Path);
+            if (resumeBatchIdentifier != null)
+            {
+                newData.setBatchIdentifier(resumeBatchIdentifier);
+                // fix resume progress bug for gpkg, fs and web, fixing it for s3 requires storing additional data.
+                if (newData.Type != DataType.S3)
+                {
+                    tileProgressCount = int.Parse(resumeBatchIdentifier);
+                }
+            }
 
             Console.WriteLine($"Total amount of tiles to merge: {totalTileCount}");
 
@@ -20,7 +38,8 @@ namespace MergerCli
 
             do
             {
-                List<Tile> newTiles = newData.GetNextBatch();
+                List<Tile> newTiles = newData.GetNextBatch(out string batchIdentifier);
+                batchStatusManager.SetCurrentBatch(newData.Path, batchIdentifier);
 
                 tiles.Clear();
                 for (int i = 0; i < newTiles.Count; i++)
@@ -33,26 +52,28 @@ namespace MergerCli
                         ()=> newTile
                     };
 
-                    string blob = Merge.MergeTiles(correspondingTileBuilders, targetCoords);
+                    byte[]? image = this._tileMerger.MergeTiles(correspondingTileBuilders, targetCoords);
 
-                    if (blob != null)
+                    if (image != null)
                     {
-                        newTile = new Tile(newTile.Z, newTile.X, newTile.Y, blob, blob.Length);
+                        newTile = new Tile(newTile.Z, newTile.X, newTile.Y, image);
                         tiles.Add(newTile);
                     }
                 }
 
+                baseData.UpdateTiles(tiles);
+
                 tileProgressCount += tiles.Count;
                 Console.WriteLine($"Tile Count: {tileProgressCount} / {totalTileCount}");
 
-                baseData.UpdateTiles(tiles);
             } while (tiles.Count == batchSize);
 
+            batchStatusManager.CompleteLayer(newData.Path);
             baseData.Wrapup();
             newData.Reset();
         }
 
-        public static void Validate(Data baseData, Data newData)
+        public void Validate(IData baseData, IData newData)
         {
             List<Tile> newTiles;
             bool hasSameTiles = true;
@@ -63,7 +84,7 @@ namespace MergerCli
 
             do
             {
-                newTiles = newData.GetNextBatch();
+                newTiles = newData.GetNextBatch(out _);
 
                 int baseMatchCount = 0;
                 int newTileCount = 0;
@@ -71,9 +92,9 @@ namespace MergerCli
                 for (int i = 0; i < newTiles.Count; i++)
                 {
                     Tile newTile = newTiles[i];
-                    Tile baseTile = baseData.GetCorrespondingTile(newTile.GetCoord(), false);
+                    bool baseTileExists = baseData.TileExists(newTile.GetCoord());
 
-                    if (baseTile != null)
+                    if (baseTileExists)
                     {
                         ++baseMatchCount;
                     }
@@ -91,10 +112,10 @@ namespace MergerCli
 
             } while (hasSameTiles && newTiles.Count > 0);
 
-            baseData.Wrapup();
             newData.Reset();
 
             Console.WriteLine($"Target's valid: {hasSameTiles}");
         }
+
     }
 }
