@@ -99,9 +99,11 @@ namespace MergerLogic.Extensions
                 configure.ClearProviders();
                 configure.AddOpenTelemetry(options =>
                     {
+                        //console exporter has hardcoded multiline log format so it cant be used
                         //options.AddConsoleExporter();
+                        //disable lgtm not disposed alert as it is global singleton that is used for the entire app life
                         options.AddProcessor(
-                            new SimpleLogRecordExportProcessor(new OpenTelemetryFormattedConsoleExporter(new ConsoleExporterOptions())));
+                            new SimpleLogRecordExportProcessor(new OpenTelemetryFormattedConsoleExporter(new ConsoleExporterOptions()))); //lgtm [cs/local-not-disposed]
                         options.SetResourceBuilder(resourceBuilder);
                     });
             });
@@ -127,7 +129,8 @@ namespace MergerLogic.Extensions
                         .SetSampler(new ParentBasedSampler(new TraceIdRatioBasedSampler(traceRatio)));
                 });
             }
-            collection.AddSingleton(new ActivitySource(serviceName));
+            //disable lgtm not disposed alert as it is global singleton that is used for the entire app life
+            collection.AddSingleton(new ActivitySource(serviceName)); //lgtm [cs/local-not-disposed]
             #endregion Tracing
 
             #region Metrics
@@ -143,7 +146,8 @@ namespace MergerLogic.Extensions
                     {
                         Endpoint = new Uri(meterCollectorUrl)
                     });
-                    meterProviderBuilder.AddReader(new PeriodicExportingMetricReader(exporter, interval));
+                    //disable lgtm not disposed alert as it is global singleton that is used for the entire app life
+                    meterProviderBuilder.AddReader(new PeriodicExportingMetricReader(exporter, interval)); //lgtm [cs/local-not-disposed]
                     //TODO: support console config for debug
                 });
             }

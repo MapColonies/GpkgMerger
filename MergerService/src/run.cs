@@ -31,7 +31,7 @@ namespace MergerService.Src
 
         private List<IData> BuildDataList(Source[] paths, int batchSize)
         {
-            using (var parseSourcesActivity = this._activitySource.StartActivity("sources parsing"))
+            using (this._activitySource.StartActivity("sources parsing"))
             {
                 List<IData> sources = new List<IData>();
 
@@ -179,7 +179,7 @@ namespace MergerService.Src
                                     // Get the elapsed time as a TimeSpan value.
                                     ts = stopWatch.Elapsed;
                                     string elapsedTime = this._timeUtils.FormatElapsedTime($"Validation time", ts);
-                                    this._logger.LogInformation(elapsedMessage);
+                                    this._logger.LogInformation(elapsedTime);
                                 }
                                 else
                                 {
