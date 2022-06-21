@@ -11,8 +11,8 @@ namespace MergerCli
 {
     internal class Program
     {
-        private static BatchStatusManager batchStatusManager;
-        private static bool done = false;
+        private static BatchStatusManager _batchStatusManager;
+        private static bool _done = false;
 
         private static void Main(string[] args)
         {
@@ -59,17 +59,17 @@ namespace MergerCli
             var timeUtils = container.GetRequiredService<ITimeUtils>();
             try
             {
-                var config = container.GetService<IConfigurationManager>();
+                var config = container.GetRequiredService<IConfigurationManager>();
                 bool validate = config.GetConfiguration<bool>("GENERAL", "validate");
                 for (int i = 1; i < sources.Count; i++)
                 {
                     Stopwatch stopWatch = new Stopwatch();
                     stopWatch.Start();
-                    if (batchStatusManager.IsLayerCompleted(sources[i].Path))
+                    if (_batchStatusManager.IsLayerCompleted(sources[i].Path))
                     {
                         continue;
                     }
-                    process.Start(baseData, sources[i], batchSize, batchStatusManager);
+                    process.Start(baseData, sources[i], batchSize, _batchStatusManager);
                     stopWatch.Stop();
 
                     // Get the elapsed time as a TimeSpan value.
@@ -104,7 +104,7 @@ namespace MergerCli
             // Get the elapsed time as a TimeSpan value.
             ts = totalTimeStopWatch.Elapsed;
             logger.LogInformation(timeUtils.FormatElapsedTime("Total runtime", ts));
-            done = true;
+            _done = true;
         }
 
         private static ServiceProvider CreateContainer()
@@ -159,17 +159,17 @@ namespace MergerCli
                     Environment.Exit(-1);
                 }
                 string json = File.ReadAllText(args[1]);
-                batchStatusManager = BatchStatusManager.FromJson(json);
-                args = batchStatusManager.Command;
+                _batchStatusManager = BatchStatusManager.FromJson(json);
+                args = _batchStatusManager.Command;
                 logger.LogInformation("resuming layers merge operation. layers progress:");
-                foreach (var item in batchStatusManager.States)
+                foreach (var item in _batchStatusManager.States)
                 {
                     logger.LogInformation($"{item.Key} {item.Value.BatchIdentifier}");
                 }
             }
             else
             {
-                batchStatusManager = new BatchStatusManager(args);
+                _batchStatusManager = new BatchStatusManager(args);
             }
             //save status on program exit
             AssemblyLoadContext.Default.Unloading += delegate { OnFailure(); };
@@ -179,9 +179,9 @@ namespace MergerCli
 
         private static void OnFailure()
         {
-            if (!done)
+            if (!_done)
             {
-                string status = batchStatusManager.ToString();
+                string status = _batchStatusManager.ToString();
                 File.WriteAllText("status.json", status);
             }
             else
