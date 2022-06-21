@@ -55,7 +55,7 @@ namespace MergerCli
                 return;
             }
 
-            var proccess = container.GetRequiredService<IProcess>();
+            var process = container.GetRequiredService<IProcess>();
             var timeUtils = container.GetRequiredService<ITimeUtils>();
             try
             {
@@ -69,7 +69,7 @@ namespace MergerCli
                     {
                         continue;
                     }
-                    proccess.Start(baseData, sources[i], batchSize, batchStatusManager);
+                    process.Start(baseData, sources[i], batchSize, batchStatusManager);
                     stopWatch.Stop();
 
                     // Get the elapsed time as a TimeSpan value.
@@ -84,7 +84,7 @@ namespace MergerCli
                         stopWatch.Start();
 
                         logger.LogInformation("Validating merged data sources");
-                        proccess.Validate(baseData, sources[i]);
+                        process.Validate(baseData, sources[i]);
 
                         stopWatch.Stop();
                         // Get the elapsed time as a TimeSpan value.
