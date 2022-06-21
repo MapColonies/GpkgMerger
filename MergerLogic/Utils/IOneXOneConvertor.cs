@@ -3,7 +3,7 @@ using MergerLogic.DataTypes;
 
 namespace MergerLogic.Utils
 {
-    public interface IOneXOneConvetor
+    public interface IOneXOneConvertor
     {
         Coord FromTwoXOne(Coord twoXOneCoords);
         Coord FromTwoXOne(int z, int x, int y);

@@ -7,7 +7,7 @@ namespace MergerLogic.DataTypes
     {
         private delegate Coord CoordConvertorFunction(Coord cords);
 
-        private int offset;
+        private int _offset;
 
         private CoordConvertorFunction _coordsFromCurrentGrid;
         private IConfigurationManager _configManager;
@@ -16,12 +16,12 @@ namespace MergerLogic.DataTypes
             string path, int batchSize, bool isBase = false, bool isOneXOne = false, Extent? extent = null, GridOrigin origin = GridOrigin.UPPER_LEFT)
             : base(container, DataType.GPKG, path, batchSize, isOneXOne, origin)
         {
-            this.offset = 0;
+            this._offset = 0;
             this._configManager = configuration;
 
             if (isOneXOne)
             {
-                this._coordsFromCurrentGrid = this._oneXOneConvetor.TryFromTwoXOne;
+                this._coordsFromCurrentGrid = this.OneXOneConvertor.TryFromTwoXOne;
             }
             else
             {
@@ -49,15 +49,15 @@ namespace MergerLogic.DataTypes
 
         public override void Reset()
         {
-            this.offset = 0;
+            this._offset = 0;
         }
 
         public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
-            batchIdentifier = this.offset.ToString();
+            batchIdentifier = this._offset.ToString();
             //TODO: optimize after IOC refactoring
             int counter = 0;
-            List<Tile> tiles = this.utils.GetBatch(this.batchSize, this.offset)
+            List<Tile> tiles = this.utils.GetBatch(this.batchSize, this._offset)
                 .Select(t =>
                 {
                     Tile tile = this._convertOriginTile(t);
@@ -65,18 +65,19 @@ namespace MergerLogic.DataTypes
                     counter++;
                     return tile;
                 }).Where(t => t != null).ToList();
-            this.offset += counter;
+            this._offset += counter;
             return tiles;
         }
 
         public override void setBatchIdentifier(string batchIdentifier)
         {
-            this.offset = int.Parse(batchIdentifier);
+            this._offset = int.Parse(batchIdentifier);
         }
 
         protected override Tile GetLastExistingTile(Coord baseCoords)
         {
-            int[] coords = new int[COORDS_FOR_ALL_ZOOM_LEVELS];
+            int cordsLength = baseCoords.z << 1;
+            int[] coords = new int[cordsLength];
             for (int i = 0; i < coords.Length; i++)
             {
                 coords[i] = -1;
