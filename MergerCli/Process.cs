@@ -80,7 +80,7 @@ namespace MergerCli
 
             int totalTileCount = newData.TileCount();
             int tilesChecked = 0;
-            this._logger.LogInformation($"Base tile Count: {baseData.TileCount()}, New tile count: {newData.TileCount()}");
+            this._logger.LogInformation($"Base tile Count: {baseData.TileCount()}, New tile count: {totalTileCount}");
 
             do
             {
