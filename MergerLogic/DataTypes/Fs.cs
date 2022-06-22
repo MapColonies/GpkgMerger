@@ -1,5 +1,7 @@
 using MergerLogic.Batching;
 using MergerLogic.Utils;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace MergerLogic.DataTypes
 {
@@ -11,13 +13,15 @@ namespace MergerLogic.DataTypes
         private bool _done;
         private int _completedTiles;
 
-        private IPathUtils _pathUtils;
+        private readonly IPathUtils _pathUtils;
+        private readonly ILogger<FS> _logger;
 
         public FS(IPathUtils pathUtils, IServiceProvider container,
             string path, int batchSize, bool isOneXOne = false, bool isBase = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
             : base(container, DataType.FOLDER, path, batchSize, isOneXOne, origin)
         {
             this._pathUtils = pathUtils;
+            this._logger = container.GetRequiredService<ILogger<FS>>();
             if (isBase)
             {
                 Directory.CreateDirectory(path);
@@ -41,7 +45,7 @@ namespace MergerLogic.DataTypes
 
         public override bool Exists()
         {
-            Console.WriteLine($"Checking if exists, folder: {this.Path}");
+            this._logger.LogInformation($"Checking if exists, folder: {this.Path}");
             string fullPath = System.IO.Path.GetFullPath(this.Path);
             return Directory.Exists(fullPath);
         }
@@ -55,7 +59,7 @@ namespace MergerLogic.DataTypes
                                                     .Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
             {
                 Coord coord = this._pathUtils.FromPath(filePath);
-                Tile tile = this.utils.GetTile(coord);
+                Tile tile = this.Utils.GetTile(coord);
                 if (tile != null)
                 {
                     tile = this._toCurrentGrid(tile);
@@ -71,7 +75,7 @@ namespace MergerLogic.DataTypes
         public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
             batchIdentifier = this._completedTiles.ToString();
-            List<Tile> tiles = new List<Tile>(this.batchSize);
+            List<Tile> tiles = new List<Tile>(this.BatchSize);
 
             if (this._done)
             {
@@ -79,7 +83,7 @@ namespace MergerLogic.DataTypes
                 return tiles;
             }
 
-            while (!this._done && tiles.Count < this.batchSize)
+            while (!this._done && tiles.Count < this.BatchSize)
             {
                 Tile tile = this._tiles.Current;
                 tiles.Add(tile);
