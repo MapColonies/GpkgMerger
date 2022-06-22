@@ -2,7 +2,7 @@ using ImageMagick;
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 
-namespace MergerLogic.ImageProccessing
+namespace MergerLogic.ImageProcessing
 {
     public class TileMerger : ITileMerger
     {
@@ -15,15 +15,14 @@ namespace MergerLogic.ImageProccessing
 
         public byte[]? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords)
         {
-            Tile lastProccessedTile;
-            var images = this.getImageList(tiles, targetCoords, out lastProccessedTile);
+            var images = this.GetImageList(tiles, targetCoords, out Tile lastProcessedTile);
             switch (images.Count)
             {
                 case 0:
                     return null;
                 case 1:
                     images[0].Dispose();
-                    return lastProccessedTile?.GetImageBytes();
+                    return lastProcessedTile?.GetImageBytes();
                 default:
                     using (var imageCollection = new MagickImageCollection())
                     {
@@ -40,10 +39,10 @@ namespace MergerLogic.ImageProccessing
             }
         }
 
-        private List<MagickImage> getImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords, out Tile lastProccessedTile)
+        private List<MagickImage> GetImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords, out Tile lastProcessedTile)
         {
             var images = new List<MagickImage>();
-            lastProccessedTile = null;
+            lastProcessedTile = null;
             for (var i = tiles.Count - 1; i >= 0; i--)
             {
                 MagickImage tileImage = null;
@@ -54,7 +53,7 @@ namespace MergerLogic.ImageProccessing
                     {
                         continue;
                     }
-                    lastProccessedTile = tile;
+                    lastProcessedTile = tile;
                     if (tile.Z > targetCoords.z)
                     {
                         throw new NotImplementedException("down scaling tiles is not supported");

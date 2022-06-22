@@ -78,7 +78,14 @@ env:
     logLevel:
       default: "Information"
       aspNetCore: "Warning"
-
+  tracing:
+    enabled: false
+    url: http://localhost:4317/v1/trace
+    ratio: 0.01
+  metrics:
+    enabled: false
+    url:  http://localhost:4317/v1/metrics
+    interval: 5000
 resources:
   enabled: true
   value:

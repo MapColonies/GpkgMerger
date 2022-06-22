@@ -5,15 +5,15 @@ namespace MergerLogic.DataTypes
 {
     public abstract class HttpDataSource : Data<IHttpUtils>
     {
-        protected TileBounds[] tileRanges;
-        protected IEnumerator<Tile[]> batches;
-        protected int batchIndex = 0;
+        protected TileBounds[] TileRanges;
+        protected IEnumerator<Tile[]> Batches;
+        protected int BatchIndex = 0;
         protected HttpDataSource(IServiceProvider container,
             DataType type, string path, int batchSize, Extent extent, GridOrigin origin, int maxZoom, int minZoom = 0, bool isOneXOne = false)
             : base(container, type, path, batchSize, isOneXOne, origin)
         {
             var patternUtils = new PathPatternUtils(path);
-            this.utils = new HttpUtils(path, patternUtils);
+            this.Utils = new HttpUtils(path, patternUtils);
             //ignore zoom level that cant be converted without image manipulation
             minZoom = isOneXOne ? Math.Max(minZoom, 2) : minZoom;
             this.GenTileRanges(extent, origin, minZoom, maxZoom);
@@ -33,55 +33,55 @@ namespace MergerLogic.DataTypes
 
         public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
-            if (this.batches == null)
+            if (this.Batches == null)
             {
-                this.batches = this.GetTiles().Chunk(this.batchSize).GetEnumerator();
+                this.Batches = this.GetTiles().Chunk(this.BatchSize).GetEnumerator();
             }
-            batchIdentifier = this.batchIndex.ToString();
-            this.batchIndex += this.batchSize;
-            if (!this.batches.MoveNext())
+            batchIdentifier = this.BatchIndex.ToString();
+            this.BatchIndex += this.BatchSize;
+            if (!this.Batches.MoveNext())
             {
                 return new List<Tile>(0);
             }
 
-            return this.batches.Current.ToList();
+            return this.Batches.Current.ToList();
         }
 
         public override void Reset()
         {
-            this.batchIndex = 0;
-            this.batches = this.GetTiles().Chunk(this.batchSize).GetEnumerator();
+            this.BatchIndex = 0;
+            this.Batches = this.GetTiles().Chunk(this.BatchSize).GetEnumerator();
         }
 
         public override void setBatchIdentifier(string batchIdentifier)
         {
-            this.batchIndex = int.Parse(batchIdentifier);
-            this.batches = this.GetTiles().Skip(this.batchIndex).Chunk(this.batchSize).GetEnumerator();
+            this.BatchIndex = int.Parse(batchIdentifier);
+            this.Batches = this.GetTiles().Skip(this.BatchIndex).Chunk(this.BatchSize).GetEnumerator();
         }
 
         public override int TileCount()
         {
-            return this.tileRanges.Sum(range => range.Size());
+            return this.TileRanges.Sum(range => range.Size());
         }
 
         protected void GenTileRanges(Extent extent, GridOrigin origin, int minZoom, int maxZoom)
         {
-            this.tileRanges = new TileBounds[maxZoom - minZoom + 1];
+            this.TileRanges = new TileBounds[maxZoom - minZoom + 1];
             for (int i = minZoom; i <= maxZoom; i++)
             {
-                this.tileRanges[i - minZoom] = GeoUtils.ExtentToTileRange(extent, i, origin);
+                this.TileRanges[i - minZoom] = GeoUtils.ExtentToTileRange(extent, i, origin);
             }
         }
 
         protected IEnumerable<Tile> GetTiles()
         {
-            foreach (var range in this.tileRanges)
+            foreach (var range in this.TileRanges)
             {
                 for (int x = range.MinX; x < range.MaxX; x++)
                 {
                     for (int y = range.MinY; y < range.MaxY; y++)
                     {
-                        yield return this._getTile(range.Zoom, x, y);
+                        yield return this.GetTile(range.Zoom, x, y);
                     }
                 }
             }
@@ -90,7 +90,7 @@ namespace MergerLogic.DataTypes
         protected override Tile GetOneXOneTile(int z, int x, int y)
         {
             Coord oneXoneBaseCoords = this._oneXOneConvetor.FromTwoXOne(z, x, y);
-            Tile tile = this.utils.GetTile(oneXoneBaseCoords);
+            Tile tile = this.Utils.GetTile(oneXoneBaseCoords);
             if (tile != null)
             {
                 tile.SetCoords(z, x, y);

@@ -15,7 +15,6 @@ namespace MergerLogic.DataTypes
         int TileCount();
         bool TileExists(Coord coord);
         bool TileExists(Tile tile);
-        void UpdateMetadata(IData data);
         void UpdateTiles(IEnumerable<Tile> tiles);
         void Wrapup();
     }

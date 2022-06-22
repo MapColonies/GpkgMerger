@@ -1,7 +1,7 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 
-namespace MergerLogic.ImageProccessing
+namespace MergerLogic.ImageProcessing
 {
     public interface ITileMerger
     {

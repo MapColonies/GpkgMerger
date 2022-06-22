@@ -83,5 +83,10 @@ namespace MergerLogic.Batching
             this.Y = y;
             this.Z = z;
         }
+
+        public override string ToString()
+        {
+            return $"z: {this.Z}, x: {this.X}, y: {this.Y}, data size: {this._data.Length}";
+        }
     }
 }

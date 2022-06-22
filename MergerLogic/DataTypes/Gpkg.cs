@@ -1,5 +1,7 @@
 using MergerLogic.Batching;
 using MergerLogic.Utils;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace MergerLogic.DataTypes
 {
@@ -7,17 +9,19 @@ namespace MergerLogic.DataTypes
     {
         private delegate Coord CoordConvertorFunction(Coord cords);
 
-        private int offset;
+        private int _offset;
 
-        private CoordConvertorFunction _coordsFromCurrentGrid;
-        private IConfigurationManager _configManager;
+        private readonly CoordConvertorFunction _coordsFromCurrentGrid;
+        private readonly IConfigurationManager _configManager;
+        private readonly ILogger _logger;
 
         public Gpkg(IConfigurationManager configuration, IServiceProvider container,
             string path, int batchSize, bool isBase = false, bool isOneXOne = false, Extent? extent = null, GridOrigin origin = GridOrigin.UPPER_LEFT)
             : base(container, DataType.GPKG, path, batchSize, isOneXOne, origin)
         {
-            this.offset = 0;
+            this._offset = 0;
             this._configManager = configuration;
+            this._logger = container.GetRequiredService<ILogger<Gpkg>>();
 
             if (isOneXOne)
             {
@@ -35,29 +39,29 @@ namespace MergerLogic.DataTypes
                     throw new Exception($" base gpkg '{path}' must have extent");
                 }
 
-                if (!this.utils.Exist())
+                if (!this.Utils.Exist())
                 {
-                    this.utils.Create(extent.Value, isOneXOne);
+                    this.Utils.Create(extent.Value, isOneXOne);
                 }
                 else
                 {
-                    this.utils.DeleteTileTableTriggers();
+                    this.Utils.DeleteTileTableTriggers();
                 }
-                this.utils.UpdateExtent(extent.Value);
+                this.Utils.UpdateExtent(extent.Value);
             }
         }
 
         public override void Reset()
         {
-            this.offset = 0;
+            this._offset = 0;
         }
 
         public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
-            batchIdentifier = this.offset.ToString();
+            batchIdentifier = this._offset.ToString();
             //TODO: optimize after IOC refactoring
             int counter = 0;
-            List<Tile> tiles = this.utils.GetBatch(this.batchSize, this.offset)
+            List<Tile> tiles = this.Utils.GetBatch(this.BatchSize, this._offset)
                 .Select(t =>
                 {
                     Tile tile = this._convertOriginTile(t);
@@ -65,13 +69,13 @@ namespace MergerLogic.DataTypes
                     counter++;
                     return tile;
                 }).Where(t => t != null).ToList();
-            this.offset += counter;
+            this._offset += counter;
             return tiles;
         }
 
         public override void setBatchIdentifier(string batchIdentifier)
         {
-            this.offset = int.Parse(batchIdentifier);
+            this._offset = int.Parse(batchIdentifier);
         }
 
         protected override Tile GetLastExistingTile(Coord baseCoords)
@@ -96,7 +100,7 @@ namespace MergerLogic.DataTypes
                 coords[arrayIterator + 1] = baseTileY;
             }
 
-            Tile lastTile = this.utils.GetLastTile(coords, baseCoords);
+            Tile lastTile = this.Utils.GetLastTile(coords, baseCoords);
             if (lastTile is not null)
             {
                 lastTile = this._toCurrentGrid(lastTile);
@@ -114,14 +118,14 @@ namespace MergerLogic.DataTypes
 
         public override void Wrapup()
         {
-            this.utils.CreateTileIndex();
-            this.utils.UpdateTileMatrixTable(this.isOneXOne);
-            this.utils.CreateTileCacheValidationTriggers();
+            this.Utils.CreateTileIndex();
+            this.Utils.UpdateTileMatrixTable(this.IsOneXOne);
+            this.Utils.CreateTileCacheValidationTriggers();
 
-            bool vacuum = bool.Parse(this._configManager.GetConfiguration("GPKG", "vacuum"));
+            bool vacuum = this._configManager.GetConfiguration<bool>("GPKG", "vacuum");
             if (vacuum)
             {
-                this.utils.Vacuum();
+                this.Utils.Vacuum();
             }
 
             this.Reset();
@@ -129,18 +133,18 @@ namespace MergerLogic.DataTypes
 
         public override bool Exists()
         {
-            Console.WriteLine($"Checking if exists, gpkg: {this.Path}");
-            return this.utils.Exist();
+            this._logger.LogInformation($"Checking if exists, gpkg: {this.Path}");
+            return this.Utils.Exist();
         }
 
         public override int TileCount()
         {
-            return this.utils.GetTileCount();
+            return this.Utils.GetTileCount();
         }
 
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
         {
-            this.utils.InsertTiles(targetTiles);
+            this.Utils.InsertTiles(targetTiles);
         }
     }
 }

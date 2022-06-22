@@ -42,9 +42,8 @@ namespace MergerLogic.Utils
 
                 return image;
             }
-            catch (AggregateException e)
+            catch (AggregateException)
             {
-                // Console.WriteLine($"Error getting tile (key={key}): {e.Message}");
                 return null;
             }
         }
