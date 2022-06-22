@@ -147,7 +147,11 @@ namespace MergerLogic.DataTypes
         //TODO: move to util after IOC
         protected Tile getLastOneXoneExistingTile(Coord coords)
         {
-            coords = this.OneXOneConvertor.FromTwoXOne(coords);
+            coords = this._fromCurrentGridCoord(coords);
+            if (coords is null)
+            {
+                return null;
+            }
             Tile? tile = this.GetLastExistingTile(coords);
             return tile != null ? this.OneXOneConvertor.ToTwoXOne(tile) : null;
         }

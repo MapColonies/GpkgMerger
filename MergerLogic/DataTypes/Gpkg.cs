@@ -78,12 +78,8 @@ namespace MergerLogic.DataTypes
         {
             int cordsLength = baseCoords.z << 1;
             int[] coords = new int[cordsLength];
-            for (int i = 0; i < coords.Length; i++)
-            {
-                coords[i] = -1;
-            }
 
-            baseCoords = this._coordsFromCurrentGrid(baseCoords);
+            //baseCoords = this._coordsFromCurrentGrid(baseCoords);
             int z = baseCoords.z;
             int baseTileX = baseCoords.x;
             int baseTileY = baseCoords.y;
@@ -98,10 +94,10 @@ namespace MergerLogic.DataTypes
             }
 
             Tile lastTile = this.utils.GetLastTile(coords, baseCoords);
-            if (lastTile is not null)
-            {
-                lastTile = this._toCurrentGrid(lastTile);
-            }
+            //if (lastTile is not null)
+            //{
+            //    lastTile = this._toCurrentGrid(lastTile);
+            //}
             return lastTile;
         }
 
