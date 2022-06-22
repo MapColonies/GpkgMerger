@@ -372,6 +372,19 @@ namespace MergerLogicUnitTests.DataTypes
         }
         #endregion
 
+        #region gpkgCreation
+        [TestMethod]
+        [TestCategory("gpkgCreation")]
+        public void gpkgCreation()
+        {
+            var extent = new Extent() { minX = -180, minY = -90, maxX = 180, maxY = 90 };
+            var gpkg = new Gpkg(this._configurationManagerMock.Object,
+                this._serviceProviderMock.Object, "test.gpkg", 10, false, false,
+                extent, GridOrigin.UPPER_LEFT);
+
+        }
+        #endregion
+
         #region helper
         private void SetupRequiredBaseMocks(bool isBase)
         {
