@@ -129,7 +129,7 @@ namespace MergerLogicUnitTests.DataTypes
             var existingTile = new Tile(2, 2, 3, new byte[] { });
             this._gpkgUtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
                 .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
-          
+
             var extent = new Extent() { minX = -180, minY = -90, maxX = 180, maxY = 90 };
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
                 this._serviceProviderMock.Object, "test.gpkg", batchSize, isBase, false,
@@ -137,14 +137,14 @@ namespace MergerLogicUnitTests.DataTypes
 
             var cords = new Coord(z, x, y);
             Assert.AreEqual(expectedNull ? null : existingTile, gpkg.GetCorrespondingTile(cords, false));
-            this._gpkgUtilsMock.Verify(util => util.GetTile(z,x,y),Times.Once);
+            this._gpkgUtilsMock.Verify(util => util.GetTile(z, x, y), Times.Once);
             this._iOneXOneConvertorMock.VerifyAll();
         }
 
         [TestMethod]
         [TestCategory("GetCorrespondingTile")]
         //existing tile
-        [DataRow(10, false,2,2,3,false)]
+        [DataRow(10, false, 2, 2, 3, false)]
         [DataRow(100, true, 2, 2, 3, false)]
         //missing tile
         [DataRow(10, false, 1, 2, 3, false)]
@@ -171,10 +171,10 @@ namespace MergerLogicUnitTests.DataTypes
                 extent, GridOrigin.UPPER_LEFT);
 
             var cords = new Coord(z, x, y);
-            Assert.AreEqual(expectedNull? nullTile : It.IsAny<Tile>(),gpkg.GetCorrespondingTile(cords,false));//TODO: replace with specific validation after mocking origin conversion
-            this._gpkgUtilsMock.Verify(util=>util.GetTile(z,x,y),Times.Once);
+            Assert.AreEqual(expectedNull ? nullTile : It.IsAny<Tile>(), gpkg.GetCorrespondingTile(cords, false));//TODO: replace with specific validation after mocking origin conversion
+            this._gpkgUtilsMock.Verify(util => util.GetTile(z, x, It.IsAny<int>()), Times.Once);//TODO: replace with specific validation after mocking origin conversion
             this._iOneXOneConvertorMock.VerifyAll();//TODO: replace with specific validation after mocking origin conversion
-            
+
         }
 
         [TestMethod]

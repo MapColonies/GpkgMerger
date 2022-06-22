@@ -119,7 +119,7 @@ namespace MergerLogic.DataTypes
                 using (var ms = new MemoryStream(buffer))
                 {
                     var file = new System.IO.FileInfo(tilePath);
-                    if(file.Directory != null)
+                    if (file.Directory != null)
                         file.Directory.Create();
                     using (FileStream fs = file.OpenWrite())
                     {
