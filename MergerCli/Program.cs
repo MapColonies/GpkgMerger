@@ -97,7 +97,7 @@ namespace MergerCli
             {
                 //save status on unhandled exceptions
                 OnFailure();
-                logger.LogError(ex.ToString());
+                logger.LogError(ex,ex.Message);
                 return;
             }
             totalTimeStopWatch.Stop();
