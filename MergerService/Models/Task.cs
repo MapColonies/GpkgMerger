@@ -54,7 +54,7 @@ namespace MergerService.Controllers
             }
             catch (Exception e)
             {
-                logger.LogError($"failed to deserialize task: {e.Message}");
+                logger.LogError(e,$"failed to deserialize task: {e.Message}");
                 return null;
             }
         }
