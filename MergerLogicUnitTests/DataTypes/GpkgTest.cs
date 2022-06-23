@@ -1,6 +1,7 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 using MergerLogic.Utils;
+using MergerLogicUnitTests.utils;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -307,43 +308,145 @@ namespace MergerLogicUnitTests.DataTypes
                 extent, GridOrigin.UPPER_LEFT);
             var testTiles = new Tile[]
             {
-                null, new Tile(1, 2, 3, new byte[] { }), null, new Tile(7, 7, 7, new byte[] { })
+                new Tile(1, 2, 3, new byte[] { }), new Tile(7, 7, 7, new byte[] { })
             };
-            
+
             gpkg.UpdateTiles(testTiles);
-            var expectedTiles = new Tile[] { testTiles[1], testTiles[3] };
+            var expectedTiles = testTiles;
 
             this._iOneXOneConvertorMock.VerifyAll();
             this._gpkgUtilsMock.Verify(utils =>
                 utils.InsertTiles(It.Is<IEnumerable<Tile>>(tiles => Enumerable.SequenceEqual(tiles, expectedTiles))));
         }
 
-        //TODO: tests update tiles with conversion
+        [TestMethod]
+        [TestCategory("UpdateTiles")]
+        [DataRow(10, false)]
+        [DataRow(100, true)]
+        public void UpdateTilesWithConversions(int batchSize, bool isBase)
+        {
+            this.SetupRequiredBaseMocks(isBase);
+            this._iOneXOneConvertorMock
+                .Setup(converter => converter.TryFromTwoXOne(It.IsAny<Tile>()))
+                .Returns<Tile>(tile => tile.Z != 7 ? tile : null);
+            this._gpkgUtilsMock
+                .Setup(utils => utils.InsertTiles(It.IsAny<IEnumerable<Tile>>()))
+                .Callback<IEnumerable<Tile>>(tiles => { tiles.ToArray(); }); // force enumerate 
+            var extent = new Extent() { minX = -180, minY = -90, maxX = 180, maxY = 90 };
+            var gpkg = new Gpkg(this._configurationManagerMock.Object,
+                this._serviceProviderMock.Object, "test.gpkg", batchSize, isBase, true,
+                extent, GridOrigin.LOWER_LEFT);
+            var testTiles = new Tile[]
+            {
+                new Tile(1, 2, 3, new byte[] { }), new Tile(7, 7, 7, new byte[] { }), new Tile(2, 2, 3, new byte[] { })
+            };
+
+            gpkg.UpdateTiles(testTiles);
+            var expectedTiles = new Tile[] { testTiles[0], testTiles[2] };
+
+            this._iOneXOneConvertorMock.Verify(converter => converter.TryFromTwoXOne(It.Is<Tile>(t => t.Z == 1 && t.X == 2)), Times.Once);//TODO: replace expected values and check y when origin conversion is mocked
+            this._iOneXOneConvertorMock.Verify(converter => converter.TryFromTwoXOne(It.Is<Tile>(t => t.Z == 7 && t.X == 7)), Times.Once);//TODO: replace expected values and check y when origin conversion is mocked
+            this._iOneXOneConvertorMock.Verify(converter => converter.TryFromTwoXOne(It.Is<Tile>(t => t.Z == 2 && t.X == 2)), Times.Once);//TODO: replace expected values and check y when origin conversion is mocked
+
+            Func<Tile, Tile, bool> compFunc = (tile1, tile2) => tile1?.Z == tile2?.Z && tile1?.X == tile2?.X;//TODO: replace expected values and check y when origin conversion is mocked
+            this._gpkgUtilsMock.Verify(utils =>
+                utils.InsertTiles(It.Is<IEnumerable<Tile>>(tiles => Enumerable.SequenceEqual(tiles, expectedTiles,
+                   EqualityComparerFactory.Create<Tile>(compFunc)))));
+            this._iOneXOneConvertorMock.VerifyAll();
+            this._gpkgUtilsMock.VerifyAll();
+        }
         #endregion
 
         #region Wrapup
+
+        public static IEnumerable<object[]> GenWrapupParams()
+        {
+            return DynamicDataGenerator.GeneratePrams(
+                new object[] { true, false }, //is one on one
+                new object[] { true, false }, //vacuum
+                new object[] { true, false }, //is base
+                new object[] { GridOrigin.LOWER_LEFT, GridOrigin.UPPER_LEFT } //origin
+            );
+        }
+
         [TestMethod]
         [TestCategory("Wrapup")]
-        public void Wrapup()
+        [DynamicData(nameof(GenWrapupParams), DynamicDataSourceType.Method)]
+        public void Wrapup(bool isOneXOne, bool vacuum, bool isBase, GridOrigin origin)
         {
+            SetupRequiredBaseMocks(isBase);
+            var seq = new MockSequence();
+            this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.CreateTileIndex());
+            this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.UpdateTileMatrixTable(isOneXOne));
+            this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.CreateTileCacheValidationTriggers());
+            this._configurationManagerMock.InSequence(seq).Setup(config => config.GetConfiguration<bool>("GPKG", "vacuum"))
+                .Returns(vacuum);
+            if (vacuum)
+            {
+                this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.Vacuum());
+            }
+
+
             var extent = new Extent() { minX = -180, minY = -90, maxX = 180, maxY = 90 };
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
-                this._serviceProviderMock.Object, "test.gpkg", 10, false, false,
-                extent, GridOrigin.UPPER_LEFT);
+                this._serviceProviderMock.Object, "test.gpkg", 10, isBase, isOneXOne,
+                extent, origin);
 
+            gpkg.Wrapup();
+            this._gpkgUtilsMock.Verify(utils => utils.CreateTileIndex(), Times.Once);
+            this._gpkgUtilsMock.Verify(utils => utils.UpdateTileMatrixTable(isOneXOne), Times.Once);
+            this._gpkgUtilsMock.Verify(utils => utils.CreateTileCacheValidationTriggers(), Times.Once);
+            if (vacuum)
+            {
+                this._gpkgUtilsMock.Verify(utils => utils.Vacuum(), Times.Once);
+            }
+            this._gpkgUtilsMock.VerifyAll();
+            this._iOneXOneConvertorMock.VerifyAll();
+            this._configurationManagerMock.VerifyAll();
         }
         #endregion
 
         #region Exists
+
+        public static IEnumerable<object[]> GenExistParams()
+        {
+            return DynamicDataGenerator.GeneratePrams(
+                new object[] { true, false }, //is one on one
+                new object[] { true, false }, //is base
+                new object[] { GridOrigin.LOWER_LEFT, GridOrigin.UPPER_LEFT }, //origin
+                new object[] { true, false } //file exists
+            );
+        }
+
         [TestMethod]
         [TestCategory("Exists")]
-        public void Exists()
+        [DynamicData(nameof(GenExistParams), DynamicDataSourceType.Method)]
+        public void Exists(bool isOneXOne, bool isBase, GridOrigin origin, bool exist)
         {
+            SetupRequiredBaseMocks(isBase);
+            this._gpkgUtilsMock.Setup(utils => utils.Exist()).Returns(exist);
+            if (isBase)
+            {
+                if (!exist)
+                {
+                    this._gpkgUtilsMock.Setup(utils => utils.Create(It.IsAny<Extent>(), isOneXOne));
+                }
+                else
+                {
+                    this._gpkgUtilsMock.Setup(utils => utils.DeleteTileTableTriggers());
+                }
+                this._gpkgUtilsMock.Setup(utils => utils.UpdateExtent(It.IsAny<Extent>()));
+            }
             var extent = new Extent() { minX = -180, minY = -90, maxX = 180, maxY = 90 };
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
-                this._serviceProviderMock.Object, "test.gpkg", 10, false, false,
-                extent, GridOrigin.UPPER_LEFT);
+                this._serviceProviderMock.Object, "test.gpkg", 10, isBase, isOneXOne,
+                extent, origin);
 
+            Assert.AreEqual(exist, gpkg.Exists());
+
+            this._gpkgUtilsMock.Verify(utils => utils.Exist(), Times.Exactly(isBase ? 2 : 1));
+            this._gpkgUtilsMock.VerifyAll();
+            this._iOneXOneConvertorMock.VerifyAll();
         }
         #endregion
 
