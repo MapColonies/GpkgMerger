@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MergerLogicUnitTests.utils
 {
@@ -13,10 +8,12 @@ namespace MergerLogicUnitTests.utils
         private class LambdaEqualityComparer<T> : IEqualityComparer<T>
         {
             private Func<T?, T?, bool> _eqFunc;
+
             public LambdaEqualityComparer(Func<T?, T?, bool> compareFunc)
             {
                 this._eqFunc = compareFunc;
             }
+
             public bool Equals(T? x, T? y)
             {
                 return this._eqFunc(x, y);
@@ -28,7 +25,7 @@ namespace MergerLogicUnitTests.utils
             }
         }
 
-        internal static IEqualityComparer<T> Create<T>(Func<T?,T?,bool> compareFunc)
+        internal static IEqualityComparer<T> Create<T>(Func<T?, T?, bool> compareFunc)
         {
             return new LambdaEqualityComparer<T>(compareFunc);
         }

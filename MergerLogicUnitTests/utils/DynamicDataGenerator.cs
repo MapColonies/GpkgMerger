@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Dynamic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace MergerLogicUnitTests.utils
 {
@@ -22,17 +17,16 @@ namespace MergerLogicUnitTests.utils
                 yield break;
             }
 
-            int nextIdx = idx+1;
+            int nextIdx = idx + 1;
             foreach (var value in parameters[idx])
             {
                 var clone = new List<object>(baseRow);
                 clone.Add(value);
-                foreach (var item in BuildObjects(parameters, nextIdx,clone))
+                foreach (var item in BuildObjects(parameters, nextIdx, clone))
                 {
                     yield return item;
                 }
             }
-            
         }
     }
 }
