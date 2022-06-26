@@ -110,8 +110,12 @@ namespace MergerLogicUnitTests.DataTypes
             bool useCords)
         {
             this.SetupRequiredBaseMocks(isBase);
-            this._gpkgUtilsMock.Setup(utils => utils.TileExists(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
-                .Returns<int, int, int>((z, x, y) => z == 2);
+            if (z != 0)
+            {
+                this._gpkgUtilsMock.Setup(utils => utils.TileExists(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+                    .Returns<int, int, int>((z, x, y) => z == 2);
+            }
+
             this._OneXOneConvertorMock.Setup(converter => converter.TryFromTwoXOne(It.IsAny<Coord>()))
                 .Returns<Coord>(cords => cords.z != 0 ? cords : null);
             //TODO: mock origin convertor?
