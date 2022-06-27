@@ -1,5 +1,3 @@
-using MergerLogic.Utils;
-
 namespace MergerLogic.DataTypes
 {
     public class Coord

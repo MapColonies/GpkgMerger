@@ -8,10 +8,10 @@ namespace MergerLogic.Utils
     {
         private readonly IPathUtils _pathUtils;
         private readonly ITimeUtils _timeUtils;
-        private readonly IGeoUtils _geoUtils; 
+        private readonly IGeoUtils _geoUtils;
         private readonly IServiceProvider _container;
 
-        public UtilsFactory(IPathUtils pathUtils, ITimeUtils timeUtils,IGeoUtils geoUtils,IServiceProvider container)
+        public UtilsFactory(IPathUtils pathUtils, ITimeUtils timeUtils, IGeoUtils geoUtils, IServiceProvider container)
         {
             this._pathUtils = pathUtils;
             this._timeUtils = timeUtils;
@@ -23,7 +23,7 @@ namespace MergerLogic.Utils
 
         public IFileUtils GetFileUtils(string path)
         {
-            return new FileUtils(path, this._pathUtils,this._geoUtils);
+            return new FileUtils(path, this._pathUtils, this._geoUtils);
         }
 
         public IGpkgUtils GetGpkgUtils(string path)

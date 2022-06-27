@@ -67,7 +67,7 @@ namespace MergerLogic.DataTypes
             this.TileRanges = new TileBounds[maxZoom - minZoom + 1];
             for (int i = minZoom; i <= maxZoom; i++)
             {
-                this.TileRanges[i - minZoom] = GeoUtils.ExtentToTileRange(extent, i, origin);
+                this.TileRanges[i - minZoom] = this.GeoUtils.ExtentToTileRange(extent, i, origin);
             }
         }
 

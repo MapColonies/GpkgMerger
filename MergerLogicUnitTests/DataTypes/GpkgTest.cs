@@ -416,7 +416,7 @@ namespace MergerLogicUnitTests.DataTypes
         [DynamicData(nameof(GenWrapupParams), DynamicDataSourceType.Method)]
         public void Wrapup(bool isOneXOne, bool vacuum, bool isBase, GridOrigin origin)
         {
-            SetupRequiredBaseMocks(isBase);
+            this.SetupRequiredBaseMocks(isBase);
             var seq = new MockSequence();
             this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.CreateTileIndex());
             this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.UpdateTileMatrixTable(isOneXOne));
@@ -466,7 +466,7 @@ namespace MergerLogicUnitTests.DataTypes
         [DynamicData(nameof(GenExistParams), DynamicDataSourceType.Method)]
         public void Exists(bool isOneXOne, bool isBase, GridOrigin origin, bool exist)
         {
-            SetupRequiredBaseMocks(isBase);
+            this.SetupRequiredBaseMocks(isBase);
             this._gpkgUtilsMock.Setup(utils => utils.Exist()).Returns(exist);
             if (isBase)
             {
@@ -512,7 +512,7 @@ namespace MergerLogicUnitTests.DataTypes
         [DynamicData(nameof(GenTileCountParams), DynamicDataSourceType.Method)]
         public void TileCount(bool isOneXOne, bool isBase, GridOrigin origin, int tileCount)
         {
-            SetupRequiredBaseMocks(isBase);
+            this.SetupRequiredBaseMocks(isBase);
             this._gpkgUtilsMock.Setup(utils => utils.GetTileCount()).Returns(tileCount);
 
             var extent = new Extent() { minX = -180, minY = -90, maxX = 180, maxY = 90 };
@@ -544,7 +544,7 @@ namespace MergerLogicUnitTests.DataTypes
         [DynamicData(nameof(GenSetBatchIdentifierParams), DynamicDataSourceType.Method)]
         public void SetBatchIdentifier(bool isOneXOne, bool isBase, GridOrigin origin, int offset)
         {
-            SetupRequiredBaseMocks(isBase);
+            this.SetupRequiredBaseMocks(isBase);
             this._gpkgUtilsMock.Setup(utils => utils.GetBatch(10, It.IsAny<int>()))
                 .Returns(new List<Tile>());
 
@@ -580,7 +580,7 @@ namespace MergerLogicUnitTests.DataTypes
         [DynamicData(nameof(GenResetParams), DynamicDataSourceType.Method)]
         public void Reset(bool isOneXOne, bool isBase, GridOrigin origin, int batchSize)
         {
-            SetupRequiredBaseMocks(isBase);
+            this.SetupRequiredBaseMocks(isBase);
             this._gpkgUtilsMock.Setup(utils => utils.GetBatch(batchSize, It.IsAny<int>()))
                 .Returns(new List<Tile> { new Tile(0, 0, 0, new byte[] { }) });
             if (isOneXOne)
@@ -632,7 +632,7 @@ namespace MergerLogicUnitTests.DataTypes
             };
             var tileBatches = tiles.Chunk(batchSize).ToList();
             var batchIdx = 0;
-            SetupRequiredBaseMocks(isBase);
+            this.SetupRequiredBaseMocks(isBase);
             var seq = new MockSequence();
             for (var i = 0; i < tileBatches.Count; i++)
             {

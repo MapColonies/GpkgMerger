@@ -87,7 +87,7 @@ namespace MergerLogic.DataTypes
                 };
                 this.ConvertOriginCoord = coord =>
                 {
-                    return GeoUtils.FlipY(coord);
+                    return this.GeoUtils.FlipY(coord);
                 };
             }
             else

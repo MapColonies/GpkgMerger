@@ -5,7 +5,7 @@ namespace MergerLogic.Utils
 {
     public class PathUtils : IPathUtils
     {
-        private readonly IGeoUtils _geoUtils; 
+        private readonly IGeoUtils _geoUtils;
 
         public PathUtils(IGeoUtils geoUtils)
         {
