@@ -15,11 +15,6 @@ namespace MergerLogic.DataTypes
             this.y = y;
         }
 
-        public void flipY()
-        {
-            this.y = GeoUtils.FlipY(this.z, this.y);
-        }
-
         public void Print()
         {
             Console.WriteLine($"z: {this.z}");

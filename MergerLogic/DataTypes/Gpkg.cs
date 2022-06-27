@@ -64,8 +64,8 @@ namespace MergerLogic.DataTypes
             List<Tile> tiles = this.Utils.GetBatch(this.BatchSize, this._offset)
                 .Select(t =>
                 {
-                    Tile tile = this._convertOriginTile(t);
-                    tile = this._toCurrentGrid(tile);
+                    Tile tile = this.ConvertOriginTile(t);
+                    tile = this.ToCurrentGrid(tile);
                     counter++;
                     return tile;
                 }).Where(t => t != null).ToList();
@@ -78,7 +78,7 @@ namespace MergerLogic.DataTypes
             this._offset = int.Parse(batchIdentifier);
         }
 
-        protected override Tile GetLastExistingTile(Coord baseCoords)
+        protected override Tile InternalGetLastExistingTile(Coord baseCoords)
         {
             int cordsLength = baseCoords.z << 1;
             int[] coords = new int[cordsLength];

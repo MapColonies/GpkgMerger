@@ -3,37 +3,36 @@ using MergerLogic.DataTypes;
 
 namespace MergerLogic.Utils
 {
-    //TODO: convert static to DI singleton
-    public static class GeoUtils
+    public class GeoUtils : IGeoUtils
     {
         public const int SRID = 4326;
 
-        public static int FlipY(int z, int y)
+        public int FlipY(int z, int y)
         {
             // Convert to and from TMS
             return (1 << z) - y - 1;
         }
 
-        public static int FlipY(Coord coord)
+        public int FlipY(Coord coord)
         {
-            return FlipY(coord.z, coord.y);
+            return this.FlipY(coord.z, coord.y);
         }
 
-        public static int FlipY(Tile tile)
+        public int FlipY(Tile tile)
         {
-            return FlipY(tile.Z, tile.Y);
+            return this.FlipY(tile.Z, tile.Y);
         }
 
-        public static double DegreesPerTile(int zoom)
+        public double DegreesPerTile(int zoom)
         {
             double tilesPerYAxis = 1 << zoom; // 2^ zoom
             double tileSizeDeg = 180 / tilesPerYAxis;
             return tileSizeDeg;
         }
 
-        public static Extent SnapExtentToTileGrid(Extent extent, int zoom)
+        public Extent SnapExtentToTileGrid(Extent extent, int zoom)
         {
-            double tileSize = DegreesPerTile(zoom);
+            double tileSize = this.DegreesPerTile(zoom);
             double minX = extent.minX - Math.Abs(extent.minX % tileSize);
             double minY = extent.minY - Math.Abs(extent.minY % tileSize);
             double maxX = extent.maxX - Math.Abs(extent.maxX % tileSize);
@@ -54,10 +53,10 @@ namespace MergerLogic.Utils
             return new Extent { minX = minX, minY = minY, maxX = maxX, maxY = maxY };
         }
 
-        public static TileBounds ExtentToTileRange(Extent extent, int zoom, GridOrigin origin = GridOrigin.UPPER_LEFT)
+        public TileBounds ExtentToTileRange(Extent extent, int zoom, GridOrigin origin = GridOrigin.UPPER_LEFT)
         {
-            extent = SnapExtentToTileGrid(extent, zoom);
-            double tileSize = DegreesPerTile(zoom);
+            extent = this.SnapExtentToTileGrid(extent, zoom);
+            double tileSize = this.DegreesPerTile(zoom);
             double minYDeg = extent.minY;
             double maxYDeg = extent.maxY;
 
@@ -75,9 +74,9 @@ namespace MergerLogic.Utils
             return new TileBounds(zoom, minX, maxX, minY, maxY);
         }
 
-        public static Extent TileRangeToExtent(TileBounds bounds)
+        public Extent TileRangeToExtent(TileBounds bounds)
         {
-            double tileSizeDeg = DegreesPerTile(bounds.Zoom);
+            double tileSizeDeg = this.DegreesPerTile(bounds.Zoom);
             double minX = (tileSizeDeg * bounds.MinX) - 180;
             double minY = (tileSizeDeg * bounds.MinY) - 90;
             double maxX = (tileSizeDeg * bounds.MaxX) - 180;

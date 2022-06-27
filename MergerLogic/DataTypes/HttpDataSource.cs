@@ -17,8 +17,8 @@ namespace MergerLogic.DataTypes
             this.GenTileRanges(extent, origin, minZoom, maxZoom);
             if (isOneXOne)
             {
-                this._fromCurrentGridTile = this.OneXOneConvertor.FromTwoXOne;
-                this._toCurrentGrid = this.OneXOneConvertor.ToTwoXOne;
+                this.FromCurrentGridTile = this.OneXOneConvertor.FromTwoXOne;
+                this.ToCurrentGrid = this.OneXOneConvertor.ToTwoXOne;
             }
         }
 

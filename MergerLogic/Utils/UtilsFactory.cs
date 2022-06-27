@@ -8,12 +8,14 @@ namespace MergerLogic.Utils
     {
         private readonly IPathUtils _pathUtils;
         private readonly ITimeUtils _timeUtils;
+        private readonly IGeoUtils _geoUtils; 
         private readonly IServiceProvider _container;
 
-        public UtilsFactory(IPathUtils pathUtils, ITimeUtils timeUtils, IServiceProvider container)
+        public UtilsFactory(IPathUtils pathUtils, ITimeUtils timeUtils,IGeoUtils geoUtils,IServiceProvider container)
         {
             this._pathUtils = pathUtils;
             this._timeUtils = timeUtils;
+            this._geoUtils = geoUtils;
             this._container = container;
         }
 
@@ -21,19 +23,19 @@ namespace MergerLogic.Utils
 
         public IFileUtils GetFileUtils(string path)
         {
-            return new FileUtils(path, this._pathUtils);
+            return new FileUtils(path, this._pathUtils,this._geoUtils);
         }
 
         public IGpkgUtils GetGpkgUtils(string path)
         {
             var logger = this._container.GetRequiredService<ILogger<GpkgUtils>>();
-            return new GpkgUtils(path, this._timeUtils, logger);
+            return new GpkgUtils(path, this._timeUtils, logger, this._geoUtils);
         }
 
         public IHttpUtils GetHttpUtils(string path)
         {
             IPathPatternUtils pathPatternUtils = this.GetPathPatternUtils(path);
-            return new HttpUtils(path, pathPatternUtils);
+            return new HttpUtils(path, pathPatternUtils, this._geoUtils);
         }
 
         public IS3Utils GetS3Utils(string path)
@@ -45,7 +47,7 @@ namespace MergerLogic.Utils
                 throw new Exception("S3 Data utils requires s3 client to be configured");
             }
 
-            return new S3Utils(client, this._pathUtils, bucket, path);
+            return new S3Utils(client, this._pathUtils, this._geoUtils, bucket, path);
         }
 
         public T GetDataUtils<T>(string path) where T : IDataUtils

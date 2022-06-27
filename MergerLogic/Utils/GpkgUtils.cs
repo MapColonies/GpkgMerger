@@ -14,7 +14,7 @@ namespace MergerLogic.Utils
         private readonly ITimeUtils _timeUtils;
         private readonly ILogger _logger;
 
-        public GpkgUtils(string path, ITimeUtils timeUtils, ILogger<GpkgUtils> logger, bool create = false) : base(path)
+        public GpkgUtils(string path, ITimeUtils timeUtils, ILogger<GpkgUtils> logger,IGeoUtils geoUtils) : base(path,geoUtils)
         {
             this._tileCache = this.InternalGetTileCache();
             this._timeUtils = timeUtils;
@@ -535,7 +535,7 @@ namespace MergerLogic.Utils
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = "INSERT INTO \"gpkg_tile_matrix_set\" VALUES " +
-                    $"('{this._tileCache}',{GeoUtils.SRID},-180,-90,180,90);";
+                    $"('{this._tileCache}',{Utils.GeoUtils.SRID},-180,-90,180,90);";
                 command.ExecuteNonQuery();
             }
         }
@@ -545,7 +545,7 @@ namespace MergerLogic.Utils
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = "INSERT INTO \"gpkg_tile_matrix_set\" VALUES " +
-                    $"('{this._tileCache}',{GeoUtils.SRID},-180,-180,180,180);";
+                    $"('{this._tileCache}',{Utils.GeoUtils.SRID},-180,-180,180,180);";
                 command.ExecuteNonQuery();
             }
         }
@@ -568,7 +568,7 @@ namespace MergerLogic.Utils
             {
                 command.CommandText = "INSERT INTO \"gpkg_contents\" " +
                     "(\"table_name\",\"data_type\",\"identifier\",\"min_x\",\"min_y\",\"max_x\",\"max_y\",\"srs_id\") VALUES " +
-                    $"('{this._tileCache}','tiles','{this._tileCache}',{extent.minX},{extent.minY},{extent.maxX},{extent.maxY},{GeoUtils.SRID});";
+                    $"('{this._tileCache}','tiles','{this._tileCache}',{extent.minX},{extent.minY},{extent.maxX},{extent.maxY},{Utils.GeoUtils.SRID});";
                 command.ExecuteNonQuery();
             }
         }

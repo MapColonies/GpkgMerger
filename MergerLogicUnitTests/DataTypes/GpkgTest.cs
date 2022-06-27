@@ -22,7 +22,7 @@ namespace MergerLogicUnitTests.DataTypes
         private MockRepository _repository;
         private Mock<IConfigurationManager> _configurationManagerMock;
         private Mock<IServiceProvider> _serviceProviderMock;
-        private Mock<IOneXOneConvertor> _OneXOneConvertorMock;
+        private Mock<IOneXOneConvertor> _oneXOneConvertorMock;
         private Mock<IUtilsFactory> _utilsFactoryMock;
         private Mock<IGpkgUtils> _gpkgUtilsMock;
         private Mock<ILogger<Gpkg>> _loggerMock;
@@ -34,7 +34,7 @@ namespace MergerLogicUnitTests.DataTypes
         {
             this._repository = new MockRepository(MockBehavior.Strict);
             this._configurationManagerMock = this._repository.Create<IConfigurationManager>();
-            this._OneXOneConvertorMock = this._repository.Create<IOneXOneConvertor>();
+            this._oneXOneConvertorMock = this._repository.Create<IOneXOneConvertor>();
             this._gpkgUtilsMock = this._repository.Create<IGpkgUtils>();
             this._utilsFactoryMock = this._repository.Create<IUtilsFactory>();
             this._utilsFactoryMock.Setup(factory => factory.GetDataUtils<IGpkgUtils>(It.IsAny<string>()))
@@ -42,7 +42,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._loggerMock = this._repository.Create<ILogger<Gpkg>>(MockBehavior.Loose);
             this._serviceProviderMock = this._repository.Create<IServiceProvider>();
             this._serviceProviderMock.Setup(container =>
-                container.GetService(typeof(IOneXOneConvertor))).Returns(this._OneXOneConvertorMock.Object);
+                container.GetService(typeof(IOneXOneConvertor))).Returns(this._oneXOneConvertorMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IUtilsFactory)))
                 .Returns(this._utilsFactoryMock.Object);
             this._serviceProviderMock.Setup(container =>
@@ -116,7 +116,7 @@ namespace MergerLogicUnitTests.DataTypes
                     .Returns<int, int, int>((z, x, y) => z == 2);
             }
 
-            this._OneXOneConvertorMock.Setup(converter => converter.TryFromTwoXOne(It.IsAny<Coord>()))
+            this._oneXOneConvertorMock.Setup(converter => converter.TryFromTwoXOne(It.IsAny<Coord>()))
                 .Returns<Coord>(cords => cords.z != 0 ? cords : null);
             //TODO: mock origin convertor?
 
@@ -200,7 +200,7 @@ namespace MergerLogicUnitTests.DataTypes
             Tile nullTile = null;
             var existingTile = new Tile(2, 2, 3, new byte[] { });
             var sequence = new MockSequence();
-            this._OneXOneConvertorMock
+            this._oneXOneConvertorMock
                 .InSequence(sequence)
                 .Setup(converter => converter.TryFromTwoXOne(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
                 .Returns<int, int, int>((z, x, y) => z != 0 ? new Coord(z, x, y) : null);
@@ -212,7 +212,7 @@ namespace MergerLogicUnitTests.DataTypes
                     .Returns<Coord>(cords => cords.z == 2 ? existingTile : nullTile);
                 if (z != 1)
                 {
-                    this._OneXOneConvertorMock
+                    this._oneXOneConvertorMock
                         .InSequence(sequence)
                         .Setup(converter => converter.ToTwoXOne(It.IsAny<Tile>()))
                         .Returns<Tile>(tile => tile.Z != 0 ? tile : null);
@@ -221,7 +221,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             if (enableUpscale)
             {
-                this._OneXOneConvertorMock
+                this._oneXOneConvertorMock
                     .InSequence(sequence)
                     .Setup(converter => converter.TryFromTwoXOne(It.IsAny<Coord>()))
                     .Returns<Coord>(cords => cords);
@@ -297,18 +297,18 @@ namespace MergerLogicUnitTests.DataTypes
             var tile = new Tile(2, 2, 3, new byte[] { });
             var sequence = new MockSequence();
 
-            this._OneXOneConvertorMock.InSequence(sequence).Setup(converter =>
+            this._oneXOneConvertorMock.InSequence(sequence).Setup(converter =>
                     converter.TryFromTwoXOne(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
                 .Returns<int, int, int>((z, x, y) => new Coord(z, x, y));
             this._gpkgUtilsMock.InSequence(sequence).Setup(utils => utils.GetTile(It.IsAny<Coord>()))
                 .Returns(nullTile);
-            this._OneXOneConvertorMock.InSequence(sequence)
+            this._oneXOneConvertorMock.InSequence(sequence)
                 .Setup(converter => converter.TryFromTwoXOne(It.IsAny<Coord>()))
                 .Returns<Coord>(cords => cords);
             this._gpkgUtilsMock.InSequence(sequence)
                 .Setup(utils => utils.GetLastTile(It.IsAny<int[]>(), It.IsAny<Coord>()))
                 .Returns(tile);
-            this._OneXOneConvertorMock.InSequence(sequence).Setup(converter => converter.ToTwoXOne(It.IsAny<Tile>()))
+            this._oneXOneConvertorMock.InSequence(sequence).Setup(converter => converter.ToTwoXOne(It.IsAny<Tile>()))
                 .Returns<Tile>(tile => tile.Z != 0 ? tile : null);
             //TODO: mock origin convertor?
 
@@ -358,7 +358,7 @@ namespace MergerLogicUnitTests.DataTypes
         public void UpdateTilesWithConversions(int batchSize, bool isBase)
         {
             this.SetupRequiredBaseMocks(isBase);
-            this._OneXOneConvertorMock
+            this._oneXOneConvertorMock
                 .Setup(converter => converter.TryFromTwoXOne(It.IsAny<Tile>()))
                 .Returns<Tile>(tile => tile.Z != 7 ? tile : null);
             this._gpkgUtilsMock
@@ -377,13 +377,13 @@ namespace MergerLogicUnitTests.DataTypes
             gpkg.UpdateTiles(testTiles);
             var expectedTiles = new Tile[] { testTiles[0], testTiles[2] };
 
-            this._OneXOneConvertorMock.Verify(
+            this._oneXOneConvertorMock.Verify(
                 converter => converter.TryFromTwoXOne(It.Is<Tile>(t => t.Z == 1 && t.X == 2)),
                 Times.Once); //TODO: replace expected values and check y when origin conversion is mocked
-            this._OneXOneConvertorMock.Verify(
+            this._oneXOneConvertorMock.Verify(
                 converter => converter.TryFromTwoXOne(It.Is<Tile>(t => t.Z == 7 && t.X == 7)),
                 Times.Once); //TODO: replace expected values and check y when origin conversion is mocked
-            this._OneXOneConvertorMock.Verify(
+            this._oneXOneConvertorMock.Verify(
                 converter => converter.TryFromTwoXOne(It.Is<Tile>(t => t.Z == 2 && t.X == 2)),
                 Times.Once); //TODO: replace expected values and check y when origin conversion is mocked
 
@@ -585,7 +585,7 @@ namespace MergerLogicUnitTests.DataTypes
                 .Returns(new List<Tile> { new Tile(0, 0, 0, new byte[] { }) });
             if (isOneXOne)
             {
-                this._OneXOneConvertorMock.Setup(converter =>
+                this._oneXOneConvertorMock.Setup(converter =>
                         converter.TryToTwoXOne(It.IsAny<Tile>()))
                     .Returns<Tile>(tile => tile);
             }
@@ -644,7 +644,7 @@ namespace MergerLogicUnitTests.DataTypes
                 {
                     for (var j = 0; j < tileBatches[i].Length; j++)
                     {
-                        this._OneXOneConvertorMock
+                        this._oneXOneConvertorMock
                             .InSequence(seq)
                             .Setup(converter => converter.TryToTwoXOne(It.IsAny<Tile>()))
                             .Returns<Tile>(tile => tile.Z != 0 ? tile : null);
@@ -673,7 +673,7 @@ namespace MergerLogicUnitTests.DataTypes
                     //TODO: validate origin conversion
                     if (isOneXOne)
                     {
-                        this._OneXOneConvertorMock.Verify(converter => converter.TryToTwoXOne(It.Is<Tile>(
+                        this._oneXOneConvertorMock.Verify(converter => converter.TryToTwoXOne(It.Is<Tile>(
                                 t => t.Z == tile.Z && t.X == tile.X)),
                             Times.Once); //TODO: add y after origin conversion mock
                     }
@@ -748,7 +748,7 @@ namespace MergerLogicUnitTests.DataTypes
         private void VerifyAll()
         {
             this._gpkgUtilsMock.VerifyAll();
-            this._OneXOneConvertorMock.VerifyAll();
+            this._oneXOneConvertorMock.VerifyAll();
             this._configurationManagerMock.VerifyAll();
         }
 

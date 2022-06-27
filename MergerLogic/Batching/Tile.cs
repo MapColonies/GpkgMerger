@@ -14,7 +14,7 @@ namespace MergerLogic.Batching
         { get; private set; }
 
         public int Y
-        { get; private set; }
+        { get; internal set; }
 
         private byte[] _data;
 
@@ -49,11 +49,6 @@ namespace MergerLogic.Batching
         public Coord GetCoord()
         {
             return new Coord(this.Z, this.X, this.Y);
-        }
-
-        public void FlipY()
-        {
-            this.Y = GeoUtils.FlipY(this.Z, this.Y);
         }
 
         public virtual void Print()
