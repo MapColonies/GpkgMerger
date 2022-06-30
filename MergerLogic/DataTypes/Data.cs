@@ -39,7 +39,7 @@ namespace MergerLogic.DataTypes
         protected GetTileFromCoordFunction _getLastExistingTile;
 
         #region tile grid converters
-        protected IOneXOneConvetor _oneXOneConvetor = null;
+        protected IOneXOneConvertor OneXOneConvertor = null;
         protected TileConvertorFunction _fromCurrentGridTile;
         protected GetCoordFromCoordFunction _fromCurrentGridCoord;
         protected TileConvertorFunction _toCurrentGrid;
@@ -48,11 +48,6 @@ namespace MergerLogic.DataTypes
         //origin converters
         protected TileConvertorFunction _convertOriginTile;
         protected ValFromCoordFunction _convertOriginCoord;
-
-
-        protected const int ZOOM_LEVEL_COUNT = 30;
-
-        protected const int COORDS_FOR_ALL_ZOOM_LEVELS = ZOOM_LEVEL_COUNT << 1;
 
         public Data(IServiceProvider container, DataType type, string path, int batchSize, bool isOneXOne = false, GridOrigin origin = GridOrigin.UPPER_LEFT)
         {
@@ -67,11 +62,11 @@ namespace MergerLogic.DataTypes
             // The following delegates are for code performance and to reduce branching while handling tiles
             if (isOneXOne)
             {
-                this._oneXOneConvetor = container.GetRequiredService<IOneXOneConvetor>();
+                this.OneXOneConvertor = container.GetRequiredService<IOneXOneConvertor>();
                 this._getLastExistingTile = this.getLastOneXoneExistingTile;
-                this._fromCurrentGridTile = this._oneXOneConvetor.TryFromTwoXOne;
-                this._fromCurrentGridCoord = this._oneXOneConvetor.TryFromTwoXOne;
-                this._toCurrentGrid = this._oneXOneConvetor.TryToTwoXOne;
+                this._fromCurrentGridTile = this.OneXOneConvertor.TryFromTwoXOne;
+                this._fromCurrentGridCoord = this.OneXOneConvertor.TryFromTwoXOne;
+                this._toCurrentGrid = this.OneXOneConvertor.TryToTwoXOne;
             }
             else
             {
@@ -147,20 +142,24 @@ namespace MergerLogic.DataTypes
         //TODO: move to util after IOC
         protected Tile getLastOneXoneExistingTile(Coord coords)
         {
-            coords = this._oneXOneConvetor.FromTwoXOne(coords);
+            coords = this._fromCurrentGridCoord(coords);
+            if (coords is null)
+            {
+                return null;
+            }
             Tile? tile = this.GetLastExistingTile(coords);
-            return tile != null ? this._oneXOneConvetor.ToTwoXOne(tile) : null;
+            return tile != null ? this.OneXOneConvertor.ToTwoXOne(tile) : null;
         }
 
         protected virtual Tile GetOneXOneTile(int z, int x, int y)
         {
-            Coord? oneXoneBaseCoords = this._oneXOneConvetor.TryFromTwoXOne(z, x, y);
+            Coord? oneXoneBaseCoords = this.OneXOneConvertor.TryFromTwoXOne(z, x, y);
             if (oneXoneBaseCoords == null)
             {
                 return null;
             }
             Tile tile = this.Utils.GetTile(oneXoneBaseCoords);
-            return tile != null ? this._oneXOneConvetor.ToTwoXOne(tile) : null;
+            return tile != null ? this.OneXOneConvertor.ToTwoXOne(tile) : null;
         }
 
 

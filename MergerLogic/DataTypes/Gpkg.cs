@@ -25,7 +25,7 @@ namespace MergerLogic.DataTypes
 
             if (isOneXOne)
             {
-                this._coordsFromCurrentGrid = this._oneXOneConvetor.TryFromTwoXOne;
+                this._coordsFromCurrentGrid = this.OneXOneConvertor.TryFromTwoXOne;
             }
             else
             {
@@ -80,13 +80,9 @@ namespace MergerLogic.DataTypes
 
         protected override Tile GetLastExistingTile(Coord baseCoords)
         {
-            int[] coords = new int[COORDS_FOR_ALL_ZOOM_LEVELS];
-            for (int i = 0; i < coords.Length; i++)
-            {
-                coords[i] = -1;
-            }
+            int cordsLength = baseCoords.z << 1;
+            int[] coords = new int[cordsLength];
 
-            baseCoords = this._coordsFromCurrentGrid(baseCoords);
             int z = baseCoords.z;
             int baseTileX = baseCoords.x;
             int baseTileY = baseCoords.y;
@@ -101,10 +97,6 @@ namespace MergerLogic.DataTypes
             }
 
             Tile lastTile = this.Utils.GetLastTile(coords, baseCoords);
-            if (lastTile is not null)
-            {
-                lastTile = this._toCurrentGrid(lastTile);
-            }
             return lastTile;
         }
 

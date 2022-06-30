@@ -42,7 +42,7 @@ namespace MergerLogic.Extensions
             return collection
                 .AddSingleton<IConfigurationManager, ConfigurationManager>()
                 .AddSingleton<IDataFactory, DataFactory>()
-                .AddSingleton<IOneXOneConvetor, OneXOneConvetor>()
+                .AddSingleton<IOneXOneConvertor, OneXOneConvertor>()
                 .AddSingleton<IPathUtils, PathUtils>()
                 .AddSingleton<IStringUtils, StringUtils>()
                 .AddSingleton<ITimeUtils, TimeUtils>()
