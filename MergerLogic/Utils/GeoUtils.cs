@@ -15,7 +15,7 @@ namespace MergerLogic.Utils
 
         public int FlipY(Coord coord)
         {
-            return this.FlipY(coord.z, coord.y);
+            return this.FlipY(coord.Z, coord.Y);
         }
 
         public int FlipY(Tile tile)
@@ -33,15 +33,15 @@ namespace MergerLogic.Utils
         public Extent SnapExtentToTileGrid(Extent extent, int zoom)
         {
             double tileSize = this.DegreesPerTile(zoom);
-            double minX = extent.minX - Math.Abs(extent.minX % tileSize);
-            double minY = extent.minY - Math.Abs(extent.minY % tileSize);
-            double maxX = extent.maxX - Math.Abs(extent.maxX % tileSize);
-            double maxY = extent.maxY - Math.Abs(extent.maxY % tileSize);
-            if (maxX != extent.maxX)
+            double minX = extent.MinX - Math.Abs(extent.MinX % tileSize);
+            double minY = extent.MinY - Math.Abs(extent.MinY % tileSize);
+            double maxX = extent.MaxX - Math.Abs(extent.MaxX % tileSize);
+            double maxY = extent.MaxY - Math.Abs(extent.MaxY % tileSize);
+            if (maxX != extent.MaxX)
             {
                 maxX += tileSize;
             }
-            if (maxY != extent.maxY)
+            if (maxY != extent.MaxY)
             {
                 maxY += tileSize;
             }
@@ -50,15 +50,15 @@ namespace MergerLogic.Utils
                 minY = -90;
                 maxY = 90;
             }
-            return new Extent { minX = minX, minY = minY, maxX = maxX, maxY = maxY };
+            return new Extent { MinX = minX, MinY = minY, MaxX = maxX, MaxY = maxY };
         }
 
         public TileBounds ExtentToTileRange(Extent extent, int zoom, GridOrigin origin = GridOrigin.UPPER_LEFT)
         {
             extent = this.SnapExtentToTileGrid(extent, zoom);
             double tileSize = this.DegreesPerTile(zoom);
-            double minYDeg = extent.minY;
-            double maxYDeg = extent.maxY;
+            double minYDeg = extent.MinY;
+            double maxYDeg = extent.MaxY;
 
             if (origin == GridOrigin.UPPER_LEFT)
             {
@@ -66,8 +66,8 @@ namespace MergerLogic.Utils
                 (minYDeg, maxYDeg) = (-maxYDeg, -minYDeg);
             }
 
-            int minX = (int)((extent.minX + 180) / tileSize);
-            int maxX = (int)((extent.maxX + 180) / tileSize);
+            int minX = (int)((extent.MinX + 180) / tileSize);
+            int maxX = (int)((extent.MaxX + 180) / tileSize);
             int minY = (int)((minYDeg + 90) / tileSize);
             int maxY = (int)((maxYDeg + 90) / tileSize);
 
@@ -81,7 +81,7 @@ namespace MergerLogic.Utils
             double minY = (tileSizeDeg * bounds.MinY) - 90;
             double maxX = (tileSizeDeg * bounds.MaxX) - 180;
             double maxY = (tileSizeDeg * bounds.MaxY) - 90;
-            return new Extent() { minX = minX, minY = minY, maxX = maxX, maxY = maxY };
+            return new Extent() { MinX = minX, MinY = minY, MaxX = maxX, MaxY = maxY };
         }
     }
 }

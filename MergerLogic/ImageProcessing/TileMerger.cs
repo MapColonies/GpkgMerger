@@ -54,13 +54,13 @@ namespace MergerLogic.ImageProcessing
                         continue;
                     }
                     lastProcessedTile = tile;
-                    if (tile.Z > targetCoords.z)
+                    if (tile.Z > targetCoords.Z)
                     {
                         throw new NotImplementedException("down scaling tiles is not supported");
                     }
                     var tileBytes = tile.GetImageBytes();
                     tileImage = new MagickImage(tileBytes);
-                    if (tile.Z < targetCoords.z)
+                    if (tile.Z < targetCoords.Z)
                     {
                         this._tileScaler.Upscale(tileImage, tile, targetCoords);
                     }

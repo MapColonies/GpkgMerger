@@ -27,9 +27,9 @@ namespace MergerLogic.Batching
 
         public Tile(Coord cords, byte[] data)
         {
-            this.Z = cords.z;
-            this.X = cords.x;
-            this.Y = cords.y;
+            this.Z = cords.Z;
+            this.X = cords.X;
+            this.Y = cords.Y;
             this._data = data;
         }
 
@@ -66,9 +66,9 @@ namespace MergerLogic.Batching
 
         public void SetCoords(Coord cords)
         {
-            this.X = cords.x;
-            this.Y = cords.y;
-            this.Z = cords.z;
+            this.X = cords.X;
+            this.Y = cords.Y;
+            this.Z = cords.Z;
         }
 
         public void SetCoords(int z, int x, int y)

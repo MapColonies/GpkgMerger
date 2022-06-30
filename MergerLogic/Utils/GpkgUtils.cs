@@ -69,10 +69,10 @@ namespace MergerLogic.Utils
                     using (var reader = command.ExecuteReader(System.Data.CommandBehavior.SingleRow))
                     {
                         reader.Read();
-                        extent.minX = reader.GetDouble(0);
-                        extent.minY = reader.GetDouble(1);
-                        extent.maxX = reader.GetDouble(2);
-                        extent.maxY = reader.GetDouble(3);
+                        extent.MinX = reader.GetDouble(0);
+                        extent.MinY = reader.GetDouble(1);
+                        extent.MaxX = reader.GetDouble(2);
+                        extent.MaxY = reader.GetDouble(3);
                     }
                 }
             }
@@ -113,10 +113,10 @@ namespace MergerLogic.Utils
                 {
                     command.CommandText = "UPDATE gpkg_contents SET min_x=$minX, max_x=$maxX, min_y=$minY, max_y=$maxY";
 
-                    command.Parameters.AddWithValue("$minX", extent.minX);
-                    command.Parameters.AddWithValue("$minY", extent.minY);
-                    command.Parameters.AddWithValue("$maxX", extent.maxX);
-                    command.Parameters.AddWithValue("$maxY", extent.maxY);
+                    command.Parameters.AddWithValue("$minX", extent.MinX);
+                    command.Parameters.AddWithValue("$minY", extent.MinY);
+                    command.Parameters.AddWithValue("$maxX", extent.MaxX);
+                    command.Parameters.AddWithValue("$maxY", extent.MaxY);
 
                     command.ExecuteNonQuery();
                 }
@@ -255,7 +255,7 @@ namespace MergerLogic.Utils
                     // Build command
                     StringBuilder commandBuilder = new StringBuilder($"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM \"{this._tileCache}\" where ");
 
-                    int zoomLevel = baseCoords.z;
+                    int zoomLevel = baseCoords.Z;
                     int maxZoomLevel = zoomLevel - 1;
                     int arrayIdx = 0;
                     for (int currentZoomLevel = maxZoomLevel; currentZoomLevel >= 0; currentZoomLevel--)
@@ -568,7 +568,7 @@ namespace MergerLogic.Utils
             {
                 command.CommandText = "INSERT INTO \"gpkg_contents\" " +
                     "(\"table_name\",\"data_type\",\"identifier\",\"min_x\",\"min_y\",\"max_x\",\"max_y\",\"srs_id\") VALUES " +
-                    $"('{this._tileCache}','tiles','{this._tileCache}',{extent.minX},{extent.minY},{extent.maxX},{extent.maxY},{Utils.GeoUtils.SRID});";
+                    $"('{this._tileCache}','tiles','{this._tileCache}',{extent.MinX},{extent.MinY},{extent.MaxX},{extent.MaxY},{Utils.GeoUtils.SRID});";
                 command.ExecuteNonQuery();
             }
         }

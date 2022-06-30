@@ -18,7 +18,7 @@ namespace MergerLogic.Utils
 
         public virtual Tile GetTile(Coord coord)
         {
-            return this.GetTile(coord.z, coord.x, coord.y);
+            return this.GetTile(coord.Z, coord.X, coord.Y);
         }
 
         public abstract bool TileExists(int z, int x, int y);

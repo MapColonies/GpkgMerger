@@ -93,7 +93,7 @@ namespace MergerLogic.DataTypes
             else
             {
                 this.ConvertOriginTile = tile => tile;
-                this.ConvertOriginCoord = coord => coord.y;
+                this.ConvertOriginCoord = coord => coord.Y;
             }
         }
 
@@ -101,9 +101,9 @@ namespace MergerLogic.DataTypes
 
         protected virtual Tile InternalGetLastExistingTile(Coord coords)
         {
-            int z = coords.z;
-            int baseTileX = coords.x;
-            int baseTileY = coords.y;
+            int z = coords.Z;
+            int baseTileX = coords.X;
+            int baseTileY = coords.Y;
 
             Tile lastTile = null;
 
@@ -130,7 +130,7 @@ namespace MergerLogic.DataTypes
 
         public bool TileExists(Coord coord)
         {
-            coord.y = this.ConvertOriginCoord(coord);
+            coord.Y = this.ConvertOriginCoord(coord);
             coord = this.FromCurrentGridCoord(coord);
 
             if (coord is null)
@@ -138,7 +138,7 @@ namespace MergerLogic.DataTypes
                 return false;
             }
 
-            return this.Utils.TileExists(coord.z, coord.x, coord.y);
+            return this.Utils.TileExists(coord.Z, coord.X, coord.Y);
         }
 
         //TODO: move to util after IOC
@@ -191,7 +191,7 @@ namespace MergerLogic.DataTypes
 
         public Tile GetCorrespondingTile(Coord coords, bool upscale)
         {
-            Tile correspondingTile = this.GetTile(coords.z, coords.x, coords.y);
+            Tile correspondingTile = this.GetTile(coords.Z, coords.X, coords.Y);
 
             if (upscale && correspondingTile == null)
             {

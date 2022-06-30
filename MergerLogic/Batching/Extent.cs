@@ -2,9 +2,9 @@
 {
     public struct Extent
     {
-        public double minX;
-        public double minY;
-        public double maxX;
-        public double maxY;
+        public double MinX;
+        public double MinY;
+        public double MaxX;
+        public double MaxY;
     }
 }
