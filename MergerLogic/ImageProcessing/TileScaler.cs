@@ -11,12 +11,12 @@ namespace MergerLogic.ImageProcessing
 
         public void Upscale(MagickImage baseImage, Tile baseTile, Coord targetCoords)
         {
-            int zoomLevelDiff = targetCoords.z - baseTile.Z;
+            int zoomLevelDiff = targetCoords.Z - baseTile.Z;
             int scale = 1 << zoomLevelDiff;
             double scaleAsDouble = (double)scale;
 
-            double tilePartX = (targetCoords.x % scale) / scaleAsDouble;
-            double tilePartY = (targetCoords.y % scale) / scaleAsDouble;
+            double tilePartX = (targetCoords.X % scale) / scaleAsDouble;
+            double tilePartY = (targetCoords.Y % scale) / scaleAsDouble;
             double tileSize = TILE_HEIGHT / scaleAsDouble;
 
             int pixleX = (int)(tilePartX * TILE_WIDTH);

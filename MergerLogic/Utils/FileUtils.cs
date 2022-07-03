@@ -6,7 +6,7 @@ namespace MergerLogic.Utils
     {
         private IPathUtils _pathUtils;
 
-        public FileUtils(string path, IPathUtils pathUtils) : base(path)
+        public FileUtils(string path, IPathUtils pathUtils, IGeoUtils geoUtils) : base(path, geoUtils)
         {
             this._pathUtils = pathUtils;
         }

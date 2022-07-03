@@ -62,10 +62,10 @@ namespace MergerLogic.DataTypes
                 Tile tile = this.Utils.GetTile(coord);
                 if (tile != null)
                 {
-                    tile = this._toCurrentGrid(tile);
+                    tile = this.ToCurrentGrid(tile);
                     if (tile != null)
                     {
-                        tile = this._convertOriginTile(tile);
+                        tile = this.ConvertOriginTile(tile);
                         yield return tile;
                     }
                 }

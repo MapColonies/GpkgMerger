@@ -31,7 +31,7 @@ namespace MergerLogic.Utils
         }
         public string RenderUrlTemplate(Coord coords)
         {
-            return this.RenderUrlTemplate(coords.x, coords.y, coords.z);
+            return this.RenderUrlTemplate(coords.X, coords.Y, coords.Z);
         }
 
         public string RenderUrlTemplate(int x, int y, int z)

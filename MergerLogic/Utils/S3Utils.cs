@@ -11,7 +11,7 @@ namespace MergerLogic.Utils
         private IAmazonS3 _client;
         private IPathUtils _pathUtils;
 
-        public S3Utils(IAmazonS3 client, IPathUtils pathUtils, string bucket, string path) : base(path)
+        public S3Utils(IAmazonS3 client, IPathUtils pathUtils, IGeoUtils geoUtils, string bucket, string path) : base(path, geoUtils)
         {
             this._client = client;
             this.bucket = bucket;

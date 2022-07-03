@@ -17,8 +17,8 @@ namespace MergerLogic.DataTypes
             this.GenTileRanges(extent, origin, minZoom, maxZoom);
             if (isOneXOne)
             {
-                this._fromCurrentGridTile = this.OneXOneConvertor.FromTwoXOne;
-                this._toCurrentGrid = this.OneXOneConvertor.ToTwoXOne;
+                this.FromCurrentGridTile = this.OneXOneConvertor.FromTwoXOne;
+                this.ToCurrentGrid = this.OneXOneConvertor.ToTwoXOne;
             }
         }
 
@@ -67,7 +67,7 @@ namespace MergerLogic.DataTypes
             this.TileRanges = new TileBounds[maxZoom - minZoom + 1];
             for (int i = minZoom; i <= maxZoom; i++)
             {
-                this.TileRanges[i - minZoom] = GeoUtils.ExtentToTileRange(extent, i, origin);
+                this.TileRanges[i - minZoom] = this.GeoUtils.ExtentToTileRange(extent, i, origin);
             }
         }
 

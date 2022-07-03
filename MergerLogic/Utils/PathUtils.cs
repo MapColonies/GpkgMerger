@@ -5,6 +5,13 @@ namespace MergerLogic.Utils
 {
     public class PathUtils : IPathUtils
     {
+        private readonly IGeoUtils _geoUtils;
+
+        public PathUtils(IGeoUtils geoUtils)
+        {
+            this._geoUtils = geoUtils;
+        }
+
         public string RemoveTrailingSlash(string path, bool isS3 = false)
         {
             return path.TrimEnd(this.GetSeperator(isS3));
@@ -23,7 +30,7 @@ namespace MergerLogic.Utils
 
         public string GetTilePathTMS(string basePath, int z, int x, int y, bool isS3 = false)
         {
-            y = GeoUtils.FlipY(z, y);
+            y = this._geoUtils.FlipY(z, y);
             return this.GetTilePath(basePath, z, x, y, isS3);
         }
 

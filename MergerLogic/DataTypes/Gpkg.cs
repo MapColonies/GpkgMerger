@@ -7,11 +7,8 @@ namespace MergerLogic.DataTypes
 {
     public class Gpkg : Data<IGpkgUtils>
     {
-        private delegate Coord CoordConvertorFunction(Coord cords);
-
         private int _offset;
 
-        private readonly CoordConvertorFunction _coordsFromCurrentGrid;
         private readonly IConfigurationManager _configManager;
         private readonly ILogger _logger;
 
@@ -23,14 +20,6 @@ namespace MergerLogic.DataTypes
             this._configManager = configuration;
             this._logger = container.GetRequiredService<ILogger<Gpkg>>();
 
-            if (isOneXOne)
-            {
-                this._coordsFromCurrentGrid = this.OneXOneConvertor.TryFromTwoXOne;
-            }
-            else
-            {
-                this._coordsFromCurrentGrid = cords => cords;
-            }
             if (isBase)
             {
                 if (extent is null)
@@ -64,8 +53,8 @@ namespace MergerLogic.DataTypes
             List<Tile> tiles = this.Utils.GetBatch(this.BatchSize, this._offset)
                 .Select(t =>
                 {
-                    Tile tile = this._convertOriginTile(t);
-                    tile = this._toCurrentGrid(tile);
+                    Tile tile = this.ConvertOriginTile(t);
+                    tile = this.ToCurrentGrid(tile);
                     counter++;
                     return tile;
                 }).Where(t => t != null).ToList();
@@ -78,14 +67,14 @@ namespace MergerLogic.DataTypes
             this._offset = int.Parse(batchIdentifier);
         }
 
-        protected override Tile GetLastExistingTile(Coord baseCoords)
+        protected override Tile InternalGetLastExistingTile(Coord baseCoords)
         {
-            int cordsLength = baseCoords.z << 1;
+            int cordsLength = baseCoords.Z << 1;
             int[] coords = new int[cordsLength];
 
-            int z = baseCoords.z;
-            int baseTileX = baseCoords.x;
-            int baseTileY = baseCoords.y;
+            int z = baseCoords.Z;
+            int baseTileX = baseCoords.X;
+            int baseTileY = baseCoords.Y;
             int arrayIterator = 0;
             for (int i = z - 1; i >= 0; i--)
             {

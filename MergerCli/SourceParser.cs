@@ -144,10 +144,10 @@ namespace MergerCli
             string[] bboxParts = extentString.Split(',');
             Extent extent = new Extent
             {
-                minX = double.Parse(bboxParts[0]),
-                minY = double.Parse(bboxParts[1]),
-                maxX = double.Parse(bboxParts[2]),
-                maxY = double.Parse(bboxParts[3])
+                MinX = double.Parse(bboxParts[0]),
+                MinY = double.Parse(bboxParts[1]),
+                MaxX = double.Parse(bboxParts[2]),
+                MaxY = double.Parse(bboxParts[3])
             };
             return extent;
         }

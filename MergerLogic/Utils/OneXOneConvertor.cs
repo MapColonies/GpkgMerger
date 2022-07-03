@@ -26,7 +26,7 @@ namespace MergerLogic.Utils
 
         public Coord? TryFromTwoXOne(Coord cords)
         {
-            return this.TryFromTwoXOne(cords.z, cords.x, cords.y);
+            return this.TryFromTwoXOne(cords.Z, cords.X, cords.Y);
         }
 
         public Tile? TryFromTwoXOne(Tile tile)
@@ -46,7 +46,7 @@ namespace MergerLogic.Utils
         /// <returns></returns>
         public Coord FromTwoXOne(Coord twoXOneCoords)
         {
-            return this.FromTwoXOne(twoXOneCoords.z, twoXOneCoords.x, twoXOneCoords.y);
+            return this.FromTwoXOne(twoXOneCoords.Z, twoXOneCoords.X, twoXOneCoords.Y);
         }
 
         /// <summary>
@@ -105,9 +105,9 @@ namespace MergerLogic.Utils
         /// <returns></returns>
         public Coord ToTwoXOne(Coord oneXOneCoords)
         {
-            int z = oneXOneCoords.z - 1;
-            int y = oneXOneCoords.y - (1 << (z - 1));
-            return new Coord(z, oneXOneCoords.x, y);
+            int z = oneXOneCoords.Z - 1;
+            int y = oneXOneCoords.Y - (1 << (z - 1));
+            return new Coord(z, oneXOneCoords.X, y);
         }
 
         /// <summary>
