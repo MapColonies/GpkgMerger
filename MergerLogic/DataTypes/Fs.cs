@@ -2,6 +2,7 @@ using MergerLogic.Batching;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.IO.Abstractions;
 
 namespace MergerLogic.DataTypes
 {
@@ -15,6 +16,7 @@ namespace MergerLogic.DataTypes
 
         private readonly IPathUtils _pathUtils;
         private readonly ILogger<FS> _logger;
+        private readonly IFileSystem _fileSystem;
 
         public FS(IPathUtils pathUtils, IServiceProvider container,
             string path, int batchSize, bool isOneXOne = false, bool isBase = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
@@ -22,9 +24,10 @@ namespace MergerLogic.DataTypes
         {
             this._pathUtils = pathUtils;
             this._logger = container.GetRequiredService<ILogger<FS>>();
+            this._fileSystem = container.GetRequiredService<IFileSystem>();
             if (isBase)
             {
-                Directory.CreateDirectory(path);
+                this._fileSystem.Directory.CreateDirectory(path);
             }
             this.Reset();
         }
@@ -55,7 +58,7 @@ namespace MergerLogic.DataTypes
             // From: https://stackoverflow.com/a/7430971/11915280 and https://stackoverflow.com/a/19961761/11915280
             string[] ext = { ".png", ".jpg" };
             // Go over directory and count png and jpg files
-            foreach (string filePath in Directory.EnumerateFiles(this.Path, "*.*", SearchOption.AllDirectories)
+            foreach (string filePath in this._fileSystem.Directory.EnumerateFiles(this.Path, "*.*", SearchOption.AllDirectories)
                                                     .Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
             {
                 Coord coord = this._pathUtils.FromPath(filePath);
@@ -111,7 +114,7 @@ namespace MergerLogic.DataTypes
             // From: https://stackoverflow.com/a/7430971/11915280 and https://stackoverflow.com/a/19961761/11915280
             string[] ext = { ".png", ".jpg" };
             // Go over directory and count png and jpg files
-            return Directory.EnumerateFiles(this.Path, "*.*", SearchOption.AllDirectories).Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))).Count();
+            return this._fileSystem.Directory.EnumerateFiles(this.Path, "*.*", SearchOption.AllDirectories).Count(file => ext.Any(x => file.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
         }
 
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
@@ -122,10 +125,10 @@ namespace MergerLogic.DataTypes
                 byte[] buffer = tile.GetImageBytes();
                 using (var ms = new MemoryStream(buffer))
                 {
-                    var file = new System.IO.FileInfo(tilePath);
+                    var file = this._fileSystem.FileInfo.FromFileName(tilePath);
                     if (file.Directory != null)
                         file.Directory.Create();
-                    using (FileStream fs = file.OpenWrite())
+                    using (Stream fs = file.OpenWrite())
                     {
                         ms.WriteTo(fs);
                     }

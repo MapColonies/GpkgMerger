@@ -11,6 +11,7 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using System.Diagnostics;
+using System.IO.Abstractions;
 using System.Reflection;
 
 namespace MergerLogic.Extensions
@@ -27,7 +28,8 @@ namespace MergerLogic.Extensions
                 .RegisterImageProcessors()
                 .RegisterMergerUtils()
                 .RegisterS3()
-                .RegisterOpenTelemetry();
+                .RegisterOpenTelemetry()
+                .RegisterFileSystem();
         }
 
         public static IServiceCollection RegisterImageProcessors(this IServiceCollection collection)
@@ -53,6 +55,12 @@ namespace MergerLogic.Extensions
         public static IServiceCollection RegisterServiceProvider(this IServiceCollection collection)
         {
             return collection.AddSingleton<IServiceProvider>(sp => sp); ;
+        }
+
+        public static IServiceCollection RegisterFileSystem(this IServiceCollection collection)
+
+        {
+            return collection.AddSingleton<IFileSystem, FileSystem>();
         }
 
         public static IServiceCollection RegisterS3(this IServiceCollection collection)

@@ -1,15 +1,18 @@
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using System.IO.Abstractions;
 
 namespace MergerLogic.Utils
 {
     public class PathUtils : IPathUtils
     {
         private readonly IGeoUtils _geoUtils;
+        private readonly IFileSystem _fileSystem;
 
-        public PathUtils(IGeoUtils geoUtils)
+        public PathUtils(IGeoUtils geoUtils, IFileSystem fileSystem)
         {
             this._geoUtils = geoUtils;
+            this._fileSystem = fileSystem;
         }
 
         public string RemoveTrailingSlash(string path, bool isS3 = false)
@@ -50,7 +53,7 @@ namespace MergerLogic.Utils
 
         private char GetSeperator(bool isS3)
         {
-            return isS3 ? '/' : Path.DirectorySeparatorChar;
+            return isS3 ? '/' : this._fileSystem.Path.DirectorySeparatorChar;
         }
     }
 }

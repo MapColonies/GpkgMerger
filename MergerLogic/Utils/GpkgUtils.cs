@@ -3,6 +3,7 @@ using MergerLogic.DataTypes;
 using Microsoft.Extensions.Logging;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.IO.Abstractions;
 using System.Text;
 
 namespace MergerLogic.Utils
@@ -13,12 +14,14 @@ namespace MergerLogic.Utils
 
         private readonly ITimeUtils _timeUtils;
         private readonly ILogger _logger;
+        private readonly IFileSystem _fileSystem;
 
-        public GpkgUtils(string path, ITimeUtils timeUtils, ILogger<GpkgUtils> logger, IGeoUtils geoUtils) : base(path, geoUtils)
+        public GpkgUtils(string path, ITimeUtils timeUtils, ILogger<GpkgUtils> logger,IFileSystem fileSystem, IGeoUtils geoUtils) : base(path, geoUtils)
         {
             this._tileCache = this.InternalGetTileCache();
             this._timeUtils = timeUtils;
             this._logger = logger;
+            this._fileSystem = fileSystem;
         }
 
         public string GetTileCache()
@@ -30,7 +33,7 @@ namespace MergerLogic.Utils
         {
             if (!this.Exist())
             {
-                return Path.GetFileNameWithoutExtension(this.path);
+                return this._fileSystem.Path.GetFileNameWithoutExtension(this.path);
             }
 
             string tileCache = "";
@@ -331,7 +334,7 @@ namespace MergerLogic.Utils
 
         public void Create(Extent extent, bool isOneXOne = false)
         {
-            Console.WriteLine($"creating new gpkg: {this.path}");
+            this._logger.LogInformation($"creating new gpkg: {this.path}");
             SQLiteConnection.CreateFile(this.path);
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
@@ -666,8 +669,8 @@ namespace MergerLogic.Utils
         public bool Exist()
         {
             // Get full path to gpkg file
-            string fullPath = Path.GetFullPath(this.path);
-            return File.Exists(fullPath);
+            string fullPath = this._fileSystem.Path.GetFullPath(this.path);
+            return this._fileSystem.File.Exists(fullPath);
         }
 
         public void UpdateTileMatrixTable(bool isOneXOne = false)
