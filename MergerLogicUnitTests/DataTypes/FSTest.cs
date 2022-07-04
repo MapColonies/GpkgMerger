@@ -22,13 +22,12 @@ namespace MergerLogicUnitTests.DataTypes
         #region mocks
 
         private MockRepository _repository;
-        private Mock<IConfigurationManager> _configurationManagerMock;
         private Mock<IServiceProvider> _serviceProviderMock;
         private Mock<IOneXOneConvertor> _oneXOneConvertorMock;
         private Mock<IUtilsFactory> _utilsFactoryMock;
         private Mock<IFileUtils> _fsUtilsMock;
         private Mock<IGeoUtils> _geoUtilsMock;
-        private Mock<IPathUtils> _pathUtilsMock;//TODO: remove
+        private Mock<IPathUtils> _pathUtilsMock;
         private Mock<ILogger<FS>> _loggerMock;
         private Mock<IFileSystem> _fileSystemMock;
         private Mock<IDirectory> _directoryMock;
@@ -41,7 +40,6 @@ namespace MergerLogicUnitTests.DataTypes
         public void BeforeEach()
         {
             this._repository = new MockRepository(MockBehavior.Strict);
-            this._configurationManagerMock = this._repository.Create<IConfigurationManager>(); //TODO: remove
             this._oneXOneConvertorMock = this._repository.Create<IOneXOneConvertor>();
             this._fsUtilsMock = this._repository.Create<IFileUtils>();
             this._geoUtilsMock = this._repository.Create<IGeoUtils>();
@@ -874,7 +872,6 @@ namespace MergerLogicUnitTests.DataTypes
             this._fileInfoFactoryMock.VerifyAll();
             this._pathUtilsMock.VerifyAll();
             this._oneXOneConvertorMock.VerifyAll();
-            this._configurationManagerMock.VerifyAll();
         }
 
         #endregion
