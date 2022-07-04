@@ -16,7 +16,7 @@ namespace MergerLogic.Utils
         private readonly ILogger _logger;
         private readonly IFileSystem _fileSystem;
 
-        public GpkgUtils(string path, ITimeUtils timeUtils, ILogger<GpkgUtils> logger,IFileSystem fileSystem, IGeoUtils geoUtils) : base(path, geoUtils)
+        public GpkgUtils(string path, ITimeUtils timeUtils, ILogger<GpkgUtils> logger, IFileSystem fileSystem, IGeoUtils geoUtils) : base(path, geoUtils)
         {
             this._tileCache = this.InternalGetTileCache();
             this._timeUtils = timeUtils;

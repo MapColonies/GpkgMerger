@@ -8,7 +8,7 @@ namespace MergerLogic.Utils
         private readonly IPathUtils _pathUtils;
         private readonly IFileSystem _fileSystem;
 
-        public FileUtils(string path, IPathUtils pathUtils, IGeoUtils geoUtils,IFileSystem fileSystem) : base(path, geoUtils)
+        public FileUtils(string path, IPathUtils pathUtils, IGeoUtils geoUtils, IFileSystem fileSystem) : base(path, geoUtils)
         {
             this._pathUtils = pathUtils;
             this._fileSystem = fileSystem;
