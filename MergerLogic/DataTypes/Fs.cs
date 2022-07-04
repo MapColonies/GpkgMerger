@@ -49,8 +49,8 @@ namespace MergerLogic.DataTypes
         public override bool Exists()
         {
             this._logger.LogInformation($"Checking if exists, folder: {this.Path}");
-            string fullPath = System.IO.Path.GetFullPath(this.Path);
-            return Directory.Exists(fullPath);
+            string fullPath = this._fileSystem.Path.GetFullPath(this.Path);
+            return this._fileSystem.Directory.Exists(fullPath);
         }
 
         private IEnumerator<Tile> GetTiles()
@@ -126,8 +126,7 @@ namespace MergerLogic.DataTypes
                 using (var ms = new MemoryStream(buffer))
                 {
                     var file = this._fileSystem.FileInfo.FromFileName(tilePath);
-                    if (file.Directory != null)
-                        file.Directory.Create();
+                    file.Directory.Create();
                     using (Stream fs = file.OpenWrite())
                     {
                         ms.WriteTo(fs);
