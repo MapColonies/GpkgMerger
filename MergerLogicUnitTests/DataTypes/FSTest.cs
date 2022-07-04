@@ -163,7 +163,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._fsUtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
                 .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
 
-            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, false, isBase, GridOrigin.LOWER_LEFT);
+            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", batchSize, false, isBase, GridOrigin.UPPER_LEFT);
 
             var cords = new Coord(z, x, y);
             Assert.AreEqual(expectedNull ? null : existingTile, fsSource.GetCorrespondingTile(cords, false));
