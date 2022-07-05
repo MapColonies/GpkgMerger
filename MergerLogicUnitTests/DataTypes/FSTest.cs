@@ -872,6 +872,8 @@ namespace MergerLogicUnitTests.DataTypes
             this._fileInfoFactoryMock.VerifyAll();
             this._pathUtilsMock.VerifyAll();
             this._oneXOneConvertorMock.VerifyAll();
+            this._geoUtilsMock.VerifyAll();
+            this._pathMock.VerifyAll();
         }
 
         #endregion
