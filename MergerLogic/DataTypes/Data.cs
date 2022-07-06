@@ -62,8 +62,8 @@ namespace MergerLogic.DataTypes
             this.GeoUtils = container.GetRequiredService<IGeoUtils>();
             this.IsOneXOne = isOneXOne;
             this.Origin = origin;
-            var loggerFactory = container.GetRequiredService(ILoggerFactory)
-            this._logger = container.GetRequiredService(ILogger<this.GetType()>)
+            var loggerFactory = container.GetRequiredService<ILoggerFactory>();
+            this._logger = loggerFactory.CreateLogger(this.GetType());
 
             // The following delegates are for code performance and to reduce branching while handling tiles
             if (isOneXOne)
@@ -219,7 +219,7 @@ namespace MergerLogic.DataTypes
 
         public virtual void Wrapup()
         {
-            Console.WriteLine($"{this.Type} source, skipping wrapup phase");
+            this._logger.LogInformation($"{this.Type} source, skipping wrapup phase");
         }
 
         public abstract bool Exists();

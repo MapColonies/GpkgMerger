@@ -10,7 +10,6 @@ namespace MergerLogic.DataTypes
         private int _offset;
 
         private readonly IConfigurationManager _configManager;
-        private readonly ILogger _logger;
 
         public Gpkg(IConfigurationManager configuration, IServiceProvider container,
             string path, int batchSize, bool isBase = false, bool isOneXOne = false, Extent? extent = null, GridOrigin origin = GridOrigin.UPPER_LEFT)
@@ -18,7 +17,6 @@ namespace MergerLogic.DataTypes
         {
             this._offset = 0;
             this._configManager = configuration;
-            this._logger = container.GetRequiredService<ILogger<Gpkg>>();
 
             if (isBase)
             {

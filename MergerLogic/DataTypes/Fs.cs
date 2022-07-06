@@ -15,7 +15,6 @@ namespace MergerLogic.DataTypes
         private int _completedTiles;
 
         private readonly IPathUtils _pathUtils;
-        private readonly ILogger<FS> _logger;
         private readonly IFileSystem _fileSystem;
 
         public FS(IPathUtils pathUtils, IServiceProvider container,
@@ -23,7 +22,6 @@ namespace MergerLogic.DataTypes
             : base(container, DataType.FOLDER, path, batchSize, isOneXOne, origin)
         {
             this._pathUtils = pathUtils;
-            this._logger = container.GetRequiredService<ILogger<FS>>();
             this._fileSystem = container.GetRequiredService<IFileSystem>();
             if (isBase)
             {

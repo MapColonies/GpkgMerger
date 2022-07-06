@@ -28,6 +28,7 @@ namespace MergerLogicUnitTests.DataTypes
         private Mock<IFileUtils> _fsUtilsMock;
         private Mock<IGeoUtils> _geoUtilsMock;
         private Mock<IPathUtils> _pathUtilsMock;
+        private Mock<ILoggerFactory> _loggerFactoryMock;
         private Mock<ILogger<FS>> _loggerMock;
         private Mock<IFileSystem> _fileSystemMock;
         private Mock<IDirectory> _directoryMock;
@@ -55,17 +56,19 @@ namespace MergerLogicUnitTests.DataTypes
             this._utilsFactoryMock.Setup(factory => factory.GetDataUtils<IFileUtils>(It.IsAny<string>()))
                 .Returns(this._fsUtilsMock.Object);
             this._loggerMock = this._repository.Create<ILogger<FS>>(MockBehavior.Loose);
+            this._loggerFactoryMock = this._repository.Create<ILoggerFactory>();
+            this._loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(this._loggerMock.Object);
             this._serviceProviderMock = this._repository.Create<IServiceProvider>();
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IOneXOneConvertor)))
                 .Returns(this._oneXOneConvertorMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IUtilsFactory)))
                 .Returns(this._utilsFactoryMock.Object);
-            this._serviceProviderMock.Setup(container => container.GetService(typeof(ILogger<FS>)))
-                .Returns(this._loggerMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IGeoUtils)))
                 .Returns(this._geoUtilsMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IFileSystem)))
                 .Returns(this._fileSystemMock.Object);
+            this._serviceProviderMock.Setup(container => container.GetService(typeof(ILoggerFactory)))
+                .Returns(this._loggerFactoryMock.Object);
         }
 
         #region TileExists

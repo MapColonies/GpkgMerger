@@ -9,7 +9,6 @@ namespace MergerLogic.DataTypes
 {
     public class S3 : Data<IS3Utils>
     {
-        private readonly ILogger _logger;
         private readonly IAmazonS3 _client;
         private readonly string _bucket;
         private string? _continuationToken;
@@ -26,7 +25,6 @@ namespace MergerLogic.DataTypes
             this._endOfRead = false;
             this._client = client;
             this._pathUtils = pathUtils;
-            this._logger = container.GetService<ILogger<S3>>();
         }
 
         public override void Reset()

@@ -26,6 +26,7 @@ namespace MergerLogicUnitTests.DataTypes
         private Mock<IUtilsFactory> _utilsFactoryMock;
         private Mock<IGpkgUtils> _gpkgUtilsMock;
         private Mock<IGeoUtils> _geoUtilsMock;
+        private Mock<ILoggerFactory> _loggerFactoryMock;
         private Mock<ILogger<Gpkg>> _loggerMock;
 
         #endregion
@@ -42,13 +43,15 @@ namespace MergerLogicUnitTests.DataTypes
             this._utilsFactoryMock.Setup(factory => factory.GetDataUtils<IGpkgUtils>(It.IsAny<string>()))
                 .Returns(this._gpkgUtilsMock.Object);
             this._loggerMock = this._repository.Create<ILogger<Gpkg>>(MockBehavior.Loose);
+            this._loggerFactoryMock = this._repository.Create<ILoggerFactory>();
+            this._loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(this._loggerMock.Object);
             this._serviceProviderMock = this._repository.Create<IServiceProvider>();
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IOneXOneConvertor)))
                 .Returns(this._oneXOneConvertorMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IUtilsFactory)))
                 .Returns(this._utilsFactoryMock.Object);
-            this._serviceProviderMock.Setup(container => container.GetService(typeof(ILogger<Gpkg>)))
-                .Returns(this._loggerMock.Object);
+            this._serviceProviderMock.Setup(container => container.GetService(typeof(ILoggerFactory)))
+                .Returns(this._loggerFactoryMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IGeoUtils)))
                 .Returns(this._geoUtilsMock.Object);
         }
