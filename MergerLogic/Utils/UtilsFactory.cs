@@ -1,6 +1,7 @@
 ﻿using Amazon.S3;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.IO.Abstractions;
 
 namespace MergerLogic.Utils
 {
@@ -9,13 +10,15 @@ namespace MergerLogic.Utils
         private readonly IPathUtils _pathUtils;
         private readonly ITimeUtils _timeUtils;
         private readonly IGeoUtils _geoUtils;
+        private readonly IFileSystem _fileSystem;
         private readonly IServiceProvider _container;
 
-        public UtilsFactory(IPathUtils pathUtils, ITimeUtils timeUtils, IGeoUtils geoUtils, IServiceProvider container)
+        public UtilsFactory(IPathUtils pathUtils, ITimeUtils timeUtils, IGeoUtils geoUtils, IFileSystem fileSystem, IServiceProvider container)
         {
             this._pathUtils = pathUtils;
             this._timeUtils = timeUtils;
             this._geoUtils = geoUtils;
+            this._fileSystem = fileSystem;
             this._container = container;
         }
 
@@ -23,13 +26,13 @@ namespace MergerLogic.Utils
 
         public IFileUtils GetFileUtils(string path)
         {
-            return new FileUtils(path, this._pathUtils, this._geoUtils);
+            return new FileUtils(path, this._pathUtils, this._geoUtils, this._fileSystem);
         }
 
         public IGpkgUtils GetGpkgUtils(string path)
         {
             var logger = this._container.GetRequiredService<ILogger<GpkgUtils>>();
-            return new GpkgUtils(path, this._timeUtils, logger, this._geoUtils);
+            return new GpkgUtils(path, this._timeUtils, logger, this._fileSystem, this._geoUtils);
         }
 
         public IHttpUtils GetHttpUtils(string path)
