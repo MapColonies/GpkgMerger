@@ -826,6 +826,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._gpkgUtilsMock.VerifyAll();
             this._oneXOneConvertorMock.VerifyAll();
             this._configurationManagerMock.VerifyAll();
+            this._geoUtilsMock.VerifyAll();
         }
 
         #endregion

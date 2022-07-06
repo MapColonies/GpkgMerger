@@ -29,11 +29,6 @@ namespace MergerLogic.DataTypes
             this._logger = container.GetService<ILogger<S3>>();
         }
 
-        ~S3()
-        {
-            this._client.Dispose();
-        }
-
         public override void Reset()
         {
             this._continuationToken = null;
@@ -50,26 +45,24 @@ namespace MergerLogic.DataTypes
         {
             batchIdentifier = this._continuationToken;
             List<Tile> tiles = new List<Tile>();
-
-            var listRequests = new ListObjectsV2Request
+            int missingTiles = this.BatchSize;
+            while (missingTiles > 0 && !this._endOfRead)
             {
-                BucketName = this._bucket,
-                Prefix = this.Path,
-                StartAfter = this.Path,
-                MaxKeys = this.BatchSize,
-                ContinuationToken = this._continuationToken
-            };
+                var listRequests = new ListObjectsV2Request
+                {
+                    BucketName = this._bucket,
+                    Prefix = this.Path,
+                    StartAfter = this.Path,
+                    MaxKeys = missingTiles,
+                    ContinuationToken = this._continuationToken
+                };
 
-            var listObjectsTask = this._client.ListObjectsV2Async(listRequests);
-            var response = listObjectsTask.Result;
+                var listObjectsTask = this._client.ListObjectsV2Async(listRequests);
+                var response = listObjectsTask.Result;
 
-            if (!this._endOfRead)
-            {
-                response.ContinuationToken = this._continuationToken;
                 foreach (S3Object item in response.S3Objects)
                 {
-                    Coord coords = this._pathUtils.FromPath(item.Key, true);
-                    Tile tile = this.Utils.GetTile(coords);
+                    Tile tile = this.Utils.GetTile(item.Key);
                     if (tile != null)
                     {
                         tile = this.ToCurrentGrid(tile);
@@ -80,10 +73,11 @@ namespace MergerLogic.DataTypes
                         }
                     }
                 }
-                this._continuationToken = response.NextContinuationToken;
-            }
 
-            this._endOfRead = !response.IsTruncated;
+                missingTiles -= response.KeyCount;
+                this._continuationToken = response.NextContinuationToken;
+                this._endOfRead = !response.IsTruncated;
+            }
 
             return tiles;
         }
