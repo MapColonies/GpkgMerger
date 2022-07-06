@@ -7,6 +7,6 @@ namespace MergerLogic.ImageProcessing
     {
         Tile ToPng(Tile tile);
         byte[] ToPng(byte[] imageData);
-        void ToPng(MagickImage image);
+        void ToPng(IMagickImage image);
     }
 }

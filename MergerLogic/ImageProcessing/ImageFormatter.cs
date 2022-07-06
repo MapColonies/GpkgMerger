@@ -19,7 +19,7 @@ namespace MergerLogic.ImageProcessing
             }
         }
 
-        public void ToPng(MagickImage image)
+        public void ToPng(IMagickImage image)
         {
             image.Format = MagickFormat.Png;
         }

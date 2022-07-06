@@ -34,6 +34,7 @@ namespace MergerLogic.ImageProcessing
                         }
                         using (var mergedImage = imageCollection.Flatten())
                         {
+                            this._imageFormatter.ToPng(mergedImage);
                             var mergedImageBytes = mergedImage.ToByteArray();
                             return mergedImageBytes;
                         }
