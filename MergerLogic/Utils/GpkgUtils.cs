@@ -18,10 +18,10 @@ namespace MergerLogic.Utils
 
         public GpkgUtils(string path, ITimeUtils timeUtils, ILogger<GpkgUtils> logger, IFileSystem fileSystem, IGeoUtils geoUtils) : base(path, geoUtils)
         {
-            this._tileCache = this.InternalGetTileCache();
             this._timeUtils = timeUtils;
             this._logger = logger;
             this._fileSystem = fileSystem;
+            this._tileCache = this.InternalGetTileCache();
         }
 
         public string GetTileCache()

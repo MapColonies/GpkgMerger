@@ -30,6 +30,7 @@ namespace MergerLogicUnitTests.DataTypes
         private Mock<IS3Utils> _s3UtilsMock;
         private Mock<IGeoUtils> _geoUtilsMock;
         private Mock<IPathUtils> _pathUtilsMock;
+        private Mock<ILoggerFactory> _loggerFactoryMock;
         private Mock<ILogger<S3>> _loggerMock;
         private Mock<IAmazonS3> _s3ClientMock;
 
@@ -47,13 +48,15 @@ namespace MergerLogicUnitTests.DataTypes
             this._utilsFactoryMock.Setup(factory => factory.GetDataUtils<IS3Utils>(It.IsAny<string>()))
                 .Returns(this._s3UtilsMock.Object);
             this._loggerMock = this._repository.Create<ILogger<S3>>(MockBehavior.Loose);
+            this._loggerFactoryMock = this._repository.Create<ILoggerFactory>();
+            this._loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(this._loggerMock.Object);
             this._serviceProviderMock = this._repository.Create<IServiceProvider>();
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IOneXOneConvertor)))
                 .Returns(this._oneXOneConvertorMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IUtilsFactory)))
                 .Returns(this._utilsFactoryMock.Object);
-            this._serviceProviderMock.Setup(container => container.GetService(typeof(ILogger<S3>)))
-                .Returns(this._loggerMock.Object);
+            this._serviceProviderMock.Setup(container => container.GetService(typeof(ILoggerFactory)))
+                .Returns(this._loggerFactoryMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IGeoUtils)))
                 .Returns(this._geoUtilsMock.Object);
             this._s3ClientMock = this._repository.Create<IAmazonS3>();

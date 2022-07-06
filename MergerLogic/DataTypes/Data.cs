@@ -1,6 +1,7 @@
 using MergerLogic.Batching;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace MergerLogic.DataTypes
 {
@@ -38,6 +39,7 @@ namespace MergerLogic.DataTypes
         protected GetTileFromXyzFunction GetTile;
         protected readonly GetTileFromCoordFunction GetLastExistingTile;
         protected readonly IGeoUtils GeoUtils;
+        protected readonly ILogger _logger;
 
         #region tile grid converters
         protected IOneXOneConvertor OneXOneConvertor = null;
@@ -60,6 +62,8 @@ namespace MergerLogic.DataTypes
             this.GeoUtils = container.GetRequiredService<IGeoUtils>();
             this.IsOneXOne = isOneXOne;
             this.Origin = origin;
+            var loggerFactory = container.GetRequiredService<ILoggerFactory>();
+            this._logger = loggerFactory.CreateLogger(this.GetType());
 
             // The following delegates are for code performance and to reduce branching while handling tiles
             if (isOneXOne)
@@ -215,7 +219,7 @@ namespace MergerLogic.DataTypes
 
         public virtual void Wrapup()
         {
-            Console.WriteLine($"{this.Type} source, skipping wrapup phase");
+            this._logger.LogInformation($"{this.Type} source, skipping wrapup phase");
         }
 
         public abstract bool Exists();
