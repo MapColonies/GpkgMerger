@@ -33,7 +33,6 @@ namespace MergerLogicUnitTests.DataTypes
         private Mock<ILogger<S3>> _loggerMock;
         private Mock<IAmazonS3> _s3ClientMock;
 
-
         #endregion
 
         [TestInitialize]
@@ -373,7 +372,6 @@ namespace MergerLogicUnitTests.DataTypes
                 this._oneXOneConvertorMock.Verify(converter => converter.ToTwoXOne(tile), expectedCallsAfterConversion);
             }
 
-
             this._s3UtilsMock.Verify(utils => utils.GetTile(4, 1, 1), expectedCallsAfterConversion);
             this._s3UtilsMock.Verify(utils => utils.GetTile(3, 0, 0), expectedCallsAfterConversion);
             this._s3UtilsMock.Verify(utils => utils.GetTile(2, 0, 0), expectedCallsAfterConversion);
@@ -386,6 +384,7 @@ namespace MergerLogicUnitTests.DataTypes
         #endregion
 
         #region UpdateTiles
+
         public static IEnumerable<object[]> GenUpdateTilesParams()
         {
             return DynamicDataGenerator.GeneratePrams(
