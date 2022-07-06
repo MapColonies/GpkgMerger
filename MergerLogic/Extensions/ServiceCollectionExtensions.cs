@@ -36,7 +36,8 @@ namespace MergerLogic.Extensions
         {
             return collection
                 .AddSingleton<ITileMerger, TileMerger>()
-                .AddSingleton<ITileScaler, TileScaler>();
+                .AddSingleton<ITileScaler, TileScaler>()
+                .AddSingleton<IImageFormatter, ImageFormatter>();
         }
 
         public static IServiceCollection RegisterMergerUtils(this IServiceCollection collection)
