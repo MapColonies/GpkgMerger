@@ -7,10 +7,12 @@ namespace MergerLogic.ImageProcessing
     public class TileMerger : ITileMerger
     {
         private readonly ITileScaler _tileScaler;
+        private readonly IImageFormatter _imageFormatter;
 
-        public TileMerger(ITileScaler tileScaler)
+        public TileMerger(ITileScaler tileScaler, IImageFormatter imageFormatter)
         {
             this._tileScaler = tileScaler;
+            this._imageFormatter = imageFormatter;
         }
 
         public byte[]? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords)
@@ -22,7 +24,7 @@ namespace MergerLogic.ImageProcessing
                     return null;
                 case 1:
                     images[0].Dispose();
-                    return lastProcessedTile?.GetImageBytes();
+                    return lastProcessedTile is not null ? this._imageFormatter.ToPng(lastProcessedTile.GetImageBytes()) : null;
                 default:
                     using (var imageCollection = new MagickImageCollection())
                     {
@@ -32,6 +34,7 @@ namespace MergerLogic.ImageProcessing
                         }
                         using (var mergedImage = imageCollection.Flatten())
                         {
+                            this._imageFormatter.ToPng(mergedImage);
                             var mergedImageBytes = mergedImage.ToByteArray();
                             return mergedImageBytes;
                         }
