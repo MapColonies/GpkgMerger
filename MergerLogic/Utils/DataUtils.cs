@@ -12,9 +12,9 @@ namespace MergerLogic.Utils
             this.path = path;
         }
 
-        public abstract Tile GetTile(int z, int x, int y);
+        public abstract Tile? GetTile(int z, int x, int y);
 
-        public virtual Tile GetTile(Coord coord)
+        public virtual Tile? GetTile(Coord coord)
         {
             return this.GetTile(coord.z, coord.x, coord.y);
         }

@@ -36,7 +36,8 @@ namespace MergerLogic.Extentions
                 .AddSingleton<IPathUtils, PathUtils>()
                 .AddSingleton<IStringUtils, StringUtils>()
                 .AddSingleton<ITimeUtils, TimeUtils>()
-                .AddSingleton<IUtilsFactory, UtilsFactory>();
+                .AddSingleton<IUtilsFactory, UtilsFactory>()
+                .AddSingleton<IHttpRequestUtils, HttpRequestUtils>();
         }
 
         public static IServiceCollection RegisterServiceProvider(this IServiceCollection collection)

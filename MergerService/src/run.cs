@@ -3,6 +3,7 @@ using MergerLogic.DataTypes;
 using MergerLogic.ImageProccessing;
 using MergerLogic.Utils;
 using MergerService.Controllers;
+using MergerService.Utils;
 using System.Diagnostics;
 
 namespace MergerService.Src
@@ -13,13 +14,17 @@ namespace MergerService.Src
         private ITileMerger _tileMerger;
         private ITimeUtils _timeUtils;
         private IConfigurationManager _configurationManager;
+        private ITaskUtils _taskUtils;
+        private IHttpRequestUtils _requestUtils;
 
-        public Run(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, IConfigurationManager configurationManager)
+        public Run(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, IConfigurationManager configurationManager, ITaskUtils taskUtils, IHttpRequestUtils requestUtils)
         {
             this._dataFactory = dataFactory;
             this._tileMerger = tileMerger;
             this._timeUtils = timeUtils;
             this._configurationManager = configurationManager;
+            this._taskUtils = taskUtils;
+            this._requestUtils = requestUtils;
         }
 
         private List<IData> BuildDataList(Source[] paths, int batchSize)
@@ -44,13 +49,15 @@ namespace MergerService.Src
             Stopwatch stopWatch = new Stopwatch();
             TimeSpan ts;
 
+            ITaskUtils taskUtils = new TaskUtils(this._configurationManager, this._requestUtils);
+
             while (true)
             {
                 MergeTask? task = null;
 
                 try
                 {
-                    task = MergeTask.GetTask();
+                    task = taskUtils.GetTask();
                 }
                 catch (Exception e)
                 {
@@ -68,7 +75,10 @@ namespace MergerService.Src
                 }
 
                 // Log the task
-                task.Print();
+                // task.Print();
+                // Thread.Sleep(1000);
+                // continue;
+                Console.WriteLine("Loop");
 
                 try
                 {

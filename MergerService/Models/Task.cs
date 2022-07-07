@@ -1,6 +1,4 @@
 using MergerLogic.Batching;
-using MergerService.Utils;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace MergerService.Controllers
@@ -41,20 +39,6 @@ namespace MergerService.Controllers
             foreach (TileBounds bounds in this.Batches)
             {
                 bounds.Print();
-            }
-        }
-
-        public static MergeTask? GetTask()
-        {
-            string taskJson = TaskUtils.GetTask();
-
-            try
-            {
-                return JsonSerializer.Deserialize<MergeTask>(taskJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
-            }
-            catch (Exception e)
-            {
-                return null;
             }
         }
     }

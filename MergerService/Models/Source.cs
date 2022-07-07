@@ -1,4 +1,6 @@
 using MergerLogic.DataTypes;
+using Newtonsoft.Json;
+using System.ComponentModel;
 
 namespace MergerService.Controllers
 {
@@ -8,16 +10,20 @@ namespace MergerService.Controllers
 
         public string Type { get; }
 
+        [DefaultValue(GridOrigin.UPPER_LEFT)]
+        [JsonProperty(Required = Required.Default, DefaultValueHandling = DefaultValueHandling.Populate, NullValueHandling = NullValueHandling.Ignore)]
         public GridOrigin Origin { get; }
 
+        [DefaultValue("2X1")]
+        [JsonProperty(Required = Required.Default, DefaultValueHandling = DefaultValueHandling.Populate, NullValueHandling = NullValueHandling.Ignore)]
         public string Grid { get; }
 
-        public Source(string path, string type, string origin = "UL", string grid = "2x1")
+        public Source(string path, string type, GridOrigin origin = GridOrigin.UPPER_LEFT, string grid = "2X1")
         {
             this.Path = path;
             this.Type = type;
-            this.Origin = origin.ToLower() == "ul" ? GridOrigin.UPPER_LEFT : GridOrigin.LOWER_LEFT;
-            this.Grid = grid;
+            this.Origin = origin; //origin.ToLower() == "ul" ? GridOrigin.UPPER_LEFT : GridOrigin.LOWER_LEFT;
+            this.Grid = grid.ToLower();
         }
 
         public bool IsOneXOne()

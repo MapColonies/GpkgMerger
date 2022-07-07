@@ -1,9 +1,10 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.Utils;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MergerLogic.DataTypes
 {
-    public abstract class HttpDataSource : Data<IHttpUtils>
+    public abstract class HttpDataSource : Data<IHttpSourceUtils>
     {
         protected TileBounds[] tileRanges;
         protected IEnumerator<Tile[]> batches;
@@ -13,7 +14,7 @@ namespace MergerLogic.DataTypes
             : base(container, type, path, batchSize, isOneXOne, origin)
         {
             var patternUtils = new PathPatternUtils(path);
-            this.utils = new HttpUtils(path, patternUtils);
+            this.utils = container.GetService<IHttpSourceUtils>();
             //ignore zoom level that cant be converted without image manipulation
             minZoom = isOneXOne ? Math.Max(minZoom, 2) : minZoom;
             this.GenTileRanges(extent, origin, minZoom, maxZoom);

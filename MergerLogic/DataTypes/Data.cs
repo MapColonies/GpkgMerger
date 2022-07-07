@@ -1,6 +1,7 @@
 using MergerLogic.Batching;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
+using System.Runtime.Serialization;
 
 namespace MergerLogic.DataTypes
 {
@@ -16,7 +17,9 @@ namespace MergerLogic.DataTypes
 
     public enum GridOrigin
     {
+        [EnumMember(Value = "LL")]
         LOWER_LEFT,
+        [EnumMember(Value = "UL")]
         UPPER_LEFT
     }
 
@@ -24,9 +27,9 @@ namespace MergerLogic.DataTypes
     {
         protected delegate int ValFromCoordFunction(Coord coord);
         protected delegate Tile? GetTileFromXYZFunction(int z, int x, int y);
-        protected delegate Coord GetCoordFromCoordFunction(Coord coord);
+        protected delegate Coord? GetCoordFromCoordFunction(Coord coord);
         protected delegate Tile GetTileFromCoordFunction(Coord coord);
-        protected delegate Tile TileConvertorFunction(Tile Tile);
+        protected delegate Tile? TileConvertorFunction(Tile Tile);
 
         public DataType Type { get; }
         public string Path { get; }
@@ -107,13 +110,13 @@ namespace MergerLogic.DataTypes
             Console.WriteLine($"{this.Type} source, skipping metadata update");
         }
 
-        protected virtual Tile GetLastExistingTile(Coord coords)
+        protected virtual Tile? GetLastExistingTile(Coord coords)
         {
             int z = coords.z;
             int baseTileX = coords.x;
             int baseTileY = coords.y;
 
-            Tile lastTile = null;
+            Tile? lastTile = null;
 
             // Go over zoom levels until a tile is found (may not find tile)
             for (int i = z - 1; i >= 0; i--)

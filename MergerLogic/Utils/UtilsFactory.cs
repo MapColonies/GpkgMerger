@@ -8,11 +8,14 @@ namespace MergerLogic.Utils
         private IPathUtils _pathUtils;
         private ITimeUtils _timeUtils;
         private IServiceProvider _container;
+        private IHttpRequestUtils _httpRequestUtils;
 
-        public UtilsFactory(IPathUtils pathUtils, ITimeUtils timeUtils, IServiceProvider container)
+        public UtilsFactory(IPathUtils pathUtils, ITimeUtils timeUtils, IServiceProvider container, IHttpRequestUtils httpRequestUtils)
         {
             this._pathUtils = pathUtils;
+            this._timeUtils = timeUtils;
             this._container = container;
+            this._httpRequestUtils = httpRequestUtils;
         }
 
         #region dataUtils
@@ -27,10 +30,10 @@ namespace MergerLogic.Utils
             return new GpkgUtils(path, this._timeUtils);
         }
 
-        public IHttpUtils GetHttpUtils(string path)
+        public IHttpSourceUtils GetHttpUtils(string path)
         {
             IPathPatternUtils pathPatternUtils = this.GetPathPatternUtils(path);
-            return new HttpUtils(path, pathPatternUtils);
+            return new HttpSourceUtils(this._httpRequestUtils, path, pathPatternUtils);
         }
 
         public IS3Utils GetS3Utils(string path)
@@ -55,7 +58,7 @@ namespace MergerLogic.Utils
             {
                 return (T)(Object)this.GetGpkgUtils(path);
             }
-            if (typeof(IHttpUtils).IsAssignableFrom(typeof(T)))
+            if (typeof(IHttpSourceUtils).IsAssignableFrom(typeof(T)))
             {
                 return (T)(Object)this.GetHttpUtils(path);
             }
