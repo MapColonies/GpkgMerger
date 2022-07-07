@@ -1,16 +1,19 @@
 using MergerCli.Utils;
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
-using MergerLogic.ImageProccessing;
+using MergerLogic.ImageProcessing;
+using Microsoft.Extensions.Logging;
 
 namespace MergerCli
 {
     internal class Process : IProcess
     {
-        private ITileMerger _tileMerger;
-        public Process(ITileMerger tileMerger)
+        private readonly ITileMerger _tileMerger;
+        private readonly ILogger _logger;
+        public Process(ITileMerger tileMerger, ILogger<Process> logger)
         {
             this._tileMerger = tileMerger;
+            this._logger = logger;
         }
 
         public void Start(IData baseData, IData newData, int batchSize, BatchStatusManager batchStatusManager)
@@ -31,10 +34,7 @@ namespace MergerCli
                 }
             }
 
-            Console.WriteLine($"Total amount of tiles to merge: {totalTileCount}");
-
-            // Update base metadata according to new data
-            baseData.UpdateMetadata(newData);
+            this._logger.LogInformation($"Total amount of tiles to merge: {totalTileCount}");
 
             do
             {
@@ -64,7 +64,7 @@ namespace MergerCli
                 baseData.UpdateTiles(tiles);
 
                 tileProgressCount += tiles.Count;
-                Console.WriteLine($"Tile Count: {tileProgressCount} / {totalTileCount}");
+                this._logger.LogInformation($"Tile Count: {tileProgressCount} / {totalTileCount}");
 
             } while (tiles.Count == batchSize);
 
@@ -80,8 +80,7 @@ namespace MergerCli
 
             int totalTileCount = newData.TileCount();
             int tilesChecked = 0;
-
-            Console.WriteLine($"New tile count: {totalTileCount}");
+            this._logger.LogInformation($"Base tile Count: {baseData.TileCount()}, New tile count: {totalTileCount}");
 
             do
             {
@@ -101,21 +100,20 @@ namespace MergerCli
                     }
                     else
                     {
-                        Console.WriteLine("Missing tiles:");
-                        newTile.Print();
+                        this._logger.LogError($"Missing tile: {newTile}");
                     }
                 }
 
                 newTileCount += newTiles.Count;
                 tilesChecked += newTiles.Count;
-                Console.WriteLine($"Total tiles checked: {tilesChecked}/{totalTileCount}");
+                this._logger.LogInformation($"Total tiles checked: {tilesChecked}/{totalTileCount}");
                 hasSameTiles = newTileCount == baseMatchCount;
 
             } while (hasSameTiles && newTiles.Count > 0);
 
             newData.Reset();
 
-            Console.WriteLine($"Target's valid: {hasSameTiles}");
+            this._logger.LogInformation($"Target's valid: {hasSameTiles}");
         }
 
     }

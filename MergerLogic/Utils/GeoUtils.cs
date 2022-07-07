@@ -3,46 +3,45 @@ using MergerLogic.DataTypes;
 
 namespace MergerLogic.Utils
 {
-    //TODO: convert static to DI singleton
-    public static class GeoUtils
+    public class GeoUtils : IGeoUtils
     {
         public const int SRID = 4326;
 
-        public static int FlipY(int z, int y)
+        public int FlipY(int z, int y)
         {
             // Convert to and from TMS
             return (1 << z) - y - 1;
         }
 
-        public static int FlipY(Coord coord)
+        public int FlipY(Coord coord)
         {
-            return FlipY(coord.z, coord.y);
+            return this.FlipY(coord.Z, coord.Y);
         }
 
-        public static int FlipY(Tile tile)
+        public int FlipY(Tile tile)
         {
-            return FlipY(tile.Z, tile.Y);
+            return this.FlipY(tile.Z, tile.Y);
         }
 
-        public static double DegreesPerTile(int zoom)
+        public double DegreesPerTile(int zoom)
         {
             double tilesPerYAxis = 1 << zoom; // 2^ zoom
             double tileSizeDeg = 180 / tilesPerYAxis;
             return tileSizeDeg;
         }
 
-        public static Extent SnapExtentToTileGrid(Extent extent, int zoom)
+        public Extent SnapExtentToTileGrid(Extent extent, int zoom)
         {
-            double tileSize = DegreesPerTile(zoom);
-            double minX = extent.minX - Math.Abs(extent.minX % tileSize);
-            double minY = extent.minY - Math.Abs(extent.minY % tileSize);
-            double maxX = extent.maxX - Math.Abs(extent.maxX % tileSize);
-            double maxY = extent.maxY - Math.Abs(extent.maxY % tileSize);
-            if (maxX != extent.maxX)
+            double tileSize = this.DegreesPerTile(zoom);
+            double minX = extent.MinX - Math.Abs(extent.MinX % tileSize);
+            double minY = extent.MinY - Math.Abs(extent.MinY % tileSize);
+            double maxX = extent.MaxX - Math.Abs(extent.MaxX % tileSize);
+            double maxY = extent.MaxY - Math.Abs(extent.MaxY % tileSize);
+            if (maxX != extent.MaxX)
             {
                 maxX += tileSize;
             }
-            if (maxY != extent.maxY)
+            if (maxY != extent.MaxY)
             {
                 maxY += tileSize;
             }
@@ -51,15 +50,15 @@ namespace MergerLogic.Utils
                 minY = -90;
                 maxY = 90;
             }
-            return new Extent { minX = minX, minY = minY, maxX = maxX, maxY = maxY };
+            return new Extent { MinX = minX, MinY = minY, MaxX = maxX, MaxY = maxY };
         }
 
-        public static TileBounds ExtentToTileRange(Extent extent, int zoom, GridOrigin origin = GridOrigin.UPPER_LEFT)
+        public TileBounds ExtentToTileRange(Extent extent, int zoom, GridOrigin origin = GridOrigin.UPPER_LEFT)
         {
-            extent = SnapExtentToTileGrid(extent, zoom);
-            double tileSize = DegreesPerTile(zoom);
-            double minYDeg = extent.minY;
-            double maxYDeg = extent.maxY;
+            extent = this.SnapExtentToTileGrid(extent, zoom);
+            double tileSize = this.DegreesPerTile(zoom);
+            double minYDeg = extent.MinY;
+            double maxYDeg = extent.MaxY;
 
             if (origin == GridOrigin.UPPER_LEFT)
             {
@@ -67,22 +66,22 @@ namespace MergerLogic.Utils
                 (minYDeg, maxYDeg) = (-maxYDeg, -minYDeg);
             }
 
-            int minX = (int)((extent.minX + 180) / tileSize);
-            int maxX = (int)((extent.maxX + 180) / tileSize);
+            int minX = (int)((extent.MinX + 180) / tileSize);
+            int maxX = (int)((extent.MaxX + 180) / tileSize);
             int minY = (int)((minYDeg + 90) / tileSize);
             int maxY = (int)((maxYDeg + 90) / tileSize);
 
             return new TileBounds(zoom, minX, maxX, minY, maxY);
         }
 
-        public static Extent TileRangeToExtent(TileBounds bounds)
+        public Extent TileRangeToExtent(TileBounds bounds)
         {
-            double tileSizeDeg = DegreesPerTile(bounds.Zoom);
+            double tileSizeDeg = this.DegreesPerTile(bounds.Zoom);
             double minX = (tileSizeDeg * bounds.MinX) - 180;
             double minY = (tileSizeDeg * bounds.MinY) - 90;
             double maxX = (tileSizeDeg * bounds.MaxX) - 180;
             double maxY = (tileSizeDeg * bounds.MaxY) - 90;
-            return new Extent() { minX = minX, minY = minY, maxX = maxX, maxY = maxY };
+            return new Extent() { MinX = minX, MinY = minY, MaxX = maxX, MaxY = maxY };
         }
     }
 }

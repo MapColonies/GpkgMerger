@@ -1,8 +1,9 @@
+using System.Diagnostics;
+
 using MergerLogic.Utils;
 using MergerService.Controllers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-// using Newtonsoft.Json;
 using System.Text.Json;
 
 namespace MergerService.Utils
@@ -12,11 +13,16 @@ namespace MergerService.Utils
     {
         private IHttpRequestUtils _httpClient;
         private IConfigurationManager _configuration;
+        private ILogger _logger;
+        private ActivitySource _activitySource;
 
-        public TaskUtils(IConfigurationManager configuration, IHttpRequestUtils httpClient)
+        public TaskUtils(IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<TaskUtils> logger, ActivitySource activitySource)
         {
             this._httpClient = httpClient;
             this._configuration = configuration;
+            this._logger = logger;
+            this._activitySource = activitySource;
+            //TODO: add tracing
         }
 
         // TODO: add update progress method

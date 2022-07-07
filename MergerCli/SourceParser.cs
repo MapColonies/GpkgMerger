@@ -1,6 +1,7 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 using MergerLogic.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace MergerCli
 {
@@ -8,10 +9,12 @@ namespace MergerCli
     {
         private readonly HashSet<string> sourceTypes = new HashSet<string>(new[] { "fs", "s3", "gpkg", "wmts", "tms", "xyz" });
         private readonly IDataFactory _dataFactory;
+        private readonly ILogger _logger;
 
-        public SourceParser(IDataFactory dataFactory)
+        public SourceParser(IDataFactory dataFactory, ILogger<SourceParser> logger)
         {
             this._dataFactory = dataFactory;
+            this._logger = logger;
         }
 
         public List<IData> ParseSources(string[] args, int batchSize)
@@ -32,7 +35,7 @@ namespace MergerCli
                         {
                             Console.WriteLine(e.Message);
                             string source = isBase ? "base" : "new";
-                            Console.WriteLine($"{source} data does not exist.");
+                            this._logger.LogError($"{source} data does not exist.");
                             Environment.Exit(1);
                         }
                         break;
@@ -45,7 +48,7 @@ namespace MergerCli
                         catch
                         {
                             string source = isBase ? "base" : "new";
-                            Console.WriteLine($"{source} data does not exist.");
+                            this._logger.LogError($"{source} data does not exist.");
                             Environment.Exit(1);
                         }
                         break;
@@ -59,7 +62,7 @@ namespace MergerCli
                         catch
                         {
                             string source = isBase ? "base" : "new";
-                            Console.WriteLine($"{source} data does not exist.");
+                            this._logger.LogError($"{source} data does not exist.");
                             Environment.Exit(1);
                         }
                         break;
@@ -88,7 +91,7 @@ namespace MergerCli
 
             }
             idx += paramCount;
-            return this._dataFactory.CreateDatasource(sourceType, sourcePath, batchSize, isOneXOne, origin, null, isBase);
+            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, isOneXOne, origin, null, isBase);
         }
 
         private IData ParseGpkgSource(string[] args, ref int idx, int batchSize, bool isBase)
@@ -112,7 +115,7 @@ namespace MergerCli
                 }
             }
             idx += paramCount;
-            return this._dataFactory.CreateDatasource(sourceType, sourcePath, batchSize, isOneXOne, origin, extent, isBase);
+            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, isOneXOne, origin, extent, isBase);
         }
 
         private IData ParseHttpSource(string[] args, ref int idx, int batchSize, bool isBase)
@@ -134,7 +137,7 @@ namespace MergerCli
                 this.ParseOptionalParameters(sourceType, sourcePath, ref isOneXOne, ref origin, optionalParams);
             }
             idx += paramCount;
-            return this._dataFactory.CreateDatasource(sourceType, sourcePath, batchSize, isBase, extent, maxZoom, minZoom, isOneXOne, origin);
+            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, isBase, extent, maxZoom, minZoom, isOneXOne, origin);
         }
 
         private Extent parseExtent(string extentString)
@@ -142,10 +145,10 @@ namespace MergerCli
             string[] bboxParts = extentString.Split(',');
             Extent extent = new Extent
             {
-                minX = double.Parse(bboxParts[0]),
-                minY = double.Parse(bboxParts[1]),
-                maxX = double.Parse(bboxParts[2]),
-                maxY = double.Parse(bboxParts[3])
+                MinX = double.Parse(bboxParts[0]),
+                MinY = double.Parse(bboxParts[1]),
+                MaxX = double.Parse(bboxParts[2]),
+                MaxY = double.Parse(bboxParts[3])
             };
             return extent;
         }

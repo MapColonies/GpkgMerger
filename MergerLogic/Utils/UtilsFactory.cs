@@ -1,19 +1,25 @@
 ﻿using Amazon.S3;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using System.IO.Abstractions;
 
 namespace MergerLogic.Utils
 {
     public class UtilsFactory : IUtilsFactory
     {
-        private IPathUtils _pathUtils;
-        private ITimeUtils _timeUtils;
-        private IServiceProvider _container;
+        private readonly IPathUtils _pathUtils;
+        private readonly ITimeUtils _timeUtils;
+        private readonly IGeoUtils _geoUtils;
+        private readonly IFileSystem _fileSystem;
+        private readonly IServiceProvider _container;
         private IHttpRequestUtils _httpRequestUtils;
 
-        public UtilsFactory(IPathUtils pathUtils, ITimeUtils timeUtils, IServiceProvider container, IHttpRequestUtils httpRequestUtils)
+        public UtilsFactory(IPathUtils pathUtils, ITimeUtils timeUtils, IGeoUtils geoUtils, IFileSystem fileSystem, IServiceProvider container, IHttpRequestUtils httpRequestUtils)
         {
             this._pathUtils = pathUtils;
             this._timeUtils = timeUtils;
+            this._geoUtils = geoUtils;
+            this._fileSystem = fileSystem;
             this._container = container;
             this._httpRequestUtils = httpRequestUtils;
         }
@@ -22,18 +28,19 @@ namespace MergerLogic.Utils
 
         public IFileUtils GetFileUtils(string path)
         {
-            return new FileUtils(path, this._pathUtils);
+            return new FileUtils(path, this._pathUtils, this._geoUtils, this._fileSystem);
         }
 
         public IGpkgUtils GetGpkgUtils(string path)
         {
-            return new GpkgUtils(path, this._timeUtils);
+            var logger = this._container.GetRequiredService<ILogger<GpkgUtils>>();
+            return new GpkgUtils(path, this._timeUtils, logger, this._fileSystem, this._geoUtils);
         }
 
         public IHttpSourceUtils GetHttpUtils(string path)
         {
             IPathPatternUtils pathPatternUtils = this.GetPathPatternUtils(path);
-            return new HttpSourceUtils(this._httpRequestUtils, path, pathPatternUtils);
+            return new HttpUtils(this._httpRequestUtils, path, pathPatternUtils, this._geoUtils);
         }
 
         public IS3Utils GetS3Utils(string path)
@@ -42,10 +49,10 @@ namespace MergerLogic.Utils
             IAmazonS3? client = this._container.GetService<IAmazonS3>();
             if (client is null || bucket == string.Empty)
             {
-                throw new Exception("S3 Data utills requires s3 client to be configured");
+                throw new Exception("S3 Data utils requires s3 client to be configured");
             }
 
-            return new S3Utils(client, this._pathUtils, bucket, path);
+            return new S3Utils(client, this._pathUtils, this._geoUtils, bucket, path);
         }
 
         public T GetDataUtils<T>(string path) where T : IDataUtils

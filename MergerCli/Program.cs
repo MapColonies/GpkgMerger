@@ -1,8 +1,9 @@
 ﻿using MergerCli.Utils;
 using MergerLogic.DataTypes;
-using MergerLogic.Extentions;
+using MergerLogic.Extensions;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Runtime.Loader;
 
@@ -10,8 +11,8 @@ namespace MergerCli
 {
     internal class Program
     {
-        private static BatchStatusManager batchStatusManager;
-        private static bool done = false;
+        private static BatchStatusManager _batchStatusManager;
+        private static bool _done = false;
 
         private static void Main(string[] args)
         {
@@ -27,9 +28,10 @@ namespace MergerCli
                 PrintHelp(programName);
                 return;
             }
-            ServiceProvider container = CreateContianer();
+            ServiceProvider container = CreateContainer();
+            ILogger logger = container.GetRequiredService<ILogger<Program>>();
 
-            PrepareStatusManger(ref args);
+            PrepareStatusManger(ref args, logger);
 
             int batchSize = int.Parse(args[1]);
             List<IData> sources;
@@ -40,7 +42,7 @@ namespace MergerCli
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                logger.LogError(ex.Message);
                 PrintHelp(args[0]);
                 return;
             }
@@ -53,26 +55,26 @@ namespace MergerCli
                 return;
             }
 
-            var proccess = container.GetRequiredService<IProcess>();
+            var process = container.GetRequiredService<IProcess>();
             var timeUtils = container.GetRequiredService<ITimeUtils>();
             try
             {
-                var config = container.GetService<IConfigurationManager>();
-                bool validate = bool.Parse(config.GetConfiguration("GENERAL", "validate"));
+                var config = container.GetRequiredService<IConfigurationManager>();
+                bool validate = config.GetConfiguration<bool>("GENERAL", "validate");
                 for (int i = 1; i < sources.Count; i++)
                 {
                     Stopwatch stopWatch = new Stopwatch();
                     stopWatch.Start();
-                    if (batchStatusManager.IsLayerCompleted(sources[i].Path))
+                    if (_batchStatusManager.IsLayerCompleted(sources[i].Path))
                     {
                         continue;
                     }
-                    proccess.Start(baseData, sources[i], batchSize, batchStatusManager);
+                    process.Start(baseData, sources[i], batchSize, _batchStatusManager);
                     stopWatch.Stop();
 
                     // Get the elapsed time as a TimeSpan value.
                     ts = stopWatch.Elapsed;
-                    timeUtils.PrintElapsedTime($"{sources[i].Path} merge runtime", ts);
+                    logger.LogInformation(timeUtils.FormatElapsedTime($"{sources[i].Path} merge runtime", ts));
 
 
                     if (validate)
@@ -81,13 +83,13 @@ namespace MergerCli
                         stopWatch.Reset();
                         stopWatch.Start();
 
-                        Console.WriteLine("Validating merged data sources");
-                        proccess.Validate(baseData, sources[i]);
+                        logger.LogInformation("Validating merged data sources");
+                        process.Validate(baseData, sources[i]);
 
                         stopWatch.Stop();
                         // Get the elapsed time as a TimeSpan value.
                         ts = stopWatch.Elapsed;
-                        timeUtils.PrintElapsedTime($"{sources[i].Path} validation time", ts);
+                        logger.LogInformation(timeUtils.FormatElapsedTime($"{sources[i].Path} validation time", ts));
                     }
                 }
             }
@@ -95,17 +97,17 @@ namespace MergerCli
             {
                 //save status on unhandled exceptions
                 OnFailure();
-                Console.WriteLine(ex.ToString());
+                logger.LogError(ex, ex.Message);
                 return;
             }
             totalTimeStopWatch.Stop();
             // Get the elapsed time as a TimeSpan value.
             ts = totalTimeStopWatch.Elapsed;
-            timeUtils.PrintElapsedTime("Total runtime", ts);
-            done = true;
+            logger.LogInformation(timeUtils.FormatElapsedTime("Total runtime", ts));
+            _done = true;
         }
 
-        private static ServiceProvider CreateContianer()
+        private static ServiceProvider CreateContainer()
         {
             return new ServiceCollection()
                 .RegisterMergerLogicType()
@@ -126,7 +128,7 @@ namespace MergerCli
                         gpkg <path>  [bbox - in format 'minX,minY,maxX,maxY' - required base] [--1x1] [--UL / --LL] 
                     **** please note all layers must be 2X1 EPSG:4326 layers ****
                                     
-                merge sources: {programName} <batch_size> <base source> <addiotional source> [<another source>...]
+                merge sources: {programName} <batch_size> <base source> <additional source> [<another source>...]
                 Examples:
                 {programName} 1000 gpkg area1.gpkg gpkg area2.gpkg
                 {programName} 1000 s3 /path1/on/s3 s3 /path2/on/s3
@@ -147,27 +149,27 @@ namespace MergerCli
                 Minimal requirement is supplying at least one source.");
         }
 
-        private static void PrepareStatusManger(ref string[] args)
+        private static void PrepareStatusManger(ref string[] args, ILogger logger)
         {
             if (args.Length == 2)
             {
                 if (!File.Exists(args[1]))
                 {
-                    Console.WriteLine($"invalid status file {args[1]}");
+                    logger.LogError($"invalid status file {args[1]}");
                     Environment.Exit(-1);
                 }
                 string json = File.ReadAllText(args[1]);
-                batchStatusManager = BatchStatusManager.FromJson(json);
-                args = batchStatusManager.Command;
-                Console.WriteLine("resuming layers merge operation. layers progress:");
-                foreach (var item in batchStatusManager.States)
+                _batchStatusManager = BatchStatusManager.FromJson(json);
+                args = _batchStatusManager.Command;
+                logger.LogInformation("resuming layers merge operation. layers progress:");
+                foreach (var item in _batchStatusManager.States)
                 {
-                    Console.WriteLine($"{item.Key} {item.Value.BatchIdentifier}");
+                    logger.LogInformation($"{item.Key} {item.Value.BatchIdentifier}");
                 }
             }
             else
             {
-                batchStatusManager = new BatchStatusManager(args);
+                _batchStatusManager = new BatchStatusManager(args);
             }
             //save status on program exit
             AssemblyLoadContext.Default.Unloading += delegate { OnFailure(); };
@@ -177,9 +179,9 @@ namespace MergerCli
 
         private static void OnFailure()
         {
-            if (!done)
+            if (!_done)
             {
-                string status = batchStatusManager.ToString();
+                string status = _batchStatusManager.ToString();
                 File.WriteAllText("status.json", status);
             }
             else

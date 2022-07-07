@@ -1,5 +1,4 @@
 using MergerLogic.DataTypes;
-using MergerLogic.Utils;
 
 namespace MergerLogic.Batching
 {
@@ -14,7 +13,7 @@ namespace MergerLogic.Batching
         { get; private set; }
 
         public int Y
-        { get; private set; }
+        { get; internal set; }
 
         private byte[] _data;
 
@@ -28,9 +27,9 @@ namespace MergerLogic.Batching
 
         public Tile(Coord cords, byte[] data)
         {
-            this.Z = cords.z;
-            this.X = cords.x;
-            this.Y = cords.y;
+            this.Z = cords.Z;
+            this.X = cords.X;
+            this.Y = cords.Y;
             this._data = data;
         }
 
@@ -51,11 +50,6 @@ namespace MergerLogic.Batching
             return new Coord(this.Z, this.X, this.Y);
         }
 
-        public void FlipY()
-        {
-            this.Y = GeoUtils.FlipY(this.Z, this.Y);
-        }
-
         public virtual void Print()
         {
             Console.WriteLine($"z: {this.Z}");
@@ -72,9 +66,9 @@ namespace MergerLogic.Batching
 
         public void SetCoords(Coord cords)
         {
-            this.X = cords.x;
-            this.Y = cords.y;
-            this.Z = cords.z;
+            this.X = cords.X;
+            this.Y = cords.Y;
+            this.Z = cords.Z;
         }
 
         public void SetCoords(int z, int x, int y)
@@ -82,6 +76,11 @@ namespace MergerLogic.Batching
             this.X = x;
             this.Y = y;
             this.Z = z;
+        }
+
+        public override string ToString()
+        {
+            return $"z: {this.Z}, x: {this.X}, y: {this.Y}, data size: {this._data.Length}";
         }
     }
 }

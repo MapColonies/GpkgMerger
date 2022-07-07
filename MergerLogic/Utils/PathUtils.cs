@@ -1,13 +1,23 @@
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using System.IO.Abstractions;
 
 namespace MergerLogic.Utils
 {
     public class PathUtils : IPathUtils
     {
+        private readonly IGeoUtils _geoUtils;
+        private readonly IFileSystem _fileSystem;
+
+        public PathUtils(IGeoUtils geoUtils, IFileSystem fileSystem)
+        {
+            this._geoUtils = geoUtils;
+            this._fileSystem = fileSystem;
+        }
+
         public string RemoveTrailingSlash(string path, bool isS3 = false)
         {
-            return path.TrimEnd(this.GetSeperator(isS3));
+            return path.TrimEnd(this.GetSeparator(isS3));
         }
 
         public string GetTilePath(string basePath, Tile tile)
@@ -17,19 +27,19 @@ namespace MergerLogic.Utils
 
         public string GetTilePath(string basePath, int z, int x, int y, bool isS3 = false)
         {
-            char seperator = this.GetSeperator(isS3);
-            return $"{basePath}{seperator}{z}{seperator}{x}{seperator}{y}.png";
+            char separator = this.GetSeparator(isS3);
+            return $"{basePath}{separator}{z}{separator}{x}{separator}{y}.png";
         }
 
         public string GetTilePathTMS(string basePath, int z, int x, int y, bool isS3 = false)
         {
-            y = GeoUtils.FlipY(z, y);
+            y = this._geoUtils.FlipY(z, y);
             return this.GetTilePath(basePath, z, x, y, isS3);
         }
 
         public Coord FromPath(string path, bool isS3 = false)
         {
-            string[] parts = path.Split(this.GetSeperator(isS3));
+            string[] parts = path.Split(this.GetSeparator(isS3));
             int numParts = parts.Length;
 
             // Each path represents a tile, therefore the last three parts represent the z, x and y values
@@ -41,9 +51,9 @@ namespace MergerLogic.Utils
             return new Coord(z, x, y);
         }
 
-        private char GetSeperator(bool isS3)
+        private char GetSeparator(bool isS3)
         {
-            return isS3 ? '/' : Path.DirectorySeparatorChar;
+            return isS3 ? '/' : this._fileSystem.Path.DirectorySeparatorChar;
         }
     }
 }

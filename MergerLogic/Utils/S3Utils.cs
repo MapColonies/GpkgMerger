@@ -1,20 +1,21 @@
 using Amazon.S3;
 using Amazon.S3.Model;
 using MergerLogic.Batching;
+using MergerLogic.DataTypes;
 
 namespace MergerLogic.Utils
 {
     public class S3Utils : DataUtils, IS3Utils
     {
-        private string bucket;
+        private readonly string _bucket;
 
-        private IAmazonS3 _client;
-        private IPathUtils _pathUtils;
+        private readonly IAmazonS3 _client;
+        private readonly IPathUtils _pathUtils;
 
-        public S3Utils(IAmazonS3 client, IPathUtils pathUtils, string bucket, string path) : base(path)
+        public S3Utils(IAmazonS3 client, IPathUtils pathUtils, IGeoUtils geoUtils, string bucket, string path) : base(path, geoUtils)
         {
             this._client = client;
-            this.bucket = bucket;
+            this._bucket = bucket;
             this._pathUtils = pathUtils;
         }
 
@@ -24,7 +25,7 @@ namespace MergerLogic.Utils
             {
                 var request = new GetObjectRequest()
                 {
-                    BucketName = bucket,
+                    BucketName = this._bucket,
                     Key = key
                 };
                 var getObjectTask = this._client.GetObjectAsync(request);
@@ -42,9 +43,8 @@ namespace MergerLogic.Utils
 
                 return image;
             }
-            catch (AggregateException e)
+            catch (AggregateException)
             {
-                // Console.WriteLine($"Error getting tile (key={key}): {e.Message}");
                 return null;
             }
         }
@@ -52,7 +52,6 @@ namespace MergerLogic.Utils
         public override Tile GetTile(int z, int x, int y)
         {
             string key = this._pathUtils.GetTilePath(this.path, z, x, y, true);
-
             byte[]? imageBytes = this.GetImageBytes(key);
             if (imageBytes == null)
             {
@@ -61,12 +60,23 @@ namespace MergerLogic.Utils
             return new Tile(z, x, y, imageBytes);
         }
 
+        public Tile GetTile(string key)
+        {
+            Coord coords = this._pathUtils.FromPath(key, true);
+            byte[]? imageBytes = this.GetImageBytes(key);
+            if (imageBytes == null)
+            {
+                return null;
+            }
+            return new Tile(coords, imageBytes);
+        }
+
         public override bool TileExists(int z, int x, int y)
         {
             string key = this._pathUtils.GetTilePath(this.path, z, x, y, true);
             var request = new GetObjectMetadataRequest()
             {
-                BucketName = this.bucket,
+                BucketName = this._bucket,
                 Key = String.Format(key)
             };
 
@@ -88,7 +98,7 @@ namespace MergerLogic.Utils
 
             var request = new PutObjectRequest()
             {
-                BucketName = this.bucket,
+                BucketName = this._bucket,
                 CannedACL = S3CannedACL.PublicRead,
                 Key = String.Format(key)
             };

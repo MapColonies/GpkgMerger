@@ -1,21 +1,27 @@
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using Microsoft.Extensions.Logging;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.IO.Abstractions;
 using System.Text;
 
 namespace MergerLogic.Utils
 {
     public class GpkgUtils : DataUtils, IGpkgUtils
     {
-        private string _tileCache;
+        private readonly string _tileCache;
 
-        private ITimeUtils _timeUtils;
+        private readonly ITimeUtils _timeUtils;
+        private readonly ILogger _logger;
+        private readonly IFileSystem _fileSystem;
 
-        public GpkgUtils(string path, ITimeUtils timeUtils, bool create = false) : base(path)
+        public GpkgUtils(string path, ITimeUtils timeUtils, ILogger<GpkgUtils> logger, IFileSystem fileSystem, IGeoUtils geoUtils) : base(path, geoUtils)
         {
-            this._tileCache = this.InternalGetTileCache();
             this._timeUtils = timeUtils;
+            this._logger = logger;
+            this._fileSystem = fileSystem;
+            this._tileCache = this.InternalGetTileCache();
         }
 
         public string GetTileCache()
@@ -27,7 +33,7 @@ namespace MergerLogic.Utils
         {
             if (!this.Exist())
             {
-                return Path.GetFileNameWithoutExtension(this.path);
+                return this._fileSystem.Path.GetFileNameWithoutExtension(this.path);
             }
 
             string tileCache = "";
@@ -66,10 +72,10 @@ namespace MergerLogic.Utils
                     using (var reader = command.ExecuteReader(System.Data.CommandBehavior.SingleRow))
                     {
                         reader.Read();
-                        extent.minX = reader.GetDouble(0);
-                        extent.minY = reader.GetDouble(1);
-                        extent.maxX = reader.GetDouble(2);
-                        extent.maxY = reader.GetDouble(3);
+                        extent.MinX = reader.GetDouble(0);
+                        extent.MinY = reader.GetDouble(1);
+                        extent.MaxX = reader.GetDouble(2);
+                        extent.MaxY = reader.GetDouble(3);
                     }
                 }
             }
@@ -110,10 +116,10 @@ namespace MergerLogic.Utils
                 {
                     command.CommandText = "UPDATE gpkg_contents SET min_x=$minX, max_x=$maxX, min_y=$minY, max_y=$maxY";
 
-                    command.Parameters.AddWithValue("$minX", extent.minX);
-                    command.Parameters.AddWithValue("$minY", extent.minY);
-                    command.Parameters.AddWithValue("$maxX", extent.maxX);
-                    command.Parameters.AddWithValue("$maxY", extent.maxY);
+                    command.Parameters.AddWithValue("$minX", extent.MinX);
+                    command.Parameters.AddWithValue("$minY", extent.MinY);
+                    command.Parameters.AddWithValue("$maxX", extent.MaxX);
+                    command.Parameters.AddWithValue("$maxY", extent.MaxY);
 
                     command.ExecuteNonQuery();
                 }
@@ -252,7 +258,7 @@ namespace MergerLogic.Utils
                     // Build command
                     StringBuilder commandBuilder = new StringBuilder($"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM \"{this._tileCache}\" where ");
 
-                    int zoomLevel = baseCoords.z;
+                    int zoomLevel = baseCoords.Z;
                     int maxZoomLevel = zoomLevel - 1;
                     int arrayIdx = 0;
                     for (int currentZoomLevel = maxZoomLevel; currentZoomLevel >= 0; currentZoomLevel--)
@@ -307,7 +313,7 @@ namespace MergerLogic.Utils
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            Console.WriteLine($"Vacuuming GPKG {this.path}");
+            this._logger.LogInformation($"Vacuuming GPKG {this.path}");
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
@@ -317,17 +323,18 @@ namespace MergerLogic.Utils
                     command.ExecuteNonQuery();
                 }
             }
-            Console.WriteLine("Done vacuuming GPKG");
+            this._logger.LogInformation("Done vacuuming GPKG");
 
             // Get the elapsed time as a TimeSpan value.
             TimeSpan ts = stopWatch.Elapsed;
 
-            this._timeUtils.PrintElapsedTime("Vacuum runtime", ts);
+            string elapsedMessage = this._timeUtils.FormatElapsedTime("Vacuum runtime", ts);
+            this._logger.LogInformation(elapsedMessage);
         }
 
         public void Create(Extent extent, bool isOneXOne = false)
         {
-            Console.WriteLine($"creating new gpkg: {this.path}");
+            this._logger.LogInformation($"creating new gpkg: {this.path}");
             SQLiteConnection.CreateFile(this.path);
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
@@ -531,7 +538,7 @@ namespace MergerLogic.Utils
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = "INSERT INTO \"gpkg_tile_matrix_set\" VALUES " +
-                    $"('{this._tileCache}',{GeoUtils.SRID},-180,-90,180,90);";
+                    $"('{this._tileCache}',{Utils.GeoUtils.SRID},-180,-90,180,90);";
                 command.ExecuteNonQuery();
             }
         }
@@ -541,7 +548,7 @@ namespace MergerLogic.Utils
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = "INSERT INTO \"gpkg_tile_matrix_set\" VALUES " +
-                    $"('{this._tileCache}',{GeoUtils.SRID},-180,-180,180,180);";
+                    $"('{this._tileCache}',{Utils.GeoUtils.SRID},-180,-180,180,180);";
                 command.ExecuteNonQuery();
             }
         }
@@ -564,7 +571,7 @@ namespace MergerLogic.Utils
             {
                 command.CommandText = "INSERT INTO \"gpkg_contents\" " +
                     "(\"table_name\",\"data_type\",\"identifier\",\"min_x\",\"min_y\",\"max_x\",\"max_y\",\"srs_id\") VALUES " +
-                    $"('{this._tileCache}','tiles','{this._tileCache}',{extent.minX},{extent.minY},{extent.maxX},{extent.maxY},{GeoUtils.SRID});";
+                    $"('{this._tileCache}','tiles','{this._tileCache}',{extent.MinX},{extent.MinY},{extent.MaxX},{extent.MaxY},{Utils.GeoUtils.SRID});";
                 command.ExecuteNonQuery();
             }
         }
@@ -638,6 +645,7 @@ namespace MergerLogic.Utils
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 var cmdBuilder = new StringBuilder();
+                connection.Open();
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = $"select name from sqlite_master where type = 'trigger' and tbl_name = '{this._tileCache}';";
@@ -646,7 +654,7 @@ namespace MergerLogic.Utils
                         while (reader.Read())
                         {
                             string trigger = reader.GetString(0);
-                            cmdBuilder.Append("DROP TRIGGER IF EXISTS \"{this.trigger}\"; ");
+                            cmdBuilder.Append($"DROP TRIGGER IF EXISTS \"{trigger}\"; ");
                         }
                     }
                 }
@@ -661,8 +669,8 @@ namespace MergerLogic.Utils
         public bool Exist()
         {
             // Get full path to gpkg file
-            string fullPath = Path.GetFullPath(this.path);
-            return File.Exists(fullPath);
+            string fullPath = this._fileSystem.Path.GetFullPath(this.path);
+            return this._fileSystem.File.Exists(fullPath);
         }
 
         public void UpdateTileMatrixTable(bool isOneXOne = false)

@@ -2,38 +2,35 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using MergerLogic.Batching;
 using MergerLogic.Utils;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace MergerLogic.DataTypes
 {
     public class S3 : Data<IS3Utils>
     {
-        private IAmazonS3 client;
-        private string bucket;
-        private string? continuationToken;
-        private bool endOfRead;
+        private readonly IAmazonS3 _client;
+        private readonly string _bucket;
+        private string? _continuationToken;
+        private bool _endOfRead;
 
-        private IPathUtils _pathUtils;
+        private readonly IPathUtils _pathUtils;
 
-        public S3(IPathUtils pathUtils, IAmazonS3 client, IServiceProvider containter,
+        public S3(IPathUtils pathUtils, IAmazonS3 client, IServiceProvider container,
             string bucket, string path, int batchSize, bool isOneXOne = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
-            : base(containter, DataType.S3, path, batchSize, isOneXOne, origin)
+            : base(container, DataType.S3, path, batchSize, isOneXOne, origin)
         {
-            this.bucket = bucket;
-            this.continuationToken = null;
-            this.endOfRead = false;
-            this.client = client;
+            this._bucket = bucket;
+            this._continuationToken = null;
+            this._endOfRead = false;
+            this._client = client;
             this._pathUtils = pathUtils;
-        }
-
-        ~S3()
-        {
-            this.client.Dispose();
         }
 
         public override void Reset()
         {
-            this.continuationToken = null;
-            this.endOfRead = false;
+            this._continuationToken = null;
+            this._endOfRead = false;
         }
 
         public override void Wrapup()
@@ -44,63 +41,62 @@ namespace MergerLogic.DataTypes
 
         public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
-            batchIdentifier = this.continuationToken;
+            batchIdentifier = this._continuationToken;
             List<Tile> tiles = new List<Tile>();
-
-            var listRequests = new ListObjectsV2Request
+            int missingTiles = this.BatchSize;
+            while (missingTiles > 0 && !this._endOfRead)
             {
-                BucketName = bucket,
-                Prefix = Path,
-                StartAfter = Path,
-                MaxKeys = batchSize,
-                ContinuationToken = continuationToken
-            };
+                var listRequests = new ListObjectsV2Request
+                {
+                    BucketName = this._bucket,
+                    Prefix = this.Path,
+                    StartAfter = this.Path,
+                    MaxKeys = missingTiles,
+                    ContinuationToken = this._continuationToken
+                };
 
-            var listObjectsTask = this.client.ListObjectsV2Async(listRequests);
-            var response = listObjectsTask.Result;
+                var listObjectsTask = this._client.ListObjectsV2Async(listRequests);
+                var response = listObjectsTask.Result;
 
-            if (!this.endOfRead)
-            {
-                response.ContinuationToken = this.continuationToken;
                 foreach (S3Object item in response.S3Objects)
                 {
-                    Coord coord = this._pathUtils.FromPath(item.Key, true);
-                    Tile tile = this.utils.GetTile(coord);
+                    Tile tile = this.Utils.GetTile(item.Key);
                     if (tile != null)
                     {
-                        tile = this._toCurrentGrid(tile);
+                        tile = this.ToCurrentGrid(tile);
                         if (tile != null)
                         {
-                            tile = this._convertOriginTile(tile);
+                            tile = this.ConvertOriginTile(tile);
                             tiles.Add(tile);
                         }
                     }
                 }
-                this.continuationToken = response.NextContinuationToken;
-            }
 
-            this.endOfRead = !response.IsTruncated;
+                missingTiles -= response.KeyCount;
+                this._continuationToken = response.NextContinuationToken;
+                this._endOfRead = !response.IsTruncated;
+            }
 
             return tiles;
         }
 
         public override void setBatchIdentifier(string batchIdentifier)
         {
-            this.continuationToken = batchIdentifier;
+            this._continuationToken = batchIdentifier;
         }
 
         public override bool Exists()
         {
             var listRequests = new ListObjectsV2Request
             {
-                BucketName = bucket,
-                Prefix = Path,
-                StartAfter = Path,
+                BucketName = this._bucket,
+                Prefix = this.Path,
+                StartAfter = this.Path,
                 MaxKeys = 1
             };
 
-            Console.WriteLine($"Checking if exists, bucket: {this.bucket}, path: {this.Path}");
-            var task = this.client.ListObjectsV2Async(listRequests);
+            this._logger.LogInformation($"Checking if exists, bucket: {this._bucket}, path: {this.Path}");
+            var task = this._client.ListObjectsV2Async(listRequests);
             var response = task.Result;
             return response.KeyCount > 0;
         }
@@ -114,13 +110,13 @@ namespace MergerLogic.DataTypes
             {
                 var listRequests = new ListObjectsV2Request
                 {
-                    BucketName = bucket,
-                    Prefix = Path,
-                    StartAfter = Path,
+                    BucketName = this._bucket,
+                    Prefix = this.Path,
+                    StartAfter = this.Path,
                     ContinuationToken = continuationToken
                 };
 
-                var task = this.client.ListObjectsV2Async(listRequests);
+                var task = this._client.ListObjectsV2Async(listRequests);
                 var response = task.Result;
 
                 tileCount += response.KeyCount;
@@ -134,7 +130,7 @@ namespace MergerLogic.DataTypes
         {
             foreach (var tile in targetTiles)
             {
-                this.utils.UpdateTile(tile);
+                this.Utils.UpdateTile(tile);
             }
         }
     }
