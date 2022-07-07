@@ -12,14 +12,7 @@ namespace MergerLogic.DataTypes
             DataType type, string path, int batchSize, Extent extent, GridOrigin origin, int maxZoom, int minZoom = 0, bool isOneXOne = false)
             : base(container, type, path, batchSize, isOneXOne, origin)
         {
-            //ignore zoom level that cant be converted without image manipulation
-            minZoom = isOneXOne ? Math.Max(minZoom, 2) : minZoom;
             this.GenTileRanges(extent, origin, minZoom, maxZoom);
-            if (isOneXOne)
-            {
-                this.FromCurrentGridTile = this.OneXOneConvertor.FromTwoXOne;
-                this.ToCurrentGrid = this.OneXOneConvertor.ToTwoXOne;
-            }
         }
 
         public override bool Exists()
@@ -83,17 +76,6 @@ namespace MergerLogic.DataTypes
                     }
                 }
             }
-        }
-
-        protected override Tile GetOneXOneTile(int z, int x, int y)
-        {
-            Coord oneXoneBaseCoords = this.OneXOneConvertor.FromTwoXOne(z, x, y);
-            Tile tile = this.Utils.GetTile(oneXoneBaseCoords);
-            if (tile != null)
-            {
-                tile.SetCoords(z, x, y);
-            }
-            return tile;
         }
 
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)

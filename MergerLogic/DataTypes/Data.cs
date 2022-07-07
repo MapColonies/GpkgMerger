@@ -219,6 +219,7 @@ namespace MergerLogic.DataTypes
 
         public virtual void Wrapup()
         {
+            this.Reset();
             this._logger.LogInformation($"{this.Type} source, skipping wrapup phase");
         }
 

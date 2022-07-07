@@ -33,12 +33,6 @@ namespace MergerLogic.DataTypes
             this._endOfRead = false;
         }
 
-        public override void Wrapup()
-        {
-            base.Wrapup();
-            this.Reset();
-        }
-
         public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
             batchIdentifier = this._continuationToken;
