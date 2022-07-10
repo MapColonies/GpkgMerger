@@ -38,12 +38,6 @@ namespace MergerLogic.DataTypes
             this._completedTiles = 0;
         }
 
-        public override void Wrapup()
-        {
-            base.Wrapup();
-            this.Reset();
-        }
-
         public override bool Exists()
         {
             this._logger.LogInformation($"Checking if exists, folder: {this.Path}");
