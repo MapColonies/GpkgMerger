@@ -421,7 +421,7 @@ namespace MergerLogicUnitTests.DataTypes
 
         #endregion
 
-        
+
         #region Exists
 
         public static IEnumerable<object[]> GenExistParams()
@@ -439,7 +439,7 @@ namespace MergerLogicUnitTests.DataTypes
         public void Exists(bool isOneXOne, GridOrigin origin, bool exist)
         {
             this.SetupConstructorRequiredMocks();
-           
+
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             var wmtsSource = new WMTS(this._serviceProviderMock.Object, "test", 10, extent, 21, 0, isOneXOne, origin);
@@ -450,44 +450,45 @@ namespace MergerLogicUnitTests.DataTypes
         }
 
         #endregion
-        /*
+
         #region TileCount
 
         public static IEnumerable<object[]> GenTileCountParams()
         {
             return DynamicDataGenerator.GeneratePrams(
                 new object[] { true, false }, //is one on one
-                new object[] { true, false }, //is base
-                new object[] { GridOrigin.LOWER_LEFT, GridOrigin.UPPER_LEFT }, //origin
-                new object[] { 7, 1365 } //tile count
+                new object[] { GridOrigin.LOWER_LEFT, GridOrigin.UPPER_LEFT } //origin
             );
         }
 
         [TestMethod]
         [TestCategory("TileCount")]
         [DynamicData(nameof(GenTileCountParams), DynamicDataSourceType.Method)]
-        public void TileCount(bool isOneXOne, bool isBase, GridOrigin origin, int tileCount)
+        public void TileCount(bool isOneXOne, GridOrigin origin)
         {
             var seq = new MockSequence();
-            this.SetupConstructorRequiredMocks(isBase, seq);
-            var fileList = new List<string>();
-            for (int i = 0; i < tileCount; i++)
-            {
-                //valid files
-                fileList.Add(i % 2 == 0 ? "t.png" : "t.jpg");
-                //invalid files
-                fileList.Add(string.Empty);
-            }
-
-            this._directoryMock
+            this._geoUtilsMock
                 .InSequence(seq)
-                .Setup(d => d.EnumerateFiles("test", "*.*", SearchOption.AllDirectories))
-                .Returns(fileList);
+                .Setup(utils => utils.ExtentToTileRange(It.IsAny<Extent>(), 0, It.IsAny<GridOrigin>()))
+                .Returns(new TileBounds(0, 0, 1, 0, 1));
+            this._geoUtilsMock
+                .InSequence(seq)
+                .Setup(utils => utils.ExtentToTileRange(It.IsAny<Extent>(), 1, It.IsAny<GridOrigin>()))
+                .Returns(new TileBounds(1, 0, 1, 0, 1));
+            this._geoUtilsMock
+                .InSequence(seq)
+                .Setup(utils => utils.ExtentToTileRange(It.IsAny<Extent>(), 2, It.IsAny<GridOrigin>()))
+                .Returns(new TileBounds(2, 0, 2, 0, 1));
+            this._geoUtilsMock
+                .InSequence(seq)
+                .Setup(utils => utils.ExtentToTileRange(It.IsAny<Extent>(), 3, It.IsAny<GridOrigin>()))
+                .Returns(new TileBounds(3, 0, 3, 0, 2));
 
-            var wmtsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, isOneXOne, isBase, origin);
+            var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
+            var wmtsSource = new WMTS(this._serviceProviderMock.Object, "test", 10, extent, 3, 0, isOneXOne, origin);
 
-            Assert.AreEqual(tileCount, wmtsSource.TileCount());
-            this._directoryMock.Verify(d => d.EnumerateFiles("test", "*.*", SearchOption.AllDirectories), Times.Exactly(2));
+            Assert.AreEqual(10, wmtsSource.TileCount());
+            this._geoUtilsMock.Verify(utils => utils.ExtentToTileRange(It.IsAny<Extent>(), It.IsAny<int>(), It.IsAny<GridOrigin>()), Times.Exactly(4));
             this.VerifyAll();
         }
 
@@ -499,7 +500,6 @@ namespace MergerLogicUnitTests.DataTypes
         {
             return DynamicDataGenerator.GeneratePrams(
                 new object[] { true, false }, //is one on one
-                new object[] { true, false }, //is base
                 new object[] { GridOrigin.LOWER_LEFT, GridOrigin.UPPER_LEFT }, //origin
                 new object[] { 3, 5 } //batch offset
             );
@@ -508,11 +508,12 @@ namespace MergerLogicUnitTests.DataTypes
         [TestMethod]
         [TestCategory("SetBatchIdentifier")]
         [DynamicData(nameof(GenSetBatchIdentifierParams), DynamicDataSourceType.Method)]
-        public void SetBatchIdentifier(bool isOneXOne, bool isBase, GridOrigin origin, int offset)
+        public void SetBatchIdentifier(bool isOneXOne, GridOrigin origin, int offset)
         {
-            this.SetupConstructorRequiredMocks(isBase);
+            this.SetupConstructorRequiredMocks();
 
-            var wmtsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, isOneXOne, isBase, origin);
+            var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
+            var wmtsSource = new WMTS(this._serviceProviderMock.Object, "test", 10, extent, 21, 0, isOneXOne, origin);
 
             string testIdentifier = offset.ToString();
             wmtsSource.setBatchIdentifier(testIdentifier);
@@ -530,7 +531,6 @@ namespace MergerLogicUnitTests.DataTypes
         {
             return DynamicDataGenerator.GeneratePrams(
                 new object[] { true, false }, //is one on one
-                new object[] { true, false }, //is base
                 new object[] { GridOrigin.LOWER_LEFT, GridOrigin.UPPER_LEFT }, //origin
                 new object[] { 1, 2 } //batch size
             );
@@ -539,40 +539,39 @@ namespace MergerLogicUnitTests.DataTypes
         [TestMethod]
         [TestCategory("Reset")]
         [DynamicData(nameof(GenResetParams), DynamicDataSourceType.Method)]
-        public void Reset(bool isOneXOne, bool isBase, GridOrigin origin, int batchSize)
+        public void Reset(bool isOneXOne, GridOrigin origin, int batchSize)
         {
-            this.SetupConstructorRequiredMocks(isBase);
-            var fileList = new List<string>();
-            for (int i = 0; i < 10; i++)
-            {
-                //valid files
-                fileList.Add(i % 2 == 0 ? "t.png" : "t.jpg");
-                //invalid files
-                fileList.Add(string.Empty);
-            }
-            this._directoryMock
-                .Setup(d => d.EnumerateFiles("test", "*.*", SearchOption.AllDirectories))
-                .Returns(fileList);
-            this._pathUtilsMock
-                .Setup(utils => utils.FromPath(It.IsAny<string>(), false))
-                .Returns(new Coord(0, 0, 0));
-            this._httpUtilsMock
-                .Setup(utils => utils.GetTile(It.IsAny<Coord>()))
-                .Returns(new Tile(0, 0, 0, Array.Empty<byte>()));
+            this._geoUtilsMock
+                .Setup(utils => utils.ExtentToTileRange(It.IsAny<Extent>(), It.IsAny<int>(), It.IsAny<GridOrigin>()))
+                .Returns<Extent, int, GridOrigin>((extent, zoom, origin) => new TileBounds(zoom, 0, 1, 0, 1));
+
             if (origin != GridOrigin.UPPER_LEFT)
             {
                 this._geoUtilsMock
-                    .Setup(utils => utils.FlipY(It.IsAny<Tile>()))
-                    .Returns<Tile>(t => t.Y);
+                    .Setup(utils => utils.FlipY(It.IsAny<int>(), It.IsAny<int>()))
+                    .Returns<int, int>((_, y) => y);
             }
             if (isOneXOne)
             {
                 this._oneXOneConvertorMock
-                    .Setup(converter => converter.TryToTwoXOne(It.IsAny<Tile>()))
+                    .Setup(converter => converter.ToTwoXOne(It.IsAny<Tile>()))
                     .Returns<Tile>(t => t);
+                this._httpUtilsMock
+                    .Setup(utils => utils.GetTile(It.IsAny<Coord>()))
+                    .Returns(new Tile(0, 0, 0, Array.Empty<byte>()));
+                this._oneXOneConvertorMock
+                    .Setup(converter => converter.TryFromTwoXOne(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+                    .Returns<int, int, int>((z, x, y) => new Coord(z, x, y));
+            }
+            else
+            {
+                this._httpUtilsMock
+                    .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+                    .Returns(new Tile(0, 0, 0, Array.Empty<byte>()));
             }
 
-            var wmtsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", batchSize, isOneXOne, isBase, origin);
+            var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
+            var wmtsSource = new WMTS(this._serviceProviderMock.Object, "test", batchSize, extent, 21, 0, isOneXOne, origin);
 
             wmtsSource.GetNextBatch(out string batchIdentifier);
             wmtsSource.GetNextBatch(out batchIdentifier);
@@ -591,7 +590,6 @@ namespace MergerLogicUnitTests.DataTypes
         {
             return DynamicDataGenerator.GeneratePrams(
                 new object[] { true, false }, //is one on one
-                new object[] { true, false }, //is base
                 new object[] { GridOrigin.LOWER_LEFT, GridOrigin.UPPER_LEFT }, //origin
                 new object[] { 1, 2, 10 } //tile count
             );
@@ -600,57 +598,71 @@ namespace MergerLogicUnitTests.DataTypes
         [TestMethod]
         [TestCategory("GetNextBatch")]
         [DynamicData(nameof(GenGetNextBatchParams), DynamicDataSourceType.Method)]
-        public void GetNextBatch(bool isOneXOne, bool isBase, GridOrigin origin, int batchSize)
+        public void GetNextBatch(bool isOneXOne, GridOrigin origin, int batchSize)
         {
+            int minZoom = 0;
+            int maxZoom = 4;
+            var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
+            // z = 0 is invalid conversion tile z = 2 is missing tile 
             var tiles = new Tile?[]
             {
-                new Tile(0, 0, 0, new byte[] { }), new Tile(1, 1, 1, new byte[] { }), null,
-                new Tile(3, 3, 3, new byte[] { }), new Tile(4, 4, 4, new byte[] { }),
+                new Tile(0, 0, 0, new byte[] { }), new Tile(1, 0, 0, new byte[] { }), null,
+                new Tile(3, 0, 0, new byte[] { }), new Tile(4, 0, 0, new byte[] { }),
             };
             var tileBatches = tiles.Where(t => t is not null && (!isOneXOne || t.Z != 0)).Chunk(batchSize).ToList();
             var batchIdx = 0;
-            this.SetupConstructorRequiredMocks(isBase);
+
             var seq = new MockSequence();
-            this._fileSystemMock
-                .InSequence(seq)
-                .Setup(fs => fs.Directory.EnumerateFiles(It.IsAny<string>(), "*.*", SearchOption.AllDirectories))
-                .Returns(new string[] { "0.png", "1.jpg", "2.png", "invalid", "3.png", "4.png" });
-
-            foreach (var tile in tiles)
+            for (var i = minZoom; i <= maxZoom; i++)
             {
-                this._pathUtilsMock
+                this._geoUtilsMock
                     .InSequence(seq)
-                    .Setup(utils => utils.FromPath(It.IsAny<string>(), false))
-                    .Returns<string, bool>((path, _) =>
-                    {
-                        int coord = int.Parse(path[..1]);
-                        return new Coord(coord, coord, coord);
-                    });
-                this._httpUtilsMock
-                    .InSequence(seq)
-                    .Setup(utils => utils.GetTile(It.IsAny<Coord>()))
-                    .Returns<Coord>(c => tiles[c.Z]);
-                if (tile != null)
-                {
-                    if (isOneXOne)
-                    {
-                        this._oneXOneConvertorMock
-                            .InSequence(seq)
-                            .Setup(converter => converter.TryToTwoXOne(It.IsAny<Tile>()))
-                            .Returns<Tile>(tile => tile.Z != 0 ? tile : null);
-                    }
+                    .Setup(utils =>
+                        utils.ExtentToTileRange(extent, i, origin))
+                    .Returns<Extent, int, GridOrigin>((_, zoom, _) => new TileBounds(zoom, 0, 1, 0, 1));
+            }
 
-                    if (origin == GridOrigin.LOWER_LEFT && (!isOneXOne || tile.Z != 0))
+            for (int i = 0; i < tiles.Length; i++)
+            {
+                if (origin != GridOrigin.UPPER_LEFT)
+                {
+                    this._geoUtilsMock
+                        .InSequence(seq)
+                        .Setup(converter => converter.FlipY(It.IsAny<int>(), It.IsAny<int>()))
+                        .Returns<int, int>((_, y) => y);
+                }
+
+                if (isOneXOne)
+                {
+                    this._oneXOneConvertorMock
+                        .InSequence(seq)
+                        .Setup(converter => converter.TryFromTwoXOne(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+                        .Returns<int, int, int>((z, x, y) => z != 0 ? new Coord(z, x, y) : null);
+                    if (i != 0)
                     {
-                        this._geoUtilsMock
-                            .InSequence(seq)
-                            .Setup(converter => converter.FlipY(It.IsAny<Tile>()))
-                            .Returns<Tile>(t => t.Y);
+                        this._httpUtilsMock
+                        .InSequence(seq)
+                        .Setup(utils => utils.GetTile(It.IsAny<Coord>()))
+                        .Returns<Coord>(cords => cords.Z < tiles.Length ? tiles[cords.Z] : null);
+                        if (i != 2)
+                        {
+                            this._oneXOneConvertorMock
+                                .InSequence(seq)
+                                .Setup(converter => converter.ToTwoXOne(It.IsAny<Tile>()))
+                                .Returns<Tile>(t => t.Z != 0 ? t : null);
+                        }
                     }
+                }
+                else
+                {
+                    this._httpUtilsMock
+                        .InSequence(seq)
+                        .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+                        .Returns<int, int, int>((z, x, y) => z < tiles.Length ? tiles[z] : null);
                 }
             }
 
-            var wmtsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", batchSize, isOneXOne, isBase, origin);
+            var wmtsSource = new WMTS(this._serviceProviderMock.Object, "test", batchSize, extent, maxZoom, minZoom, isOneXOne, origin);
 
             var comparer = ComparerFactory.Create<Tile>((t1, t2) => t1?.Z == t2?.Z && t1?.X == t2?.X && t1?.Y == t2?.Y ? 0 : -1);
             for (int i = 0; i < tileBatches.Count; i++)
@@ -661,67 +673,49 @@ namespace MergerLogicUnitTests.DataTypes
                 CollectionAssert.AreEqual(exactedBatch.ToArray(), res, comparer);
                 string expectedBatchId = Math.Min(i * batchSize, tiles.Length).ToString();
                 Assert.AreEqual(expectedBatchId, batchIdentifier);
-                foreach (var tile in tileBatches[i])
+            }
+
+            for (int i = 0; i < tiles.Length; i++)
+            {
+                if (origin != GridOrigin.UPPER_LEFT)
                 {
-                    this._pathUtilsMock.Verify(utils => utils.FromPath(It.IsRegex($"^{tile.Z}\\.(png|jpg)$"), false), Times.Once);
-                    this._httpUtilsMock.Verify(utils => utils.GetTile(It.Is<Coord>(c => c.Z == tile.Z && c.X == tile.X && c.Y == tile.Y)));
-                    if (origin == GridOrigin.LOWER_LEFT)
+                    this._geoUtilsMock.Verify(converter => converter.FlipY(i, 0), Times.Once);
+                }
+
+                if (isOneXOne)
+                {
+                    this._oneXOneConvertorMock.Verify(converter => converter.TryFromTwoXOne(1, 0, 0), Times.Once);
+                    if (i != 0)
                     {
-                        this._geoUtilsMock.Verify(converter => converter.FlipY(tile), Times.Once);
-                    }
-                    if (isOneXOne)
-                    {
-                        this._oneXOneConvertorMock.Verify(converter => converter.TryToTwoXOne(It.Is<Tile>(
-                                t => t.Z == tile.Z && t.X == tile.X && t.Y == tile.Y)), Times.Once);
+                        this._httpUtilsMock.Verify(utils => utils.GetTile(It.Is<Coord>(c => c.Z == i && c.X == 0 && c.Y == 0)), Times.Once);
+                        if (i != 2)
+                        {
+                            this._oneXOneConvertorMock.Verify(converter =>
+                                converter.ToTwoXOne(It.Is<Tile>(t => t.Z == i && t.X == 0 && t.Y == 0)), Times.Once);
+                        }
                     }
                 }
+                else
+                {
+                    this._httpUtilsMock.Verify(utils => utils.GetTile(i, 0, 0), Times.Once);
+                }
             }
-            this.VerifyAll();
-        }
 
-        #endregion
+            this._geoUtilsMock.Verify(
+                utils => utils.ExtentToTileRange(It.IsAny<Extent>(), It.IsAny<int>(), It.IsAny<GridOrigin>()),
+                Times.Exactly(maxZoom - minZoom + 1));
 
-        #region FsCreation
-
-        public static IEnumerable<object[]> GenFsCreationParams()
-        {
-            return DynamicDataGenerator.GeneratePrams(
-                new object[] { true, false }, //is one on one
-                new object[] { true, false }, //is base
-                new object[] { GridOrigin.LOWER_LEFT, GridOrigin.UPPER_LEFT } //origin
-            );
-        }
-
-        [TestMethod]
-        [TestCategory("FsCreation")]
-        [DynamicData(nameof(GenFsCreationParams), DynamicDataSourceType.Method)]
-        public void FsCreation(bool isOneXOne, bool isBase, GridOrigin origin)
-        {
-            var seq = new MockSequence();
-
-            IDirectoryInfo nullInfo = null;
-            if (isBase)
+            if (origin != GridOrigin.UPPER_LEFT)
             {
-                this._directoryMock
-                    .InSequence(seq)
-                    .Setup(directory => directory.CreateDirectory(It.IsAny<string>())).Returns(nullInfo);
+                this._geoUtilsMock.Verify(converter => converter.FlipY(It.IsAny<int>(), It.IsAny<int>()),
+                    Times.Exactly(tiles.Length));
             }
 
-            this._fileSystemMock
-                .InSequence(seq)
-                .Setup(fs => fs.Directory.EnumerateFiles(It.IsAny<string>(), "*.*", SearchOption.AllDirectories))
-                .Returns(Array.Empty<string>());
-
-            new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, isOneXOne, isBase, origin);
-
-            this._directoryMock.Verify(dir => dir.CreateDirectory("test"), isBase ? Times.Once : Times.Never);
             this.VerifyAll();
         }
 
-
-
         #endregion
-        */
+        
         #region helper
 
         private void SetupConstructorRequiredMocks(MockSequence? sequence = null)

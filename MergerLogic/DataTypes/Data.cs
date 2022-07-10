@@ -172,13 +172,13 @@ namespace MergerLogic.DataTypes
         //lazy load get tile function on first call for compatibility with null utills in contractor
         protected Tile GetTileInitializer(int z, int x, int y)
         {
-            GetTileFromXyzFunction fixedGridGetTileFuntion = this.IsOneXOne ? this.GetOneXOneTile : this.Utils.GetTile;
+            GetTileFromXyzFunction fixedGridGetTileFunction = this.IsOneXOne ? this.GetOneXOneTile : this.Utils.GetTile;
             if (this.Origin == GridOrigin.LOWER_LEFT)
             {
                 this.GetTile = (z, x, y) =>
                 {
                     int newY = this.GeoUtils.FlipY(z, y);
-                    Tile? tile = fixedGridGetTileFuntion(z, x, newY);
+                    Tile? tile = fixedGridGetTileFunction(z, x, newY);
                     //set cords to current origin
                     tile?.SetCoords(z, x, y);
                     return tile;
@@ -186,7 +186,7 @@ namespace MergerLogic.DataTypes
             }
             else
             {
-                this.GetTile = fixedGridGetTileFuntion;
+                this.GetTile = fixedGridGetTileFunction;
             }
             return this.GetTile(z, x, y);
         }
