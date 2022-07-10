@@ -33,7 +33,7 @@ namespace MergerCli
                         }
                         catch (Exception e)
                         {
-                            Console.WriteLine(e.Message);
+                            this._logger.LogError(e.Message);
                             string source = isBase ? "base" : "new";
                             this._logger.LogError($"{source} data does not exist.");
                             Environment.Exit(1);
