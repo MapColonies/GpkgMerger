@@ -1,6 +1,6 @@
 namespace MergerLogic.Utils
 {
-    public class HttpRequestUtils : IHttpRequestUtils
+    public class HttpRequestUtils : IHttpRequestUtils, IDisposable
     {
         private HttpClient _httpClient;
 
@@ -58,6 +58,19 @@ namespace MergerLogic.Utils
             var bodyTask = content?.ReadAsAsync<T>()!;
             Console.WriteLine($"result: {bodyTask.Result}");
             return bodyTask.Result;
+        }
+
+        public Task<HttpResponseMessage> GetAsync(string? requestUri)
+        {
+            return this._httpClient.GetAsync(requestUri);
+        }
+
+        public void Dispose()
+        {
+            if (this._httpClient != null)
+            {
+                this._httpClient.Dispose();
+            }
         }
     }
 }

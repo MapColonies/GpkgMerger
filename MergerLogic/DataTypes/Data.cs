@@ -39,7 +39,7 @@ namespace MergerLogic.DataTypes
         protected readonly int BatchSize;
 
         protected TUtilsType Utils;
-        protected GetTileFromXyzFunction GetTile;
+        protected GetTileFromXYZFunction GetTile;
         protected readonly GetTileFromCoordFunction GetLastExistingTile;
         protected readonly IGeoUtils GeoUtils;
         protected readonly ILogger _logger;
@@ -175,7 +175,7 @@ namespace MergerLogic.DataTypes
         // lazy load get tile function on first call for compatibility with null utills in contractor
         protected Tile? GetTileInitializer(int z, int x, int y)
         {
-            GetTileFromXyzFunction fixedGridGetTileFuntion = this.IsOneXOne ? this.GetOneXOneTile : this.Utils.GetTile;
+            GetTileFromXYZFunction fixedGridGetTileFuntion = this.IsOneXOne ? this.GetOneXOneTile : this.Utils.GetTile;
             if (this.Origin == GridOrigin.LOWER_LEFT)
             {
                 this.GetTile = (z, x, y) =>

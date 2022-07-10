@@ -7,5 +7,7 @@ namespace MergerLogic.Utils
         string GetDataString(string url);
 
         T? GetData<T>(string url);
+
+        Task<HttpResponseMessage> GetAsync(string? requestUri);
     }
 }

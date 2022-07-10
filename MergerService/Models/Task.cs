@@ -46,9 +46,10 @@ namespace MergerService.Controllers
 
         public static MergeTask? GetTask(ILogger<MergeTask> logger)
         {
-            string taskJson = TaskUtils.GetTask();
+            return null;
+            // string taskJson = TaskUtils.GetTask();
 
-            try
+            /*try
             {
                 return JsonSerializer.Deserialize<MergeTask>(taskJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
             }
@@ -56,7 +57,7 @@ namespace MergerService.Controllers
             {
                 logger.LogError(e, $"failed to deserialize task: {e.Message}");
                 return null;
-            }
+            }*/
         }
     }
 }
