@@ -1,6 +1,6 @@
 namespace MergerLogic.Utils
 {
-    public class HttpRequestUtils : IHttpRequestUtils, IDisposable
+    public class HttpRequestUtils : IHttpRequestUtils
     {
         private HttpClient _httpClient;
 
@@ -11,7 +11,10 @@ namespace MergerLogic.Utils
 
         ~HttpRequestUtils()
         {
-            this._httpClient.Dispose();
+            if (this._httpClient != null)
+            {
+                this._httpClient.Dispose();
+            }
         }
 
         private HttpContent? GetContent(string url)
@@ -36,41 +39,27 @@ namespace MergerLogic.Utils
         public byte[]? GetData(string url)
         {
             HttpContent? content = GetContent(url);
-            Console.WriteLine($"content: {content}");
             var bodyTask = content?.ReadAsByteArrayAsync()!;
-            Console.WriteLine($"result: {bodyTask.Result}");
             return bodyTask.Result;
         }
 
         public string GetDataString(string url)
         {
             HttpContent? content = GetContent(url);
-            Console.WriteLine($"content: {content}");
             var bodyTask = content?.ReadAsStringAsync()!.Result;
-            Console.WriteLine($"result: {bodyTask}");
             return bodyTask;
         }
 
         public T? GetData<T>(string url)
         {
             HttpContent? content = GetContent(url);
-            Console.WriteLine($"content: {content}");
             var bodyTask = content?.ReadAsAsync<T>()!;
-            Console.WriteLine($"result: {bodyTask.Result}");
             return bodyTask.Result;
         }
 
         public Task<HttpResponseMessage> GetAsync(string? requestUri)
         {
             return this._httpClient.GetAsync(requestUri);
-        }
-
-        public void Dispose()
-        {
-            if (this._httpClient != null)
-            {
-                this._httpClient.Dispose();
-            }
         }
     }
 }
