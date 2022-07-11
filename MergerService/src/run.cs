@@ -16,12 +16,14 @@ namespace MergerService.Src
         private readonly IConfigurationManager _configurationManager;
         private readonly ILogger _logger;
         private readonly ILogger<MergeTask> _mergeTaskLogger;
+        private readonly ILogger<TaskUtils> _taskUtilsLogger;
         private readonly ActivitySource _activitySource;
         private readonly ITaskUtils _taskUtils;
         private readonly IHttpRequestUtils _requestUtils;
 
         public Run(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, IConfigurationManager configurationManager,
-            ILogger<Run> logger, ILogger<MergeTask> mergeTaskLogger, ActivitySource activitySource, ITaskUtils taskUtils, IHttpRequestUtils requestUtils)
+            ILogger<Run> logger, ILogger<MergeTask> mergeTaskLogger, ILogger<TaskUtils> taskUtilsLogger, ActivitySource activitySource,
+            ITaskUtils taskUtils, IHttpRequestUtils requestUtils)
         {
             this._dataFactory = dataFactory;
             this._tileMerger = tileMerger;
@@ -30,6 +32,7 @@ namespace MergerService.Src
             this._logger = logger;
             this._activitySource = activitySource;
             this._mergeTaskLogger = mergeTaskLogger;
+            this._taskUtilsLogger = taskUtilsLogger;
             this._taskUtils = taskUtils;
             this._requestUtils = requestUtils;
         }
@@ -63,7 +66,7 @@ namespace MergerService.Src
 
             this._logger.LogInformation("starting task polling loop");
 
-            // ITaskUtils taskUtils = new TaskUtils(this._configurationManager, this._requestUtils);
+            ITaskUtils taskUtils = new TaskUtils(this._configurationManager, this._requestUtils, this._taskUtilsLogger, this._activitySource);
 
             while (true)
             {
@@ -71,8 +74,7 @@ namespace MergerService.Src
 
                 try
                 {
-                    task = MergeTask.GetTask(this._mergeTaskLogger);
-                    // task = taskUtils.GetTask();
+                    task = taskUtils.GetTask();
                 }
                 catch (Exception e)
                 {
