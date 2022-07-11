@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace MergerLogicUnitTests.utils
+namespace MergerLogicUnitTests.testUtils
 {
     internal static class ComparerFactory
     {
