@@ -43,21 +43,5 @@ namespace MergerService.Controllers
                 bounds.Print();
             }
         }
-
-        public static MergeTask? GetTask(ILogger<MergeTask> logger)
-        {
-            return null;
-            // string taskJson = TaskUtils.GetTask();
-
-            /*try
-            {
-                return JsonSerializer.Deserialize<MergeTask>(taskJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
-            }
-            catch (Exception e)
-            {
-                logger.LogError(e, $"failed to deserialize task: {e.Message}");
-                return null;
-            }*/
-        }
     }
 }
