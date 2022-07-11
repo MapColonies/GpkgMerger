@@ -22,7 +22,7 @@ namespace MergerService.Controllers
         {
             this.Path = path;
             this.Type = type;
-            this.Origin = origin; //origin.ToLower() == "ul" ? GridOrigin.UPPER_LEFT : GridOrigin.LOWER_LEFT;
+            this.Origin = origin;
             this.Grid = grid.ToLower();
         }
 

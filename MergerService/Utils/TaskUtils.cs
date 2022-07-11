@@ -1,10 +1,8 @@
 using System.Diagnostics;
-
 using MergerLogic.Utils;
 using MergerService.Controllers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using System.Text.Json;
 
 namespace MergerService.Utils
 {
