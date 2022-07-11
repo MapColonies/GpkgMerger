@@ -17,12 +17,9 @@ var app = builder.Build();
 
 app.MapControllers();
 
-Console.WriteLine(Environment.CurrentDirectory);
-Console.WriteLine(AppContext.BaseDirectory);
+new Thread(() =>
+{
+    app.Run();
+});
 
-// new Thread(() =>
-// {
-//     app.Run();
-// });
-
-// app.Services.GetRequiredService<IRun>().Start();
+app.Services.GetRequiredService<IRun>().Start();

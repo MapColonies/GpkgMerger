@@ -91,7 +91,8 @@ namespace MergerService.Src
                 }
 
                 // Log the task
-                this._logger.LogInformation($"starting task: taskId job: jobId");//TODO: add job and task ids
+                // TODO: add job and task ids
+                this._logger.LogInformation($"starting task: taskId job: jobId");
 
                 try
                 {
@@ -103,9 +104,11 @@ namespace MergerService.Src
 
                         foreach (TileBounds bounds in task.Batches)
                         {
+                            Console.WriteLine($"activitySource: {this._activitySource}");
                             using (var batchActivity = this._activitySource.StartActivity("batch processing"))
                             {
-                                batchActivity.AddTag("bbox", bounds.ToString());
+                                // TODO: remove comment and check that the activity is created (When bug will be fixed)
+                                // batchActivity.AddTag("bbox", bounds.ToString());
 
                                 stopWatch.Reset();
                                 stopWatch.Start();
@@ -113,7 +116,8 @@ namespace MergerService.Src
                                 int totalTileCount = bounds.Size();
                                 int tileProgressCount = 0;
 
-                                batchActivity.AddTag("size", totalTileCount);
+                                // TODO: remove comment and check that the activity is created (When bug will be fixed)
+                                // batchActivity.AddTag("size", totalTileCount);
 
                                 // Skip if there are no tiles in the given bounds
                                 if (totalTileCount == 0)
@@ -130,6 +134,7 @@ namespace MergerService.Src
 
                                 // Go over the bounds of the current batch
                                 using (this._activitySource.StartActivity("merging tiles"))
+                                {
                                     for (int x = bounds.MinX; x < bounds.MaxX; x++)
                                     {
                                         for (int y = bounds.MinY; y < bounds.MaxY; y++)
@@ -161,9 +166,12 @@ namespace MergerService.Src
                                             }
                                         }
                                     }
+                                }
 
                                 using (this._activitySource.StartActivity("saving tiles"))
+                                {
                                     target.UpdateTiles(tiles);
+                                }
 
                                 this._logger.LogInformation($"Tile Count: {tileProgressCount} / {totalTileCount}");
                                 target.Wrapup();
