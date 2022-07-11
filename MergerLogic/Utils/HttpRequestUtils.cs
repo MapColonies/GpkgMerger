@@ -4,9 +4,9 @@ namespace MergerLogic.Utils
     {
         private HttpClient _httpClient;
 
-        public HttpRequestUtils()
+        public HttpRequestUtils(HttpClient httpClient)
         {
-            this._httpClient = new HttpClient();
+            this._httpClient = httpClient;
         }
 
         ~HttpRequestUtils()
@@ -55,11 +55,6 @@ namespace MergerLogic.Utils
             HttpContent? content = GetContent(url);
             var bodyTask = content?.ReadAsAsync<T>()!;
             return bodyTask.Result;
-        }
-
-        public Task<HttpResponseMessage> GetAsync(string? requestUri)
-        {
-            return this._httpClient.GetAsync(requestUri);
         }
     }
 }
