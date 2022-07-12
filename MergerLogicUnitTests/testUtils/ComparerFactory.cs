@@ -25,7 +25,7 @@ namespace MergerLogicUnitTests.testUtils
             {
                 if (x is null && y is null)
                     return 0;
-                else if ((x is null && y?.GetType() == typeof(T)) || (y is null && x?.GetType() == typeof(T)) || (x?.GetType() == typeof(T) && y?.GetType() == typeof(T)))
+                else if ((x is null && y is T) || (y is null && x is T) || (x is T && y is T))
                 {
                     return this._eqFunc((T?)x, (T?)y);
                 }

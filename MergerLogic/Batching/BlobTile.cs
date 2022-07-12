@@ -28,5 +28,10 @@ namespace MergerLogic.Batching
             return StringUtils.StringToByteArray(this.Blob);
         }
 
+        public override string ToString()
+        {
+            return $"z: {this.Z}, x: {this.X}, y: {this.Y}, data size: {this.BlobSize}";
+        }
+
     }
 }
