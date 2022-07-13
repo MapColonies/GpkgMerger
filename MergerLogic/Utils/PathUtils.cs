@@ -31,12 +31,6 @@ namespace MergerLogic.Utils
             return $"{basePath}{separator}{z}{separator}{x}{separator}{y}.png";
         }
 
-        public string GetTilePathTMS(string basePath, int z, int x, int y, bool isS3 = false)
-        {
-            y = this._geoUtils.FlipY(z, y);
-            return this.GetTilePath(basePath, z, x, y, isS3);
-        }
-
         public Coord FromPath(string path, bool isS3 = false)
         {
             string[] parts = path.Split(this.GetSeparator(isS3));
