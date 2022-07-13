@@ -8,7 +8,6 @@ namespace MergerLogic.Utils
         Coord FromPath(string path, bool isS3 = false);
         string GetTilePath(string basePath, int z, int x, int y, bool isS3 = false);
         string GetTilePath(string basePath, Tile tile);
-        string GetTilePathTMS(string basePath, int z, int x, int y, bool isS3 = false);
         string RemoveTrailingSlash(string path, bool isS3 = false);
     }
 }

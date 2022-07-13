@@ -77,7 +77,7 @@ namespace MergerLogic.Utils
             var request = new GetObjectMetadataRequest()
             {
                 BucketName = this._bucket,
-                Key = String.Format(key)
+                Key = key
             };
 
             try
@@ -86,7 +86,7 @@ namespace MergerLogic.Utils
                 _ = task.Result;
                 return true;
             }
-            catch (AmazonS3Exception e)
+            catch (AggregateException e)
             {
                 return false;
             }
