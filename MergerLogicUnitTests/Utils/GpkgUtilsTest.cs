@@ -411,7 +411,7 @@ namespace MergerLogicUnitTests.Utils
                     this._fileSystemMock.Object, this._geoUtilsMock.Object);
 
                 gpkgUtils.DeleteTileTableTriggers();
-                
+
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText =
@@ -421,6 +421,132 @@ namespace MergerLogicUnitTests.Utils
                 }
             }
 
+            this.VerifyAll();
+        }
+
+        #endregion
+
+        #region CreateTileCacheValidationTriggers
+
+        [TestMethod]
+        [TestCategory("CreateTileCacheValidationTriggers")]
+        public void CreateTileCacheValidationTriggers()
+        {
+            string path = this.GetGpkgPath();
+            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            {
+                connection.Open();
+                this.SetupConstructorRequiredMocks(connection);
+                this.CreateTestTiles(connection, Array.Empty<Tile>());
+
+                var gpkgUtils = new GpkgUtils(path, this._timeUtilsMock.Object, this._loggerMock.Object,
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+
+                gpkgUtils.CreateTileCacheValidationTriggers();
+
+                foreach (var action in new string[] { "BEFORE INSERT", "BEFORE UPDATE" })
+                {
+                    foreach (var col in new string[] { "tile_column", "tile_row", "zoom" })
+                    {
+                        using (var command = connection.CreateCommand())
+                        {
+                            command.CommandText =
+                                "SELECT count(*) FROM sqlite_master WHERE type = 'trigger' " +
+                                "AND tbl_name = 'test' AND name NOT LIKE '%autoindex%' " +
+                                $"AND sql Like '%{action}%' AND name LIKE '%{col}%';";
+                            Assert.AreEqual(1l, command.ExecuteScalar(), $"{action} trigger is missing for {col}");
+                        }
+                    }
+                }
+            }
+            this.VerifyAll();
+        }
+
+        #endregion
+
+        #region UpdateTileMatrixTable
+
+        public static IEnumerable<object[]> GenUpdateTileMatrixTableParams()
+        {
+            return DynamicDataGenerator.GeneratePrams(new object[][]
+            {
+                new object[] { true, false }, //is 1X1
+                new object[] { 0, 1,5,12,21 } // max zoom
+            });
+        }
+
+        [TestMethod]
+        [TestCategory("UpdateTileMatrixTable")]
+        [DynamicData(nameof(GenUpdateTileMatrixTableParams), DynamicDataSourceType.Method)]
+        public void UpdateTileMatrixTable(bool isOneXOne, int maxZoom)
+        {
+            string path = this.GetGpkgPath();
+            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            {
+                connection.Open();
+                this.SetupConstructorRequiredMocks(connection);
+                this.CreateTestTiles(connection, new Tile[] { new Tile(maxZoom, 0, 0, Array.Empty<byte>()) });
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "CREATE TABLE gpkg_tile_matrix (" +
+                                          "table_name TEXT NOT NULL," +
+                                          "zoom_level INTEGER NOT NULL," +
+                                          "matrix_width INTEGER NOT NULL," +
+                                          "matrix_height INTEGER NOT NULL," +
+                                          "tile_width INTEGER NOT NULL," +
+                                          "tile_height INTEGER NOT NULL," +
+                                          "pixel_x_size DOUBLE NOT NULL," +
+                                          "pixel_y_size DOUBLE NOT NULL);";
+                    command.ExecuteNonQuery();
+                }
+
+                var gpkgUtils = new GpkgUtils(path, this._timeUtilsMock.Object, this._loggerMock.Object,
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+
+                gpkgUtils.UpdateTileMatrixTable(isOneXOne);
+
+                long expectedMatrixCount = maxZoom + 1;
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "SELECT count(*) FROM gpkg_tile_matrix";
+                    Assert.AreEqual(expectedMatrixCount, command.ExecuteScalar());
+                }
+
+                int expetedTileSize = 256;
+                int[] expectedMatrixYSize =
+                { 
+                    //0 1 2  3   4  5    6   7    8    9    10    11    12    13    14      15     16     17
+                    1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072,
+                    //18      19      20       21
+                    262144, 524288, 1048576, 2097152
+                };
+                var getExpectedMatrixXSize = (int z) => isOneXOne ? expectedMatrixYSize[z] : 2 * expectedMatrixYSize[z];
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "SELECT table_name,zoom_level,matrix_width,matrix_height,tile_width,tile_height," +
+                                          "pixel_x_size,pixel_y_size FROM gpkg_tile_matrix " +
+                                          "ORDER BY zoom_level ASC";
+                    using (var reader = command.ExecuteReader())
+                    {
+                        int i = 0;
+                        while (reader.Read())
+                        {
+                            Assert.AreEqual("test", reader.GetString(0));
+                            Assert.AreEqual(i, reader.GetInt32(1));
+                            var expectedMatrixWidth = getExpectedMatrixXSize(i);
+                            Assert.AreEqual(expectedMatrixWidth, reader.GetInt32(2));
+                            Assert.AreEqual(expectedMatrixYSize[i], reader.GetInt32(3));
+                            Assert.AreEqual(expetedTileSize, reader.GetInt32(4));
+                            Assert.AreEqual(expetedTileSize, reader.GetInt32(5));
+                            var expectedPixelSize = (360d / expectedMatrixWidth) / expetedTileSize;
+                            Assert.AreEqual(expectedPixelSize, reader.GetDouble(6), 1e-22);
+                            Assert.AreEqual(expectedPixelSize, reader.GetDouble(7), 1e-22);
+                            i++;
+                        }
+                        Assert.AreEqual(maxZoom + 1, i);
+                    }
+                }
+            }
             this.VerifyAll();
         }
 
