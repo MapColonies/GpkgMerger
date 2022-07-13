@@ -24,11 +24,6 @@ namespace MergerLogic.Utils
             this._tileCache = this.InternalGetTileCache();
         }
 
-        public string GetTileCache()
-        {
-            return this._tileCache;
-        }
-
         private string InternalGetTileCache()
         {
             if (!this.Exist())
@@ -94,7 +89,7 @@ namespace MergerLogic.Utils
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = $"SELECT count(*) FROM \"{this._tileCache}\"";
-
+                    //TODO: can optimized by using command.ExecuteScalar
                     using (var reader = command.ExecuteReader(System.Data.CommandBehavior.SingleRow))
                     {
                         reader.Read();
@@ -247,6 +242,10 @@ namespace MergerLogic.Utils
 
         public Tile GetLastTile(int[] coords, Coord baseCoords)
         {
+            if (coords.Length < 2)
+            {
+                return null;
+            }
             Tile lastTile = null;
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
@@ -287,6 +286,8 @@ namespace MergerLogic.Utils
                         var x = reader.GetInt32(1);
                         var y = reader.GetInt32(2);
                         var blob = reader.GetString(3);
+                        //TODO: optimize by removing hex conversion using getBlob, reading it in loop into memory stream and converting it to byte array 
+                        // this will also remove the need from blob tile
                         var blobSize = reader.GetInt32(4);
                         lastTile = new BlobTile(z, x, y, blob, blobSize);
                     }
@@ -363,20 +364,6 @@ namespace MergerLogic.Utils
             }
             // Vacuum is required if page size pragma is changed
             //Vacuum();
-        }
-
-        public void RemoveUnusedTileMatrix(IEnumerable<int> usedZooms)
-        {
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
-            {
-                connection.Open();
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "DELETE FROM \"gpkg_tile_matrix\" " +
-                        $"WHERE \"table_name\" = '{this._tileCache}' AND  \"zoom_level\" NOT IN ({string.Join(',', usedZooms)});";
-                    command.ExecuteNonQuery();
-                }
-            }
         }
 
         private void CreateSpatialRefTable(SQLiteConnection connection)
