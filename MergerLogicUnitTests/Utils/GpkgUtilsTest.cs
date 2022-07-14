@@ -46,6 +46,86 @@ namespace MergerLogicUnitTests.Utils
             this._loggerMock = this._repository.Create<ILogger<GpkgUtils>>(MockBehavior.Loose);
         }
 
+        #region GetTile
+
+        public static IEnumerable<object[]> GenGetTileParams()
+        {
+            return DynamicDataGenerator.GeneratePrams(new object[][]
+            {
+                new object[] { true, false}, // exist
+                new object[] { true, false} // use coords
+            });
+        }
+
+        [TestMethod]
+        [TestCategory("GetTile")]
+        [DynamicData(nameof(GenGetTileParams), DynamicDataSourceType.Method)]
+        public void GetTile(bool exist, bool useCoords)
+        {
+            var data = new byte[1];
+            var cords = new Coord(0, 0, 0);
+            var testTiles = exist ? new Tile[] { new Tile(cords, data) } : Array.Empty<Tile>();
+
+            string path = this.GetGpkgPath();
+            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            {
+                connection.Open();
+                this.SetupConstructorRequiredMocks(connection);
+                this.CreateTestTiles(connection, testTiles); //create tile table
+
+                var gpkgUtils = new GpkgUtils(path, this._timeUtilsMock.Object, this._loggerMock.Object,
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+
+                var res = useCoords ? gpkgUtils.GetTile(cords) : gpkgUtils.GetTile(cords.Z, cords.X, cords.Y);
+
+                if (!exist)
+                {
+                    Assert.IsNull(res);
+                }
+                else
+                {
+                    Assert.AreEqual(cords.Z, res.Z);
+                    Assert.AreEqual(cords.X, res.X);
+                    Assert.AreEqual(cords.Y, res.Y);
+                    CollectionAssert.AreEqual(data, res.GetImageBytes());
+                }
+            }
+            this.VerifyAll();
+        }
+
+        #endregion
+
+        #region TileExists
+
+        [TestMethod]
+        [TestCategory("TileExists")]
+        [DataRow(true)]
+        [DataRow(false)]
+        public void TileExists(bool exist)
+        {
+            var data = new byte[1];
+            var cords = new Coord(0, 0, 0);
+            var testTiles = exist ? new Tile[] { new Tile(cords, data) } : Array.Empty<Tile>();
+
+            string path = this.GetGpkgPath();
+            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            {
+                connection.Open();
+                this.SetupConstructorRequiredMocks(connection);
+                this.CreateTestTiles(connection, testTiles); //create tile table
+
+                var gpkgUtils = new GpkgUtils(path, this._timeUtilsMock.Object, this._loggerMock.Object,
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+
+                var res = gpkgUtils.TileExists(cords.Z, cords.X, cords.Y);
+
+                Assert.AreEqual(exist, res);
+            }
+            this.VerifyAll();
+        }
+
+        #endregion
+
         #region CreateTileIndex
 
         [TestMethod]
