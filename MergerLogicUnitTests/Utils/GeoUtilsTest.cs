@@ -163,7 +163,6 @@ namespace MergerLogicUnitTests.Utils
 
         #endregion
 
-        //Extent TileRangeToExtent(TileBounds bounds);
         #region TileRangeToExtent
 
         public static IEnumerable<object[]> GenTileRangeToExtentParams()
