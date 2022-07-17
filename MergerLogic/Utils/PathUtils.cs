@@ -6,12 +6,10 @@ namespace MergerLogic.Utils
 {
     public class PathUtils : IPathUtils
     {
-        private readonly IGeoUtils _geoUtils;
         private readonly IFileSystem _fileSystem;
 
-        public PathUtils(IGeoUtils geoUtils, IFileSystem fileSystem)
+        public PathUtils(IFileSystem fileSystem)
         {
-            this._geoUtils = geoUtils;
             this._fileSystem = fileSystem;
         }
 
