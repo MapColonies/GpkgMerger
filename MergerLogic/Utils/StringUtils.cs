@@ -4,6 +4,7 @@ namespace MergerLogic.Utils
 {
     public class StringUtils : IStringUtils
     {
+        //TODO: optimize if it is still required after optimizing reading the the tile from gpkg
         // From: https://stackoverflow.com/questions/321370/how-can-i-convert-a-hex-string-to-a-byte-array
         public static byte[] StringToByteArray(string hex)
         {
