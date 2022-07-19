@@ -6,17 +6,20 @@ namespace MergerLogic.Utils
     public class PathPatternUtils : IPathPatternUtils
     {
         private string[] _pattern;
-        private Dictionary<string, string> _keyValues;
+        private readonly Dictionary<string, string> _keyValues;
 
         public PathPatternUtils(string pattern)
         {
             this._keyValues = new Dictionary<string, string>(9);
-            this.compilePattern(pattern);
+            this.CompilePattern(pattern);
         }
 
-        private void compilePattern(string pattern)
+        private void CompilePattern(string pattern)
         {
-            this._pattern = Regex.Split(pattern, "{(x)}|{(X)}|{(TileCol)}|{(y)}|{(Y)}|{(TileRow)}|{(TileMatrix)}|{(z)}|{(Z)}");
+            this._pattern = Regex
+                .Split(pattern, "{(x)}|{(X)}|{(TileCol)}|{(y)}|{(Y)}|{(TileRow)}|{(TileMatrix)}|{(z)}|{(Z)}")
+                .Where(str => !string.IsNullOrEmpty(str)).ToArray();
+
             if (this._pattern.Length == 6)
             {
                 // add empty value to the end in case the patten ends with parameter and not constant
