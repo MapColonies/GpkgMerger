@@ -3,7 +3,6 @@ using MergerLogic.DataTypes;
 
 namespace MergerLogic.Utils
 {
-    //TODO: add proper tests. calling this multiple tiles (i.e. converting already converted coordinates WILL BREAK THE TARGET DATA IN UNRECOVERABLE WAY (!!!)
     public class OneXOneConvertor : IOneXOneConvertor
     {
 
