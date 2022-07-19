@@ -1,5 +1,6 @@
 ﻿using MergerLogic.DataTypes;
 using MergerLogic.Utils;
+using MergerLogicUnitTests.testUtils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
@@ -47,22 +48,31 @@ namespace MergerLogicUnitTests.Utils
 
         public static IEnumerable<object[]> GenRenderUrlTemplateParams()
         {
-
+            return DynamicDataGenerator.GeneratePrams(new object[][]
+            {
+                new object[]
+                {
+                    new TestExpected<Coord,string>(new Coord(0,0,0),"https://test.com/wmts/grid/0/0/0.png"),
+                    new TestExpected<Coord,string>(new Coord(21,3494272,2097152),"https://test.com/wmts/grid/21/3494272/2097152.png"),
+                    new TestExpected<Coord,string>(new Coord(7,126,784),"https://test.com/wmts/grid/7/126/784.png")
+                }, //test data
+                new object[] { true, false} //use coords
+            });
         }
 
         [TestMethod]
         [TestCategory("RenderUrlTemplate")]
         [DynamicData(nameof(GenRenderUrlTemplateParams), DynamicDataSourceType.Method)]
-        public void RenderUrlTemplate(Coord coords, bool useCoords, string expected)
+        public void RenderUrlTemplate(TestExpected<Coord, string> testData, bool useCoords)
         {
             var patternUtils = new PathPatternUtils("https://test.com/wmts/grid/{TileMatrix}/{TileCol}/{TileRow}.png");
             if (useCoords)
             {
-                Assert.AreEqual(expected, patternUtils.RenderUrlTemplate(coords));
+                Assert.AreEqual(testData.ExpectedData, patternUtils.RenderUrlTemplate(testData.TestData));
             }
             else
             {
-                Assert.AreEqual(expected, patternUtils.RenderUrlTemplate(coords.X, coords.Y, coords.Z));
+                Assert.AreEqual(testData.ExpectedData, patternUtils.RenderUrlTemplate(testData.TestData.X, testData.TestData.Y, testData.TestData.Z));
             }
         }
 
