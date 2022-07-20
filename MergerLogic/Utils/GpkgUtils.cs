@@ -78,9 +78,9 @@ namespace MergerLogic.Utils
             return extent;
         }
 
-        public int GetTileCount()
+        public long GetTileCount()
         {
-            int tileCount = 0;
+            long tileCount = 0;
 
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
@@ -93,7 +93,7 @@ namespace MergerLogic.Utils
                     using (var reader = command.ExecuteReader(System.Data.CommandBehavior.SingleRow))
                     {
                         reader.Read();
-                        tileCount = reader.GetInt32(0);
+                        tileCount = reader.GetInt64(0);
                     }
                 }
             }

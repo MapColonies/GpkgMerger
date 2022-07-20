@@ -9,7 +9,7 @@ namespace MergerLogic.Utils
         List<Tile> GetBatch(int batchSize, int offset);
         Extent GetExtent();
         Tile GetLastTile(int[] coords, Coord baseCoords);
-        int GetTileCount();
+        long GetTileCount();
         void InsertTiles(IEnumerable<Tile> tiles);
         void UpdateExtent(Extent extent);
         void Vacuum();

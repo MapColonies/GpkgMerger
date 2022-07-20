@@ -597,7 +597,7 @@ namespace MergerLogicUnitTests.DataTypes
             var seq = new MockSequence();
             this.SetupConstructorRequiredMocks(isBase, seq);
             var fileList = new List<string>();
-            for (int i = 0; i < tileCount; i++)
+            for (long i = 0; i < tileCount; i++)
             {
                 //valid files
                 fileList.Add(i % 2 == 0 ? "t.png" : "t.jpg");

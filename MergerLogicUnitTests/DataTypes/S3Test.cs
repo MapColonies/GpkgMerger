@@ -529,7 +529,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._s3ClientMock
                 .InSequence(seq)
                 .Setup(s3 => s3.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new ListObjectsV2Response() { KeyCount = tiles });
+                .ReturnsAsync(new ListObjectsV2Response() { KeyCount = tiles }); // todo: discuss how to check for long
 
             var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", 10, isOneXOne, origin);
 

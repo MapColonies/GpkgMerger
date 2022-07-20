@@ -12,7 +12,7 @@ namespace MergerLogic.DataTypes
         List<Tile> GetNextBatch(out string batchIdentifier);
         void Reset();
         void setBatchIdentifier(string batchIdentifier);
-        int TileCount();
+        long TileCount();
         bool TileExists(Coord coord);
         bool TileExists(Tile tile);
         void UpdateTiles(IEnumerable<Tile> tiles);

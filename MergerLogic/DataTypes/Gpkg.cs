@@ -115,7 +115,7 @@ namespace MergerLogic.DataTypes
             return this.Utils.Exist();
         }
 
-        public override int TileCount()
+        public override long TileCount()
         {
             return this.Utils.GetTileCount();
         }

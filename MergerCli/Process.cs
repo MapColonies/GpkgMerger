@@ -20,8 +20,8 @@ namespace MergerCli
         {
             batchStatusManager.InitilaizeLayer(newData.Path);
             List<Tile> tiles = new List<Tile>(batchSize);
-            int totalTileCount = newData.TileCount();
-            int tileProgressCount = 0;
+            long totalTileCount = newData.TileCount();
+            long tileProgressCount = 0;
 
             string? resumeBatchIdentifier = batchStatusManager.GetLayerBatchIdentifier(newData.Path);
             if (resumeBatchIdentifier != null)
@@ -78,8 +78,8 @@ namespace MergerCli
             List<Tile> newTiles;
             bool hasSameTiles = true;
 
-            int totalTileCount = newData.TileCount();
-            int tilesChecked = 0;
+            long totalTileCount = newData.TileCount();
+            long tilesChecked = 0;
             this._logger.LogInformation($"Base tile Count: {baseData.TileCount()}, New tile count: {totalTileCount}");
 
             do
@@ -87,8 +87,8 @@ namespace MergerCli
                 newTiles = newData.GetNextBatch(out _);
 
                 int baseMatchCount = 0;
-                int newTileCount = 0;
-
+                long newTileCount = 0;
+                // todo: ask shahar if it needs to be long
                 for (int i = 0; i < newTiles.Count; i++)
                 {
                     Tile newTile = newTiles[i];

@@ -101,7 +101,7 @@ namespace MergerLogic.DataTypes
             }
         }
 
-        public override int TileCount()
+        public override long TileCount()
         {
             // From: https://stackoverflow.com/a/7430971/11915280 and https://stackoverflow.com/a/19961761/11915280
             string[] ext = { ".png", ".jpg" };
