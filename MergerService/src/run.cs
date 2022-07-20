@@ -98,7 +98,7 @@ namespace MergerService.Src
                                 stopWatch.Reset();
                                 stopWatch.Start();
 
-                                int totalTileCount = bounds.Size();
+                                int totalTileCount = (int)bounds.Size();
                                 int tileProgressCount = 0;
 
                                 batchActivity.AddTag("size", totalTileCount);
@@ -199,7 +199,7 @@ namespace MergerService.Src
 
         private void Validate(IData target, TileBounds bounds)
         {
-            int totalTileCount = bounds.Size();
+            int totalTileCount = (int)bounds.Size();
             int tilesChecked = 0;
 
             this._logger.LogInformation("If any missing tiles are found, they will be printed.");

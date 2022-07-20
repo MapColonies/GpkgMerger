@@ -6,7 +6,7 @@ namespace MergerLogic.DataTypes
 {
     public class Gpkg : Data<IGpkgUtils>
     {
-        private int _offset;
+        private long _offset;
 
         private readonly IConfigurationManager _configManager;
 
@@ -61,7 +61,7 @@ namespace MergerLogic.DataTypes
 
         public override void setBatchIdentifier(string batchIdentifier)
         {
-            this._offset = int.Parse(batchIdentifier);
+            this._offset = long.Parse(batchIdentifier);
         }
 
         protected override Tile InternalGetLastExistingTile(Coord baseCoords)
@@ -115,7 +115,7 @@ namespace MergerLogic.DataTypes
             return this.Utils.Exist();
         }
 
-        public override int TileCount()
+        public override long TileCount()
         {
             return this.Utils.GetTileCount();
         }

@@ -612,7 +612,7 @@ namespace MergerLogicUnitTests.DataTypes
         public void SetBatchIdentifier(bool isOneXOne, bool isBase, GridOrigin origin, int offset)
         {
             this.SetupRequiredBaseMocks(isBase);
-            this._gpkgUtilsMock.Setup(utils => utils.GetBatch(10, It.IsAny<int>()))
+            this._gpkgUtilsMock.Setup(utils => utils.GetBatch(10, It.IsAny<long>()))
                 .Returns(new List<Tile>());
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
@@ -648,7 +648,7 @@ namespace MergerLogicUnitTests.DataTypes
         public void Reset(bool isOneXOne, bool isBase, GridOrigin origin, int batchSize)
         {
             this.SetupRequiredBaseMocks(isBase);
-            this._gpkgUtilsMock.Setup(utils => utils.GetBatch(batchSize, It.IsAny<int>()))
+            this._gpkgUtilsMock.Setup(utils => utils.GetBatch(batchSize, It.IsAny<long>()))
                 .Returns(new List<Tile> { new Tile(0, 0, 0, new byte[] { }) });
             if (origin == GridOrigin.LOWER_LEFT)
             {
@@ -674,7 +674,7 @@ namespace MergerLogicUnitTests.DataTypes
             gpkg.GetNextBatch(out batchIdentifier);
             Assert.AreEqual("0", batchIdentifier);
             this._gpkgUtilsMock.Verify(utils => utils.GetBatch(batchSize, 0), Times.Exactly(2));
-            this._gpkgUtilsMock.Verify(utils => utils.GetBatch(batchSize, It.IsAny<int>()), Times.Exactly(3));
+            this._gpkgUtilsMock.Verify(utils => utils.GetBatch(batchSize, It.IsAny<long>()), Times.Exactly(3));
             this.VerifyAll();
         }
 
@@ -710,7 +710,7 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._gpkgUtilsMock
                     .InSequence(seq)
-                    .Setup(utils => utils.GetBatch(batchSize, It.IsAny<int>()))
+                    .Setup(utils => utils.GetBatch(batchSize, It.IsAny<long>()))
                     .Returns(tileBatches[i].ToList());
                 for (var j = 0; j < tileBatches[i].Length; j++)
                 {

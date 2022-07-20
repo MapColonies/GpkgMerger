@@ -12,7 +12,7 @@ namespace MergerLogic.DataTypes
 
         private IEnumerator<Tile> _tiles;
         private bool _done;
-        private int _completedTiles;
+        private long _completedTiles;
 
         private readonly IPathUtils _pathUtils;
         private readonly IFileSystem _fileSystem;
@@ -92,16 +92,16 @@ namespace MergerLogic.DataTypes
 
         public override void setBatchIdentifier(string batchIdentifier)
         {
-            this._completedTiles = int.Parse(batchIdentifier);
+            this._completedTiles = long.Parse(batchIdentifier);
             // uncomment to make this function work at any point of the run and not only after the source initialization
             //this.tiles.Reset();
-            for (int i = 0; i < this._completedTiles; i++)
+            for (long i = 0; i < this._completedTiles; i++)
             {
                 this._tiles.MoveNext();
             }
         }
 
-        public override int TileCount()
+        public override long TileCount()
         {
             // From: https://stackoverflow.com/a/7430971/11915280 and https://stackoverflow.com/a/19961761/11915280
             string[] ext = { ".png", ".jpg" };

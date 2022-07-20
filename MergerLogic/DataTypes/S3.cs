@@ -94,9 +94,9 @@ namespace MergerLogic.DataTypes
             return response.KeyCount > 0;
         }
 
-        public override int TileCount()
+        public override long TileCount()
         {
-            int tileCount = 0;
+            long tileCount = 0;
             string continuationToken = null;
 
             do
