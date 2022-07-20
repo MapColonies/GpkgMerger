@@ -6,7 +6,7 @@ namespace MergerLogic.Utils
     public interface IGpkgUtils : IDataUtils
     {
         void CreateTileIndex();
-        List<Tile> GetBatch(int batchSize, int offset);
+        List<Tile> GetBatch(int batchSize, long offset);
         Extent GetExtent();
         Tile GetLastTile(int[] coords, Coord baseCoords);
         long GetTileCount();

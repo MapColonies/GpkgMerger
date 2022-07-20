@@ -207,7 +207,7 @@ namespace MergerLogic.Utils
             }
         }
 
-        public List<Tile> GetBatch(int batchSize, int offset)
+        public List<Tile> GetBatch(int batchSize, long offset)
         {
             List<Tile> tiles = new List<Tile>();
 
