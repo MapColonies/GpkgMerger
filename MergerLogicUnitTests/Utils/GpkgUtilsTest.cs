@@ -119,6 +119,32 @@ namespace MergerLogicUnitTests.Utils
             this.VerifyAll();
         }
 
+        [TestMethod]
+        [TestCategory("GetBatch")]
+        public void GetBatchWithLongOffset()
+        {
+            long offset = 1L + int.MaxValue;
+            string path = this.GetGpkgPath();
+            var testTiles = new Tile[]
+            {
+                new Tile(0, 0, 0, Array.Empty<byte>())
+            };
+
+            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            {
+                connection.Open();
+                this.SetupConstructorRequiredMocks(connection);
+                this.CreateTestTiles(connection, testTiles);
+
+                var gpkgUtils = new GpkgUtils(path, this._timeUtilsMock.Object, this._loggerMock.Object,
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+
+                var res = gpkgUtils.GetBatch(21, offset);
+                CollectionAssert.AreEqual(Array.Empty<Tile>(), res);
+            }
+            this.VerifyAll();
+        }
+
         #endregion
 
         #region GetExtent
