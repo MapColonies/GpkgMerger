@@ -232,7 +232,7 @@ namespace MergerLogicUnitTests.Utils
         public void GetTileCount(int tileCount)
         {
             string path = this.GetGpkgPath();
-            var testTiles = new List<Tile>(tileCount); // todo: discuss how to check for long
+            var testTiles = new List<Tile>(tileCount);
             for (int i = 0; i < tileCount; i++)
             {
                 testTiles.Add(new Tile(0, i, 0, Array.Empty<byte>()));

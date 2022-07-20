@@ -87,8 +87,7 @@ namespace MergerCli
                 newTiles = newData.GetNextBatch(out _);
 
                 int baseMatchCount = 0;
-                long newTileCount = 0;
-                // todo: ask shahar if it needs to be long
+                int newTileCount = 0;
                 for (int i = 0; i < newTiles.Count; i++)
                 {
                     Tile newTile = newTiles[i];
