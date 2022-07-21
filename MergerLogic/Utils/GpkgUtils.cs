@@ -1,5 +1,6 @@
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using MergerLogic.Extensions;
 using Microsoft.Extensions.Logging;
 using System.Data.SQLite;
 using System.Diagnostics;
@@ -680,6 +681,67 @@ namespace MergerLogic.Utils
                     this.CreateSqureGrid(connection, 0, maxZoom, 2, 1, 180, 2, 256);//creates 2X1 grid
                 }
             }
+        }
+
+        public bool IsValidGrid(bool isOneXOne = false)
+        {
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    string maxY = isOneXOne ? "180" : "90";
+                    command.CommandText = "SELECT count(*) FROM gpkg_tile_matrix_set " +
+                                          $"WHERE table_name = '{this._tileCache}' AND srs_id = {Utils.GeoUtils.SRID} " +
+                                          "AND min_x = -180 AND max_x = 180 " +
+                                          $"AND min_y = -{maxY} AND max_y = {maxY}";
+                    long count = (long)command.ExecuteScalar();
+                    var isValid = count == 1;
+                    if (!isValid)
+                    {
+                        return false;
+                    }
+                }
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText =
+                        "SELECT zoom_level, matrix_width, matrix_height, tile_width, tile_height, pixel_x_size, pixel_y_size " +
+                        "FROM gpkg_tile_matrix " +
+                        $"WHERE table_name = '{this._tileCache}' ORDER BY zoom_level ASC";
+                    using (var reader = command.ExecuteReader())
+                    {
+                        const int tileSize = 256;
+                        const double doublePrecession = 1e-10;
+                        int zoom = 0;
+                        int yAxisSizeDeg = isOneXOne ? 360 : 180;
+                        double res = (double)yAxisSizeDeg / 256;
+                        int yTiles = 1;
+                        int xTiles = isOneXOne ? 1 : 2;
+                        while (reader.Read())
+                        {
+                            int rowZoom = reader.GetInt32(0);
+                            while (zoom < rowZoom)
+                            {
+                                res = res / 2;
+                                yTiles <<= 1;
+                                xTiles <<= 1;
+                                zoom++;
+                            }
+
+                            if (reader.GetInt32(1) != xTiles || reader.GetInt32(2) != yTiles ||
+                                reader.GetInt32(3) != tileSize || reader.GetInt32(4) != tileSize ||
+                                !reader.GetDouble(5).IsApproximatelyEqualTo(res, doublePrecession) ||
+                                !reader.GetDouble(6).IsApproximatelyEqualTo(res, doublePrecession))
+                            {
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return true;
         }
     }
 }

@@ -25,15 +25,34 @@ namespace MergerLogic.DataTypes
                     throw new Exception($" base gpkg '{path}' must have extent");
                 }
 
+                this._logger.LogInformation($"Checking if exists, gpkg: {this.Path}");
                 if (!this.Utils.Exist())
                 {
                     this.Utils.Create(extent.Value, isOneXOne);
                 }
                 else
                 {
+                    if (!this.Utils.IsValidGrid(isOneXOne))
+                    {
+                        var gridType = isOneXOne ? "1X1" : "2X1";
+                        throw new Exception($"gpkg source {path} don't have valid {gridType} grid.");
+                    };
                     this.Utils.DeleteTileTableTriggers();
                 }
                 this.Utils.UpdateExtent(extent.Value);
+            }
+            else
+            {
+                this._logger.LogInformation($"Checking if exists, gpkg: {this.Path}");
+                if (!this.Utils.Exist())
+                {
+                    throw new Exception($"gpkg source {path} does not exist.");
+                }
+                if (!this.Utils.IsValidGrid(isOneXOne))
+                {
+                    var gridType = isOneXOne ? "1X1" : "2X1";
+                    throw new Exception($"gpkg source {path} don't have valid {gridType} grid.");
+                };
             }
         }
 
@@ -111,8 +130,7 @@ namespace MergerLogic.DataTypes
 
         public override bool Exists()
         {
-            this._logger.LogInformation($"Checking if exists, gpkg: {this.Path}");
-            return this.Utils.Exist();
+            return true; //exists validation is now part of the constructor
         }
 
         public override long TileCount()

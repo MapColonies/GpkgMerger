@@ -533,30 +533,43 @@ namespace MergerLogicUnitTests.DataTypes
         [DynamicData(nameof(GenExistParams), DynamicDataSourceType.Method)]
         public void Exists(bool isOneXOne, bool isBase, GridOrigin origin, bool exist)
         {
-            this.SetupRequiredBaseMocks(isBase);
-            this._gpkgUtilsMock.Setup(utils => utils.Exist()).Returns(exist);
-            if (isBase)
+            var seq = new MockSequence();
+            this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.Exist()).Returns(exist);
+            if (exist)
             {
-                if (!exist)
+                this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.IsValidGrid(It.IsAny<bool>())).Returns(true);
+                if (isBase)
                 {
-                    this._gpkgUtilsMock.Setup(utils => utils.Create(It.IsAny<Extent>(), isOneXOne));
+                    this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.DeleteTileTableTriggers());
+                    this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.UpdateExtent(It.IsAny<Extent>()));
                 }
-                else
-                {
-                    this._gpkgUtilsMock.Setup(utils => utils.DeleteTileTableTriggers());
-                }
-
-                this._gpkgUtilsMock.Setup(utils => utils.UpdateExtent(It.IsAny<Extent>()));
+            }
+            else if (isBase)
+            {
+                this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.Create(It.IsAny<Extent>(), isOneXOne));
+                this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.UpdateExtent(It.IsAny<Extent>()));
             }
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
-            var gpkg = new Gpkg(this._configurationManagerMock.Object,
-                this._serviceProviderMock.Object, "test.gpkg", 10, isBase, isOneXOne,
-                extent, origin);
+            var action = () =>
+            {
+                var gpkg = new Gpkg(this._configurationManagerMock.Object,
+                    this._serviceProviderMock.Object, "test.gpkg", 10, isBase, isOneXOne,
+                    extent, origin);
 
-            Assert.AreEqual(exist, gpkg.Exists());
+                Assert.AreEqual(true, gpkg.Exists());
+            };
 
-            this._gpkgUtilsMock.Verify(utils => utils.Exist(), Times.Exactly(isBase ? 2 : 1));
+            if (!exist && !isBase)
+            {
+                Assert.ThrowsException<Exception>(action);
+            }
+            else
+            {
+                action();
+            }
+
+            this._gpkgUtilsMock.Verify(utils => utils.Exist(), Times.Once);
             this.VerifyAll();
         }
 
@@ -809,17 +822,46 @@ namespace MergerLogicUnitTests.DataTypes
 
         #endregion
 
+        #region gridValidation
+        public static IEnumerable<object[]> GenGridValidationParams()
+        {
+            return DynamicDataGenerator.GeneratePrams(
+                new object[] { true, false }, //is one on one
+                new object[] { GridOrigin.LOWER_LEFT, GridOrigin.UPPER_LEFT } //origin
+            );
+        }
+        [TestMethod]
+        [TestCategory("gridValidation")]
+        [DynamicData(nameof(GenGridValidationParams), DynamicDataSourceType.Method)]
+        public void GpkgSourceThrowsExceptionWhenGridIsNotValid(bool isOneXOne, GridOrigin origin)
+        {
+            Extent? extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
+
+            var seq = new MockSequence();
+            this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.Exist()).Returns(true);
+            this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.IsValidGrid(It.IsAny<bool>())).Returns(false);
+
+            Assert.ThrowsException<Exception>(() =>
+                new Gpkg(this._configurationManagerMock.Object,
+                    this._serviceProviderMock.Object, "test.gpkg", 10, true, isOneXOne,
+                    extent, origin));
+            this.VerifyAll();
+        }
+        #endregion
+
         #region helper
 
         private void SetupRequiredBaseMocks(bool isBase)
         {
+            var seq = new MockSequence();
+            this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.Exist()).Returns(true);
+            this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.IsValidGrid(It.IsAny<bool>())).Returns(true);
+
             if (!isBase)
             {
                 return;
             }
 
-            var seq = new MockSequence();
-            this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.Exist()).Returns(true);
             this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.DeleteTileTableTriggers());
             this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.UpdateExtent(It.IsAny<Extent>()));
         }

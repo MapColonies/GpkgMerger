@@ -658,6 +658,143 @@ namespace MergerLogicUnitTests.Utils
 
         #endregion
 
+        #region IsValidGrid
+
+        [TestMethod]
+        [TestCategory("IsValidGrid")]
+        [DataRow(false, "('test',0,2,1,256,256,0.703125,0.703125),('test',1,4,2,256,256,0.3515625,0.3515625)", true)]//valid 2 zoom 2X1
+        [DataRow(true, "('test',0,1,1,256,256,1.40625,1.40625),('test',1,2,2,256,256,0.703125,0.703125)", true)]//valid 2 zoom 1X1
+        [DataRow(false, "('test',1,4,2,256,256,0.3515625,0.3515625),('test',3,16,8,256,256,0.087890625,0.087890625)", true)]//valid zooms 1,3 2X1
+        [DataRow(true, "('test',1,2,2,256,256,0.703125,0.703125),('test',3,8,8,256,256,0.17578125,0.17578125)", true)]//valid zooms 1,3 1X1
+        [DataRow(true, "('test',0,2,1,256,256,0.703125,0.703125),('test',1,4,2,256,256,0.3515625,0.3515625)", false)]//valid 2X1 when configured to 1X1
+        [DataRow(false, "('test',0,1,1,256,256,1.40625,1.40625),('test',1,2,2,256,256,0.703125,0.703125)", false)]//valid 1X1 when configured to 2X1
+        [DataRow(false, "('test',0,2,1,256,256,0.703125,0.703125),('test',1,4,2,256,256,0.17578125,0.17578125)", false)]//2X1 with invalid zoom multiplier
+        [DataRow(true, "('test',0,1,1,256,256,1.40625,1.40625),('test',1,2,2,256,256,0.3515625,0.3515625)", false)]//1X1 with invalid zoom multiplier
+        [DataRow(false, "('test',0,2,1,512,512,0.703125,0.703125),('test',1,4,2,512,512,0.3515625,0.3515625)", false)]//2X1 with 512X512 tiles
+        [DataRow(true, "('test',0,1,1,512,512,1.40625,1.40625),('test',1,2,2,512,512,0.703125,0.703125)", false)]//1X1 with 512X512 tiles
+        [DataRow(true, "('test',0,3,1,512,512,1.40625,1.40625),('test',1,5,2,512,512,0.703125,0.703125)", false)]//none standard grid ratio
+        public void IsValidGridWithValidMatrixSet(bool isOneXOne, string gridValues, bool expected)
+        {
+            string path = this.GetGpkgPath();
+            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            {
+                connection.Open();
+                this.SetupConstructorRequiredMocks(connection);
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "CREATE TABLE gpkg_tile_matrix_set (" +
+                                          "table_name TEXT NOT NULL," +
+                                          "srs_id INTEGER NOT NULL," +
+                                          "min_x DOUBLE NOT NULL," +
+                                          "min_y DOUBLE NOT NULL," +
+                                          "max_x DOUBLE NOT NULL," +
+                                          "max_y DOUBLE NOT NULL);";
+                    command.ExecuteNonQuery();
+                }
+                using (var command = connection.CreateCommand())
+                {
+                    var maxY = isOneXOne ? "180" : "90";
+                    command.CommandText = "INSERT INTO \"gpkg_tile_matrix_set\" VALUES " +
+                                          $"('test',4326,-180,-{maxY},180,{maxY});";
+                    command.ExecuteNonQuery();
+                }
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "CREATE TABLE gpkg_tile_matrix (" +
+                                          "table_name TEXT NOT NULL," +
+                                          "zoom_level INTEGER NOT NULL," +
+                                          "matrix_width INTEGER NOT NULL," +
+                                          "matrix_height INTEGER NOT NULL," +
+                                          "tile_width INTEGER NOT NULL," +
+                                          "tile_height INTEGER NOT NULL," +
+                                          "pixel_x_size DOUBLE NOT NULL," +
+                                          "pixel_y_size DOUBLE NOT NULL);";
+                    command.ExecuteNonQuery();
+                }
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "INSERT OR REPLACE INTO gpkg_tile_matrix VALUES " +
+                                          gridValues + ";";
+                    command.ExecuteNonQuery();
+                }
+
+                var gpkgUtils = new GpkgUtils(path, this._timeUtilsMock.Object, this._loggerMock.Object,
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+
+                Assert.AreEqual(expected, gpkgUtils.IsValidGrid(isOneXOne));
+            }
+            this.VerifyAll();
+        }
+
+        [TestMethod]
+        [TestCategory("IsValidGrid")]
+        [DataRow(false, "('test',4326,-180,-90,180,90)", true)]//valid 2X1
+        [DataRow(true, "('test',4326,-180,-180,180,180)", true)]//valid 1X1
+        [DataRow(false, "('test',3857,-180,-90,180,90)", false)]// 2X1 mercator
+        [DataRow(true, "('test',3857,-180,-180,180,180)", false)]// 1X1 mercator
+        [DataRow(false, "('test',4326,0,0,180,90)", false)]// 2X1 with invalid grid extent
+        [DataRow(true, "('test',4326,0,0,180,180)", false)]// 1X1 with invalid grid extent
+        public void IsValidGridWithInvalidMatrixSet(bool isOneXOne, string matrixSetValue, bool expected)
+        {
+            string path = this.GetGpkgPath();
+            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            {
+                connection.Open();
+                this.SetupConstructorRequiredMocks(connection);
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "CREATE TABLE gpkg_tile_matrix_set (" +
+                                          "table_name TEXT NOT NULL," +
+                                          "srs_id INTEGER NOT NULL," +
+                                          "min_x DOUBLE NOT NULL," +
+                                          "min_y DOUBLE NOT NULL," +
+                                          "max_x DOUBLE NOT NULL," +
+                                          "max_y DOUBLE NOT NULL);";
+                    command.ExecuteNonQuery();
+                }
+                using (var command = connection.CreateCommand())
+                {
+                    var maxY = isOneXOne ? "180" : "90";
+                    command.CommandText = "INSERT INTO \"gpkg_tile_matrix_set\" VALUES " +
+                                          matrixSetValue +
+                                          ";";
+                    command.ExecuteNonQuery();
+                }
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "CREATE TABLE gpkg_tile_matrix (" +
+                                          "table_name TEXT NOT NULL," +
+                                          "zoom_level INTEGER NOT NULL," +
+                                          "matrix_width INTEGER NOT NULL," +
+                                          "matrix_height INTEGER NOT NULL," +
+                                          "tile_width INTEGER NOT NULL," +
+                                          "tile_height INTEGER NOT NULL," +
+                                          "pixel_x_size DOUBLE NOT NULL," +
+                                          "pixel_y_size DOUBLE NOT NULL);";
+                    command.ExecuteNonQuery();
+                }
+                using (var command = connection.CreateCommand())
+                {
+                    var gridValues = isOneXOne ? "('test',0,1,1,256,256,1.40625,1.40625),('test',1,2,2,256,256,0.703125,0.703125)"
+                        : "('test',0,2,1,256,256,0.703125,0.703125),('test',1,4,2,256,256,0.3515625,0.3515625)";
+
+                    command.CommandText = "INSERT OR REPLACE INTO gpkg_tile_matrix VALUES " +
+                                          gridValues + ";";
+                    command.ExecuteNonQuery();
+                }
+
+                var gpkgUtils = new GpkgUtils(path, this._timeUtilsMock.Object, this._loggerMock.Object,
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+
+                Assert.AreEqual(expected, gpkgUtils.IsValidGrid(isOneXOne));
+            }
+            this.VerifyAll();
+        }
+
+        #endregion
+
         #region helpers
 
         private string GetGpkgPath()
