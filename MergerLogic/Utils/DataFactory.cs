@@ -24,9 +24,12 @@ namespace MergerLogic.Utils
         public IData CreateDataSource(string type, string path, int batchSize, bool isOneXOne, GridOrigin? origin = null, Extent? extent = null, bool isBase = false)
         {
             IData data;
+            string outputPath = this._configurationManager.GetConfiguration("GENERAL", "outputPath");
+
             switch (type.ToLower())
             {
                 case "gpkg":
+                    path = Path.Combine(outputPath, path);
                     if (origin == null)
                         data = new Gpkg(this._configurationManager, this._container, path, batchSize, isBase, isOneXOne, extent);
                     else
@@ -47,6 +50,7 @@ namespace MergerLogic.Utils
                         data = new S3(this._pathUtils, client, this._container, bucket, path, batchSize, isOneXOne, origin.Value);
                     break;
                 case "fs":
+                    path = Path.Combine(outputPath, path);
                     if (origin == null)
                         data = new FS(this._pathUtils, this._container, path, batchSize, isOneXOne, isBase);
                     else
