@@ -390,12 +390,12 @@ namespace MergerLogicUnitTests.Utils
                 var res = new List<Tile>();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "select zoom_level,tile_column,tile_row, hex(tile_data) from test";
+                    command.CommandText = "select zoom_level,tile_column,tile_row, tile_data from test";
                     using (var reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
-                            res.Add(new BlobTile(reader.GetInt32(0), reader.GetInt32(1), reader.GetInt32(2), reader.GetString(3), 0));
+                            res.Add(new Tile(reader.GetInt32(0), reader.GetInt32(1), reader.GetInt32(2), (byte[])reader["tile_data"]));
                         }
                     }
                 }
