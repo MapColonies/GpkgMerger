@@ -143,14 +143,6 @@ namespace MergerLogic.Utils
                         return null;
                     }
                     tile = new Tile(z, x, y, blob);
-                    //using (var reader = command.ExecuteReader(System.Data.CommandBehavior.SingleRow))
-                    //{
-                    //    while (reader.Read())
-                    //    {
-                    //        var blob = reader.GetString(0);
-                    //        tile = new Tile(z, x, y, blob);
-                    //    }
-                    //}
                 }
             }
 
