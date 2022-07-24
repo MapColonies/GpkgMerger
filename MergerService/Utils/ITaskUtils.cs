@@ -4,6 +4,6 @@ namespace MergerService.Utils
 {
     public interface ITaskUtils
     {
-        MergeTask? GetTask();
+        MergeTask? GetTask(string jobType, string taskType);
     }
 }

@@ -24,12 +24,17 @@ namespace MergerService.Utils
         }
 
         // TODO: add update progress method
-        public MergeTask? GetTask()
+        public MergeTask? GetTask(string jobType, string taskType)
         {
-            string url = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
-            Console.WriteLine($"url: {url}");
-            string metadata = this._httpClient.GetDataString(url);
-            Console.WriteLine($"metadata: {metadata}");
+            string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
+            string url = $"{baseUrl}/{jobType}/{taskType}/startPending";
+            string metadata = this._httpClient.PostDataString(url);
+
+            if (metadata is null)
+            {
+                return null;
+            }
+
             // metadata.Print();
             // return metadata;
 
@@ -156,6 +161,10 @@ namespace MergerService.Utils
             //             ""Type"": ""FS"",
             //             ""Origin"": ""UL"",
             //             ""Grid"": ""2X1""
+            //         },
+            //         {
+            //         "Path": "area1.gpkg",
+            //         "Type": "GPKG"
             //         }
             //     ]
             // }";
