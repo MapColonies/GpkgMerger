@@ -132,19 +132,17 @@ namespace MergerLogic.Utils
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT hex(tile_data) FROM \"{this._tileCache}\" where zoom_level=$z and tile_column=$x and tile_row=$y";
+                    command.CommandText = $"SELECT tile_data FROM \"{this._tileCache}\" WHERE zoom_level=$z AND tile_column=$x AND tile_row=$y LIMIT 1";
                     command.Parameters.AddWithValue("$z", z);
                     command.Parameters.AddWithValue("$x", x);
                     command.Parameters.AddWithValue("$y", y);
 
-                    using (var reader = command.ExecuteReader(System.Data.CommandBehavior.SingleRow))
+                    var blob = (byte[])command.ExecuteScalar();
+                    if (blob == null)
                     {
-                        while (reader.Read())
-                        {
-                            var blob = reader.GetString(0);
-                            tile = new BlobTile(z, x, y, blob, blob.Length);
-                        }
+                        return null;
                     }
+                    tile = new Tile(z, x, y, blob);
                 }
             }
 
@@ -218,7 +216,7 @@ namespace MergerLogic.Utils
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM \"{this._tileCache}\" limit $limit offset $offset";
+                    command.CommandText = $"SELECT zoom_level, tile_column, tile_row, tile_data FROM \"{this._tileCache}\" limit $limit offset $offset";
                     command.Parameters.AddWithValue("$limit", batchSize);
                     command.Parameters.AddWithValue("$offset", offset);
 
@@ -229,10 +227,9 @@ namespace MergerLogic.Utils
                             var z = reader.GetInt32(0);
                             var x = reader.GetInt32(1);
                             var y = reader.GetInt32(2);
-                            var blob = reader.GetString(3);
-                            var blobSize = reader.GetInt32(4);
+                            var blob = (byte[])reader["tile_data"];
 
-                            Tile tile = new BlobTile(z, x, y, blob, blobSize);
+                            Tile tile = new Tile(z, x, y, blob);
                             tiles.Add(tile);
                         }
                     }
@@ -256,7 +253,7 @@ namespace MergerLogic.Utils
                 {
 
                     // Build command
-                    StringBuilder commandBuilder = new StringBuilder($"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM \"{this._tileCache}\" where ");
+                    StringBuilder commandBuilder = new StringBuilder($"SELECT zoom_level, tile_column, tile_row, tile_data FROM \"{this._tileCache}\" where ");
 
                     int zoomLevel = baseCoords.Z;
                     int maxZoomLevel = zoomLevel - 1;
@@ -286,11 +283,9 @@ namespace MergerLogic.Utils
                         var z = reader.GetInt32(0);
                         var x = reader.GetInt32(1);
                         var y = reader.GetInt32(2);
-                        var blob = reader.GetString(3);
-                        //TODO: optimize by removing hex conversion using getBlob, reading it in loop into memory stream and converting it to byte array 
-                        // this will also remove the need from blob tile
-                        var blobSize = reader.GetInt32(4);
-                        lastTile = new BlobTile(z, x, y, blob, blobSize);
+                        var blob = (byte[])reader["tile_data"];
+
+                        lastTile = new Tile(z, x, y, blob);
                     }
                 }
             }
@@ -699,6 +694,7 @@ namespace MergerLogic.Utils
                     var isValid = count == 1;
                     if (!isValid)
                     {
+                        this._logger.LogWarning($"gpkg {this.path} has failed grid tile matrix set validation");
                         return false;
                     }
                 }
@@ -734,6 +730,7 @@ namespace MergerLogic.Utils
                                 !reader.GetDouble(5).IsApproximatelyEqualTo(res, doublePrecession) ||
                                 !reader.GetDouble(6).IsApproximatelyEqualTo(res, doublePrecession))
                             {
+                                this._logger.LogWarning($"gpkg {this.path} has failed grid validation for zoom {rowZoom}");
                                 return false;
                             }
                         }
