@@ -6,6 +6,8 @@ namespace MergerLogic.Utils
 
         string GetDataString(string url);
 
+        string PostDataString(string url);
+
         T? GetData<T>(string url);
     }
 }
