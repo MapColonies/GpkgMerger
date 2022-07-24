@@ -699,6 +699,7 @@ namespace MergerLogic.Utils
                     var isValid = count == 1;
                     if (!isValid)
                     {
+                        this._logger.LogWarning($"gpkg {this.path} has failed grid tile matrix set validation");
                         return false;
                     }
                 }
@@ -734,6 +735,7 @@ namespace MergerLogic.Utils
                                 !reader.GetDouble(5).IsApproximatelyEqualTo(res, doublePrecession) ||
                                 !reader.GetDouble(6).IsApproximatelyEqualTo(res, doublePrecession))
                             {
+                                this._logger.LogWarning($"gpkg {this.path} has failed grid validation for zoom {rowZoom}");
                                 return false;
                             }
                         }
