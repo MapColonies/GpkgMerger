@@ -44,7 +44,7 @@ spec:
                 operator: In
                 values:
                 - nodeAffinityPod
-          topologyKey: kubernetes.io/hostname    
+            topologyKey: kubernetes.io/hostname    
     {{- if $cloudProviderImagePullSecretName }}
       imagePullSecrets:
         - name: {{ $cloudProviderImagePullSecretName | quote }}
