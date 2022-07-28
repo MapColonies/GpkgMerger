@@ -1,14 +1,12 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 using MergerLogic.Utils;
-using MergerLogicUnitTests.utils;
+using MergerLogicUnitTests.testUtils;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.IO.Abstractions;
 using System.Linq;
 
 namespace MergerLogicUnitTests.DataTypes
@@ -715,7 +713,7 @@ namespace MergerLogicUnitTests.DataTypes
         }
 
         #endregion
-        
+
         #region helper
 
         private void SetupConstructorRequiredMocks(MockSequence? sequence = null)

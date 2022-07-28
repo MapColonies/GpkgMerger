@@ -48,7 +48,6 @@ namespace MergerLogic.Extensions
                 .AddSingleton<IDataFactory, DataFactory>()
                 .AddSingleton<IOneXOneConvertor, OneXOneConvertor>()
                 .AddSingleton<IPathUtils, PathUtils>()
-                .AddSingleton<IStringUtils, StringUtils>()
                 .AddSingleton<ITimeUtils, TimeUtils>()
                 .AddSingleton<IUtilsFactory, UtilsFactory>()
                 .AddSingleton<IGeoUtils, GeoUtils>();

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace MergerLogicUnitTests.utils
+namespace MergerLogicUnitTests.testUtils
 {
     internal static class DynamicDataGenerator
     {

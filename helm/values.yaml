@@ -46,6 +46,7 @@ local:
     storageClassName: host-path
 
 rasterCommon:
+  useNodeAffinity: false
   serviceUrls:
     jobManager: http://localhost:8084
   storage:

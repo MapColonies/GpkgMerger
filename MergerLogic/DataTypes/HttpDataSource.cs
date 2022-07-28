@@ -51,7 +51,7 @@ namespace MergerLogic.DataTypes
             this.Batches = this.GetTiles().Skip(this.BatchIndex).Chunk(this.BatchSize).GetEnumerator();
         }
 
-        public override int TileCount()
+        public override long TileCount()
         {
             return this.TileRanges.Sum(range => range.Size());
         }

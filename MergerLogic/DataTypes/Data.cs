@@ -228,7 +228,7 @@ namespace MergerLogic.DataTypes
 
         public abstract bool Exists();
 
-        public abstract int TileCount();
+        public abstract long TileCount();
 
         public abstract void setBatchIdentifier(string batchIdentifier);
 

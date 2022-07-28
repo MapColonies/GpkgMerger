@@ -168,7 +168,7 @@ namespace MergerService.Src
                             stopWatch.Reset();
                             stopWatch.Start();
 
-                            int totalTileCount = bounds.Size();
+                            int totalTileCount = (int)bounds.Size();
                             int tileProgressCount = 0;
 
                             // TODO: remove comment and check that the activity is created (When bug will be fixed)
@@ -313,7 +313,7 @@ namespace MergerService.Src
 
         private bool Validate(IData target, TileBounds bounds)
         {
-            int totalTileCount = bounds.Size();
+            int totalTileCount = (int)bounds.Size();
             int tilesChecked = 0;
 
             this._logger.LogInformation("If any missing tiles are found, they will be printed.");

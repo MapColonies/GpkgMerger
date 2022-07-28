@@ -1,5 +1,6 @@
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using MergerLogic.Extensions;
 using Microsoft.Extensions.Logging;
 using System.Data.SQLite;
 using System.Diagnostics;
@@ -22,11 +23,6 @@ namespace MergerLogic.Utils
             this._logger = logger;
             this._fileSystem = fileSystem;
             this._tileCache = this.InternalGetTileCache();
-        }
-
-        public string GetTileCache()
-        {
-            return this._tileCache;
         }
 
         private string InternalGetTileCache()
@@ -83,9 +79,9 @@ namespace MergerLogic.Utils
             return extent;
         }
 
-        public int GetTileCount()
+        public long GetTileCount()
         {
-            int tileCount = 0;
+            long tileCount = 0;
 
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
@@ -94,11 +90,11 @@ namespace MergerLogic.Utils
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = $"SELECT count(*) FROM \"{this._tileCache}\"";
-
+                    //TODO: can optimized by using command.ExecuteScalar
                     using (var reader = command.ExecuteReader(System.Data.CommandBehavior.SingleRow))
                     {
                         reader.Read();
-                        tileCount = reader.GetInt32(0);
+                        tileCount = reader.GetInt64(0);
                     }
                 }
             }
@@ -136,19 +132,17 @@ namespace MergerLogic.Utils
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT hex(tile_data) FROM \"{this._tileCache}\" where zoom_level=$z and tile_column=$x and tile_row=$y";
+                    command.CommandText = $"SELECT tile_data FROM \"{this._tileCache}\" WHERE zoom_level=$z AND tile_column=$x AND tile_row=$y LIMIT 1";
                     command.Parameters.AddWithValue("$z", z);
                     command.Parameters.AddWithValue("$x", x);
                     command.Parameters.AddWithValue("$y", y);
 
-                    using (var reader = command.ExecuteReader(System.Data.CommandBehavior.SingleRow))
+                    var blob = (byte[])command.ExecuteScalar();
+                    if (blob == null)
                     {
-                        while (reader.Read())
-                        {
-                            var blob = reader.GetString(0);
-                            tile = new BlobTile(z, x, y, blob, blob.Length);
-                        }
+                        return null;
                     }
+                    tile = new Tile(z, x, y, blob);
                 }
             }
 
@@ -212,7 +206,7 @@ namespace MergerLogic.Utils
             }
         }
 
-        public List<Tile> GetBatch(int batchSize, int offset)
+        public List<Tile> GetBatch(int batchSize, long offset)
         {
             List<Tile> tiles = new List<Tile>();
 
@@ -222,7 +216,7 @@ namespace MergerLogic.Utils
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM \"{this._tileCache}\" limit $limit offset $offset";
+                    command.CommandText = $"SELECT zoom_level, tile_column, tile_row, tile_data FROM \"{this._tileCache}\" limit $limit offset $offset";
                     command.Parameters.AddWithValue("$limit", batchSize);
                     command.Parameters.AddWithValue("$offset", offset);
 
@@ -233,10 +227,9 @@ namespace MergerLogic.Utils
                             var z = reader.GetInt32(0);
                             var x = reader.GetInt32(1);
                             var y = reader.GetInt32(2);
-                            var blob = reader.GetString(3);
-                            var blobSize = reader.GetInt32(4);
+                            var blob = (byte[])reader["tile_data"];
 
-                            Tile tile = new BlobTile(z, x, y, blob, blobSize);
+                            Tile tile = new Tile(z, x, y, blob);
                             tiles.Add(tile);
                         }
                     }
@@ -247,6 +240,10 @@ namespace MergerLogic.Utils
 
         public Tile GetLastTile(int[] coords, Coord baseCoords)
         {
+            if (coords.Length < 2)
+            {
+                return null;
+            }
             Tile lastTile = null;
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
@@ -256,7 +253,7 @@ namespace MergerLogic.Utils
                 {
 
                     // Build command
-                    StringBuilder commandBuilder = new StringBuilder($"SELECT zoom_level, tile_column, tile_row, hex(tile_data), length(hex(tile_data)) as blob_size FROM \"{this._tileCache}\" where ");
+                    StringBuilder commandBuilder = new StringBuilder($"SELECT zoom_level, tile_column, tile_row, tile_data FROM \"{this._tileCache}\" where ");
 
                     int zoomLevel = baseCoords.Z;
                     int maxZoomLevel = zoomLevel - 1;
@@ -286,9 +283,9 @@ namespace MergerLogic.Utils
                         var z = reader.GetInt32(0);
                         var x = reader.GetInt32(1);
                         var y = reader.GetInt32(2);
-                        var blob = reader.GetString(3);
-                        var blobSize = reader.GetInt32(4);
-                        lastTile = new BlobTile(z, x, y, blob, blobSize);
+                        var blob = (byte[])reader["tile_data"];
+
+                        lastTile = new Tile(z, x, y, blob);
                     }
                 }
             }
@@ -363,20 +360,6 @@ namespace MergerLogic.Utils
             }
             // Vacuum is required if page size pragma is changed
             //Vacuum();
-        }
-
-        public void RemoveUnusedTileMatrix(IEnumerable<int> usedZooms)
-        {
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
-            {
-                connection.Open();
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "DELETE FROM \"gpkg_tile_matrix\" " +
-                        $"WHERE \"table_name\" = '{this._tileCache}' AND  \"zoom_level\" NOT IN ({string.Join(',', usedZooms)});";
-                    command.ExecuteNonQuery();
-                }
-            }
         }
 
         private void CreateSpatialRefTable(SQLiteConnection connection)
@@ -693,6 +676,69 @@ namespace MergerLogic.Utils
                     this.CreateSqureGrid(connection, 0, maxZoom, 2, 1, 180, 2, 256);//creates 2X1 grid
                 }
             }
+        }
+
+        public bool IsValidGrid(bool isOneXOne = false)
+        {
+            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    string maxY = isOneXOne ? "180" : "90";
+                    command.CommandText = "SELECT count(*) FROM gpkg_tile_matrix_set " +
+                                          $"WHERE table_name = '{this._tileCache}' AND srs_id = {Utils.GeoUtils.SRID} " +
+                                          "AND min_x = -180 AND max_x = 180 " +
+                                          $"AND min_y = -{maxY} AND max_y = {maxY}";
+                    long count = (long)command.ExecuteScalar();
+                    var isValid = count == 1;
+                    if (!isValid)
+                    {
+                        this._logger.LogWarning($"gpkg {this.path} has failed grid tile matrix set validation");
+                        return false;
+                    }
+                }
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText =
+                        "SELECT zoom_level, matrix_width, matrix_height, tile_width, tile_height, pixel_x_size, pixel_y_size " +
+                        "FROM gpkg_tile_matrix " +
+                        $"WHERE table_name = '{this._tileCache}' ORDER BY zoom_level ASC";
+                    using (var reader = command.ExecuteReader())
+                    {
+                        const int tileSize = 256;
+                        const double doublePrecession = 1e-10;
+                        int zoom = 0;
+                        int yAxisSizeDeg = isOneXOne ? 360 : 180;
+                        double res = (double)yAxisSizeDeg / 256;
+                        int yTiles = 1;
+                        int xTiles = isOneXOne ? 1 : 2;
+                        while (reader.Read())
+                        {
+                            int rowZoom = reader.GetInt32(0);
+                            while (zoom < rowZoom)
+                            {
+                                res = res / 2;
+                                yTiles <<= 1;
+                                xTiles <<= 1;
+                                zoom++;
+                            }
+
+                            if (reader.GetInt32(1) != xTiles || reader.GetInt32(2) != yTiles ||
+                                reader.GetInt32(3) != tileSize || reader.GetInt32(4) != tileSize ||
+                                !reader.GetDouble(5).IsApproximatelyEqualTo(res, doublePrecession) ||
+                                !reader.GetDouble(6).IsApproximatelyEqualTo(res, doublePrecession))
+                            {
+                                this._logger.LogWarning($"gpkg {this.path} has failed grid validation for zoom {rowZoom}");
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return true;
         }
     }
 }

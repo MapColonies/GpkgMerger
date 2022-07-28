@@ -2,7 +2,6 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using MergerLogic.Batching;
 using MergerLogic.Utils;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace MergerLogic.DataTypes
@@ -95,9 +94,9 @@ namespace MergerLogic.DataTypes
             return response.KeyCount > 0;
         }
 
-        public override int TileCount()
+        public override long TileCount()
         {
-            int tileCount = 0;
+            long tileCount = 0;
             string continuationToken = null;
 
             do

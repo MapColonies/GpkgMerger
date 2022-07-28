@@ -21,7 +21,7 @@ namespace MergerLogic.Batching
             this.MaxY = maxY;
         }
 
-        public int Size()
+        public long Size()
         {
             return (this.MaxX - this.MinX) * (this.MaxY - this.MinY);
         }
