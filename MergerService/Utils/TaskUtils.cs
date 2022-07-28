@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using MergerLogic.Utils;
 using MergerService.Controllers;
 using Newtonsoft.Json;
@@ -27,10 +28,11 @@ namespace MergerService.Utils
         public MergeTask? GetTask(string jobType, string taskType)
         {
             string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
-            string url = $"{baseUrl}/{jobType}/{taskType}/startPending";
-            string metadata = this._httpClient.PostDataString(url);
+            string url = $"{baseUrl}/tasks/{jobType}/{taskType}/startPending";
+            Console.WriteLine(url);
+            string taskData = this._httpClient.PostDataString(url);
 
-            if (metadata is null)
+            if (taskData is null)
             {
                 return null;
             }
@@ -173,13 +175,36 @@ namespace MergerService.Utils
             {
                 var jsonSerializerSettings = new JsonSerializerSettings();
                 jsonSerializerSettings.Converters.Add(new StringEnumConverter());
-                return JsonConvert.DeserializeObject<MergeTask>(metadata, jsonSerializerSettings)!;
+                return JsonConvert.DeserializeObject<MergeTask>(taskData, jsonSerializerSettings)!;
             }
             catch (Exception e)
             {
                 Console.WriteLine($"Error: {e.Message}");
                 return null;
             }
+        }
+
+        public void UpdateTask(string jobId, string taskId, UpdateParameters updateParameters)
+        {
+            // Update job DB on task completion
+            string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
+            string url = Path.Combine(baseUrl, $"jobs/{jobId}/tasks/{taskId}");
+
+            // Convert metadata to json
+            var jsonSerializerSettings = new JsonSerializerSettings();
+            jsonSerializerSettings.Converters.Add(new StringEnumConverter());
+            string json = JsonConvert.SerializeObject(updateParameters, jsonSerializerSettings);
+            var body = new System.Net.Http.StringContent(json, Encoding.UTF8, "application/json");
+
+            _ = this._httpClient.PutDataString(url, body);
+        }
+
+        public void UpdateCompletion(string jobId, string taskId)
+        {
+            // Update overseer on task completion
+            string baseUrl = this._configuration.GetConfiguration("TASK", "overseerUrl");
+            string url = Path.Combine(baseUrl, $"tasks/{jobId}/{taskId}/completed");
+            _ = this._httpClient.PostDataString(url);
         }
     }
 }

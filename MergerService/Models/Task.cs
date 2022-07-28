@@ -1,10 +1,43 @@
 using MergerLogic.Batching;
 using Newtonsoft.Json;
 using System.ComponentModel;
+using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 
 namespace MergerService.Controllers
 {
+    public enum Status
+    {
+        [EnumMember(Value = "Pending")]
+        PENDING,
+        [EnumMember(Value = "In-Progress")]
+        IN_PROGRESS,
+        [EnumMember(Value = "Completed")]
+        COMPLETED,
+        [EnumMember(Value = "Failed")]
+        FAILED
+    }
+
+    public class UpdateParameters
+    {
+        [JsonInclude]
+        public Status status { get; }
+
+        [JsonInclude]
+        public int percentage { get; }
+
+        [DefaultValue("")]
+        [JsonInclude]
+        public string reason { get; }
+
+        public UpdateParameters(Status status, int percentage, string reason = "")
+        {
+            this.status = status;
+            this.percentage = percentage;
+            this.reason = reason;
+        }
+    }
+
     public class MergeMetadata
     {
         [JsonInclude]
@@ -60,15 +93,15 @@ namespace MergerService.Controllers
         public MergeMetadata Parameters { get; }
 
         [JsonInclude]
-        public string Status { get; }
+        public Status Status { get; set; }
 
         [DefaultValue(0)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         [JsonInclude]
-        public int? Percentage { get; }
+        public int Percentage { get; set; }
 
         [JsonInclude]
-        public string Reason { get; }
+        public string Reason { get; set; }
 
         [JsonInclude]
         public int Attempts { get; }
@@ -86,7 +119,7 @@ namespace MergerService.Controllers
         public DateTime Updated { get; }
 
         public MergeTask(string id, string type, string description, MergeMetadata parameters,
-                            string status, int? percentage, string reason, int attempts,
+                            Status status, int? percentage, string reason, int attempts,
                             string jobId, bool resettable, DateTime created, DateTime updated)
         {
             this.Id = id;
@@ -94,13 +127,30 @@ namespace MergerService.Controllers
             this.Description = description;
             this.Parameters = parameters;
             this.Status = status;
-            this.Percentage = percentage;
+
+            if (percentage is null)
+            {
+                percentage = 0;
+            }
+            this.Percentage = (int)percentage;
+
             this.Reason = reason;
             this.Attempts = attempts;
             this.JobId = jobId;
             this.Resettable = resettable;
             this.Created = created;
             this.Updated = updated;
+        }
+
+        public void MarkCompleted()
+        {
+            this.Percentage = 100;
+            this.Status = Status.COMPLETED;
+        }
+
+        public UpdateParameters GetUpdateParameters()
+        {
+            return new UpdateParameters(this.Status, this.Percentage, this.Reason);
         }
 
         public void Print()

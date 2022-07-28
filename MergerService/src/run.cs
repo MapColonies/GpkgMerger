@@ -86,7 +86,6 @@ namespace MergerService.Src
             while (true)
             {
                 MergeTask? task = null;
-                MergeMetadata? metadata = null;
                 bool activatedAny = false;
 
                 foreach (var item in taskTypes)
@@ -100,20 +99,29 @@ namespace MergerService.Src
                     }
                     catch (Exception e)
                     {
-                        this._logger.LogError($"Error in MergerService run - get task: {e.Message}");
+                        this._logger.LogError($"Error in MergerService start - get task: {e.Message}");
                     }
 
                     // Guard clause in case there are no batches or sources
-                    if (task == null || task.Parameters == null || task.Parameters.Batches == null || task.Parameters.Sources == null)
+                    if (task == null)
                     {
-                        Console.WriteLine($"task: {task}, batches: {task?.Parameters?.Batches}, sources: {task?.Parameters?.Sources}");
                         continue;
                     }
 
-                    metadata = task.Parameters;
-
-                    RunTask(metadata);
+                    task.Status = Status.IN_PROGRESS;
+                    RunTask(task, taskUtils);
                     activatedAny = true;
+
+                    try
+                    {
+                        task.MarkCompleted();
+                        UpdateParameters updateParameters = task.GetUpdateParameters();
+                        taskUtils.UpdateTask(task.JobId, task.Id, updateParameters);
+                    }
+                    catch (Exception e)
+                    {
+                        this._logger.LogError($"Error in MergerService start - update task: {e.Message}");
+                    }
                 }
 
                 // Sleep only if there was no task to run for any type
@@ -125,8 +133,15 @@ namespace MergerService.Src
             }
         }
 
-        private void RunTask(MergeMetadata? task)
+        private void RunTask(MergeTask task, ITaskUtils taskUtils)
         {
+            // Guard clause in case there are no batches or sources
+            if (task.Parameters == null || task.Parameters.Batches == null || task.Parameters.Sources == null)
+            {
+                return;
+            }
+
+            MergeMetadata metadata = task.Parameters;
             Stopwatch stopWatch = new Stopwatch();
             TimeSpan ts;
 
@@ -142,7 +157,7 @@ namespace MergerService.Src
                     //taskActivity.AddTag("jobId", task.jodId);
                     //taskActivity.AddTag("taskId", task.id);
 
-                    foreach (TileBounds bounds in task.Batches)
+                    foreach (TileBounds bounds in metadata.Batches)
                     {
                         Console.WriteLine($"activitySource: {this._activitySource}");
                         using (var batchActivity = this._activitySource.StartActivity("batch processing"))
@@ -165,7 +180,7 @@ namespace MergerService.Src
                                 continue;
                             }
 
-                            List<IData> sources = this.BuildDataList(task.Sources, totalTileCount);
+                            List<IData> sources = this.BuildDataList(metadata.Sources, totalTileCount);
                             IData target = sources[0];
 
                             List<Tile> tiles = new List<Tile>(totalTileCount);
@@ -203,6 +218,17 @@ namespace MergerService.Src
                                         if (tileProgressCount % 1000 == 0)
                                         {
                                             this._logger.LogInformation($"Tile Count: {tileProgressCount} / {totalTileCount}");
+
+                                            try
+                                            {
+                                                task.Percentage = 100 * (tileProgressCount / totalTileCount);
+                                                UpdateParameters updateParameters = task.GetUpdateParameters();
+                                                taskUtils.UpdateTask(task.JobId, task.Id, updateParameters);
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                this._logger.LogError($"Error in MergerService run - update task: {e.Message}");
+                                            }
                                         }
                                     }
                                 }
@@ -221,10 +247,11 @@ namespace MergerService.Src
                             // Get the elapsed time as a TimeSpan value.
                             ts = stopWatch.Elapsed;
                             string elapsedMessage = this._timeUtils.FormatElapsedTime("Merge runtime: ", ts);
-                            this._logger.LogInformation($"Merged the following bounds: {bounds}. {elapsedMessage}");
+                            this._logger.LogInformation($"Merged the following bounds: {bounds} for zoom: {bounds.Zoom}. {elapsedMessage}");
 
                             // After merging, validate if requested
                             bool validate = this._configurationManager.GetConfiguration<bool>("GENERAL", "validate");
+                            Console.WriteLine(validate);
                             if (validate)
                             {
                                 // Reset stopwatch for validation time measure
@@ -233,7 +260,24 @@ namespace MergerService.Src
 
                                 this._logger.LogInformation("Validating merged data sources");
                                 using (this._activitySource.StartActivity("validating tiles"))
-                                    this.Validate(target, bounds);
+                                {
+                                    bool valid = this.Validate(target, bounds);
+
+                                    if (!valid)
+                                    {
+                                        try
+                                        {
+                                            task.Status = Status.FAILED;
+                                            task.Reason = "Error in validation, target not valid after run";
+                                            UpdateParameters updateParameters = task.GetUpdateParameters();
+                                            taskUtils.UpdateTask(task.JobId, task.Id, updateParameters);
+                                        }
+                                        catch (Exception innerError)
+                                        {
+                                            this._logger.LogError($"Error in MergerService run - update task failure after validation failure: {innerError.Message}");
+                                        }
+                                    }
+                                }
 
                                 stopWatch.Stop();
                                 // Get the elapsed time as a TimeSpan value.
@@ -253,10 +297,22 @@ namespace MergerService.Src
             {
                 this._logger.LogError("Error in MergerService run - bounds loop");
                 this._logger.LogError(e.Message);
+
+                try
+                {
+                    task.Status = Status.FAILED;
+                    task.Reason = e.Message;
+                    UpdateParameters updateParameters = task.GetUpdateParameters();
+                    taskUtils.UpdateTask(task.JobId, task.Id, updateParameters);
+                }
+                catch (Exception innerError)
+                {
+                    this._logger.LogError($"Error in MergerService run catch block - update task failure: {innerError.Message}");
+                }
             }
         }
 
-        private void Validate(IData target, TileBounds bounds)
+        private bool Validate(IData target, TileBounds bounds)
         {
             int totalTileCount = bounds.Size();
             int tilesChecked = 0;
@@ -290,6 +346,8 @@ namespace MergerService.Src
 
             this._logger.LogInformation($"Total tiles checked: {tilesChecked}/{totalTileCount}");
             this._logger.LogInformation($"Target's valid: {hasSameTiles}");
+
+            return hasSameTiles;
         }
     }
 }
