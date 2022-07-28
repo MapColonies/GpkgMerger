@@ -8,6 +8,8 @@ namespace MergerLogic.Utils
 
         string PostDataString(string url);
 
+        string PutDataString(string url, StringContent body);
+
         T? GetData<T>(string url);
     }
 }
