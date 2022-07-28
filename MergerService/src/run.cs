@@ -117,6 +117,7 @@ namespace MergerService.Src
                         task.MarkCompleted();
                         UpdateParameters updateParameters = task.GetUpdateParameters();
                         taskUtils.UpdateTask(task.JobId, task.Id, updateParameters);
+                        taskUtils.UpdateCompletion(task.JobId, task.Id);
                     }
                     catch (Exception e)
                     {
@@ -159,7 +160,6 @@ namespace MergerService.Src
 
                     foreach (TileBounds bounds in metadata.Batches)
                     {
-                        Console.WriteLine($"activitySource: {this._activitySource}");
                         using (var batchActivity = this._activitySource.StartActivity("batch processing"))
                         {
                             // TODO: remove comment and check that the activity is created (When bug will be fixed)
@@ -251,7 +251,6 @@ namespace MergerService.Src
 
                             // After merging, validate if requested
                             bool validate = this._configurationManager.GetConfiguration<bool>("GENERAL", "validate");
-                            Console.WriteLine(validate);
                             if (validate)
                             {
                                 // Reset stopwatch for validation time measure

@@ -25,7 +25,6 @@ namespace MergerLogic.Utils
             var httpRes = resTask.Result;
             if (httpRes.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                Console.WriteLine($"Error, res: {httpRes}");
                 return null;
             }
             else if (httpRes.StatusCode != System.Net.HttpStatusCode.OK)

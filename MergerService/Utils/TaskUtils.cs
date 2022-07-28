@@ -29,7 +29,6 @@ namespace MergerService.Utils
         {
             string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
             string url = $"{baseUrl}/tasks/{jobType}/{taskType}/startPending";
-            Console.WriteLine(url);
             string taskData = this._httpClient.PostDataString(url);
 
             if (taskData is null)
@@ -179,7 +178,7 @@ namespace MergerService.Utils
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Error: {e.Message}");
+                this._logger.LogInformation(e, "Error serializing returned task");
                 return null;
             }
         }
