@@ -1,11 +1,44 @@
 using MergerLogic.Batching;
-using MergerService.Utils;
-using System.Text.Json;
+using Newtonsoft.Json;
+using System.ComponentModel;
+using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 
 namespace MergerService.Controllers
 {
-    public class MergeTask
+    public enum Status
+    {
+        [EnumMember(Value = "Pending")]
+        PENDING,
+        [EnumMember(Value = "In-Progress")]
+        IN_PROGRESS,
+        [EnumMember(Value = "Completed")]
+        COMPLETED,
+        [EnumMember(Value = "Failed")]
+        FAILED
+    }
+
+    public class UpdateParameters
+    {
+        [JsonInclude]
+        public Status status { get; }
+
+        [JsonInclude]
+        public int percentage { get; }
+
+        [DefaultValue("")]
+        [JsonInclude]
+        public string reason { get; }
+
+        public UpdateParameters(Status status, int percentage, string reason = "")
+        {
+            this.status = status;
+            this.percentage = percentage;
+            this.reason = reason;
+        }
+    }
+
+    public class MergeMetadata
     {
         [JsonInclude]
         public TileBounds[]? Batches { get; }
@@ -13,7 +46,7 @@ namespace MergerService.Controllers
         [JsonInclude]
         public Source[]? Sources { get; }
 
-        public MergeTask(TileBounds[] batches, Source[] sources)
+        public MergeMetadata(TileBounds[] batches, Source[] sources)
         {
             this.Batches = batches;
             this.Sources = sources;
@@ -43,20 +76,97 @@ namespace MergerService.Controllers
                 bounds.Print();
             }
         }
+    }
 
-        public static MergeTask? GetTask(ILogger<MergeTask> logger)
+    public class MergeTask
+    {
+        [JsonInclude]
+        public string Id { get; }
+
+        [JsonInclude]
+        public string Type { get; }
+
+        [JsonInclude]
+        public string Description { get; }
+
+        [JsonInclude]
+        public MergeMetadata Parameters { get; }
+
+        [JsonInclude]
+        public Status Status { get; set; }
+
+        [DefaultValue(0)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        [JsonInclude]
+        public int Percentage { get; set; }
+
+        [JsonInclude]
+        public string Reason { get; set; }
+
+        [JsonInclude]
+        public int Attempts { get; }
+
+        [JsonInclude]
+        public string JobId { get; }
+
+        [JsonInclude]
+        public bool Resettable { get; }
+
+        [JsonInclude]
+        public DateTime Created { get; }
+
+        [JsonInclude]
+        public DateTime Updated { get; }
+
+        public MergeTask(string id, string type, string description, MergeMetadata parameters,
+                            Status status, int? percentage, string reason, int attempts,
+                            string jobId, bool resettable, DateTime created, DateTime updated)
         {
-            string taskJson = TaskUtils.GetTask();
+            this.Id = id;
+            this.Type = type;
+            this.Description = description;
+            this.Parameters = parameters;
+            this.Status = status;
 
-            try
+            if (percentage is null)
             {
-                return JsonSerializer.Deserialize<MergeTask>(taskJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+                percentage = 0;
             }
-            catch (Exception e)
-            {
-                logger.LogError(e, $"failed to deserialize task: {e.Message}");
-                return null;
-            }
+            this.Percentage = (int)percentage;
+
+            this.Reason = reason;
+            this.Attempts = attempts;
+            this.JobId = jobId;
+            this.Resettable = resettable;
+            this.Created = created;
+            this.Updated = updated;
+        }
+
+        public void MarkCompleted()
+        {
+            this.Percentage = 100;
+            this.Status = Status.COMPLETED;
+        }
+
+        public UpdateParameters GetUpdateParameters()
+        {
+            return new UpdateParameters(this.Status, this.Percentage, this.Reason);
+        }
+
+        public void Print()
+        {
+            Console.WriteLine($"Id: {this.Id}");
+            Console.WriteLine($"Type: {this.Type}");
+            Console.WriteLine($"Description: {this.Description}");
+            this.Parameters.Print();
+            Console.WriteLine($"Status: {this.Status}");
+            Console.WriteLine($"Percentage: {this.Percentage}");
+            Console.WriteLine($"Reason: {this.Reason}");
+            Console.WriteLine($"Attempts: {this.Attempts}");
+            Console.WriteLine($"JobId: {this.JobId}");
+            Console.WriteLine($"Resettable: {this.Resettable}");
+            Console.WriteLine($"Created: {this.Created}");
+            Console.WriteLine($"Updated: {this.Updated}");
         }
     }
 }

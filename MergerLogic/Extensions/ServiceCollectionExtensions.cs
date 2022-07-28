@@ -29,7 +29,8 @@ namespace MergerLogic.Extensions
                 .RegisterMergerUtils()
                 .RegisterS3()
                 .RegisterOpenTelemetry()
-                .RegisterFileSystem();
+                .RegisterFileSystem()
+                .RegisterHttp();
         }
 
         public static IServiceCollection RegisterImageProcessors(this IServiceCollection collection)
@@ -87,6 +88,13 @@ namespace MergerLogic.Extensions
                 return new AmazonS3Client(credentials, s3Config);
 
             });
+        }
+
+        public static IServiceCollection RegisterHttp(this IServiceCollection collection)
+        {
+            return collection
+                .AddTransient<HttpClient>()
+                .AddTransient<IHttpRequestUtils, HttpRequestUtils>();
         }
 
         public static IServiceCollection RegisterOpenTelemetry(this IServiceCollection collection)

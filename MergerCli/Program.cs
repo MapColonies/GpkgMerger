@@ -13,9 +13,13 @@ namespace MergerCli
     {
         private static BatchStatusManager _batchStatusManager;
         private static bool _done = false;
+        private static ILogger _logger;
 
         private static void Main(string[] args)
         {
+            ServiceProvider container = CreateContainer();
+            _logger = container.GetRequiredService<ILogger<Program>>();
+
             Stopwatch totalTimeStopWatch = new Stopwatch();
             totalTimeStopWatch.Start();
             TimeSpan ts;
@@ -24,14 +28,12 @@ namespace MergerCli
             // Require input of wanted batch size and 2 types and paths (base and new gpkg)
             if (args.Length < 6 && args.Length != 2)
             {
-                Console.WriteLine("invalid command.");
+                _logger.LogError("invalid command.");
                 PrintHelp(programName);
                 return;
             }
-            ServiceProvider container = CreateContainer();
-            ILogger logger = container.GetRequiredService<ILogger<Program>>();
 
-            PrepareStatusManger(ref args, logger);
+            PrepareStatusManger(ref args);
 
             int batchSize = int.Parse(args[1]);
             List<IData> sources;
@@ -42,7 +44,7 @@ namespace MergerCli
             }
             catch (Exception ex)
             {
-                logger.LogError(ex.Message);
+                _logger.LogError(ex.Message);
                 PrintHelp(args[0]);
                 return;
             }
@@ -50,7 +52,7 @@ namespace MergerCli
             IData baseData = sources[0];
             if (sources.Count < 2)
             {
-                Console.WriteLine("minimum of 2 sources is required");
+                _logger.LogError("minimum of 2 sources is required");
                 PrintHelp(programName);
                 return;
             }
@@ -74,7 +76,7 @@ namespace MergerCli
 
                     // Get the elapsed time as a TimeSpan value.
                     ts = stopWatch.Elapsed;
-                    logger.LogInformation(timeUtils.FormatElapsedTime($"{sources[i].Path} merge runtime", ts));
+                    _logger.LogInformation(timeUtils.FormatElapsedTime($"{sources[i].Path} merge runtime", ts));
 
 
                     if (validate)
@@ -83,13 +85,13 @@ namespace MergerCli
                         stopWatch.Reset();
                         stopWatch.Start();
 
-                        logger.LogInformation("Validating merged data sources");
+                        _logger.LogInformation("Validating merged data sources");
                         process.Validate(baseData, sources[i]);
 
                         stopWatch.Stop();
                         // Get the elapsed time as a TimeSpan value.
                         ts = stopWatch.Elapsed;
-                        logger.LogInformation(timeUtils.FormatElapsedTime($"{sources[i].Path} validation time", ts));
+                        _logger.LogInformation(timeUtils.FormatElapsedTime($"{sources[i].Path} validation time", ts));
                     }
                 }
             }
@@ -97,13 +99,13 @@ namespace MergerCli
             {
                 //save status on unhandled exceptions
                 OnFailure();
-                logger.LogError(ex, ex.Message);
+                _logger.LogError(ex, ex.Message);
                 return;
             }
             totalTimeStopWatch.Stop();
             // Get the elapsed time as a TimeSpan value.
             ts = totalTimeStopWatch.Elapsed;
-            logger.LogInformation(timeUtils.FormatElapsedTime("Total runtime", ts));
+            _logger.LogInformation(timeUtils.FormatElapsedTime("Total runtime", ts));
             _done = true;
         }
 
@@ -118,7 +120,7 @@ namespace MergerCli
 
         private static void PrintHelp(string programName)
         {
-            Console.WriteLine($@"Usage:
+            _logger.LogInformation($@"Usage:
 
                 Supported sources parameters:
                     web sources (cant be base source):
@@ -149,22 +151,22 @@ namespace MergerCli
                 Minimal requirement is supplying at least one source.");
         }
 
-        private static void PrepareStatusManger(ref string[] args, ILogger logger)
+        private static void PrepareStatusManger(ref string[] args)
         {
             if (args.Length == 2)
             {
                 if (!File.Exists(args[1]))
                 {
-                    logger.LogError($"invalid status file {args[1]}");
+                    _logger.LogError($"invalid status file {args[1]}");
                     Environment.Exit(-1);
                 }
                 string json = File.ReadAllText(args[1]);
                 _batchStatusManager = BatchStatusManager.FromJson(json);
                 args = _batchStatusManager.Command;
-                logger.LogInformation("resuming layers merge operation. layers progress:");
+                _logger.LogInformation("resuming layers merge operation. layers progress:");
                 foreach (var item in _batchStatusManager.States)
                 {
-                    logger.LogInformation($"{item.Key} {item.Value.BatchIdentifier}");
+                    _logger.LogInformation($"{item.Key} {item.Value.BatchIdentifier}");
                 }
             }
             else

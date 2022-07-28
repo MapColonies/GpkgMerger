@@ -31,8 +31,9 @@ namespace MergerCli
                         {
                             sources.Add(this.ParseGpkgSource(args, ref idx, batchSize, isBase));
                         }
-                        catch
+                        catch (Exception e)
                         {
+                            this._logger.LogError(e.Message);
                             string source = isBase ? "base" : "new";
                             this._logger.LogError($"{source} data does not exist.");
                             Environment.Exit(1);

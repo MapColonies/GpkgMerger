@@ -8,6 +8,8 @@ output/
 Cache*
 User/
 
+# Merger residential files
+status.json
 
 **/Properties/launchSettings.json
 

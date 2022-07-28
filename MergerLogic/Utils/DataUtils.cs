@@ -14,9 +14,9 @@ namespace MergerLogic.Utils
             this.GeoUtils = geoUtils;
         }
 
-        public abstract Tile GetTile(int z, int x, int y);
+        public abstract Tile? GetTile(int z, int x, int y);
 
-        public virtual Tile GetTile(Coord coord)
+        public virtual Tile? GetTile(Coord coord)
         {
             return this.GetTile(coord.Z, coord.X, coord.Y);
         }
