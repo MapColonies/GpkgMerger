@@ -17,10 +17,18 @@ namespace MergerLogic.Utils
             }
         }
 
-        private HttpContent? GetContent(HttpRequestMessage req)
+        private HttpContent? GetContent(string url, HttpMethod method, FormUrlEncodedContent? content)
         {
-            var resTask = this._httpClient.SendAsync(req);
-            resTask.Wait();
+            Task<HttpResponseMessage> resTask;
+            using (HttpRequestMessage req = new HttpRequestMessage
+            {
+                Method = HttpMethod.Get,
+                RequestUri = new Uri(url),
+                Content = content
+            })
+            {
+                resTask = this._httpClient.SendAsync(req);
+            }
 
             var httpRes = resTask.Result;
             if (httpRes.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -29,7 +37,7 @@ namespace MergerLogic.Utils
             }
             else if (httpRes.StatusCode != System.Net.HttpStatusCode.OK)
             {
-                throw new Exception($"Invalid response from {req.RequestUri}, status: {httpRes.StatusCode}.");
+                throw new Exception($"Invalid response from {url}, status: {httpRes.StatusCode}.");
             }
 
             return httpRes.Content;
@@ -37,61 +45,35 @@ namespace MergerLogic.Utils
 
         public byte[]? GetData(string url)
         {
-            HttpRequestMessage req = new HttpRequestMessage
-            {
-                Method = HttpMethod.Get,
-                RequestUri = new Uri(url),
-            };
-            HttpContent? content = GetContent(req);
-            var bodyTask = content?.ReadAsByteArrayAsync()!;
+            HttpContent? resBody = GetContent(url, HttpMethod.Get, null);
+            var bodyTask = resBody?.ReadAsByteArrayAsync()!;
             return bodyTask.Result;
         }
 
-        public string PostDataString(string url)
+        public string PostDataString(string url, FormUrlEncodedContent? content)
         {
-            HttpRequestMessage req = new HttpRequestMessage
-            {
-                Method = HttpMethod.Post,
-                RequestUri = new Uri(url)
-            };
-            HttpContent? content = GetContent(req);
-            var bodyTask = content?.ReadAsStringAsync()!.Result;
+            HttpContent? resBody = GetContent(url, HttpMethod.Post, content);
+            var bodyTask = resBody?.ReadAsStringAsync()!.Result;
             return bodyTask;
         }
 
-        public string PutDataString(string url, StringContent body)
+        public string PutDataString(string url, FormUrlEncodedContent? content)
         {
-            HttpRequestMessage req = new HttpRequestMessage
-            {
-                Method = HttpMethod.Put,
-                RequestUri = new Uri(url),
-                Content = body
-            };
-            HttpContent? content = GetContent(req);
-            var bodyTask = content?.ReadAsStringAsync()!.Result;
+            HttpContent? resBody = GetContent(url, HttpMethod.Put, content);
+            var bodyTask = resBody?.ReadAsStringAsync()!.Result;
             return bodyTask;
         }
 
         public string GetDataString(string url)
         {
-            HttpRequestMessage req = new HttpRequestMessage
-            {
-                Method = HttpMethod.Get,
-                RequestUri = new Uri(url)
-            };
-            HttpContent? content = GetContent(req);
-            var bodyTask = content?.ReadAsStringAsync()!.Result;
+            HttpContent? resBody = GetContent(url, HttpMethod.Get, null);
+            var bodyTask = resBody?.ReadAsStringAsync()!.Result;
             return bodyTask;
         }
 
         public T? GetData<T>(string url)
         {
-            HttpRequestMessage req = new HttpRequestMessage
-            {
-                Method = HttpMethod.Get,
-                RequestUri = new Uri(url)
-            };
-            HttpContent? content = GetContent(req);
+            HttpContent? content = GetContent(url, HttpMethod.Get, null);
             var bodyTask = content?.ReadAsAsync<T>()!;
             return bodyTask.Result;
         }

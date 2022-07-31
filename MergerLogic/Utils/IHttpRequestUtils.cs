@@ -6,9 +6,9 @@ namespace MergerLogic.Utils
 
         string GetDataString(string url);
 
-        string PostDataString(string url);
+        string PostDataString(string url, FormUrlEncodedContent? content);
 
-        string PutDataString(string url, StringContent body);
+        string PutDataString(string url, FormUrlEncodedContent? content);
 
         T? GetData<T>(string url);
     }
