@@ -15,7 +15,11 @@ namespace MergerService.Controllers
         [EnumMember(Value = "Completed")]
         COMPLETED,
         [EnumMember(Value = "Failed")]
-        FAILED
+        FAILED,
+        [EnumMember(Value = "Expired")]
+        EXPIRED,
+        [EnumMember(Value = "Aborted")]
+        ABORTED
     }
 
     public class UpdateParameters
