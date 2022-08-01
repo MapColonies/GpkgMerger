@@ -6,8 +6,14 @@ namespace MergerService.Utils
     {
         MergeTask? GetTask(string jobType, string taskType);
 
-        void UpdateTask(string jobId, string taskId, UpdateParameters updateMetadata);
+        public void NotifyOnCompletion(string jobId, string taskId);
+
+        public void UpdateProgress(string jobId, string taskId, int progress);
 
         public void UpdateCompletion(string jobId, string taskId);
+
+        public void UpdateReject(string jobId, string taskId, int attempts, string reason, bool resettable);
+
+        public void UpdateFailed(string jobId, string taskId, string reason);
     }
 }

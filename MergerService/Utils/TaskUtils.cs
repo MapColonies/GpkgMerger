@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Text;
 using MergerLogic.Utils;
 using MergerService.Controllers;
 using Newtonsoft.Json;
@@ -29,7 +28,7 @@ namespace MergerService.Utils
         {
             string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
             string url = $"{baseUrl}/tasks/{jobType}/{taskType}/startPending";
-            string taskData = this._httpClient.PostDataString(url);
+            string taskData = this._httpClient.PostDataString(url, null);
 
             if (taskData is null)
             {
@@ -49,27 +48,60 @@ namespace MergerService.Utils
             }
         }
 
-        public void UpdateTask(string jobId, string taskId, UpdateParameters updateParameters)
+        public void NotifyOnCompletion(string jobId, string taskId)
         {
-            // Update job DB on task completion
+            // Notify overseer on task completion
+            string baseUrl = this._configuration.GetConfiguration("TASK", "overseerUrl");
+            string url = Path.Combine(baseUrl, $"tasks/{jobId}/{taskId}/completed");
+            _ = this._httpClient.PostDataString(url, null);
+        }
+
+        private void Update(string jobId, string taskId, FormUrlEncodedContent content)
+        {
             string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
             string url = Path.Combine(baseUrl, $"jobs/{jobId}/tasks/{taskId}");
+            _ = this._httpClient.PutDataString(url, content);
+        }
 
-            // Convert metadata to json
-            var jsonSerializerSettings = new JsonSerializerSettings();
-            jsonSerializerSettings.Converters.Add(new StringEnumConverter());
-            string json = JsonConvert.SerializeObject(updateParameters, jsonSerializerSettings);
-            var body = new System.Net.Http.StringContent(json, Encoding.UTF8, "application/json");
-
-            _ = this._httpClient.PutDataString(url, body);
+        public void UpdateProgress(string jobId, string taskId, int progress)
+        {
+            var content = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("percentage", progress.ToString())
+            });
+            Update(jobId, taskId, content);
         }
 
         public void UpdateCompletion(string jobId, string taskId)
         {
-            // Update overseer on task completion
-            string baseUrl = this._configuration.GetConfiguration("TASK", "overseerUrl");
-            string url = Path.Combine(baseUrl, $"tasks/{jobId}/{taskId}/completed");
-            _ = this._httpClient.PostDataString(url);
+            var content = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("percentage", "100"),
+                new KeyValuePair<string, string>("status", "completed")
+            });
+            Update(jobId, taskId, content);
+        }
+
+        public void UpdateReject(string jobId, string taskId, int attempts, string reason, bool resettable)
+        {
+            attempts++;
+            var content = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("attempts", attempts.ToString()),
+                new KeyValuePair<string, string>("reason", reason),
+                new KeyValuePair<string, string>("resettable", resettable.ToString())
+            });
+            Update(jobId, taskId, content);
+        }
+
+        public void UpdateFailed(string jobId, string taskId, string reason)
+        {
+            var content = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("status", "failed"),
+                new KeyValuePair<string, string>("reason", reason)
+            });
+            Update(jobId, taskId, content);
         }
     }
 }

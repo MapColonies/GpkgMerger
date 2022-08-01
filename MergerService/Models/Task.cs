@@ -22,26 +22,6 @@ namespace MergerService.Controllers
         ABORTED
     }
 
-    public class UpdateParameters
-    {
-        [JsonInclude]
-        public Status status { get; }
-
-        [JsonInclude]
-        public int percentage { get; }
-
-        [DefaultValue("")]
-        [JsonInclude]
-        public string reason { get; }
-
-        public UpdateParameters(Status status, int percentage, string reason = "")
-        {
-            this.status = status;
-            this.percentage = percentage;
-            this.reason = reason;
-        }
-    }
-
     public class MergeMetadata
     {
         [JsonInclude]
@@ -97,7 +77,7 @@ namespace MergerService.Controllers
         public MergeMetadata Parameters { get; }
 
         [JsonInclude]
-        public Status Status { get; set; }
+        public Status Status { get; }
 
         [DefaultValue(0)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -105,7 +85,7 @@ namespace MergerService.Controllers
         public int Percentage { get; set; }
 
         [JsonInclude]
-        public string Reason { get; set; }
+        public string Reason { get; }
 
         [JsonInclude]
         public int Attempts { get; }
@@ -144,17 +124,6 @@ namespace MergerService.Controllers
             this.Resettable = resettable;
             this.Created = created;
             this.Updated = updated;
-        }
-
-        public void MarkCompleted()
-        {
-            this.Percentage = 100;
-            this.Status = Status.COMPLETED;
-        }
-
-        public UpdateParameters GetUpdateParameters()
-        {
-            return new UpdateParameters(this.Status, this.Percentage, this.Reason);
         }
 
         public void Print()

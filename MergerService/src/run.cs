@@ -108,16 +108,13 @@ namespace MergerService.Src
                         continue;
                     }
 
-                    task.Status = Status.IN_PROGRESS;
                     RunTask(task, taskUtils);
                     activatedAny = true;
 
                     try
                     {
-                        task.MarkCompleted();
-                        UpdateParameters updateParameters = task.GetUpdateParameters();
-                        taskUtils.UpdateTask(task.JobId, task.Id, updateParameters);
                         taskUtils.UpdateCompletion(task.JobId, task.Id);
+                        taskUtils.NotifyOnCompletion(task.JobId, task.Id);
                     }
                     catch (Exception e)
                     {
@@ -137,7 +134,7 @@ namespace MergerService.Src
         private void RunTask(MergeTask task, ITaskUtils taskUtils)
         {
             // Guard clause in case there are no batches or sources
-            if (task.Parameters == null || task.Parameters.Batches == null || task.Parameters.Sources == null)
+            if (task.Parameters is null || task.Parameters.Batches is null || task.Parameters.Sources is null)
             {
                 return;
             }
@@ -222,8 +219,7 @@ namespace MergerService.Src
                                             try
                                             {
                                                 task.Percentage = 100 * (tileProgressCount / totalTileCount);
-                                                UpdateParameters updateParameters = task.GetUpdateParameters();
-                                                taskUtils.UpdateTask(task.JobId, task.Id, updateParameters);
+                                                taskUtils.UpdateProgress(task.JobId, task.Id, task.Percentage);
                                             }
                                             catch (Exception e)
                                             {
@@ -266,10 +262,7 @@ namespace MergerService.Src
                                     {
                                         try
                                         {
-                                            task.Status = Status.FAILED;
-                                            task.Reason = "Error in validation, target not valid after run";
-                                            UpdateParameters updateParameters = task.GetUpdateParameters();
-                                            taskUtils.UpdateTask(task.JobId, task.Id, updateParameters);
+                                            taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, "Error in validation, target not valid after run", true);
                                         }
                                         catch (Exception innerError)
                                         {
@@ -299,10 +292,7 @@ namespace MergerService.Src
 
                 try
                 {
-                    task.Status = Status.FAILED;
-                    task.Reason = e.Message;
-                    UpdateParameters updateParameters = task.GetUpdateParameters();
-                    taskUtils.UpdateTask(task.JobId, task.Id, updateParameters);
+                    taskUtils.UpdateFailed(task.JobId, task.Id, e.Message);
                 }
                 catch (Exception innerError)
                 {
