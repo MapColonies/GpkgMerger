@@ -14,12 +14,15 @@ namespace MergerService.Utils
         private ILogger _logger;
         private ActivitySource _activitySource;
 
-        public TaskUtils(IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<TaskUtils> logger, ActivitySource activitySource)
+        private int _maxAttempts;
+
+        public TaskUtils(int maxAttempts, IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<TaskUtils> logger, ActivitySource activitySource)
         {
             this._httpClient = httpClient;
             this._configuration = configuration;
             this._logger = logger;
             this._activitySource = activitySource;
+            this._maxAttempts = maxAttempts;
             //TODO: add tracing
         }
 
@@ -85,6 +88,13 @@ namespace MergerService.Utils
         public void UpdateReject(string jobId, string taskId, int attempts, string reason, bool resettable)
         {
             attempts++;
+
+            // Check if the task should actually fail
+            if (!resettable || attempts == this._maxAttempts)
+            {
+                UpdateFailed(jobId, taskId, reason);
+            }
+
             var content = new FormUrlEncodedContent(new[]
             {
                 new KeyValuePair<string, string>("attempts", attempts.ToString()),
