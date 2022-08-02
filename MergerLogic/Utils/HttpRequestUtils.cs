@@ -1,12 +1,16 @@
+using Microsoft.Extensions.Logging;
+
 namespace MergerLogic.Utils
 {
     public class HttpRequestUtils : IHttpRequestUtils
     {
         private HttpClient _httpClient;
+        private ILogger<IHttpRequestUtils> _logger;
 
-        public HttpRequestUtils(HttpClient httpClient)
+        public HttpRequestUtils(HttpClient httpClient, ILogger<IHttpRequestUtils> logger)
         {
             this._httpClient = httpClient;
+            this._logger = logger;
         }
 
         ~HttpRequestUtils()
@@ -37,7 +41,10 @@ namespace MergerLogic.Utils
             }
             else if (httpRes.StatusCode != System.Net.HttpStatusCode.OK)
             {
-                throw new Exception($"Invalid response from {url}, status: {httpRes.StatusCode}.");
+                string message = $"Invalid response from {url}, status: {httpRes.StatusCode}";
+                this._logger.LogWarning(message);
+                this._logger.LogDebug($"Response: {httpRes.ToString()}");
+                throw new Exception(message);
             }
 
             return httpRes.Content;
