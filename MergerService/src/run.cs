@@ -146,8 +146,7 @@ namespace MergerService.Src
             TimeSpan ts;
 
             // Log the task
-            // TODO: add job and task ids
-            this._logger.LogInformation($"starting task: taskId job: jobId");
+            this._logger.LogInformation($"starting task: {task.Id} job: {task.JobId}");
 
             try
             {
