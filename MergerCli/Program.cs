@@ -13,7 +13,7 @@ namespace MergerCli
     {
         private static BatchStatusManager _batchStatusManager;
         private static bool _done = false;
-        private static ILogger _logger;
+        private static ILogger<Program> _logger;
 
         private static void Main(string[] args)
         {
