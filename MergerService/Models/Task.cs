@@ -60,6 +60,14 @@ namespace MergerService.Controllers
                 bounds.Print();
             }
         }
+
+        public override string ToString()
+        {
+            return $@"Sources:
+            {this.Sources?.ToString()}
+            Batches:
+            {this.Batches?.ToString()}";
+        }
     }
 
     public class MergeTask
@@ -128,18 +136,23 @@ namespace MergerService.Controllers
 
         public void Print()
         {
-            Console.WriteLine($"Id: {this.Id}");
-            Console.WriteLine($"Type: {this.Type}");
-            Console.WriteLine($"Description: {this.Description}");
-            this.Parameters.Print();
-            Console.WriteLine($"Status: {this.Status}");
-            Console.WriteLine($"Percentage: {this.Percentage}");
-            Console.WriteLine($"Reason: {this.Reason}");
-            Console.WriteLine($"Attempts: {this.Attempts}");
-            Console.WriteLine($"JobId: {this.JobId}");
-            Console.WriteLine($"Resettable: {this.Resettable}");
-            Console.WriteLine($"Created: {this.Created}");
-            Console.WriteLine($"Updated: {this.Updated}");
+            Console.WriteLine($"{this.ToString()}");
+        }
+
+        public override string ToString()
+        {
+            return $@"Id: {this.Id}
+            Type: {this.Type}
+            Description: {this.Description}
+            Parameters: {this.Parameters.ToString()}
+            Status: {this.Status}
+            Percentage: {this.Percentage}
+            Reason: {this.Reason}
+            Attempts: {this.Attempts}
+            JobId: {this.JobId}
+            Resettable: {this.Resettable}
+            Created: {this.Created}
+            Updated: {this.Updated}";
         }
     }
 }

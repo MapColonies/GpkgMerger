@@ -137,6 +137,7 @@ namespace MergerService.Src
             // Guard clause in case there are no batches or sources
             if (task.Parameters is null || task.Parameters.Batches is null || task.Parameters.Sources is null)
             {
+                this._logger.LogWarning($"Task parameters are invalid. Task: {task.ToString()}");
                 return;
             }
 

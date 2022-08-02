@@ -33,10 +33,15 @@ namespace MergerService.Controllers
 
         public void Print()
         {
-            Console.WriteLine($"Path: {this.Path}");
-            Console.WriteLine($"Type: {this.Type}");
-            Console.WriteLine($"Origin: {this.Origin}");
-            Console.WriteLine($"Grid: {this.Grid}");
+            Console.WriteLine(this.ToString());
+        }
+
+        public override string ToString()
+        {
+            return $@"Path: {this.Path}
+            Type: {this.Type}
+            Origin: {this.Origin}
+            Grid: {this.Grid}";
         }
     }
 }
