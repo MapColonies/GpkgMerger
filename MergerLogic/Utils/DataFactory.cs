@@ -3,6 +3,7 @@ using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.IO.Abstractions;
 
 namespace MergerLogic.Utils
 {
@@ -12,13 +13,15 @@ namespace MergerLogic.Utils
         private readonly IPathUtils _pathUtils;
         private readonly IServiceProvider _container;
         private readonly ILogger _logger;
+        private readonly IFileSystem _fileSystem;
 
-        public DataFactory(IConfigurationManager configuration, IPathUtils pathUtils, IServiceProvider container, ILogger<DataFactory> logger)
+        public DataFactory(IConfigurationManager configuration, IPathUtils pathUtils, IServiceProvider container, ILogger<DataFactory> logger, IFileSystem fileSystem)
         {
             this._configurationManager = configuration;
             this._pathUtils = pathUtils;
             this._container = container;
             this._logger = logger;
+            this._fileSystem = fileSystem;
         }
 
         public IData CreateDataSource(string type, string path, int batchSize, bool isOneXOne, GridOrigin? origin = null, Extent? extent = null, bool isBase = false)
@@ -29,7 +32,7 @@ namespace MergerLogic.Utils
             switch (type.ToLower())
             {
                 case "gpkg":
-                    path = Path.Combine(outputPath, path);
+                    path = this._fileSystem.Path.Join(outputPath, path);
                     if (origin == null)
                         data = new Gpkg(this._configurationManager, this._container, path, batchSize, isBase, isOneXOne, extent);
                     else
@@ -50,7 +53,7 @@ namespace MergerLogic.Utils
                         data = new S3(this._pathUtils, client, this._container, bucket, path, batchSize, isOneXOne, origin.Value);
                     break;
                 case "fs":
-                    path = Path.Combine(outputPath, path);
+                    path = this._fileSystem.Path.Join(outputPath, path);
                     if (origin == null)
                         data = new FS(this._pathUtils, this._container, path, batchSize, isOneXOne, isBase);
                     else
