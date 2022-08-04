@@ -29,7 +29,8 @@ namespace MergerService.Utils
         public MergeTask? GetTask(string jobType, string taskType)
         {
             string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl").TrimEnd();
-            string url = $"{baseUrl}/tasks/{jobType}/{taskType}/startPending";
+            string relativeUri = $"tasks/{jobType}/{taskType}/startPending";
+            string url = new Uri(new Uri(baseUrl), relativeUri).ToString();
             string taskData = this._httpClient.PostDataString(url, null);
 
             if (taskData is null)
@@ -54,14 +55,16 @@ namespace MergerService.Utils
         {
             // Notify overseer on task completion
             string baseUrl = this._configuration.GetConfiguration("TASK", "overseerUrl").TrimEnd();
-            string url = $"{baseUrl}/tasks/{jobId}/{taskId}/completed";
+            string relativeUri = $"tasks/{jobId}/{taskId}/completed";
+            string url = new Uri(new Uri(baseUrl), relativeUri).ToString();
             _ = this._httpClient.PostDataString(url, null);
         }
 
         private void Update(string jobId, string taskId, FormUrlEncodedContent content)
         {
             string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl").TrimEnd();
-            string url = $"{baseUrl}/jobs/{jobId}/tasks/{taskId}";
+            string relativeUri = $"jobs/{jobId}/tasks/{taskId}";
+            string url = new Uri(new Uri(baseUrl), relativeUri).ToString();
             _ = this._httpClient.PutDataString(url, content);
         }
 
