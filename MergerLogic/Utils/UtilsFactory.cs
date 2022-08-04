@@ -40,7 +40,7 @@ namespace MergerLogic.Utils
         public IHttpSourceUtils GetHttpUtils(string path)
         {
             IPathPatternUtils pathPatternUtils = this.GetPathPatternUtils(path);
-            return new HttpSourceUtils(this._httpRequestUtils, path, pathPatternUtils, this._geoUtils);
+            return new HttpSourceUtils(path, this._httpRequestUtils, pathPatternUtils, this._geoUtils);
         }
 
         public IS3Utils GetS3Utils(string path)
