@@ -4,6 +4,8 @@ namespace MergerLogic.Utils
 {
     public class HttpRequestUtils : IHttpRequestUtils
     {
+        private delegate void OnNotFound();
+
         private HttpClient _httpClient;
         private ILogger<IHttpRequestUtils> _logger;
 
@@ -21,7 +23,7 @@ namespace MergerLogic.Utils
             }
         }
 
-        private HttpContent? GetContent(string url, HttpMethod method, FormUrlEncodedContent? content)
+        private HttpContent? GetContent(string url, HttpMethod method, FormUrlEncodedContent? content, bool ignoreNotFound)
         {
             Task<HttpResponseMessage> resTask;
             using (HttpRequestMessage req = new HttpRequestMessage
@@ -37,7 +39,15 @@ namespace MergerLogic.Utils
             var httpRes = resTask.Result;
             if (httpRes.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                return null;
+                if (ignoreNotFound)
+                {
+                    return null;
+                }
+
+                string message = $"{url} not found";
+                this._logger.LogWarning(message);
+                this._logger.LogDebug($"Response: {httpRes.ToString()}");
+                throw new Exception(message);
             }
             else if (httpRes.StatusCode != System.Net.HttpStatusCode.OK)
             {
@@ -50,37 +60,37 @@ namespace MergerLogic.Utils
             return httpRes.Content;
         }
 
-        public byte[]? GetData(string url)
+        public byte[]? GetData(string url, bool ignoreNotFound = true)
         {
-            HttpContent? resBody = GetContent(url, HttpMethod.Get, null);
+            HttpContent? resBody = GetContent(url, HttpMethod.Get, null, ignoreNotFound);
             var bodyTask = resBody?.ReadAsByteArrayAsync()!;
             return bodyTask.Result;
         }
 
-        public string PostDataString(string url, FormUrlEncodedContent? content)
+        public string PostDataString(string url, FormUrlEncodedContent? content, bool ignoreNotFound = true)
         {
-            HttpContent? resBody = GetContent(url, HttpMethod.Post, content);
+            HttpContent? resBody = GetContent(url, HttpMethod.Post, content, ignoreNotFound);
             var bodyTask = resBody?.ReadAsStringAsync()!.Result;
             return bodyTask;
         }
 
-        public string PutDataString(string url, FormUrlEncodedContent? content)
+        public string PutDataString(string url, FormUrlEncodedContent? content, bool ignoreNotFound = true)
         {
-            HttpContent? resBody = GetContent(url, HttpMethod.Put, content);
+            HttpContent? resBody = GetContent(url, HttpMethod.Put, content, ignoreNotFound);
             var bodyTask = resBody?.ReadAsStringAsync()!.Result;
             return bodyTask;
         }
 
-        public string GetDataString(string url)
+        public string GetDataString(string url, bool ignoreNotFound = true)
         {
-            HttpContent? resBody = GetContent(url, HttpMethod.Get, null);
+            HttpContent? resBody = GetContent(url, HttpMethod.Get, null, ignoreNotFound);
             var bodyTask = resBody?.ReadAsStringAsync()!.Result;
             return bodyTask;
         }
 
-        public T? GetData<T>(string url)
+        public T? GetData<T>(string url, bool ignoreNotFound = true)
         {
-            HttpContent? content = GetContent(url, HttpMethod.Get, null);
+            HttpContent? content = GetContent(url, HttpMethod.Get, null, ignoreNotFound);
             var bodyTask = content?.ReadAsAsync<T>()!;
             return bodyTask.Result;
         }

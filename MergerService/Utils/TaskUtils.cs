@@ -28,10 +28,10 @@ namespace MergerService.Utils
 
         public MergeTask? GetTask(string jobType, string taskType)
         {
-            string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl").TrimEnd();
+            string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
             string relativeUri = $"tasks/{jobType}/{taskType}/startPending";
             string url = new Uri(new Uri(baseUrl), relativeUri).ToString();
-            string taskData = this._httpClient.PostDataString(url, null);
+            string taskData = this._httpClient.PostDataString(url, null, false);
 
             if (taskData is null)
             {
@@ -54,18 +54,18 @@ namespace MergerService.Utils
         public void NotifyOnCompletion(string jobId, string taskId)
         {
             // Notify overseer on task completion
-            string baseUrl = this._configuration.GetConfiguration("TASK", "overseerUrl").TrimEnd();
+            string baseUrl = this._configuration.GetConfiguration("TASK", "overseerUrl");
             string relativeUri = $"tasks/{jobId}/{taskId}/completed";
             string url = new Uri(new Uri(baseUrl), relativeUri).ToString();
-            _ = this._httpClient.PostDataString(url, null);
+            _ = this._httpClient.PostDataString(url, null, false);
         }
 
         private void Update(string jobId, string taskId, FormUrlEncodedContent content)
         {
-            string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl").TrimEnd();
+            string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
             string relativeUri = $"jobs/{jobId}/tasks/{taskId}";
             string url = new Uri(new Uri(baseUrl), relativeUri).ToString();
-            _ = this._httpClient.PutDataString(url, content);
+            _ = this._httpClient.PutDataString(url, content, false);
         }
 
         public void UpdateProgress(string jobId, string taskId, int progress)
