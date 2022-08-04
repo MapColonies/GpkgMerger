@@ -26,10 +26,9 @@ namespace MergerService.Utils
             //TODO: add tracing
         }
 
-        // TODO: add update progress method
         public MergeTask? GetTask(string jobType, string taskType)
         {
-            string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
+            string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl").TrimEnd();
             string url = $"{baseUrl}/tasks/{jobType}/{taskType}/startPending";
             string taskData = this._httpClient.PostDataString(url, null);
 
@@ -46,7 +45,7 @@ namespace MergerService.Utils
             }
             catch (Exception e)
             {
-                this._logger.LogInformation(e, "Error serializing returned task");
+                this._logger.LogWarning(e, "Error serializing returned task");
                 return null;
             }
         }
@@ -54,15 +53,15 @@ namespace MergerService.Utils
         public void NotifyOnCompletion(string jobId, string taskId)
         {
             // Notify overseer on task completion
-            string baseUrl = this._configuration.GetConfiguration("TASK", "overseerUrl");
-            string url = Path.Combine(baseUrl, $"tasks/{jobId}/{taskId}/completed");
+            string baseUrl = this._configuration.GetConfiguration("TASK", "overseerUrl").TrimEnd();
+            string url = $"{baseUrl}/tasks/{jobId}/{taskId}/completed";
             _ = this._httpClient.PostDataString(url, null);
         }
 
         private void Update(string jobId, string taskId, FormUrlEncodedContent content)
         {
-            string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
-            string url = Path.Combine(baseUrl, $"jobs/{jobId}/tasks/{taskId}");
+            string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl").TrimEnd();
+            string url = $"{baseUrl}/jobs/{jobId}/tasks/{taskId}";
             _ = this._httpClient.PutDataString(url, content);
         }
 
