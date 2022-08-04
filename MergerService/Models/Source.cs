@@ -14,11 +14,11 @@ namespace MergerService.Controllers
         [JsonProperty(Required = Required.Default, DefaultValueHandling = DefaultValueHandling.Populate, NullValueHandling = NullValueHandling.Ignore)]
         public GridOrigin Origin { get; }
 
-        [DefaultValue("2X1")]
+        [DefaultValue("2x1")]
         [JsonProperty(Required = Required.Default, DefaultValueHandling = DefaultValueHandling.Populate, NullValueHandling = NullValueHandling.Ignore)]
         public string Grid { get; }
 
-        public Source(string path, string type, GridOrigin origin = GridOrigin.UPPER_LEFT, string grid = "2X1")
+        public Source(string path, string type, GridOrigin origin = GridOrigin.UPPER_LEFT, string grid = "2x1")
         {
             this.Path = path;
             this.Type = type;
