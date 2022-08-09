@@ -21,12 +21,12 @@ namespace MergerLogic.Utils
             }
         }
 
-        private HttpContent? GetContent(string url, HttpMethod method, FormUrlEncodedContent? content, bool ignoreNotFound)
+        private HttpContent? GetContent(string url, HttpMethod method, HttpContent? content, bool ignoreNotFound)
         {
             Task<HttpResponseMessage> resTask;
             using (HttpRequestMessage req = new HttpRequestMessage
             {
-                Method = HttpMethod.Get,
+                Method = method,
                 RequestUri = new Uri(url),
                 Content = content
             })
@@ -65,14 +65,14 @@ namespace MergerLogic.Utils
             return bodyTask.Result;
         }
 
-        public string PostDataString(string url, FormUrlEncodedContent? content, bool ignoreNotFound = true)
+        public string PostDataString(string url, HttpContent? content, bool ignoreNotFound = true)
         {
             HttpContent? resBody = GetContent(url, HttpMethod.Post, content, ignoreNotFound);
             var bodyTask = resBody?.ReadAsStringAsync()!.Result;
             return bodyTask;
         }
 
-        public string PutDataString(string url, FormUrlEncodedContent? content, bool ignoreNotFound = true)
+        public string PutDataString(string url, HttpContent? content, bool ignoreNotFound = true)
         {
             HttpContent? resBody = GetContent(url, HttpMethod.Put, content, ignoreNotFound);
             var bodyTask = resBody?.ReadAsStringAsync()!.Result;
