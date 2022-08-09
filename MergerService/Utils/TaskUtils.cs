@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Net.Http.Headers;
 using MergerLogic.Utils;
 using MergerService.Controllers;
 using Newtonsoft.Json;
@@ -15,6 +14,7 @@ namespace MergerService.Utils
         private ILogger _logger;
         private ActivitySource _activitySource;
         private int _maxAttempts;
+        private JsonSerializerSettings _jsonSerializerSettings;
 
         public TaskUtils(IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<TaskUtils> logger, ActivitySource activitySource)
         {
@@ -22,7 +22,11 @@ namespace MergerService.Utils
             this._configuration = configuration;
             this._logger = logger;
             this._activitySource = activitySource;
-            this._maxAttempts = this._configuration.GetConfiguration<int>("TASK", "maxAttempts"); ;
+            this._maxAttempts = this._configuration.GetConfiguration<int>("TASK", "maxAttempts");
+
+            // Construct Json serializer settings
+            _jsonSerializerSettings = new JsonSerializerSettings();
+            _jsonSerializerSettings.Converters.Add(new StringEnumConverter());
             //TODO: add tracing
         }
 
@@ -40,9 +44,7 @@ namespace MergerService.Utils
 
             try
             {
-                var jsonSerializerSettings = new JsonSerializerSettings();
-                jsonSerializerSettings.Converters.Add(new StringEnumConverter());
-                return JsonConvert.DeserializeObject<MergeTask>(taskData, jsonSerializerSettings)!;
+                return JsonConvert.DeserializeObject<MergeTask>(taskData, _jsonSerializerSettings)!;
             }
             catch (Exception e)
             {
