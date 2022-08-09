@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net.Http.Headers;
 using MergerLogic.Utils;
 using MergerService.Controllers;
 using Newtonsoft.Json;
@@ -13,16 +14,15 @@ namespace MergerService.Utils
         private IConfigurationManager _configuration;
         private ILogger _logger;
         private ActivitySource _activitySource;
-
         private int _maxAttempts;
 
-        public TaskUtils(int maxAttempts, IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<TaskUtils> logger, ActivitySource activitySource)
+        public TaskUtils(IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<TaskUtils> logger, ActivitySource activitySource)
         {
             this._httpClient = httpClient;
             this._configuration = configuration;
             this._logger = logger;
             this._activitySource = activitySource;
-            this._maxAttempts = maxAttempts;
+            this._maxAttempts = this._configuration.GetConfiguration<int>("TASK", "maxAttempts"); ;
             //TODO: add tracing
         }
 

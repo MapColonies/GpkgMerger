@@ -78,10 +78,9 @@ namespace MergerService.Src
         public void Start()
         {
             var pollingTime = this._configurationManager.GetConfiguration<int>("TASK", "pollingTime");
-            var maxAttempts = this._configurationManager.GetConfiguration<int>("TASK", "maxAttempts");
 
             var taskTypes = BuildTypeList();
-            ITaskUtils taskUtils = new TaskUtils(maxAttempts, this._configurationManager, this._requestUtils, this._taskUtilsLogger, this._activitySource);
+            ITaskUtils taskUtils = new TaskUtils(this._configurationManager, this._requestUtils, this._taskUtilsLogger, this._activitySource);
 
             this._logger.LogInformation("starting task polling loop");
             while (true)
