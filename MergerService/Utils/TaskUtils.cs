@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net.Http.Headers;
 using MergerLogic.Utils;
 using MergerService.Controllers;
 using Newtonsoft.Json;
@@ -44,7 +45,7 @@ namespace MergerService.Utils
 
             try
             {
-                return JsonConvert.DeserializeObject<MergeTask>(taskData, _jsonSerializerSettings)!;
+                return JsonConvert.DeserializeObject<MergeTask>(taskData, this._jsonSerializerSettings)!;
             }
             catch (Exception e)
             {
@@ -62,7 +63,7 @@ namespace MergerService.Utils
             _ = this._httpClient.PostDataString(url, null, false);
         }
 
-        private void Update(string jobId, string taskId, FormUrlEncodedContent content)
+        private void Update(string jobId, string taskId, HttpContent content)
         {
             string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
             string relativeUri = $"jobs/{jobId}/tasks/{taskId}";
@@ -72,20 +73,24 @@ namespace MergerService.Utils
 
         public void UpdateProgress(string jobId, string taskId, int progress)
         {
-            var content = new FormUrlEncodedContent(new[]
+            var content = new StringContent(JsonConvert.SerializeObject(new
             {
-                new KeyValuePair<string, string>("percentage", progress.ToString())
-            });
+                percentage = progress
+            }, this._jsonSerializerSettings));
+
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
             Update(jobId, taskId, content);
         }
 
         public void UpdateCompletion(string jobId, string taskId)
         {
-            var content = new FormUrlEncodedContent(new[]
+            var content = new StringContent(JsonConvert.SerializeObject(new
             {
-                new KeyValuePair<string, string>("percentage", "100"),
-                new KeyValuePair<string, string>("status", "completed")
-            });
+                percentage = 100,
+                status = Status.COMPLETED
+            }, this._jsonSerializerSettings));
+
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
             Update(jobId, taskId, content);
         }
 
@@ -99,22 +104,26 @@ namespace MergerService.Utils
                 UpdateFailed(jobId, taskId, reason);
             }
 
-            var content = new FormUrlEncodedContent(new[]
+            var content = new StringContent(JsonConvert.SerializeObject(new
             {
-                new KeyValuePair<string, string>("attempts", attempts.ToString()),
-                new KeyValuePair<string, string>("reason", reason),
-                new KeyValuePair<string, string>("resettable", resettable.ToString())
-            });
+                attempts,
+                reason,
+                resettable
+            }, this._jsonSerializerSettings));
+
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
             Update(jobId, taskId, content);
         }
 
         public void UpdateFailed(string jobId, string taskId, string reason)
         {
-            var content = new FormUrlEncodedContent(new[]
+            var content = new StringContent(JsonConvert.SerializeObject(new
             {
-                new KeyValuePair<string, string>("status", "failed"),
-                new KeyValuePair<string, string>("reason", reason)
-            });
+                status = Status.FAILED,
+                reason
+            }, this._jsonSerializerSettings));
+
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
             Update(jobId, taskId, content);
         }
     }
