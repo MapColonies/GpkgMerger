@@ -65,21 +65,21 @@ namespace MergerLogic.Utils
             return bodyTask.Result;
         }
 
-        public string PostDataString(string url, HttpContent? content, bool ignoreNotFound = true)
+        public string? PostDataString(string url, HttpContent? content, bool ignoreNotFound = true)
         {
             HttpContent? resBody = GetContent(url, HttpMethod.Post, content, ignoreNotFound);
             var bodyTask = resBody?.ReadAsStringAsync()!.Result;
             return bodyTask;
         }
 
-        public string PutDataString(string url, HttpContent? content, bool ignoreNotFound = true)
+        public string? PutDataString(string url, HttpContent? content, bool ignoreNotFound = true)
         {
             HttpContent? resBody = GetContent(url, HttpMethod.Put, content, ignoreNotFound);
             var bodyTask = resBody?.ReadAsStringAsync()!.Result;
             return bodyTask;
         }
 
-        public string GetDataString(string url, bool ignoreNotFound = true)
+        public string? GetDataString(string url, bool ignoreNotFound = true)
         {
             HttpContent? resBody = GetContent(url, HttpMethod.Get, null, ignoreNotFound);
             var bodyTask = resBody?.ReadAsStringAsync()!.Result;

@@ -36,7 +36,7 @@ namespace MergerService.Utils
             string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
             string relativeUri = $"tasks/{jobType}/{taskType}/startPending";
             string url = new Uri(new Uri(baseUrl), relativeUri).ToString();
-            string taskData = this._httpClient.PostDataString(url, null, false);
+            string? taskData = this._httpClient.PostDataString(url, null, false);
 
             if (taskData is null)
             {
