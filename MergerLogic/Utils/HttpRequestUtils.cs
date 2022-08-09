@@ -4,8 +4,6 @@ namespace MergerLogic.Utils
 {
     public class HttpRequestUtils : IHttpRequestUtils
     {
-        private delegate void OnNotFound();
-
         private HttpClient _httpClient;
         private ILogger<IHttpRequestUtils> _logger;
 

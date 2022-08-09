@@ -24,8 +24,6 @@ namespace MergerLogic.Utils
 
         public IEnumerable<IConfigurationSection> GetChildren(params string[] configPath)
         {
-            List<KeyValuePair<string, string>> values = new List<KeyValuePair<string, string>>();
-
             var config = this.config.GetSection(configPath[0]);
             for (int i = 1; i < configPath.Length - 1; i++)
             {
