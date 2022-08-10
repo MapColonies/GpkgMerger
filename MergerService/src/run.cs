@@ -215,7 +215,7 @@ namespace MergerService.Src
                                         // Show progress every 1000 tiles
                                         if (tileProgressCount % 1000 == 0)
                                         {
-                                            this._logger.LogInformation($"Tile Count: {tileProgressCount} / {totalTileCount}");
+                                            this._logger.LogDebug($"Job: {task.JobId}, Task: {task.Id}, Tile Count: {tileProgressCount} / {totalTileCount}");
 
                                             try
                                             {
