@@ -16,6 +16,8 @@ namespace MergerService.Utils
         private ActivitySource _activitySource;
         private int _maxAttempts;
         private JsonSerializerSettings _jsonSerializerSettings;
+        private string _overseerUrl;
+        private string _jobManagerUrl;
 
         public TaskUtils(IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<TaskUtils> logger, ActivitySource activitySource)
         {
@@ -28,14 +30,16 @@ namespace MergerService.Utils
             // Construct Json serializer settings
             _jsonSerializerSettings = new JsonSerializerSettings();
             _jsonSerializerSettings.Converters.Add(new StringEnumConverter());
+
+            _overseerUrl = this._configuration.GetConfiguration("TASK", "overseerUrl");
+            _jobManagerUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
             //TODO: add tracing
         }
 
         public MergeTask? GetTask(string jobType, string taskType)
         {
-            string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
             string relativeUri = $"tasks/{jobType}/{taskType}/startPending";
-            string url = new Uri(new Uri(baseUrl), relativeUri).ToString();
+            string url = new Uri(new Uri(_jobManagerUrl), relativeUri).ToString();
             string? taskData = this._httpClient.PostDataString(url, null, false);
 
             if (taskData is null)
@@ -57,17 +61,15 @@ namespace MergerService.Utils
         public void NotifyOnCompletion(string jobId, string taskId)
         {
             // Notify overseer on task completion
-            string baseUrl = this._configuration.GetConfiguration("TASK", "overseerUrl");
             string relativeUri = $"tasks/{jobId}/{taskId}/completed";
-            string url = new Uri(new Uri(baseUrl), relativeUri).ToString();
+            string url = new Uri(new Uri(_overseerUrl), relativeUri).ToString();
             _ = this._httpClient.PostDataString(url, null, false);
         }
 
         private void Update(string jobId, string taskId, HttpContent content)
         {
-            string baseUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
             string relativeUri = $"jobs/{jobId}/tasks/{taskId}";
-            string url = new Uri(new Uri(baseUrl), relativeUri).ToString();
+            string url = new Uri(new Uri(_jobManagerUrl), relativeUri).ToString();
             _ = this._httpClient.PutDataString(url, content, false);
         }
 
