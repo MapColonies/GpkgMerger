@@ -115,6 +115,7 @@ namespace MergerService.Src
                     {
                         taskUtils.UpdateCompletion(task.JobId, task.Id);
                         taskUtils.NotifyOnCompletion(task.JobId, task.Id);
+                        this._logger.LogInformation($"Completed task: jobId: {task.JobId}, taskId: {task.Id}")
                     }
                     catch (Exception e)
                     {
