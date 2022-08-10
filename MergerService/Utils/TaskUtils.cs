@@ -134,6 +134,7 @@ namespace MergerService.Utils
 
                 using (var content = new StringContent(JsonConvert.SerializeObject(new
                 {
+                    status = Status.PENDING,
                     attempts,
                     reason,
                     resettable
