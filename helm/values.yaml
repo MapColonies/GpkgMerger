@@ -11,13 +11,13 @@ initialDelaySeconds: 60
 resetOnConfigChange: true
 
 cloudProvider:
-  dockerRegistryUrl: 'my-registry'
-  imagePullSecretName: 'my-registry-secret'
+  dockerRegistryUrl: "my-registry"
+  imagePullSecretName: "my-registry-secret"
   flavor: openshift
 
 image:
   repository: gpkg-merge
-  tag: 'latest'
+  tag: "latest"
 
 local:
   s3:
@@ -30,7 +30,7 @@ local:
       create: false #for local deployment only
       name: local-tiles-pv
       storage: 5Gi
-      hostPath: '/tiles' #tiles hostPatch
+      hostPath: "/tiles" #tiles hostPatch
     ingestionPv:
       create: false #for local deployment only
       name: local-sources-pv
@@ -48,6 +48,7 @@ local:
 rasterCommon:
   useNodeAffinity: false
   serviceUrls:
+    overseer: http://localhost:8080
     jobManager: http://localhost:8084
   storage:
     fs:
@@ -64,17 +65,15 @@ rasterCommon:
 env:
   general:
     validate: true
+    outputPath: "output"
   TASK:
-    types: [
-      {
-        taskType: "tilesMerging",
-        jobType: "Ingestion_Update"
-      },
-      {
-        taskType: "tilesMerging",
-        jobType: "Ingestion_New"
-      }
-    ]
+    types:
+      [
+        { taskType: "tilesMerging", jobType: "Ingestion_Update" },
+        { taskType: "tilesMerging", jobType: "Ingestion_New" },
+      ]
+    pollingTime: 1000
+    maxAttempts: 3
   logging:
     logLevel:
       default: "Information"
@@ -85,7 +84,7 @@ env:
     ratio: 0.01
   metrics:
     enabled: false
-    url:  http://localhost:4317/v1/metrics
+    url: http://localhost:4317/v1/metrics
     interval: 5000
 resources:
   enabled: true
@@ -96,4 +95,3 @@ resources:
     requests:
       cpu: "100m"
       memory: "128Mi"
-
