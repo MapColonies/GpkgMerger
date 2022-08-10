@@ -14,6 +14,8 @@ namespace MergerLogic.Utils
         private readonly IServiceProvider _container;
         private readonly ILogger _logger;
         private readonly IFileSystem _fileSystem;
+        private readonly string _outputPath;
+        private readonly string _bucket;
 
         public DataFactory(IConfigurationManager configuration, IPathUtils pathUtils, IServiceProvider container, ILogger<DataFactory> logger, IFileSystem fileSystem)
         {
@@ -22,25 +24,25 @@ namespace MergerLogic.Utils
             this._container = container;
             this._logger = logger;
             this._fileSystem = fileSystem;
+
+            _outputPath = this._configurationManager.GetConfiguration("GENERAL", "outputPath");
+            _bucket = this._configurationManager.GetConfiguration("S3", "bucket");
         }
 
         public IData CreateDataSource(string type, string path, int batchSize, bool isOneXOne, GridOrigin? origin = null, Extent? extent = null, bool isBase = false)
         {
             IData data;
-            string outputPath = this._configurationManager.GetConfiguration("GENERAL", "outputPath");
 
             switch (type.ToLower())
             {
                 case "gpkg":
-                    path = this._fileSystem.Path.Join(outputPath, path);
+                    path = this._fileSystem.Path.Join(_outputPath, path);
                     if (origin == null)
                         data = new Gpkg(this._configurationManager, this._container, path, batchSize, isBase, isOneXOne, extent);
                     else
                         data = new Gpkg(this._configurationManager, this._container, path, batchSize, isBase, isOneXOne, extent, origin.Value);
                     break;
                 case "s3":
-                    string s3Url = this._configurationManager.GetConfiguration("S3", "url");
-                    string bucket = this._configurationManager.GetConfiguration("S3", "bucket");
                     var client = this._container.GetService<IAmazonS3>();
                     if (client is null)
                     {
@@ -48,12 +50,12 @@ namespace MergerLogic.Utils
                     }
                     path = this._pathUtils.RemoveTrailingSlash(path);
                     if (origin == null)
-                        data = new S3(this._pathUtils, client, this._container, bucket, path, batchSize, isOneXOne);
+                        data = new S3(this._pathUtils, client, this._container, _bucket, path, batchSize, isOneXOne);
                     else
-                        data = new S3(this._pathUtils, client, this._container, bucket, path, batchSize, isOneXOne, origin.Value);
+                        data = new S3(this._pathUtils, client, this._container, _bucket, path, batchSize, isOneXOne, origin.Value);
                     break;
                 case "fs":
-                    path = this._fileSystem.Path.Join(outputPath, path);
+                    path = this._fileSystem.Path.Join(_outputPath, path);
                     if (origin == null)
                         data = new FS(this._pathUtils, this._container, path, batchSize, isOneXOne, isBase);
                     else
