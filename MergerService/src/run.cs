@@ -244,7 +244,7 @@ namespace MergerService.Src
                             // Get the elapsed time as a TimeSpan value.
                             ts = stopWatch.Elapsed;
                             string elapsedMessage = this._timeUtils.FormatElapsedTime("Merge runtime: ", ts);
-                            this._logger.LogInformation($"Merged the following bounds: {bounds} for zoom: {bounds.Zoom}. {elapsedMessage}");
+                            this._logger.LogInformation($"Merged the following bounds: {bounds}. {elapsedMessage}");
 
                             // After merging, validate if requested
                             bool validate = this._configurationManager.GetConfiguration<bool>("GENERAL", "validate");
