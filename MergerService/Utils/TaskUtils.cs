@@ -104,6 +104,7 @@ namespace MergerService.Utils
             if (!resettable || attempts == this._maxAttempts)
             {
                 UpdateFailed(jobId, taskId, reason);
+                return;
             }
 
             var content = new StringContent(JsonConvert.SerializeObject(new
