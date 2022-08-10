@@ -1,5 +1,6 @@
 using MergerLogic.Batching;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System.ComponentModel;
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
@@ -38,35 +39,14 @@ namespace MergerService.Controllers
 
         public void Print()
         {
-            if (this.Sources is null)
-            {
-                return;
-            }
-
-            Console.WriteLine("Sources:");
-            foreach (Source source in this.Sources)
-            {
-                source.Print();
-            }
-
-            if (this.Batches is null)
-            {
-                return;
-            }
-
-            Console.WriteLine("Batches:");
-            foreach (TileBounds bounds in this.Batches)
-            {
-                bounds.Print();
-            }
+            Console.WriteLine(this.ToString());
         }
 
         public override string ToString()
         {
-            return $@"Sources:
-            {this.Sources?.ToString()}
-            Batches:
-            {this.Batches?.ToString()}";
+            var jsonSerializerSettings = new JsonSerializerSettings();
+            jsonSerializerSettings.Converters.Add(new StringEnumConverter());
+            return JsonConvert.SerializeObject(this, jsonSerializerSettings)!;
         }
     }
 
@@ -141,18 +121,9 @@ namespace MergerService.Controllers
 
         public override string ToString()
         {
-            return $@"Id: {this.Id}
-            Type: {this.Type}
-            Description: {this.Description}
-            Parameters: {this.Parameters.ToString()}
-            Status: {this.Status}
-            Percentage: {this.Percentage}
-            Reason: {this.Reason}
-            Attempts: {this.Attempts}
-            JobId: {this.JobId}
-            Resettable: {this.Resettable}
-            Created: {this.Created}
-            Updated: {this.Updated}";
+            var jsonSerializerSettings = new JsonSerializerSettings();
+            jsonSerializerSettings.Converters.Add(new StringEnumConverter());
+            return JsonConvert.SerializeObject(this, jsonSerializerSettings)!;
         }
     }
 }

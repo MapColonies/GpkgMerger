@@ -49,7 +49,7 @@ namespace MergerService.Utils
             }
             catch (Exception e)
             {
-                this._logger.LogWarning(e, "Error serializing returned task");
+                this._logger.LogWarning(e, "Error deserializing returned task");
                 return null;
             }
         }

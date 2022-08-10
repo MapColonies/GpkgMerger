@@ -1,5 +1,6 @@
 using MergerLogic.DataTypes;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System.ComponentModel;
 
 namespace MergerService.Controllers
@@ -38,10 +39,9 @@ namespace MergerService.Controllers
 
         public override string ToString()
         {
-            return $@"Path: {this.Path}
-            Type: {this.Type}
-            Origin: {this.Origin}
-            Grid: {this.Grid}";
+            var jsonSerializerSettings = new JsonSerializerSettings();
+            jsonSerializerSettings.Converters.Add(new StringEnumConverter());
+            return JsonConvert.SerializeObject(this, jsonSerializerSettings)!;
         }
     }
 }
