@@ -38,6 +38,8 @@ namespace MergerService.Utils
 
         public MergeTask? GetTask(string jobType, string taskType)
         {
+            // TODO: add heartbeat start method
+
             string relativeUri = $"tasks/{jobType}/{taskType}/startPending";
             string url = new Uri(new Uri(_jobManagerUrl), relativeUri).ToString();
             string? taskData = this._httpClient.PostDataString(url, null, false);
@@ -56,6 +58,8 @@ namespace MergerService.Utils
                 this._logger.LogWarning(e, "Error deserializing returned task");
                 return null;
             }
+
+            // TODO: add heartbeat stop method
         }
 
         public void NotifyOnCompletion(string jobId, string taskId)
