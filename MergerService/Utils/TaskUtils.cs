@@ -40,23 +40,26 @@ namespace MergerService.Utils
         {
             // TODO: add heartbeat start method
 
-            string relativeUri = $"tasks/{jobType}/{taskType}/startPending";
-            string url = new Uri(new Uri(_jobManagerUrl), relativeUri).ToString();
-            string? taskData = this._httpClient.PostDataString(url, null, false);
+            using (var dequeueActivity = this._activitySource.StartActivity("dequeue task"))
+            {
+                string relativeUri = $"tasks/{jobType}/{taskType}/startPending";
+                string url = new Uri(new Uri(_jobManagerUrl), relativeUri).ToString();
+                string? taskData = this._httpClient.PostDataString(url, null, false);
 
-            if (taskData is null)
-            {
-                return null;
-            }
+                if (taskData is null)
+                {
+                    return null;
+                }
 
-            try
-            {
-                return JsonConvert.DeserializeObject<MergeTask>(taskData, this._jsonSerializerSettings)!;
-            }
-            catch (Exception e)
-            {
-                this._logger.LogWarning(e, "Error deserializing returned task");
-                return null;
+                try
+                {
+                    return JsonConvert.DeserializeObject<MergeTask>(taskData, this._jsonSerializerSettings)!;
+                }
+                catch (Exception e)
+                {
+                    this._logger.LogWarning(e, "Error deserializing returned task");
+                    return null;
+                }
             }
 
             // TODO: add heartbeat stop method
@@ -64,10 +67,13 @@ namespace MergerService.Utils
 
         public void NotifyOnCompletion(string jobId, string taskId)
         {
-            // Notify overseer on task completion
-            string relativeUri = $"tasks/{jobId}/{taskId}/completed";
-            string url = new Uri(new Uri(_overseerUrl), relativeUri).ToString();
-            _ = this._httpClient.PostDataString(url, null, false);
+            using (var activity = this._activitySource.StartActivity("notify overseer on task completion"))
+            {
+                // Notify overseer on task completion
+                string relativeUri = $"tasks/{jobId}/{taskId}/completed";
+                string url = new Uri(new Uri(_overseerUrl), relativeUri).ToString();
+                _ = this._httpClient.PostDataString(url, null, false);
+            }
         }
 
         private void Update(string jobId, string taskId, HttpContent content)
@@ -79,59 +85,77 @@ namespace MergerService.Utils
 
         public void UpdateProgress(string jobId, string taskId, int progress)
         {
-            var content = new StringContent(JsonConvert.SerializeObject(new
+            using (var activity = this._activitySource.StartActivity("update task progress"))
             {
-                percentage = progress
-            }, this._jsonSerializerSettings));
+                // activity.AddTag("progress", progress);
 
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-            Update(jobId, taskId, content);
+                var content = new StringContent(JsonConvert.SerializeObject(new
+                {
+                    percentage = progress
+                }, this._jsonSerializerSettings));
+
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                Update(jobId, taskId, content);
+            }
         }
 
         public void UpdateCompletion(string jobId, string taskId)
         {
-            var content = new StringContent(JsonConvert.SerializeObject(new
+            using (var activity = this._activitySource.StartActivity("update task completed"))
             {
-                percentage = 100,
-                status = Status.COMPLETED
-            }, this._jsonSerializerSettings));
+                var content = new StringContent(JsonConvert.SerializeObject(new
+                {
+                    percentage = 100,
+                    status = Status.COMPLETED
+                }, this._jsonSerializerSettings));
 
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-            Update(jobId, taskId, content);
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                Update(jobId, taskId, content);
+            }
         }
 
         public void UpdateReject(string jobId, string taskId, int attempts, string reason, bool resettable)
         {
-            attempts++;
-
-            // Check if the task should actually fail
-            if (!resettable || attempts == this._maxAttempts)
+            using (var activity = this._activitySource.StartActivity("reject task"))
             {
-                UpdateFailed(jobId, taskId, reason);
-                return;
+                attempts++;
+                // activity.AddTag("attempts", attempts);
+                // activity.AddTag("resettable", resettable);
+
+                // Check if the task should actually fail
+                if (!resettable || attempts == this._maxAttempts)
+                {
+                    UpdateFailed(jobId, taskId, reason);
+                    return;
+                }
+
+                var content = new StringContent(JsonConvert.SerializeObject(new
+                {
+                    attempts,
+                    reason,
+                    resettable
+                }, this._jsonSerializerSettings));
+
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                Update(jobId, taskId, content);
             }
-
-            var content = new StringContent(JsonConvert.SerializeObject(new
-            {
-                attempts,
-                reason,
-                resettable
-            }, this._jsonSerializerSettings));
-
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-            Update(jobId, taskId, content);
         }
 
         private void UpdateFailed(string jobId, string taskId, string reason)
         {
-            var content = new StringContent(JsonConvert.SerializeObject(new
+            using (var activity = this._activitySource.StartActivity("fail task"))
             {
-                status = Status.FAILED,
-                reason
-            }, this._jsonSerializerSettings));
+                // activity.AddTag("reason", reason);
 
-            content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-            Update(jobId, taskId, content);
+                var content = new StringContent(JsonConvert.SerializeObject(new
+                {
+                    status = Status.FAILED,
+                    reason
+                }, this._jsonSerializerSettings));
+
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                Update(jobId, taskId, content);
+            }
         }
     }
 }
