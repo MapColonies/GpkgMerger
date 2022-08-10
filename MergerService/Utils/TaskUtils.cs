@@ -70,6 +70,7 @@ namespace MergerService.Utils
             using (var activity = this._activitySource.StartActivity("notify overseer on task completion"))
             {
                 // Notify overseer on task completion
+                this._logger.LogInformation($"Notifying overseer on completion, job: {jobId}, task: {taskId}");
                 string relativeUri = $"tasks/{jobId}/{taskId}/completed";
                 string url = new Uri(new Uri(_overseerUrl), relativeUri).ToString();
                 _ = this._httpClient.PostDataString(url, null, false);
@@ -89,13 +90,14 @@ namespace MergerService.Utils
             {
                 // activity.AddTag("progress", progress);
 
-                var content = new StringContent(JsonConvert.SerializeObject(new
+                using (var content = new StringContent(JsonConvert.SerializeObject(new
                 {
                     percentage = progress
-                }, this._jsonSerializerSettings));
-
-                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                Update(jobId, taskId, content);
+                }, this._jsonSerializerSettings)))
+                {
+                    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                    Update(jobId, taskId, content);
+                }
             }
         }
 
@@ -103,14 +105,15 @@ namespace MergerService.Utils
         {
             using (var activity = this._activitySource.StartActivity("update task completed"))
             {
-                var content = new StringContent(JsonConvert.SerializeObject(new
+                using (var content = new StringContent(JsonConvert.SerializeObject(new
                 {
                     percentage = 100,
                     status = Status.COMPLETED
-                }, this._jsonSerializerSettings));
-
-                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                Update(jobId, taskId, content);
+                }, this._jsonSerializerSettings)))
+                {
+                    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                    Update(jobId, taskId, content);
+                }
             }
         }
 
@@ -129,15 +132,16 @@ namespace MergerService.Utils
                     return;
                 }
 
-                var content = new StringContent(JsonConvert.SerializeObject(new
+                using (var content = new StringContent(JsonConvert.SerializeObject(new
                 {
                     attempts,
                     reason,
                     resettable
-                }, this._jsonSerializerSettings));
-
-                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                Update(jobId, taskId, content);
+                }, this._jsonSerializerSettings)))
+                {
+                    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                    Update(jobId, taskId, content);
+                }
             }
         }
 
@@ -147,14 +151,15 @@ namespace MergerService.Utils
             {
                 // activity.AddTag("reason", reason);
 
-                var content = new StringContent(JsonConvert.SerializeObject(new
+                using (var content = new StringContent(JsonConvert.SerializeObject(new
                 {
                     status = Status.FAILED,
                     reason
-                }, this._jsonSerializerSettings));
-
-                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                Update(jobId, taskId, content);
+                }, this._jsonSerializerSettings)))
+                {
+                    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                    Update(jobId, taskId, content);
+                }
             }
         }
     }
