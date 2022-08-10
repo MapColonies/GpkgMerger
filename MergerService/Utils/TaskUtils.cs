@@ -118,7 +118,7 @@ namespace MergerService.Utils
             Update(jobId, taskId, content);
         }
 
-        public void UpdateFailed(string jobId, string taskId, string reason)
+        private void UpdateFailed(string jobId, string taskId, string reason)
         {
             var content = new StringContent(JsonConvert.SerializeObject(new
             {

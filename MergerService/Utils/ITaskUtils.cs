@@ -13,7 +13,5 @@ namespace MergerService.Utils
         public void UpdateCompletion(string jobId, string taskId);
 
         public void UpdateReject(string jobId, string taskId, int attempts, string reason, bool resettable);
-
-        public void UpdateFailed(string jobId, string taskId, string reason);
     }
 }

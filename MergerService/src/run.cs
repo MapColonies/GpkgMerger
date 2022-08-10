@@ -137,7 +137,7 @@ namespace MergerService.Src
             if (task.Parameters is null || task.Parameters.Batches is null || task.Parameters.Sources is null)
             {
                 this._logger.LogWarning($"Task parameters are invalid. Task: {task.ToString()}");
-                taskUtils.UpdateFailed(task.JobId, task.Id, "Task parameters are invalid");
+                taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, "Task parameters are invalid", false);
                 return;
             }
 
@@ -293,7 +293,7 @@ namespace MergerService.Src
 
                 try
                 {
-                    taskUtils.UpdateFailed(task.JobId, task.Id, e.Message);
+                    taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, e.Message, false);
                 }
                 catch (Exception innerError)
                 {
