@@ -141,6 +141,8 @@ namespace MergerService.Src
                 return;
             }
 
+            bool validate = this._configurationManager.GetConfiguration<bool>("GENERAL", "validate");
+
             MergeMetadata metadata = task.Parameters;
             Stopwatch stopWatch = new Stopwatch();
             TimeSpan ts;
@@ -224,7 +226,7 @@ namespace MergerService.Src
                                             }
                                             catch (Exception e)
                                             {
-                                                this._logger.LogError($"Error in MergerService run - update task: {e.Message}");
+                                                this._logger.LogError($"Error in MergerService run - update task percentage: {e.Message}");
                                             }
                                         }
                                     }
@@ -247,7 +249,6 @@ namespace MergerService.Src
                             this._logger.LogInformation($"Merged the following bounds: {bounds}. {elapsedMessage}");
 
                             // After merging, validate if requested
-                            bool validate = this._configurationManager.GetConfiguration<bool>("GENERAL", "validate");
                             if (validate)
                             {
                                 // Reset stopwatch for validation time measure
