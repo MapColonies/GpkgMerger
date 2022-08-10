@@ -58,35 +58,35 @@ namespace MergerLogic.Utils
             return httpRes.Content;
         }
 
-        public byte[]? GetData(string url, bool ignoreNotFound = true)
+        public byte[]? GetData(string url, bool ignoreNotFound = false)
         {
             HttpContent? resBody = GetContent(url, HttpMethod.Get, null, ignoreNotFound);
             var bodyTask = resBody?.ReadAsByteArrayAsync()!;
             return bodyTask.Result;
         }
 
-        public string? PostDataString(string url, HttpContent? content, bool ignoreNotFound = true)
+        public string? PostDataString(string url, HttpContent? content, bool ignoreNotFound = false)
         {
             HttpContent? resBody = GetContent(url, HttpMethod.Post, content, ignoreNotFound);
             var bodyTask = resBody?.ReadAsStringAsync()!.Result;
             return bodyTask;
         }
 
-        public string? PutDataString(string url, HttpContent? content, bool ignoreNotFound = true)
+        public string? PutDataString(string url, HttpContent? content, bool ignoreNotFound = false)
         {
             HttpContent? resBody = GetContent(url, HttpMethod.Put, content, ignoreNotFound);
             var bodyTask = resBody?.ReadAsStringAsync()!.Result;
             return bodyTask;
         }
 
-        public string? GetDataString(string url, bool ignoreNotFound = true)
+        public string? GetDataString(string url, bool ignoreNotFound = false)
         {
             HttpContent? resBody = GetContent(url, HttpMethod.Get, null, ignoreNotFound);
             var bodyTask = resBody?.ReadAsStringAsync()!.Result;
             return bodyTask;
         }
 
-        public T? GetData<T>(string url, bool ignoreNotFound = true)
+        public T? GetData<T>(string url, bool ignoreNotFound = false)
         {
             HttpContent? content = GetContent(url, HttpMethod.Get, null, ignoreNotFound);
             var bodyTask = content?.ReadAsAsync<T>()!;

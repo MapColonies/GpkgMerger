@@ -16,7 +16,7 @@ namespace MergerLogic.Utils
         public override Tile? GetTile(int z, int x, int y)
         {
             string url = this._pathPatternUtils.RenderUrlTemplate(x, y, z);
-            byte[]? data = this._httpClient.GetData(url);
+            byte[]? data = this._httpClient.GetData(url, true);
             if (data is null)
             {
                 return null;

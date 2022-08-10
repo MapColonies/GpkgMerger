@@ -44,7 +44,7 @@ namespace MergerService.Utils
             {
                 string relativeUri = $"tasks/{jobType}/{taskType}/startPending";
                 string url = new Uri(new Uri(_jobManagerUrl), relativeUri).ToString();
-                string? taskData = this._httpClient.PostDataString(url, null, false);
+                string? taskData = this._httpClient.PostDataString(url, null);
 
                 if (taskData is null)
                 {
@@ -73,7 +73,7 @@ namespace MergerService.Utils
                 this._logger.LogInformation($"Notifying overseer on completion, job: {jobId}, task: {taskId}");
                 string relativeUri = $"tasks/{jobId}/{taskId}/completed";
                 string url = new Uri(new Uri(_overseerUrl), relativeUri).ToString();
-                _ = this._httpClient.PostDataString(url, null, false);
+                _ = this._httpClient.PostDataString(url, null);
             }
         }
 
@@ -81,7 +81,7 @@ namespace MergerService.Utils
         {
             string relativeUri = $"jobs/{jobId}/tasks/{taskId}";
             string url = new Uri(new Uri(_jobManagerUrl), relativeUri).ToString();
-            _ = this._httpClient.PutDataString(url, content, false);
+            _ = this._httpClient.PutDataString(url, content);
         }
 
         public void UpdateProgress(string jobId, string taskId, int progress)
