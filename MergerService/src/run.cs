@@ -138,7 +138,15 @@ namespace MergerService.Src
             if (task.Parameters is null || task.Parameters.Batches is null || task.Parameters.Sources is null)
             {
                 this._logger.LogWarning($"Task parameters are invalid. Task: {task.ToString()}");
-                taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, "Task parameters are invalid", false);
+
+                try
+                {
+                    taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, "Task parameters are invalid", false);
+                }
+                catch (Exception e)
+                {
+                    this._logger.LogError($"Error in MergerService run - update task failure on invalid parameters: {e.Message}");
+                }
                 return;
             }
 
