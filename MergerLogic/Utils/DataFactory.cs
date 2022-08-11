@@ -14,7 +14,6 @@ namespace MergerLogic.Utils
         private readonly IServiceProvider _container;
         private readonly ILogger _logger;
         private readonly IFileSystem _fileSystem;
-        private readonly string _outputPath;
         private readonly string _bucket;
 
         public DataFactory(IConfigurationManager configuration, IPathUtils pathUtils, IServiceProvider container, ILogger<DataFactory> logger, IFileSystem fileSystem)
@@ -25,7 +24,6 @@ namespace MergerLogic.Utils
             this._logger = logger;
             this._fileSystem = fileSystem;
 
-            _outputPath = this._configurationManager.GetConfiguration("GENERAL", "outputPath");
             _bucket = this._configurationManager.GetConfiguration("S3", "bucket");
         }
 
@@ -36,7 +34,6 @@ namespace MergerLogic.Utils
             switch (type.ToLower())
             {
                 case "gpkg":
-                    path = this._fileSystem.Path.Join(_outputPath, path);
                     if (origin == null)
                         data = new Gpkg(this._configurationManager, this._container, path, batchSize, isBase, isOneXOne, extent);
                     else
@@ -55,7 +52,6 @@ namespace MergerLogic.Utils
                         data = new S3(this._pathUtils, client, this._container, _bucket, path, batchSize, isOneXOne, origin.Value);
                     break;
                 case "fs":
-                    path = this._fileSystem.Path.Join(_outputPath, path);
                     if (origin == null)
                         data = new FS(this._pathUtils, this._container, path, batchSize, isOneXOne, isBase);
                     else

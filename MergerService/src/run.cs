@@ -5,6 +5,7 @@ using MergerLogic.Utils;
 using MergerService.Controllers;
 using MergerService.Utils;
 using System.Diagnostics;
+using System.IO.Abstractions;
 
 namespace MergerService.Src
 {
@@ -20,10 +21,13 @@ namespace MergerService.Src
         private readonly ActivitySource _activitySource;
         private readonly ITaskUtils _taskUtils;
         private readonly IHttpRequestUtils _requestUtils;
+        private readonly IFileSystem _fileSystem;
+        private readonly string _gpkgPath;
+        private readonly string _filePath;
 
         public Run(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, IConfigurationManager configurationManager,
             ILogger<Run> logger, ILogger<MergeTask> mergeTaskLogger, ILogger<TaskUtils> taskUtilsLogger, ActivitySource activitySource,
-            ITaskUtils taskUtils, IHttpRequestUtils requestUtils)
+            ITaskUtils taskUtils, IHttpRequestUtils requestUtils, IFileSystem fileSystem)
         {
             this._dataFactory = dataFactory;
             this._tileMerger = tileMerger;
@@ -35,6 +39,27 @@ namespace MergerService.Src
             this._taskUtilsLogger = taskUtilsLogger;
             this._taskUtils = taskUtils;
             this._requestUtils = requestUtils;
+            this._fileSystem = fileSystem;
+            this._gpkgPath = this._configurationManager.GetConfiguration("GENERAL", "gpkgPath");
+            this._filePath = this._configurationManager.GetConfiguration("GENERAL", "filePath");
+        }
+
+        private string BuildPath(Source source)
+        {
+            string type = source.Type.ToUpper();
+            string path = source.Path;
+
+            if (type == "GPKG")
+            {
+                return this._fileSystem.Path.Join(this._gpkgPath, path);
+            }
+
+            if (type == "FS")
+            {
+                return this._fileSystem.Path.Join(this._filePath, path);
+            }
+
+            return path;
         }
 
         private List<IData> BuildDataList(Source[] paths, int batchSize)
@@ -46,11 +71,13 @@ namespace MergerService.Src
                 if (paths.Length != 0)
                 {
                     //TODO: add extent
-                    sources.Add(this._dataFactory.CreateDataSource(paths[0].Type, paths[0].Path, batchSize, paths[0].IsOneXOne(), paths[0].Origin, null, true));
+                    string path = BuildPath(paths[0]);
+                    sources.Add(this._dataFactory.CreateDataSource(paths[0].Type, path, batchSize, paths[0].IsOneXOne(), paths[0].Origin, null, true));
                     foreach (Source source in paths.Skip(1))
                     {
                         // TODO: add support for HTTP
-                        sources.Add(this._dataFactory.CreateDataSource(source.Type, source.Path, batchSize,
+                        path = BuildPath(source);
+                        sources.Add(this._dataFactory.CreateDataSource(source.Type, path, batchSize,
                             source.IsOneXOne(), source.Origin));
                     }
                 }
