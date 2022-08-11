@@ -11,13 +11,13 @@ initialDelaySeconds: 60
 resetOnConfigChange: true
 
 cloudProvider:
-  dockerRegistryUrl: "my-registry"
-  imagePullSecretName: "my-registry-secret"
+  dockerRegistryUrl: 'my-registry'
+  imagePullSecretName: 'my-registry-secret'
   flavor: openshift
 
 image:
   repository: gpkg-merge
-  tag: "latest"
+  tag: 'latest'
 
 local:
   s3:
@@ -30,7 +30,7 @@ local:
       create: false #for local deployment only
       name: local-tiles-pv
       storage: 5Gi
-      hostPath: "/tiles" #tiles hostPatch
+      hostPath: '/tiles' #tiles hostPatch
     ingestionPv:
       create: false #for local deployment only
       name: local-sources-pv
@@ -65,7 +65,7 @@ rasterCommon:
 env:
   general:
     validate: true
-    outputPath: "output"
+    outputPath: 'output'
   TASK:
     types:
       [
