@@ -23,7 +23,7 @@ namespace MergerLogic.Utils
 
         private HttpContent? GetContent(string url, HttpMethod method, HttpContent? content, bool ignoreNotFound)
         {
-            Task<HttpResponseMessage> resTask;
+            HttpResponseMessage httpRes;
             using (HttpRequestMessage req = new HttpRequestMessage
             {
                 Method = method,
@@ -31,10 +31,9 @@ namespace MergerLogic.Utils
                 Content = content
             })
             {
-                resTask = this._httpClient.SendAsync(req);
+                httpRes = this._httpClient.Send(req);
             }
 
-            var httpRes = resTask.Result;
             if (httpRes.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 if (ignoreNotFound)
