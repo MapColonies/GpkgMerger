@@ -24,6 +24,7 @@ namespace MergerService.Src
         private readonly IFileSystem _fileSystem;
         private readonly string _gpkgPath;
         private readonly string _filePath;
+        private readonly bool _shouldValidate;
 
         public Run(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, IConfigurationManager configurationManager,
             ILogger<Run> logger, ILogger<MergeTask> mergeTaskLogger, ILogger<TaskUtils> taskUtilsLogger, ActivitySource activitySource,
@@ -42,6 +43,7 @@ namespace MergerService.Src
             this._fileSystem = fileSystem;
             this._gpkgPath = this._configurationManager.GetConfiguration("GENERAL", "gpkgPath");
             this._filePath = this._configurationManager.GetConfiguration("GENERAL", "filePath");
+            this._shouldValidate = this._configurationManager.GetConfiguration<bool>("GENERAL", "validate");
         }
 
         private string BuildPath(Source source)
@@ -177,8 +179,6 @@ namespace MergerService.Src
                 return;
             }
 
-            bool validate = this._configurationManager.GetConfiguration<bool>("GENERAL", "validate");
-
             MergeMetadata metadata = task.Parameters;
             Stopwatch stopWatch = new Stopwatch();
             TimeSpan ts;
@@ -285,7 +285,7 @@ namespace MergerService.Src
                             this._logger.LogInformation($"Merged the following bounds: {bounds}. {elapsedMessage}");
 
                             // After merging, validate if requested
-                            if (validate)
+                            if (this._shouldValidate)
                             {
                                 // Reset stopwatch for validation time measure
                                 stopWatch.Reset();
