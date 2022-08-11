@@ -68,10 +68,10 @@ env:
     outputPath: 'output'
   TASK:
     types:
-      [
-        { taskType: "tilesMerging", jobType: "Ingestion_Update" },
-        { taskType: "tilesMerging", jobType: "Ingestion_New" },
-      ]
+      - jobType: 'Ingestion_Update'
+        taskType: 'tilesMerging'
+      - jobType: 'Ingestion_New'
+        taskType: 'tilesMerging'
     pollingTime: 1000
     maxAttempts: 3
   logging:
