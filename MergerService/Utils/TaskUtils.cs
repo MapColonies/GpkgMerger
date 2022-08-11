@@ -40,7 +40,7 @@ namespace MergerService.Utils
         {
             // TODO: add heartbeat start method
 
-            using (var dequeueActivity = this._activitySource.StartActivity("dequeue task"))
+            using (this._activitySource.StartActivity("dequeue task"))
             {
                 string relativeUri = $"tasks/{jobType}/{taskType}/startPending";
                 string url = new Uri(new Uri(_jobManagerUrl), relativeUri).ToString();
@@ -67,7 +67,7 @@ namespace MergerService.Utils
 
         public void NotifyOnCompletion(string jobId, string taskId)
         {
-            using (var activity = this._activitySource.StartActivity("notify overseer on task completion"))
+            using (this._activitySource.StartActivity("notify overseer on task completion"))
             {
                 // Notify overseer on task completion
                 this._logger.LogInformation($"Notifying overseer on completion, job: {jobId}, task: {taskId}");
@@ -103,7 +103,7 @@ namespace MergerService.Utils
 
         public void UpdateCompletion(string jobId, string taskId)
         {
-            using (var activity = this._activitySource.StartActivity("update task completed"))
+            using (this._activitySource.StartActivity("update task completed"))
             {
                 using (var content = new StringContent(JsonConvert.SerializeObject(new
                 {
@@ -121,16 +121,17 @@ namespace MergerService.Utils
         {
             using (var activity = this._activitySource.StartActivity("reject task"))
             {
-                attempts++;
                 // activity.AddTag("attempts", attempts);
                 // activity.AddTag("resettable", resettable);
 
                 // Check if the task should actually fail
                 if (!resettable || attempts == this._maxAttempts)
                 {
-                    UpdateFailed(jobId, taskId, reason);
+                    UpdateFailed(jobId, taskId, attempts, reason, resettable);
                     return;
                 }
+
+                attempts++;
 
                 using (var content = new StringContent(JsonConvert.SerializeObject(new
                 {
@@ -146,16 +147,20 @@ namespace MergerService.Utils
             }
         }
 
-        private void UpdateFailed(string jobId, string taskId, string reason)
+        private void UpdateFailed(string jobId, string taskId, int attempts, string reason, bool resettable)
         {
             using (var activity = this._activitySource.StartActivity("fail task"))
             {
                 // activity.AddTag("reason", reason);
 
+                attempts++;
+
                 using (var content = new StringContent(JsonConvert.SerializeObject(new
                 {
                     status = Status.FAILED,
-                    reason
+                    attempts,
+                    reason,
+                    resettable
                 }, this._jsonSerializerSettings)))
                 {
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
