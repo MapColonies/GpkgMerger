@@ -114,11 +114,11 @@ namespace MergerService.Src
             this._logger.LogInformation("starting task polling loop");
             while (true)
             {
-                MergeTask? task = null;
                 bool activatedAny = false;
 
                 foreach (var item in taskTypes)
                 {
+                    MergeTask? task = null;
                     string jobType = item.Key;
                     string taskType = item.Value;
 
