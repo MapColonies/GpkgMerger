@@ -31,10 +31,16 @@ namespace MergerService.Controllers
         [JsonInclude]
         public Source[]? Sources { get; }
 
+        [System.Text.Json.Serialization.JsonIgnore]
+        private JsonSerializerSettings _jsonSerializerSettings;
+
         public MergeMetadata(TileBounds[] batches, Source[] sources)
         {
             this.Batches = batches;
             this.Sources = sources;
+
+            this._jsonSerializerSettings = new JsonSerializerSettings();
+            this._jsonSerializerSettings.Converters.Add(new StringEnumConverter());
         }
 
         public void Print()
@@ -44,9 +50,7 @@ namespace MergerService.Controllers
 
         public override string ToString()
         {
-            var jsonSerializerSettings = new JsonSerializerSettings();
-            jsonSerializerSettings.Converters.Add(new StringEnumConverter());
-            return JsonConvert.SerializeObject(this, jsonSerializerSettings)!;
+            return JsonConvert.SerializeObject(this, this._jsonSerializerSettings)!;
         }
     }
 
@@ -90,6 +94,9 @@ namespace MergerService.Controllers
         [JsonInclude]
         public DateTime Updated { get; }
 
+        [System.Text.Json.Serialization.JsonIgnore]
+        private JsonSerializerSettings _jsonSerializerSettings;
+
         public MergeTask(string id, string type, string description, MergeMetadata parameters,
                             Status status, int? percentage, string reason, int attempts,
                             string jobId, bool resettable, DateTime created, DateTime updated)
@@ -112,6 +119,9 @@ namespace MergerService.Controllers
             this.Resettable = resettable;
             this.Created = created;
             this.Updated = updated;
+
+            this._jsonSerializerSettings = new JsonSerializerSettings();
+            this._jsonSerializerSettings.Converters.Add(new StringEnumConverter());
         }
 
         public void Print()
@@ -121,9 +131,7 @@ namespace MergerService.Controllers
 
         public override string ToString()
         {
-            var jsonSerializerSettings = new JsonSerializerSettings();
-            jsonSerializerSettings.Converters.Add(new StringEnumConverter());
-            return JsonConvert.SerializeObject(this, jsonSerializerSettings)!;
+            return JsonConvert.SerializeObject(this, this._jsonSerializerSettings)!;
         }
     }
 }

@@ -19,12 +19,18 @@ namespace MergerService.Controllers
         [JsonProperty(Required = Required.Default, DefaultValueHandling = DefaultValueHandling.Populate, NullValueHandling = NullValueHandling.Ignore)]
         public string Grid { get; }
 
+        [System.Text.Json.Serialization.JsonIgnore]
+        private JsonSerializerSettings _jsonSerializerSettings;
+
         public Source(string path, string type, GridOrigin origin = GridOrigin.UPPER_LEFT, string grid = "2x1")
         {
             this.Path = path;
             this.Type = type;
             this.Origin = origin;
             this.Grid = grid.ToLower();
+
+            this._jsonSerializerSettings = new JsonSerializerSettings();
+            this._jsonSerializerSettings.Converters.Add(new StringEnumConverter());
         }
 
         public bool IsOneXOne()
@@ -39,9 +45,7 @@ namespace MergerService.Controllers
 
         public override string ToString()
         {
-            var jsonSerializerSettings = new JsonSerializerSettings();
-            jsonSerializerSettings.Converters.Add(new StringEnumConverter());
-            return JsonConvert.SerializeObject(this, jsonSerializerSettings)!;
+            return JsonConvert.SerializeObject(this, this._jsonSerializerSettings)!;
         }
     }
 }
