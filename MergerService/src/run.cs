@@ -109,6 +109,12 @@ namespace MergerService.Src
             var pollingTime = this._configurationManager.GetConfiguration<int>("TASK", "pollingTime");
 
             var taskTypes = BuildTypeList();
+            if (taskTypes.Count == 0)
+            {
+                this._logger.LogInformation("No tasks configured, please provide job and task types");
+                return;
+            }
+
             ITaskUtils taskUtils = new TaskUtils(this._configurationManager, this._requestUtils, this._taskUtilsLogger, this._activitySource);
 
             this._logger.LogInformation("starting task polling loop");
