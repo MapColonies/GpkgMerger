@@ -65,7 +65,8 @@ rasterCommon:
 env:
   general:
     validate: true
-    outputPath: 'output'
+    gpkgPath: 'output/gpkgs'
+    filePath: 'output/files'
   TASK:
     types:
       - jobType: 'Ingestion_Update'

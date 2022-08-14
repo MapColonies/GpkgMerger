@@ -9,7 +9,8 @@ metadata:
   name: {{ .Release.Name }}-{{ $chartName }}-configmap
 data:
   GENERAL__validate: {{ .Values.env.general.validate | quote }}
-  GENERAL__outputPath: {{ .Values.env.general.outputPath | quote }}
+  GENERAL__gpkgPath: {{ .Values.env.general.gpkgPath | quote }}
+  GENERAL__filePath: {{ .Values.env.general.filePath | quote }}
   TASK__overseerUrl: {{ .Values.rasterCommon.serviceUrls.overseer | quote }} 
   TASK__jobManagerUrl: {{ .Values.rasterCommon.serviceUrls.jobManager | quote }} 
   TASK__types: {{ .Values.env.TASK.types | quote }}
