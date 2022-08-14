@@ -68,10 +68,10 @@ spec:
           env:
             - name: SERVER_PORT
               value: "8080"
-            - name: GENERAL__outputBasePath
-              value: /app/tiles_outputs
-            - name: GENERAL__sourcesBasePath
+            - name: GENERAL__gpkgPath
               value: /layerSources
+            - name: GENERAL__filePath
+              value: /app/tiles_outputs
             - name: S3_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
