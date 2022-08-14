@@ -48,7 +48,7 @@ local:
 rasterCommon:
   useNodeAffinity: false
   serviceUrls:
-    overseer: http://localhost:8080
+    discreteOverseer: http://localhost:8080
     jobManager: http://localhost:8084
   storage:
     fs:
