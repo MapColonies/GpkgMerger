@@ -10,7 +10,7 @@ metadata:
 data:
   GENERAL__validate: {{ .Values.env.general.validate | quote }}
   GENERAL__outputPath: {{ .Values.env.general.outputPath | quote }}
-  TASK__overseerUrl: {{ .Values.rasterCommon.serviceUrls.overseer | quote }} 
+  TASK__overseerUrl: {{ .Values.rasterCommon.serviceUrls.discreteOverseer | quote }} 
   TASK__jobManagerUrl: {{ .Values.rasterCommon.serviceUrls.jobManager | quote }} 
   TASK__types: {{ .Values.env.TASK.types | quote }}
   TASK__pollingTime: {{ .Values.env.TASK.pollingTime | quote }}
