@@ -12,7 +12,7 @@ data:
   GENERAL__outputPath: {{ .Values.env.general.outputPath | quote }}
   TASK__overseerUrl: {{ .Values.rasterCommon.serviceUrls.discreteOverseer | quote }} 
   TASK__jobManagerUrl: {{ .Values.rasterCommon.serviceUrls.jobManager | quote }} 
-  TASK__types: {{ .Values.env.TASK.types | quote }}
+  TASK__types: {{ .Values.env.TASK.types | toJson | quote }}
   TASK__pollingTime: {{ .Values.env.TASK.pollingTime | quote }}
   TASK__maxAttempts: {{ .Values.env.TASK.maxAttempts | quote }}
   S3__url: {{ .Values.rasterCommon.storage.s3.endpointUrl | quote }}
