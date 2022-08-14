@@ -1,9 +1,10 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.Utils;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MergerLogic.DataTypes
 {
-    public abstract class HttpDataSource : Data<IHttpUtils>
+    public abstract class HttpDataSource : Data<IHttpSourceUtils>
     {
         protected TileBounds[] TileRanges;
         protected IEnumerator<Tile[]> Batches;

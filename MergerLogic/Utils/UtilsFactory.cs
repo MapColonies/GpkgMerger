@@ -12,14 +12,16 @@ namespace MergerLogic.Utils
         private readonly IGeoUtils _geoUtils;
         private readonly IFileSystem _fileSystem;
         private readonly IServiceProvider _container;
+        private IHttpRequestUtils _httpRequestUtils;
 
-        public UtilsFactory(IPathUtils pathUtils, ITimeUtils timeUtils, IGeoUtils geoUtils, IFileSystem fileSystem, IServiceProvider container)
+        public UtilsFactory(IPathUtils pathUtils, ITimeUtils timeUtils, IGeoUtils geoUtils, IFileSystem fileSystem, IServiceProvider container, IHttpRequestUtils httpRequestUtils)
         {
             this._pathUtils = pathUtils;
             this._timeUtils = timeUtils;
             this._geoUtils = geoUtils;
             this._fileSystem = fileSystem;
             this._container = container;
+            this._httpRequestUtils = httpRequestUtils;
         }
 
         #region dataUtils
@@ -35,10 +37,10 @@ namespace MergerLogic.Utils
             return new GpkgUtils(path, this._timeUtils, logger, this._fileSystem, this._geoUtils);
         }
 
-        public IHttpUtils GetHttpUtils(string path)
+        public IHttpSourceUtils GetHttpUtils(string path)
         {
             IPathPatternUtils pathPatternUtils = this.GetPathPatternUtils(path);
-            return new HttpUtils(path, pathPatternUtils, this._geoUtils);
+            return new HttpSourceUtils(path, this._httpRequestUtils, pathPatternUtils, this._geoUtils);
         }
 
         public IS3Utils GetS3Utils(string path)
@@ -63,7 +65,7 @@ namespace MergerLogic.Utils
             {
                 return (T)(Object)this.GetGpkgUtils(path);
             }
-            if (typeof(IHttpUtils).IsAssignableFrom(typeof(T)))
+            if (typeof(IHttpSourceUtils).IsAssignableFrom(typeof(T)))
             {
                 return (T)(Object)this.GetHttpUtils(path);
             }

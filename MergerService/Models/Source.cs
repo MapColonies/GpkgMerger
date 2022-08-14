@@ -1,4 +1,7 @@
 using MergerLogic.DataTypes;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using System.ComponentModel;
 
 namespace MergerService.Controllers
 {
@@ -8,16 +11,26 @@ namespace MergerService.Controllers
 
         public string Type { get; }
 
+        [DefaultValue(GridOrigin.UPPER_LEFT)]
+        [JsonProperty(Required = Required.Default, DefaultValueHandling = DefaultValueHandling.Populate, NullValueHandling = NullValueHandling.Ignore)]
         public GridOrigin Origin { get; }
 
+        [DefaultValue("2x1")]
+        [JsonProperty(Required = Required.Default, DefaultValueHandling = DefaultValueHandling.Populate, NullValueHandling = NullValueHandling.Ignore)]
         public string Grid { get; }
 
-        public Source(string path, string type, string origin = "UL", string grid = "2x1")
+        [System.Text.Json.Serialization.JsonIgnore]
+        private JsonSerializerSettings _jsonSerializerSettings;
+
+        public Source(string path, string type, GridOrigin origin = GridOrigin.UPPER_LEFT, string grid = "2x1")
         {
             this.Path = path;
             this.Type = type;
-            this.Origin = origin.ToLower() == "ul" ? GridOrigin.UPPER_LEFT : GridOrigin.LOWER_LEFT;
-            this.Grid = grid;
+            this.Origin = origin;
+            this.Grid = grid.ToLower();
+
+            this._jsonSerializerSettings = new JsonSerializerSettings();
+            this._jsonSerializerSettings.Converters.Add(new StringEnumConverter());
         }
 
         public bool IsOneXOne()
@@ -27,10 +40,12 @@ namespace MergerService.Controllers
 
         public void Print()
         {
-            Console.WriteLine($"Path: {this.Path}");
-            Console.WriteLine($"Type: {this.Type}");
-            Console.WriteLine($"Origin: {this.Origin}");
-            Console.WriteLine($"Grid: {this.Grid}");
+            Console.WriteLine(this.ToString());
+        }
+
+        public override string ToString()
+        {
+            return JsonConvert.SerializeObject(this, this._jsonSerializerSettings)!;
         }
     }
 }

@@ -48,8 +48,8 @@ namespace MergerCli
                     var targetCoords = newTile.GetCoord();
                     List<CorrespondingTileBuilder> correspondingTileBuilders = new List<CorrespondingTileBuilder>()
                     {
-                        ()=>baseData.GetCorrespondingTile(targetCoords,true),
-                        ()=> newTile
+                        () => baseData.GetCorrespondingTile(targetCoords,true),
+                        () => newTile
                     };
 
                     byte[]? image = this._tileMerger.MergeTiles(correspondingTileBuilders, targetCoords);

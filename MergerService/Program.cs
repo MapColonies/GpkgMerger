@@ -1,5 +1,6 @@
 using MergerLogic.Extensions;
 using MergerService.Src;
+using MergerService.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.RegisterMergerLogicType();
 builder.Services.AddSingleton<IRun, Run>();
+builder.Services.AddSingleton<ITaskUtils, TaskUtils>();
 
 var app = builder.Build();
 

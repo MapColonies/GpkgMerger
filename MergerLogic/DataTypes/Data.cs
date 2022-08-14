@@ -2,6 +2,7 @@ using MergerLogic.Batching;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Runtime.Serialization;
 
 namespace MergerLogic.DataTypes
 {
@@ -17,17 +18,19 @@ namespace MergerLogic.DataTypes
 
     public enum GridOrigin
     {
+        [EnumMember(Value = "LL")]
         LOWER_LEFT,
+        [EnumMember(Value = "UL")]
         UPPER_LEFT
     }
 
     public abstract class Data<TUtilsType> : IData where TUtilsType : IDataUtils
     {
         protected delegate int ValFromCoordFunction(Coord coord);
-        protected delegate Tile GetTileFromXyzFunction(int z, int x, int y);
-        protected delegate Coord GetCoordFromCoordFunction(Coord coord);
+        protected delegate Tile? GetTileFromXYZFunction(int z, int x, int y);
+        protected delegate Coord? GetCoordFromCoordFunction(Coord coord);
         protected delegate Tile GetTileFromCoordFunction(Coord coord);
-        protected delegate Tile TileConvertorFunction(Tile tile);
+        protected delegate Tile? TileConvertorFunction(Tile tile);
 
         public DataType Type { get; }
         public string Path { get; }
@@ -36,7 +39,7 @@ namespace MergerLogic.DataTypes
         protected readonly int BatchSize;
 
         protected TUtilsType Utils;
-        protected GetTileFromXyzFunction GetTile;
+        protected GetTileFromXYZFunction GetTile;
         protected readonly GetTileFromCoordFunction GetLastExistingTile;
         protected readonly IGeoUtils GeoUtils;
         protected readonly ILogger _logger;
@@ -109,7 +112,7 @@ namespace MergerLogic.DataTypes
             int baseTileX = coords.X;
             int baseTileY = coords.Y;
 
-            Tile lastTile = null;
+            Tile? lastTile = null;
 
             // Go over zoom levels until a tile is found (may not find tile)
             for (int i = z - 1; i >= 0; i--)
@@ -169,10 +172,10 @@ namespace MergerLogic.DataTypes
         }
 
 
-        //lazy load get tile function on first call for compatibility with null utills in contractor
-        protected Tile GetTileInitializer(int z, int x, int y)
+        // lazy load get tile function on first call for compatibility with null utills in contractor
+        protected Tile? GetTileInitializer(int z, int x, int y)
         {
-            GetTileFromXyzFunction fixedGridGetTileFunction = this.IsOneXOne ? this.GetOneXOneTile : this.Utils.GetTile;
+            GetTileFromXYZFunction fixedGridGetTileFunction = this.IsOneXOne ? this.GetOneXOneTile : this.Utils.GetTile;
             if (this.Origin == GridOrigin.LOWER_LEFT)
             {
                 this.GetTile = (z, x, y) =>

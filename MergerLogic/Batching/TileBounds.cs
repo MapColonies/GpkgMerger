@@ -28,16 +28,12 @@ namespace MergerLogic.Batching
 
         public void Print()
         {
-            Console.WriteLine($"Zoom: {this.Zoom}");
-            Console.WriteLine($"mixX: {this.MinX}");
-            Console.WriteLine($"maxX: {this.MaxX}");
-            Console.WriteLine($"minY: {this.MinY}");
-            Console.WriteLine($"maxY: {this.MaxY}");
+            Console.WriteLine(this.ToString());
         }
 
         public override string ToString()
         {
-            return $"min x: {this.MinX}, min y: {this.MinY}, max x: {this.MaxX}, max y: {this.MaxY}";
+            return $"zoom: {this.Zoom}, min x: {this.MinX}, min y: {this.MinY}, max x: {this.MaxX}, max y: {this.MaxY}";
         }
     }
 }
