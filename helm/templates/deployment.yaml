@@ -55,7 +55,7 @@ spec:
       - name: ingestion-storage
         persistentVolumeClaim:
           claimName: {{ .Values.rasterCommon.storage.fs.ingestionSourcePvc.name }}
-      - name: tiles-storage
+      - name: output-storage
         persistentVolumeClaim:
           claimName: {{ .Values.rasterCommon.storage.fs.internalPvc.name }}
     #   nodeSelector:
@@ -68,10 +68,12 @@ spec:
           env:
             - name: SERVER_PORT
               value: "8080"
-            - name: GENERAL__gpkgPath
+            - name: GENERAL__inputPath
               value: /layerSources
+            - name: GENERAL__gpkgPath
+              value: {{ printf "%s%s" "/app/tiles_outputs/" .Values.rasterCommon.storage.fs.internalPvc.gpkgSubPath }}
             - name: GENERAL__filePath
-              value: /app/tiles_outputs
+              value: {{ printf "%s%s" "/app/tiles_outputs/" .Values.rasterCommon.storage.fs.internalPvc.tilesSubPath }}
             - name: S3_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
@@ -92,9 +94,12 @@ spec:
           volumeMounts:
             - name: ingestion-storage
               mountPath: /layerSources
-            - name: tiles-storage
+            - name: output-storage
               mountPath: /app/tiles_outputs
               subPath: {{ .Values.rasterCommon.storage.fs.internalPvc.tilesSubPath }}
+            - name: output-storage
+              mountPath: /app/tiles_outputs
+              subPath: {{ .Values.rasterCommon.storage.fs.internalPvc.gpkgSubPath }}
           {{- if .Values.resources.enabled }}
           resources:
             {{- toYaml .Values.resources.value | nindent 12 }}

@@ -22,6 +22,7 @@ namespace MergerService.Src
         private readonly ITaskUtils _taskUtils;
         private readonly IHttpRequestUtils _requestUtils;
         private readonly IFileSystem _fileSystem;
+        private readonly string _inputPath;
         private readonly string _gpkgPath;
         private readonly string _filePath;
         private readonly bool _shouldValidate;
@@ -41,15 +42,22 @@ namespace MergerService.Src
             this._taskUtils = taskUtils;
             this._requestUtils = requestUtils;
             this._fileSystem = fileSystem;
+            this._inputPath = this._configurationManager.GetConfiguration("GENERAL", "inputPath");
             this._gpkgPath = this._configurationManager.GetConfiguration("GENERAL", "gpkgPath");
             this._filePath = this._configurationManager.GetConfiguration("GENERAL", "filePath");
             this._shouldValidate = this._configurationManager.GetConfiguration<bool>("GENERAL", "validate");
         }
 
-        private string BuildPath(Source source)
+        private string BuildPath(Source source, bool isTarget)
         {
             string type = source.Type.ToUpper();
             string path = source.Path;
+
+            // If the source is not the target
+            if (!isTarget)
+            {
+                return this._fileSystem.Path.Join(this._inputPath, path);
+            }
 
             if (type == "GPKG")
             {
@@ -73,12 +81,12 @@ namespace MergerService.Src
                 if (paths.Length != 0)
                 {
                     //TODO: add extent
-                    string path = BuildPath(paths[0]);
+                    string path = BuildPath(paths[0], true);
                     sources.Add(this._dataFactory.CreateDataSource(paths[0].Type, path, batchSize, paths[0].IsOneXOne(), paths[0].Origin, null, true));
                     foreach (Source source in paths.Skip(1))
                     {
                         // TODO: add support for HTTP
-                        path = BuildPath(source);
+                        path = BuildPath(source, false);
                         sources.Add(this._dataFactory.CreateDataSource(source.Type, path, batchSize,
                             source.IsOneXOne(), source.Origin));
                     }

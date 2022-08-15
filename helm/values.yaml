@@ -57,6 +57,7 @@ rasterCommon:
       internalPvc:
         name: "internal-pvc"
         tilesSubPath: tiles
+        gpkgSubPath: gpkgs
     s3:
       endpointUrl: localhost:9000"
       tilesBucket: ""
