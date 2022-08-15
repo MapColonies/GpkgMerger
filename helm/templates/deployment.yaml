@@ -96,10 +96,6 @@ spec:
               mountPath: /layerSources
             - name: output-storage
               mountPath: /app/tiles_outputs
-              subPath: {{ .Values.rasterCommon.storage.fs.internalPvc.tilesSubPath }}
-            - name: output-storage
-              mountPath: /app/tiles_outputs
-              subPath: {{ .Values.rasterCommon.storage.fs.internalPvc.gpkgSubPath }}
           {{- if .Values.resources.enabled }}
           resources:
             {{- toYaml .Values.resources.value | nindent 12 }}
