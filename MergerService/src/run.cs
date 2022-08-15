@@ -6,6 +6,7 @@ using MergerService.Controllers;
 using MergerService.Utils;
 using System.Diagnostics;
 using System.IO.Abstractions;
+using System.Net;
 
 namespace MergerService.Src
 {
@@ -143,7 +144,13 @@ namespace MergerService.Src
                     }
                     catch (Exception e)
                     {
+                        if (e is HttpRequestException && ((HttpRequestException)e).StatusCode == HttpStatusCode.NotFound)
+                        {
+                            this._logger.LogDebug("No task was found to work on...");
+                            continue;
+                        }
                         this._logger.LogError($"Error in MergerService start - get task: {e.Message}");
+                        continue;
                     }
 
                     // Guard clause in case there are no batches or sources
@@ -163,7 +170,7 @@ namespace MergerService.Src
                     }
                     catch (Exception e)
                     {
-                        this._logger.LogError($"Error in MergerService start - update task: {e.Message}");
+                        this._logger.LogError($"Error in MergerService start - update task completion: {e.Message}");
                     }
                 }
 

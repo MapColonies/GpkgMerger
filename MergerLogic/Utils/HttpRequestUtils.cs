@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using System.Net;
 
 namespace MergerLogic.Utils
 {
@@ -34,7 +35,7 @@ namespace MergerLogic.Utils
                 httpRes = this._httpClient.Send(req);
             }
 
-            if (httpRes.StatusCode == System.Net.HttpStatusCode.NotFound)
+            if (httpRes.StatusCode == HttpStatusCode.NotFound)
             {
                 if (ignoreNotFound)
                 {
@@ -42,16 +43,16 @@ namespace MergerLogic.Utils
                 }
 
                 string message = $"{url} not found";
-                this._logger.LogWarning(message);
+                this._logger.LogDebug(message);
                 this._logger.LogDebug($"Response: {httpRes.ToString()}");
-                throw new Exception(message);
+                throw new HttpRequestException(message, null, HttpStatusCode.NotFound);
             }
-            else if (httpRes.StatusCode != System.Net.HttpStatusCode.OK)
+            else if (httpRes.StatusCode != HttpStatusCode.OK)
             {
                 string message = $"Invalid response from {url}, status: {httpRes.StatusCode}";
                 this._logger.LogWarning(message);
                 this._logger.LogDebug($"Response: {httpRes.ToString()}");
-                throw new Exception(message);
+                throw new HttpRequestException(message, null, httpRes.StatusCode);
             }
 
             return httpRes.Content;
