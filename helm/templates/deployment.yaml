@@ -55,7 +55,10 @@ spec:
       - name: ingestion-storage
         persistentVolumeClaim:
           claimName: {{ .Values.rasterCommon.storage.fs.ingestionSourcePvc.name }}
-      - name: output-storage
+      - name: tiles-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.rasterCommon.storage.fs.internalPvc.name }}
+      - name: gpkg-storage
         persistentVolumeClaim:
           claimName: {{ .Values.rasterCommon.storage.fs.internalPvc.name }}
     #   nodeSelector:
@@ -94,10 +97,10 @@ spec:
           volumeMounts:
             - name: ingestion-storage
               mountPath: /layerSources
-            - name: output-storage
+            - name: tiles-storage
               mountPath: /app/tiles_outputs
               subPath: {{ .Values.rasterCommon.storage.fs.internalPvc.tilesSubPath }}
-            - name: output-storage
+            - name: gpkg-storage
               mountPath: /app/tiles_outputs
               subPath: {{ .Values.rasterCommon.storage.fs.internalPvc.gpkgSubPath }}
           {{- if .Values.resources.enabled }}
