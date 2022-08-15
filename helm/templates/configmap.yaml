@@ -10,8 +10,11 @@ metadata:
 data:
   GENERAL__validate: {{ .Values.env.general.validate | quote }}
   TASK__overseerUrl: {{ .Values.rasterCommon.serviceUrls.discreteOverseer | quote }} 
-  TASK__jobManagerUrl: {{ .Values.rasterCommon.serviceUrls.jobManager | quote }} 
-  TASK__types: {{ .Values.env.TASK.types | toJson | quote }}
+  TASK__jobManagerUrl: {{ .Values.rasterCommon.serviceUrls.jobManager | quote }}
+  {{- range $i, $e := .Values.env.TASK.types }}
+  TASK__types__{{ $i }}__jobType: {{ $e.jobType }}
+  TASK__types__{{ $i }}__taskType: {{ $e.taskType }}
+  {{- end }}
   TASK__pollingTime: {{ .Values.env.TASK.pollingTime | quote }}
   TASK__maxAttempts: {{ .Values.env.TASK.maxAttempts | quote }}
   S3__url: {{ .Values.rasterCommon.storage.s3.endpointUrl | quote }}
