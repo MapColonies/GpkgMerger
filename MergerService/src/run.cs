@@ -111,8 +111,9 @@ namespace MergerService.Src
             var taskTypes = BuildTypeList();
             if (taskTypes.Count == 0)
             {
-                this._logger.LogInformation("No tasks configured, please provide job and task types");
-                return;
+                string message = "No tasks configured, please provide job and task types";
+                this._logger.LogCritical(message);
+                throw new Exception(message);
             }
 
             ITaskUtils taskUtils = new TaskUtils(this._configurationManager, this._requestUtils, this._taskUtilsLogger, this._activitySource);
