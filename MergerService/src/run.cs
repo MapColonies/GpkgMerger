@@ -159,7 +159,25 @@ namespace MergerService.Src
                         continue;
                     }
 
-                    RunTask(task, taskUtils);
+                    try
+                    {
+                        RunTask(task, taskUtils);
+                    }
+                    catch (Exception e)
+                    {
+                        this._logger.LogError($"Error in MergerService while running task {task.Id}, error: {e.Message}");
+
+                        try
+                        {
+                            taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, e.Message, false);
+                        }
+                        catch (Exception innerError)
+                        {
+                            this._logger.LogError($"Error in MergerService while updating reject status, RunTask catch block - update task failure: {innerError.Message}");
+                        }
+                        continue;
+                    }
+
                     activatedAny = true;
 
                     try
@@ -208,157 +226,141 @@ namespace MergerService.Src
             // Log the task
             this._logger.LogInformation($"starting task: {task.ToString()}");
 
-            try
+            using (var taskActivity = this._activitySource.StartActivity("task processing"))
             {
-                using (var taskActivity = this._activitySource.StartActivity("task processing"))
+                //TODO: add task identifier to activity
+                //taskActivity.AddTag("jobId", task.jodId);
+                //taskActivity.AddTag("taskId", task.id);
+
+                foreach (TileBounds bounds in metadata.Batches)
                 {
-                    //TODO: add task identifier to activity
-                    //taskActivity.AddTag("jobId", task.jodId);
-                    //taskActivity.AddTag("taskId", task.id);
-
-                    foreach (TileBounds bounds in metadata.Batches)
+                    using (var batchActivity = this._activitySource.StartActivity("batch processing"))
                     {
-                        using (var batchActivity = this._activitySource.StartActivity("batch processing"))
-                        {
-                            // TODO: remove comment and check that the activity is created (When bug will be fixed)
-                            // batchActivity.AddTag("bbox", bounds.ToString());
+                        // TODO: remove comment and check that the activity is created (When bug will be fixed)
+                        // batchActivity.AddTag("bbox", bounds.ToString());
 
+                        stopWatch.Reset();
+                        stopWatch.Start();
+
+                        int totalTileCount = (int)bounds.Size();
+                        int tileProgressCount = 0;
+
+                        // TODO: remove comment and check that the activity is created (When bug will be fixed)
+                        // batchActivity.AddTag("size", totalTileCount);
+
+                        // Skip if there are no tiles in the given bounds
+                        if (totalTileCount == 0)
+                        {
+                            continue;
+                        }
+
+                        List<IData> sources = this.BuildDataList(metadata.Sources, totalTileCount);
+                        IData target = sources[0];
+
+                        List<Tile> tiles = new List<Tile>(totalTileCount);
+
+                        this._logger.LogInformation($"Total amount of tiles to merge: {totalTileCount}");
+
+                        // Go over the bounds of the current batch
+                        using (this._activitySource.StartActivity("merging tiles"))
+                        {
+                            for (int x = bounds.MinX; x < bounds.MaxX; x++)
+                            {
+                                for (int y = bounds.MinY; y < bounds.MaxY; y++)
+                                {
+                                    Coord coord = new Coord(bounds.Zoom, x, y);
+
+                                    // Create tile builder list for current coord for all sources
+                                    List<CorrespondingTileBuilder> correspondingTileBuilders =
+                                        new List<CorrespondingTileBuilder>();
+                                    foreach (IData source in sources)
+                                    {
+                                        correspondingTileBuilders.Add(
+                                            () => source.GetCorrespondingTile(coord, true));
+                                    }
+
+                                    byte[]? blob = this._tileMerger.MergeTiles(correspondingTileBuilders, coord);
+
+                                    if (blob != null)
+                                    {
+                                        tiles.Add(new Tile(coord, blob));
+                                    }
+
+                                    tileProgressCount++;
+
+                                    // Show progress every 1000 tiles
+                                    if (tileProgressCount % 1000 == 0)
+                                    {
+                                        this._logger.LogDebug($"Job: {task.JobId}, Task: {task.Id}, Tile Count: {tileProgressCount} / {totalTileCount}");
+
+                                        try
+                                        {
+                                            task.Percentage = 100 * (tileProgressCount / totalTileCount);
+                                            taskUtils.UpdateProgress(task.JobId, task.Id, task.Percentage);
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            this._logger.LogError($"Error in MergerService run - update task percentage: {e.Message}");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        using (this._activitySource.StartActivity("saving tiles"))
+                        {
+                            target.UpdateTiles(tiles);
+                        }
+
+                        this._logger.LogInformation($"Tile Count: {tileProgressCount} / {totalTileCount}");
+                        target.Wrapup();
+
+                        stopWatch.Stop();
+
+                        // Get the elapsed time as a TimeSpan value.
+                        ts = stopWatch.Elapsed;
+                        string elapsedMessage = this._timeUtils.FormatElapsedTime("Merge runtime: ", ts);
+                        this._logger.LogInformation($"Merged the following bounds: {bounds}. {elapsedMessage}");
+
+                        // After merging, validate if requested
+                        if (this._shouldValidate)
+                        {
+                            // Reset stopwatch for validation time measure
                             stopWatch.Reset();
                             stopWatch.Start();
 
-                            int totalTileCount = (int)bounds.Size();
-                            int tileProgressCount = 0;
-
-                            // TODO: remove comment and check that the activity is created (When bug will be fixed)
-                            // batchActivity.AddTag("size", totalTileCount);
-
-                            // Skip if there are no tiles in the given bounds
-                            if (totalTileCount == 0)
+                            this._logger.LogInformation("Validating merged data sources");
+                            using (this._activitySource.StartActivity("validating tiles"))
                             {
-                                continue;
-                            }
+                                bool valid = this.Validate(target, bounds);
 
-                            List<IData> sources = this.BuildDataList(metadata.Sources, totalTileCount);
-                            IData target = sources[0];
-
-                            List<Tile> tiles = new List<Tile>(totalTileCount);
-
-                            this._logger.LogInformation($"Total amount of tiles to merge: {totalTileCount}");
-
-                            // Go over the bounds of the current batch
-                            using (this._activitySource.StartActivity("merging tiles"))
-                            {
-                                for (int x = bounds.MinX; x < bounds.MaxX; x++)
+                                if (!valid)
                                 {
-                                    for (int y = bounds.MinY; y < bounds.MaxY; y++)
+                                    try
                                     {
-                                        Coord coord = new Coord(bounds.Zoom, x, y);
-
-                                        // Create tile builder list for current coord for all sources
-                                        List<CorrespondingTileBuilder> correspondingTileBuilders =
-                                            new List<CorrespondingTileBuilder>();
-                                        foreach (IData source in sources)
-                                        {
-                                            correspondingTileBuilders.Add(
-                                                () => source.GetCorrespondingTile(coord, true));
-                                        }
-
-                                        byte[]? blob = this._tileMerger.MergeTiles(correspondingTileBuilders, coord);
-
-                                        if (blob != null)
-                                        {
-                                            tiles.Add(new Tile(coord, blob));
-                                        }
-
-                                        tileProgressCount++;
-
-                                        // Show progress every 1000 tiles
-                                        if (tileProgressCount % 1000 == 0)
-                                        {
-                                            this._logger.LogDebug($"Job: {task.JobId}, Task: {task.Id}, Tile Count: {tileProgressCount} / {totalTileCount}");
-
-                                            try
-                                            {
-                                                task.Percentage = 100 * (tileProgressCount / totalTileCount);
-                                                taskUtils.UpdateProgress(task.JobId, task.Id, task.Percentage);
-                                            }
-                                            catch (Exception e)
-                                            {
-                                                this._logger.LogError($"Error in MergerService run - update task percentage: {e.Message}");
-                                            }
-                                        }
+                                        taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, "Error in validation, target not valid after run", true);
+                                    }
+                                    catch (Exception innerError)
+                                    {
+                                        this._logger.LogError($"Error in MergerService run - update task failure after validation failure: {innerError.Message}");
                                     }
                                 }
                             }
-
-                            using (this._activitySource.StartActivity("saving tiles"))
-                            {
-                                target.UpdateTiles(tiles);
-                            }
-
-                            this._logger.LogInformation($"Tile Count: {tileProgressCount} / {totalTileCount}");
-                            target.Wrapup();
 
                             stopWatch.Stop();
-
                             // Get the elapsed time as a TimeSpan value.
                             ts = stopWatch.Elapsed;
-                            string elapsedMessage = this._timeUtils.FormatElapsedTime("Merge runtime: ", ts);
-                            this._logger.LogInformation($"Merged the following bounds: {bounds}. {elapsedMessage}");
-
-                            // After merging, validate if requested
-                            if (this._shouldValidate)
-                            {
-                                // Reset stopwatch for validation time measure
-                                stopWatch.Reset();
-                                stopWatch.Start();
-
-                                this._logger.LogInformation("Validating merged data sources");
-                                using (this._activitySource.StartActivity("validating tiles"))
-                                {
-                                    bool valid = this.Validate(target, bounds);
-
-                                    if (!valid)
-                                    {
-                                        try
-                                        {
-                                            taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, "Error in validation, target not valid after run", true);
-                                        }
-                                        catch (Exception innerError)
-                                        {
-                                            this._logger.LogError($"Error in MergerService run - update task failure after validation failure: {innerError.Message}");
-                                        }
-                                    }
-                                }
-
-                                stopWatch.Stop();
-                                // Get the elapsed time as a TimeSpan value.
-                                ts = stopWatch.Elapsed;
-                                string elapsedTime = this._timeUtils.FormatElapsedTime($"Validation time", ts);
-                                this._logger.LogInformation(elapsedTime);
-                            }
-                            else
-                            {
-                                this._logger.LogInformation("Validation not requested, skipping validation...");
-                            }
+                            string elapsedTime = this._timeUtils.FormatElapsedTime($"Validation time", ts);
+                            this._logger.LogInformation(elapsedTime);
+                        }
+                        else
+                        {
+                            this._logger.LogInformation("Validation not requested, skipping validation...");
                         }
                     }
                 }
             }
-            catch (Exception e)
-            {
-                this._logger.LogError("Error in MergerService run - bounds loop");
-                this._logger.LogError(e.Message);
 
-                try
-                {
-                    taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, e.Message, false);
-                }
-                catch (Exception innerError)
-                {
-                    this._logger.LogError($"Error in MergerService run catch block - update task failure: {innerError.Message}");
-                }
-            }
         }
 
         private bool Validate(IData target, TileBounds bounds)
