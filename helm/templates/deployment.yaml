@@ -5,6 +5,11 @@
 {{- $cloudProviderImagePullSecretName := include "gpkg-merger.cloudProviderImagePullSecretName" . -}}
 {{- $imageTag := include "gpkg-merger.tag" . -}}
 {{- if .Values.enabled -}}
+
+{{ $gpkgPath := (printf "%s%s" "/app/tiles_outputs/" .Values.rasterCommon.storage.fs.internalPvc.gpkgSubPath) }}
+{{ $tilePath := (printf "%s%s" "/app/tiles_outputs/" .Values.rasterCommon.storage.fs.internalPvc.tilesSubPath) }}
+{{ $sources := (ternary $tilePath (printf "%s%s" "/layerSources/" .Values.rasterCommon.storage.fs.ingestionSourcePvc.subPath) .Values.isExporter ) }}
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -56,8 +61,8 @@ spec:
         persistentVolumeClaim:
           claimName: {{ .Values.rasterCommon.storage.fs.ingestionSourcePvc.name }}
       - name: output-storage
-        persistentVolumeClaim:
-          claimName: {{ .Values.rasterCommon.storage.fs.internalPvc.name }}
+        emptyDir:
+          sizeLimit: '10Gi'
     #   nodeSelector:
     #     knownNode: eastus-1-node-1
       containers:
@@ -69,11 +74,11 @@ spec:
             - name: SERVER_PORT
               value: "8080"
             - name: GENERAL__inputPath
-              value: /layerSources
+              value: {{ $sources }}
             - name: GENERAL__gpkgPath
               value: {{ printf "%s%s" "/app/tiles_outputs/" .Values.rasterCommon.storage.fs.internalPvc.gpkgSubPath }}
             - name: GENERAL__filePath
-              value: {{ printf "%s%s" "/app/tiles_outputs/" .Values.rasterCommon.storage.fs.internalPvc.tilesSubPath }}
+              value: {{ $tilePath }}
             - name: S3_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
