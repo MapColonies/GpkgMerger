@@ -165,7 +165,7 @@ namespace MergerService.Src
                     }
                     catch (Exception e)
                     {
-                        this._logger.LogError($"Error in MergerService run, error: {e.Message}");
+                        this._logger.LogError($"Error in MergerService while running task {task.Id}, error: {e.Message}");
 
                         try
                         {
@@ -173,7 +173,7 @@ namespace MergerService.Src
                         }
                         catch (Exception innerError)
                         {
-                            this._logger.LogError($"Error in MergerService start, RunTask catch block - update task failure: {innerError.Message}");
+                            this._logger.LogError($"Error in MergerService while updating reject status, RunTask catch block - update task failure: {innerError.Message}");
                         }
                         continue;
                     }
