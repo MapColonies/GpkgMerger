@@ -61,8 +61,8 @@ spec:
         persistentVolumeClaim:
           claimName: {{ .Values.rasterCommon.storage.fs.ingestionSourcePvc.name }}
       - name: output-storage
-        emptyDir:
-          sizeLimit: '10Gi'
+        persistentVolumeClaim:
+          claimName: {{ .Values.rasterCommon.storage.fs.internalPvc.name }}
     #   nodeSelector:
     #     knownNode: eastus-1-node-1
       containers:
