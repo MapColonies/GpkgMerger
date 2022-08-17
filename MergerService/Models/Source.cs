@@ -1,3 +1,4 @@
+using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -10,6 +11,8 @@ namespace MergerService.Controllers
         public string Path { get; }
 
         public string Type { get; }
+        
+        public Extent? Extent { get; }
 
         [DefaultValue(GridOrigin.UPPER_LEFT)]
         [JsonProperty(Required = Required.Default, DefaultValueHandling = DefaultValueHandling.Populate, NullValueHandling = NullValueHandling.Ignore)]
@@ -22,10 +25,11 @@ namespace MergerService.Controllers
         [System.Text.Json.Serialization.JsonIgnore]
         private JsonSerializerSettings _jsonSerializerSettings;
 
-        public Source(string path, string type, GridOrigin origin = GridOrigin.UPPER_LEFT, string grid = "2x1")
+        public Source(string path, string type, Extent? extent = null, GridOrigin origin = GridOrigin.UPPER_LEFT, string grid = "2x1")
         {
             this.Path = path;
             this.Type = type;
+            this.Extent = extent;
             this.Origin = origin;
             this.Grid = grid.ToLower();
 

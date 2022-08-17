@@ -81,9 +81,8 @@ namespace MergerService.Src
 
                 if (paths.Length != 0)
                 {
-                    //TODO: add extent
                     string path = BuildPath(paths[0], true);
-                    sources.Add(this._dataFactory.CreateDataSource(paths[0].Type, path, batchSize, paths[0].IsOneXOne(), paths[0].Origin, null, true));
+                    sources.Add(this._dataFactory.CreateDataSource(paths[0].Type, path, batchSize, paths[0].IsOneXOne(), paths[0].Origin, paths[0].Extent , true));
                     foreach (Source source in paths.Skip(1))
                     {
                         // TODO: add support for HTTP

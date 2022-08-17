@@ -9,6 +9,7 @@ environment: development
 replicaCount: 1
 initialDelaySeconds: 60
 resetOnConfigChange: true
+isExporter: false
 
 cloudProvider:
   dockerRegistryUrl: 'my-registry'
@@ -54,6 +55,7 @@ rasterCommon:
     fs:
       ingestionSourcePvc:
         name: ingestion-source-pvc
+        subPath: ingestion-source
       internalPvc:
         name: "internal-pvc"
         tilesSubPath: tiles
