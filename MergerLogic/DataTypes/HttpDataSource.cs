@@ -1,6 +1,5 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.Utils;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace MergerLogic.DataTypes
 {
@@ -10,10 +9,20 @@ namespace MergerLogic.DataTypes
         protected IEnumerator<Tile[]> Batches;
         protected int BatchIndex = 0;
         protected HttpDataSource(IServiceProvider container,
-            DataType type, string path, int batchSize, Extent extent, GridOrigin origin, int maxZoom, int minZoom = 0, bool isOneXOne = false)
+            DataType type, string path, int batchSize, Extent extent, GridOrigin? origin, bool? isOneXOne, int maxZoom, int minZoom = 0)
             : base(container, type, path, batchSize, isOneXOne, origin)
         {
-            this.GenTileRanges(extent, origin, minZoom, maxZoom);
+            this.GenTileRanges(extent, this.Origin, minZoom, maxZoom);
+        }
+
+        protected override GridOrigin DefaultOrigin()
+        {
+            return GridOrigin.LOWER_LEFT;
+        }
+
+        protected override bool DefaultOneXOne()
+        {
+            return false;
         }
 
         public override bool Exists()

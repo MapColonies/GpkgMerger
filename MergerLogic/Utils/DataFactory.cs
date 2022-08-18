@@ -27,17 +27,14 @@ namespace MergerLogic.Utils
             _bucket = this._configurationManager.GetConfiguration("S3", "bucket");
         }
 
-        public IData CreateDataSource(string type, string path, int batchSize, bool isOneXOne, GridOrigin? origin = null, Extent? extent = null, bool isBase = false)
+        public IData CreateDataSource(string type, string path, int batchSize, bool? isOneXOne = null, GridOrigin? origin = null, Extent? extent = null, bool isBase = false)
         {
             IData data;
 
             switch (type.ToLower())
             {
                 case "gpkg":
-                    if (origin == null)
-                        data = new Gpkg(this._configurationManager, this._container, path, batchSize, isBase, isOneXOne, extent);
-                    else
-                        data = new Gpkg(this._configurationManager, this._container, path, batchSize, isBase, isOneXOne, extent, origin.Value);
+                    data = new Gpkg(this._configurationManager, this._container, path, batchSize, isOneXOne, origin, isBase, extent);
                     break;
                 case "s3":
                     var client = this._container.GetService<IAmazonS3>();
@@ -46,16 +43,10 @@ namespace MergerLogic.Utils
                         throw new Exception("s3 configuration is required");
                     }
                     path = this._pathUtils.RemoveTrailingSlash(path);
-                    if (origin == null)
-                        data = new S3(this._pathUtils, client, this._container, _bucket, path, batchSize, isOneXOne);
-                    else
-                        data = new S3(this._pathUtils, client, this._container, _bucket, path, batchSize, isOneXOne, origin.Value);
+                    data = new S3(this._pathUtils, client, this._container, _bucket, path, batchSize, isOneXOne, origin);
                     break;
                 case "fs":
-                    if (origin == null)
-                        data = new FS(this._pathUtils, this._container, path, batchSize, isOneXOne, isBase);
-                    else
-                        data = new FS(this._pathUtils, this._container, path, batchSize, isOneXOne, isBase, origin.Value);
+                    data = new FS(this._pathUtils, this._container, path, batchSize, isOneXOne, origin, isBase);
                     break;
                 case "wmts":
                 case "xyz":
@@ -77,7 +68,7 @@ namespace MergerLogic.Utils
             return data;
         }
 
-        public IData CreateDataSource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0, bool isOneXone = false, GridOrigin? origin = null)
+        public IData CreateDataSource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0, bool? isOneXone = null, GridOrigin? origin = null)
         {
             IData data;
             type = type.ToLower();
@@ -95,22 +86,13 @@ namespace MergerLogic.Utils
             switch (type)
             {
                 case "wmts":
-                    if (origin == null)
-                        data = new WMTS(this._container, path, batchSize, extent, maxZoom, minZoom, isOneXone);
-                    else
-                        data = new WMTS(this._container, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
+                    data = new WMTS(this._container, path, batchSize, extent, isOneXone, origin, maxZoom, minZoom);
                     break;
                 case "xyz":
-                    if (origin == null)
-                        data = new XYZ(this._container, path, batchSize, extent, maxZoom, minZoom, isOneXone);
-                    else
-                        data = new XYZ(this._container, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
+                    data = new XYZ(this._container, path, batchSize, extent, isOneXone, origin, maxZoom, minZoom);
                     break;
                 case "tms":
-                    if (origin == null)
-                        data = new TMS(this._container, path, batchSize, extent, maxZoom, minZoom, isOneXone);
-                    else
-                        data = new TMS(this._container, path, batchSize, extent, maxZoom, minZoom, isOneXone, origin.Value);
+                    data = new TMS(this._container, path, batchSize, extent, isOneXone, origin, maxZoom, minZoom);
                     break;
                 default:
                     throw new Exception($"Currently there is no support for the data type '{type}'");
