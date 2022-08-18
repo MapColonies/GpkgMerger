@@ -105,8 +105,8 @@ namespace MergerLogicUnitTests.DataTypes
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
-                this._serviceProviderMock.Object, "test.gpkg", 10, isBase, isOneXOne,
-                extent, origin);
+                this._serviceProviderMock.Object, "test.gpkg", 10, isOneXOne, origin,
+                isBase, extent);
 
             var expected = cords.Z == 2;
             if (useCoords)
@@ -156,8 +156,8 @@ namespace MergerLogicUnitTests.DataTypes
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
-                this._serviceProviderMock.Object, "test.gpkg", batchSize, isBase, false,
-                extent, GridOrigin.UPPER_LEFT);
+                this._serviceProviderMock.Object, "test.gpkg", batchSize, false,
+                GridOrigin.UPPER_LEFT, isBase, extent);
 
             var cords = new Coord(z, x, y);
             Assert.AreEqual(expectedNull ? null : existingTile, gpkg.GetCorrespondingTile(cords, false));
@@ -245,8 +245,8 @@ namespace MergerLogicUnitTests.DataTypes
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
-                this._serviceProviderMock.Object, "test.gpkg", 10, isBase, isOneXOne,
-                extent, origin);
+                this._serviceProviderMock.Object, "test.gpkg", 10, isOneXOne, origin,
+                isBase, extent);
 
             var res = gpkg.GetCorrespondingTile(cords, enableUpscale);
             if (expectedNull)
@@ -360,8 +360,8 @@ namespace MergerLogicUnitTests.DataTypes
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
-                this._serviceProviderMock.Object, "test.gpkg", 10, isBase, isOneXOne,
-                extent, origin);
+                this._serviceProviderMock.Object, "test.gpkg", 10, isOneXOne, origin,
+                isBase, extent);
             var upscaleCords = new Coord(5, 2, 3);
 
             var expectedTile = isValidConversion ? tile : null;
@@ -431,8 +431,8 @@ namespace MergerLogicUnitTests.DataTypes
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
-                this._serviceProviderMock.Object, "test.gpkg", 10, isBase, isOneXOne,
-                extent, origin);
+                this._serviceProviderMock.Object, "test.gpkg", 10, isOneXOne, origin,
+                isBase, extent);
 
             var testTiles = new Tile[]
             {
@@ -499,8 +499,8 @@ namespace MergerLogicUnitTests.DataTypes
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
-                this._serviceProviderMock.Object, "test.gpkg", 10, isBase, isOneXOne,
-                extent, origin);
+                this._serviceProviderMock.Object, "test.gpkg", 10, isOneXOne, origin,
+                isBase, extent);
 
             gpkg.Wrapup();
             this._gpkgUtilsMock.Verify(utils => utils.CreateTileIndex(), Times.Once);
@@ -554,8 +554,8 @@ namespace MergerLogicUnitTests.DataTypes
             var action = () =>
             {
                 var gpkg = new Gpkg(this._configurationManagerMock.Object,
-                    this._serviceProviderMock.Object, "test.gpkg", 10, isBase, isOneXOne,
-                    extent, origin);
+                    this._serviceProviderMock.Object, "test.gpkg", 10, isOneXOne, origin,
+                    isBase, extent);
 
                 Assert.AreEqual(true, gpkg.Exists());
             };
@@ -597,8 +597,8 @@ namespace MergerLogicUnitTests.DataTypes
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
-                this._serviceProviderMock.Object, "test.gpkg", 10, isBase, isOneXOne,
-                extent, origin);
+                this._serviceProviderMock.Object, "test.gpkg", 10, isOneXOne, origin,
+                isBase, extent);
 
             Assert.AreEqual(tileCount, gpkg.TileCount());
             this._gpkgUtilsMock.Verify(utils => utils.GetTileCount(), Times.Once);
@@ -630,8 +630,8 @@ namespace MergerLogicUnitTests.DataTypes
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
-                this._serviceProviderMock.Object, "test.gpkg", 10, isBase, isOneXOne,
-                extent, origin);
+                this._serviceProviderMock.Object, "test.gpkg", 10, isOneXOne, origin,
+                isBase, extent);
 
             string testIdentifier = offset.ToString();
             gpkg.setBatchIdentifier(testIdentifier);
@@ -677,8 +677,8 @@ namespace MergerLogicUnitTests.DataTypes
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
-                this._serviceProviderMock.Object, "test.gpkg", batchSize, isBase, isOneXOne,
-                extent, origin);
+                this._serviceProviderMock.Object, "test.gpkg", batchSize, isOneXOne, origin,
+                isBase, extent);
 
             gpkg.GetNextBatch(out string batchIdentifier);
             gpkg.GetNextBatch(out batchIdentifier);
@@ -746,8 +746,8 @@ namespace MergerLogicUnitTests.DataTypes
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
-                this._serviceProviderMock.Object, "test.gpkg", batchSize, isBase, isOneXOne,
-                extent, origin);
+                this._serviceProviderMock.Object, "test.gpkg", batchSize, isOneXOne, origin,
+                isBase, extent);
 
             for (int i = 0; i < tileBatches.Count; i++)
             {
@@ -799,8 +799,8 @@ namespace MergerLogicUnitTests.DataTypes
             this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.UpdateExtent(extent));
 
             new Gpkg(this._configurationManagerMock.Object,
-                this._serviceProviderMock.Object, "test.gpkg", 10, true, isOneXOne,
-                extent, origin);
+                this._serviceProviderMock.Object, "test.gpkg", 10, isOneXOne, origin,
+                true, extent);
             this._gpkgUtilsMock.Verify(utils => utils.Create(extent, isOneXOne), Times.Once);
             this._gpkgUtilsMock.Verify(utils => utils.Exist(), Times.Once);
             this._gpkgUtilsMock.Verify(utils => utils.UpdateExtent(extent), Times.Once);
@@ -815,8 +815,8 @@ namespace MergerLogicUnitTests.DataTypes
             Extent? extent = null;
             Assert.ThrowsException<Exception>(() =>
                 new Gpkg(this._configurationManagerMock.Object,
-                    this._serviceProviderMock.Object, "test.gpkg", 10, true, isOneXOne,
-                    extent, origin));
+                    this._serviceProviderMock.Object, "test.gpkg", 10, isOneXOne,
+                    origin, true, extent));
             this.VerifyAll();
         }
 
@@ -843,8 +843,8 @@ namespace MergerLogicUnitTests.DataTypes
 
             Assert.ThrowsException<Exception>(() =>
                 new Gpkg(this._configurationManagerMock.Object,
-                    this._serviceProviderMock.Object, "test.gpkg", 10, true, isOneXOne,
-                    extent, origin));
+                    this._serviceProviderMock.Object, "test.gpkg", 10, isOneXOne,
+                    origin, true, extent));
             this.VerifyAll();
         }
         #endregion
