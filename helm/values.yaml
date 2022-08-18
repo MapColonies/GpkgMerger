@@ -76,6 +76,8 @@ env:
         taskType: 'tilesMerging'
     pollingTime: 1000
     maxAttempts: 3
+  HTTP:
+    retries: 2
   logging:
     logLevel:
       default: "Information"
