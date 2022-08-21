@@ -27,14 +27,14 @@ namespace MergerLogic.Utils
             _bucket = this._configurationManager.GetConfiguration("S3", "bucket");
         }
 
-        public IData CreateDataSource(string type, string path, int batchSize, bool? isOneXOne = null, GridOrigin? origin = null, Extent? extent = null, bool isBase = false)
+        public IData CreateDataSource(string type, string path, int batchSize, Grid? grid = null, GridOrigin? origin = null, Extent? extent = null, bool isBase = false)
         {
             IData data;
 
             switch (type.ToLower())
             {
                 case "gpkg":
-                    data = new Gpkg(this._configurationManager, this._container, path, batchSize, isOneXOne, origin, isBase, extent);
+                    data = new Gpkg(this._configurationManager, this._container, path, batchSize, grid, origin, isBase, extent);
                     break;
                 case "s3":
                     var client = this._container.GetService<IAmazonS3>();
@@ -43,10 +43,10 @@ namespace MergerLogic.Utils
                         throw new Exception("s3 configuration is required");
                     }
                     path = this._pathUtils.RemoveTrailingSlash(path);
-                    data = new S3(this._pathUtils, client, this._container, _bucket, path, batchSize, isOneXOne, origin);
+                    data = new S3(this._pathUtils, client, this._container, _bucket, path, batchSize, grid, origin);
                     break;
                 case "fs":
-                    data = new FS(this._pathUtils, this._container, path, batchSize, isOneXOne, origin, isBase);
+                    data = new FS(this._pathUtils, this._container, path, batchSize, grid, origin, isBase);
                     break;
                 case "wmts":
                 case "xyz":
@@ -68,7 +68,7 @@ namespace MergerLogic.Utils
             return data;
         }
 
-        public IData CreateDataSource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0, bool? isOneXone = null, GridOrigin? origin = null)
+        public IData CreateDataSource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0, Grid? grid = null, GridOrigin? origin = null)
         {
             IData data;
             type = type.ToLower();
@@ -77,7 +77,7 @@ namespace MergerLogic.Utils
                 case "gpkg":
                 case "s3":
                 case "fs":
-                    return this.CreateDataSource(type, path, batchSize, isOneXone, origin, extent, isBase);
+                    return this.CreateDataSource(type, path, batchSize, grid, origin, extent, isBase);
             };
             if (isBase)
             {
@@ -86,13 +86,13 @@ namespace MergerLogic.Utils
             switch (type)
             {
                 case "wmts":
-                    data = new WMTS(this._container, path, batchSize, extent, isOneXone, origin, maxZoom, minZoom);
+                    data = new WMTS(this._container, path, batchSize, extent, grid, origin, maxZoom, minZoom);
                     break;
                 case "xyz":
-                    data = new XYZ(this._container, path, batchSize, extent, isOneXone, origin, maxZoom, minZoom);
+                    data = new XYZ(this._container, path, batchSize, extent, grid, origin, maxZoom, minZoom);
                     break;
                 case "tms":
-                    data = new TMS(this._container, path, batchSize, extent, isOneXone, origin, maxZoom, minZoom);
+                    data = new TMS(this._container, path, batchSize, extent, grid, origin, maxZoom, minZoom);
                     break;
                 default:
                     throw new Exception($"Currently there is no support for the data type '{type}'");

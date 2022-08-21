@@ -16,6 +16,14 @@ namespace MergerLogic.DataTypes
         XYZ
     }
 
+    public enum Grid
+    {
+        [EnumMember(Value = "2X1")]
+        TwoXOne,
+        [EnumMember(Value = "1X1")]
+        OneXOne
+    }
+
     public enum GridOrigin
     {
         [EnumMember(Value = "LL")]
@@ -34,7 +42,8 @@ namespace MergerLogic.DataTypes
 
         public DataType Type { get; }
         public string Path { get; }
-        public bool IsOneXOne { get; protected set; }
+        public bool IsOneXOne { get; }
+        public Grid Grid { get; protected set; }
         public GridOrigin Origin { get; protected set; }
         protected readonly int BatchSize;
 
@@ -55,7 +64,7 @@ namespace MergerLogic.DataTypes
         protected TileConvertorFunction ConvertOriginTile;
         protected ValFromCoordFunction ConvertOriginCoord;
 
-        protected Data(IServiceProvider container, DataType type, string path, int batchSize, bool? isOneXOne, GridOrigin? origin)
+        protected Data(IServiceProvider container, DataType type, string path, int batchSize, Grid? grid, GridOrigin? origin)
         {
             this.Type = type;
             this.Path = path;
@@ -63,7 +72,8 @@ namespace MergerLogic.DataTypes
             var utilsFactory = container.GetRequiredService<IUtilsFactory>();
             this.Utils = utilsFactory.GetDataUtils<TUtilsType>(path);
             this.GeoUtils = container.GetRequiredService<IGeoUtils>();
-            this.IsOneXOne = isOneXOne is null ? DefaultOneXOne() : (bool)isOneXOne;
+            this.Grid = grid is null ? DefaultGrid() : (Grid)grid.Value;
+            this.IsOneXOne = this.Grid == Grid.OneXOne;
             this.Origin = origin is null ? DefaultOrigin() : (GridOrigin)origin.Value;
             var loggerFactory = container.GetRequiredService<ILoggerFactory>();
             this._logger = loggerFactory.CreateLogger(this.GetType());
@@ -106,7 +116,7 @@ namespace MergerLogic.DataTypes
 
         protected abstract GridOrigin DefaultOrigin();
 
-        protected abstract bool DefaultOneXOne();
+        protected abstract Grid DefaultGrid();
 
         public abstract void Reset();
 

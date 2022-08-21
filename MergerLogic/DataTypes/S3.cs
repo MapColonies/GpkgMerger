@@ -16,8 +16,8 @@ namespace MergerLogic.DataTypes
         private readonly IPathUtils _pathUtils;
 
         public S3(IPathUtils pathUtils, IAmazonS3 client, IServiceProvider container,
-            string bucket, string path, int batchSize, bool? isOneXOne, GridOrigin? origin)
-            : base(container, DataType.S3, path, batchSize, isOneXOne, origin)
+            string bucket, string path, int batchSize, Grid? grid, GridOrigin? origin)
+            : base(container, DataType.S3, path, batchSize, grid, origin)
         {
             this._bucket = bucket;
             this._continuationToken = null;
@@ -31,9 +31,9 @@ namespace MergerLogic.DataTypes
             return GridOrigin.LOWER_LEFT;
         }
 
-        protected override bool DefaultOneXOne()
+        protected override Grid DefaultGrid()
         {
-            return false;
+            return Grid.TwoXOne;
         }
 
         public override void Reset()

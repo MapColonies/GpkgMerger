@@ -11,8 +11,8 @@ namespace MergerLogic.DataTypes
         private readonly IConfigurationManager _configManager;
 
         public Gpkg(IConfigurationManager configuration, IServiceProvider container,
-            string path, int batchSize, bool? isOneXOne, GridOrigin? origin, bool isBase = false, Extent? extent = null)
-            : base(container, DataType.GPKG, path, batchSize, isOneXOne, origin)
+            string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false, Extent? extent = null)
+            : base(container, DataType.GPKG, path, batchSize, grid, origin)
         {
             this._offset = 0;
             this._configManager = configuration;
@@ -61,9 +61,9 @@ namespace MergerLogic.DataTypes
             return GridOrigin.UPPER_LEFT;
         }
 
-        protected override bool DefaultOneXOne()
+        protected override Grid DefaultGrid()
         {
-            return false;
+            return Grid.TwoXOne;
         }
 
         public override void Reset()

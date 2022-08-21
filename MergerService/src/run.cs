@@ -82,13 +82,13 @@ namespace MergerService.Src
                 if (paths.Length != 0)
                 {
                     string path = BuildPath(paths[0], true);
-                    sources.Add(this._dataFactory.CreateDataSource(paths[0].Type, path, batchSize, paths[0].IsOneXOne(), paths[0].Origin, paths[0].Extent , true));
+                    sources.Add(this._dataFactory.CreateDataSource(paths[0].Type, path, batchSize, paths[0].Grid, paths[0].Origin, paths[0].Extent, true));
                     foreach (Source source in paths.Skip(1))
                     {
                         // TODO: add support for HTTP
                         path = BuildPath(source, false);
                         sources.Add(this._dataFactory.CreateDataSource(source.Type, path, batchSize,
-                            source.IsOneXOne(), source.Origin));
+                            source.Grid, source.Origin));
                     }
                 }
 
