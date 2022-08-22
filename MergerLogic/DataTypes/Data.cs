@@ -42,7 +42,7 @@ namespace MergerLogic.DataTypes
 
         public DataType Type { get; }
         public string Path { get; }
-        public bool IsOneXOne { get; }
+        public bool IsOneXOne => this.Grid == Grid.OneXOne;
         public Grid Grid { get; protected set; }
         public GridOrigin Origin { get; protected set; }
         protected readonly int BatchSize;
@@ -73,7 +73,6 @@ namespace MergerLogic.DataTypes
             this.Utils = utilsFactory.GetDataUtils<TUtilsType>(path);
             this.GeoUtils = container.GetRequiredService<IGeoUtils>();
             this.Grid = grid is null ? DefaultGrid() : (Grid)grid.Value;
-            this.IsOneXOne = this.Grid == Grid.OneXOne;
             this.Origin = origin is null ? DefaultOrigin() : (GridOrigin)origin.Value;
             var loggerFactory = container.GetRequiredService<ILoggerFactory>();
             this._logger = loggerFactory.CreateLogger(this.GetType());
