@@ -61,11 +61,6 @@ namespace MergerLogic.DataTypes
             return GridOrigin.UPPER_LEFT;
         }
 
-        protected override Grid DefaultGrid()
-        {
-            return Grid.TwoXOne;
-        }
-
         public override void Reset()
         {
             this._offset = 0;

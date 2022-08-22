@@ -20,11 +20,6 @@ namespace MergerLogic.DataTypes
             return GridOrigin.LOWER_LEFT;
         }
 
-        protected override Grid DefaultGrid()
-        {
-            return Grid.TwoXOne;
-        }
-
         public override bool Exists()
         {
             // there is no reasonable way to validate url template source

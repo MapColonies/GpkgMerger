@@ -115,7 +115,10 @@ namespace MergerLogic.DataTypes
 
         protected abstract GridOrigin DefaultOrigin();
 
-        protected abstract Grid DefaultGrid();
+        protected virtual Grid DefaultGrid()
+        {
+            return Grid.TwoXOne;
+        }
 
         public abstract void Reset();
 
