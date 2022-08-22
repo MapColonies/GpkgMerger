@@ -97,8 +97,7 @@ namespace MergerLogic.Extensions
             ConfigurationManager _config = new ConfigurationManager(null);
             var maxAttempts = _config.GetConfiguration<int>("HTTP", "retries");
             var retryPolicy = HttpPolicyExtensions.HandleTransientHttpError()
-                .WaitAndRetryAsync(maxAttempts, attempt => TimeSpan.FromSeconds(Math.Pow(2,attempt)))
-                ;
+                .WaitAndRetryAsync(maxAttempts, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)));
             collection.AddHttpClient("httpClient")
                 .AddPolicyHandler(retryPolicy);
             collection.AddHttpClient("httpClientWithoutRetry")
