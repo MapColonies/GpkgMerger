@@ -11,8 +11,8 @@ namespace MergerLogic.DataTypes
         private readonly IConfigurationManager _configManager;
 
         public Gpkg(IConfigurationManager configuration, IServiceProvider container,
-            string path, int batchSize, bool isBase = false, bool isOneXOne = false, Extent? extent = null, GridOrigin origin = GridOrigin.UPPER_LEFT)
-            : base(container, DataType.GPKG, path, batchSize, isOneXOne, origin)
+            string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false, Extent? extent = null)
+            : base(container, DataType.GPKG, path, batchSize, grid, origin)
         {
             this._offset = 0;
             this._configManager = configuration;
@@ -28,13 +28,13 @@ namespace MergerLogic.DataTypes
                 this._logger.LogInformation($"Checking if exists, gpkg: {this.Path}");
                 if (!this.Utils.Exist())
                 {
-                    this.Utils.Create(extent.Value, isOneXOne);
+                    this.Utils.Create(extent.Value, this.IsOneXOne);
                 }
                 else
                 {
-                    if (!this.Utils.IsValidGrid(isOneXOne))
+                    if (!this.Utils.IsValidGrid(this.IsOneXOne))
                     {
-                        var gridType = isOneXOne ? "1X1" : "2X1";
+                        var gridType = this.IsOneXOne ? "1X1" : "2X1";
                         throw new Exception($"gpkg source {path} don't have valid {gridType} grid.");
                     };
                     this.Utils.DeleteTileTableTriggers();
@@ -48,12 +48,17 @@ namespace MergerLogic.DataTypes
                 {
                     throw new Exception($"gpkg source {path} does not exist.");
                 }
-                if (!this.Utils.IsValidGrid(isOneXOne))
+                if (!this.Utils.IsValidGrid(this.IsOneXOne))
                 {
-                    var gridType = isOneXOne ? "1X1" : "2X1";
+                    var gridType = this.IsOneXOne ? "1X1" : "2X1";
                     throw new Exception($"gpkg source {path} don't have valid {gridType} grid.");
                 };
             }
+        }
+
+        protected override GridOrigin DefaultOrigin()
+        {
+            return GridOrigin.UPPER_LEFT;
         }
 
         public override void Reset()

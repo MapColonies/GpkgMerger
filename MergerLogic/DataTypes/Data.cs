@@ -16,6 +16,14 @@ namespace MergerLogic.DataTypes
         XYZ
     }
 
+    public enum Grid
+    {
+        [EnumMember(Value = "2X1")]
+        TwoXOne,
+        [EnumMember(Value = "1X1")]
+        OneXOne
+    }
+
     public enum GridOrigin
     {
         [EnumMember(Value = "LL")]
@@ -34,8 +42,9 @@ namespace MergerLogic.DataTypes
 
         public DataType Type { get; }
         public string Path { get; }
-        public bool IsOneXOne { get; }
-        public GridOrigin Origin { get; }
+        public bool IsOneXOne => this.Grid == Grid.OneXOne;
+        public Grid Grid { get; protected set; }
+        public GridOrigin Origin { get; protected set; }
         protected readonly int BatchSize;
 
         protected TUtilsType Utils;
@@ -55,7 +64,7 @@ namespace MergerLogic.DataTypes
         protected TileConvertorFunction ConvertOriginTile;
         protected ValFromCoordFunction ConvertOriginCoord;
 
-        protected Data(IServiceProvider container, DataType type, string path, int batchSize, bool isOneXOne = false, GridOrigin origin = GridOrigin.UPPER_LEFT)
+        protected Data(IServiceProvider container, DataType type, string path, int batchSize, Grid? grid, GridOrigin? origin)
         {
             this.Type = type;
             this.Path = path;
@@ -63,13 +72,13 @@ namespace MergerLogic.DataTypes
             var utilsFactory = container.GetRequiredService<IUtilsFactory>();
             this.Utils = utilsFactory.GetDataUtils<TUtilsType>(path);
             this.GeoUtils = container.GetRequiredService<IGeoUtils>();
-            this.IsOneXOne = isOneXOne;
-            this.Origin = origin;
+            this.Grid = grid is null ? DefaultGrid() : (Grid)grid.Value;
+            this.Origin = origin is null ? DefaultOrigin() : (GridOrigin)origin.Value;
             var loggerFactory = container.GetRequiredService<ILoggerFactory>();
             this._logger = loggerFactory.CreateLogger(this.GetType());
 
             // The following delegates are for code performance and to reduce branching while handling tiles
-            if (isOneXOne)
+            if (this.IsOneXOne)
             {
                 this.OneXOneConvertor = container.GetRequiredService<IOneXOneConvertor>();
                 this.GetLastExistingTile = this.GetLastOneXOneExistingTile;
@@ -102,6 +111,13 @@ namespace MergerLogic.DataTypes
                 this.ConvertOriginTile = tile => tile;
                 this.ConvertOriginCoord = coord => coord.Y;
             }
+        }
+
+        protected abstract GridOrigin DefaultOrigin();
+
+        protected virtual Grid DefaultGrid()
+        {
+            return Grid.TwoXOne;
         }
 
         public abstract void Reset();

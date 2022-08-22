@@ -91,7 +91,8 @@ namespace MergerCli
 
             }
             idx += paramCount;
-            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, isOneXOne, origin, null, isBase);
+            Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
+            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, grid, origin, null, isBase);
         }
 
         private IData ParseGpkgSource(string[] args, ref int idx, int batchSize, bool isBase)
@@ -115,7 +116,8 @@ namespace MergerCli
                 }
             }
             idx += paramCount;
-            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, isOneXOne, origin, extent, isBase);
+            Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
+            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, grid, origin, extent, isBase);
         }
 
         private IData ParseHttpSource(string[] args, ref int idx, int batchSize, bool isBase)
@@ -137,7 +139,8 @@ namespace MergerCli
                 this.ParseOptionalParameters(sourceType, sourcePath, ref isOneXOne, ref origin, optionalParams);
             }
             idx += paramCount;
-            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, isBase, extent, maxZoom, minZoom, isOneXOne, origin);
+            Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
+            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, isBase, extent, maxZoom, minZoom, grid, origin);
         }
 
         private Extent parseExtent(string extentString)

@@ -2,7 +2,6 @@ using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using System.ComponentModel;
 
 namespace MergerService.Controllers
 {
@@ -11,35 +10,26 @@ namespace MergerService.Controllers
         public string Path { get; }
 
         public string Type { get; }
-        
+
         public Extent? Extent { get; }
 
-        [DefaultValue(GridOrigin.UPPER_LEFT)]
-        [JsonProperty(Required = Required.Default, DefaultValueHandling = DefaultValueHandling.Populate, NullValueHandling = NullValueHandling.Ignore)]
-        public GridOrigin Origin { get; }
+        public GridOrigin? Origin { get; }
 
-        [DefaultValue("2x1")]
-        [JsonProperty(Required = Required.Default, DefaultValueHandling = DefaultValueHandling.Populate, NullValueHandling = NullValueHandling.Ignore)]
-        public string Grid { get; }
+        public Grid? Grid { get; }
 
         [System.Text.Json.Serialization.JsonIgnore]
         private JsonSerializerSettings _jsonSerializerSettings;
 
-        public Source(string path, string type, Extent? extent = null, GridOrigin origin = GridOrigin.UPPER_LEFT, string grid = "2x1")
+        public Source(string path, string type, Extent? extent = null, GridOrigin? origin = null, Grid? grid = null)
         {
             this.Path = path;
             this.Type = type;
             this.Extent = extent;
             this.Origin = origin;
-            this.Grid = grid.ToLower();
+            this.Grid = grid;
 
             this._jsonSerializerSettings = new JsonSerializerSettings();
             this._jsonSerializerSettings.Converters.Add(new StringEnumConverter());
-        }
-
-        public bool IsOneXOne()
-        {
-            return this.Grid.ToLower() == "1x1";
         }
 
         public void Print()

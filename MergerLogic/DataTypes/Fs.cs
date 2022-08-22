@@ -18,8 +18,8 @@ namespace MergerLogic.DataTypes
         private readonly IFileSystem _fileSystem;
 
         public FS(IPathUtils pathUtils, IServiceProvider container,
-            string path, int batchSize, bool isOneXOne = false, bool isBase = false, GridOrigin origin = GridOrigin.LOWER_LEFT)
-            : base(container, DataType.FOLDER, path, batchSize, isOneXOne, origin)
+            string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false)
+            : base(container, DataType.FOLDER, path, batchSize, grid, origin)
         {
             this._pathUtils = pathUtils;
             this._fileSystem = container.GetRequiredService<IFileSystem>();
@@ -28,6 +28,11 @@ namespace MergerLogic.DataTypes
                 this._fileSystem.Directory.CreateDirectory(path);
             }
             this.Reset();
+        }
+
+        protected override GridOrigin DefaultOrigin()
+        {
+            return GridOrigin.LOWER_LEFT;
         }
 
         public override void Reset()
