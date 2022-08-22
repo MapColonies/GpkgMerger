@@ -32,7 +32,7 @@ namespace MergerLogic.Utils
                 Content = content
             })
             {
-                httpRes = this._httpClient.Send(req);
+                httpRes = this._httpClient.SendAsync(req).Result;
             }
 
             if (httpRes.StatusCode == HttpStatusCode.NotFound)

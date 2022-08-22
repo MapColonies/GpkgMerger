@@ -24,11 +24,12 @@ data:
   {{ if .Values.env.tracing.enabled }}
   TRACING__enabled: 'true'
   TRACING__url: {{ $tracingUrl }}
-  TRACING__ratio: {{ .Values.env.tracing.ratio }} 
+  TRACING__ratio: {{ .Values.env.tracing.ratio | quote}} 
   {{ end }}
   {{ if .Values.env.metrics.enabled }}
   METRICS__enabled: 'true'
   METRICS__url: {{ $metricsUrl }}
-  METRICS__interval: {{ .Values.env.metrics.interval }}
+  METRICS__interval: {{ .Values.env.metrics.interval | quote}}
   {{ end }}
+  HTTP__retries: {{ .Values.env.HTTP.retries | quote }}
 {{- end -}}

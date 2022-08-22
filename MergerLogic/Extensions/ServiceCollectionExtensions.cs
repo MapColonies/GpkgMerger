@@ -10,6 +10,8 @@ using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Polly;
+using Polly.Extensions.Http;
 using System.Diagnostics;
 using System.IO.Abstractions;
 using System.Reflection;
@@ -92,9 +94,17 @@ namespace MergerLogic.Extensions
 
         public static IServiceCollection RegisterHttp(this IServiceCollection collection)
         {
-            return collection
-                .AddTransient<HttpClient>()
-                .AddTransient<IHttpRequestUtils, HttpRequestUtils>();
+            ConfigurationManager _config = new ConfigurationManager(null);
+            var maxAttempts = _config.GetConfiguration<int>("HTTP", "retries");
+            var retryPolicy = HttpPolicyExtensions.HandleTransientHttpError()
+                .WaitAndRetryAsync(maxAttempts, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)));
+            collection.AddHttpClient("httpClient")
+                .AddPolicyHandler(retryPolicy);
+            collection.AddHttpClient("httpClientWithoutRetry")
+                .AddPolicyHandler(retryPolicy);
+            collection.AddTransient<HttpClient>(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("httpClient"));
+            collection.AddTransient<IHttpRequestUtils, HttpRequestUtils>();
+            return collection;
         }
 
         public static IServiceCollection RegisterOpenTelemetry(this IServiceCollection collection)
