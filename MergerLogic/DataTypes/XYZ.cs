@@ -9,5 +9,10 @@ namespace MergerLogic.DataTypes
             : base(container, DataType.XYZ, path, batchSize, extent, origin, grid, maxZoom, minZoom)
         {
         }
+
+        protected override GridOrigin DefaultOrigin()
+        {
+            return GridOrigin.UPPER_LEFT;
+        }
     }
 }

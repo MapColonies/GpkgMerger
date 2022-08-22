@@ -9,5 +9,10 @@ namespace MergerLogic.DataTypes
             : base(container, DataType.WMTS, path, batchSize, extent, tileGridOrigin, grid, maxZoom, minZoom)
         {
         }
+
+        protected override GridOrigin DefaultOrigin()
+        {
+            return GridOrigin.UPPER_LEFT;
+        }
     }
 }

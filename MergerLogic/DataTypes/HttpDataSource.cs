@@ -15,11 +15,6 @@ namespace MergerLogic.DataTypes
             this.GenTileRanges(extent, this.Origin, minZoom, maxZoom);
         }
 
-        protected override GridOrigin DefaultOrigin()
-        {
-            return GridOrigin.LOWER_LEFT;
-        }
-
         public override bool Exists()
         {
             // there is no reasonable way to validate url template source
