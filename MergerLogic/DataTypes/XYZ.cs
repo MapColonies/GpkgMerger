@@ -10,6 +10,11 @@ namespace MergerLogic.DataTypes
         {
         }
 
+        protected override Grid DefaultGrid()
+        {
+            return Grid.OneXOne;
+        }
+
         protected override GridOrigin DefaultOrigin()
         {
             return GridOrigin.UPPER_LEFT;
