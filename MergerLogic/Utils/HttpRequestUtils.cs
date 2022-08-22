@@ -62,7 +62,7 @@ namespace MergerLogic.Utils
         {
             HttpContent? resBody = GetContent(url, HttpMethod.Get, null, ignoreNotFound);
             var bodyTask = resBody?.ReadAsByteArrayAsync()!;
-            return bodyTask.Result;
+            return bodyTask?.Result;
         }
 
         public string? PostDataString(string url, HttpContent? content, bool ignoreNotFound = false)
