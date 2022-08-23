@@ -6,8 +6,6 @@ namespace MergerService.Utils
     {
         MergeTask? GetTask(string jobType, string taskType);
 
-        public void NotifyOnCompletion(string jobId, string taskId);
-
         public void UpdateProgress(string jobId, string taskId, int progress);
 
         public void UpdateCompletion(string jobId, string taskId);
