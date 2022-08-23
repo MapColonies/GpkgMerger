@@ -33,8 +33,9 @@ namespace MergerLogicUnitTests.Utils
         [TestInitialize]
         public void beforeEach()
         {
-            this._repository = new MockRepository(MockBehavior.Strict);
+            this._repository = new MockRepository(MockBehavior.Loose);
             this._httpMessageHandler = this._repository.Create<HttpMessageHandler>();
+            this._httpMessageHandler.Protected().Setup("Dispose", ItExpr.IsAny<bool>());
             this._httpClientMock = new HttpClient(this._httpMessageHandler.Object);
             this._loggerMock = this._repository.Create<ILogger<IHttpRequestUtils>>(MockBehavior.Loose);
         }
@@ -78,7 +79,7 @@ namespace MergerLogicUnitTests.Utils
                 Assert.ThrowsException<HttpRequestException>(() => reqUtils.GetData(url, ignoreNotFound));
             }
 
-            this._repository.VerifyAll();
+            this.verifyAll();
         }
 
         [TestMethod]
@@ -107,7 +108,7 @@ namespace MergerLogicUnitTests.Utils
                 Assert.ThrowsException<HttpRequestException>(() => reqUtils.GetDataString(url, ignoreNotFound));
             }
 
-            this._repository.VerifyAll();
+            this.verifyAll();
         }
 
         class GenericTestType
@@ -142,7 +143,7 @@ namespace MergerLogicUnitTests.Utils
                     reqUtils.GetData<GenericTestType>(url, ignoreNotFound));
             }
 
-            this._repository.VerifyAll();
+            this.verifyAll();
         }
 
         #endregion
@@ -186,7 +187,7 @@ namespace MergerLogicUnitTests.Utils
                 Assert.ThrowsException<HttpRequestException>(() => reqUtils.PostData(url, content, ignoreNotFound));
             }
 
-            this._repository.VerifyAll();
+            this.verifyAll();
         }
 
         #endregion
@@ -230,7 +231,7 @@ namespace MergerLogicUnitTests.Utils
                 Assert.ThrowsException<HttpRequestException>(() => reqUtils.PutData(url, content, ignoreNotFound));
             }
 
-            this._repository.VerifyAll();
+            this.verifyAll();
         }
 
         #endregion
@@ -268,6 +269,12 @@ namespace MergerLogicUnitTests.Utils
                 {
                     Content = JsonContent.Create(expectedResponse),
                 });
+        }
+
+        private void verifyAll()
+        {
+            this._httpMessageHandler.Protected().Verify("SendAsync", Times.Once(), ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>());
         }
 
         #endregion
