@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text;
 using System.Threading;
 
@@ -44,9 +45,6 @@ namespace MergerLogicUnitTests.Utils
         public enum ErrorType { None, NotFound, GenericError}
 
         #region GetData
-        //byte[]? GetData(string url, bool ignoreNotFound = false);
-        //T? GetData<T>(string url, bool ignoreNotFound = false);
-        //string? GetDataString(string url, bool ignoreNotFound = false);
 
         public static IEnumerable<object[]> GetDataBytesParameters()
         {
@@ -62,7 +60,8 @@ namespace MergerLogicUnitTests.Utils
         public void GetDataBytes(ErrorType errorType,bool ignoreNotFound)
         {
             const string url = "http://testUrl";
-            this.MockSendRequest(HttpMethod.Get, null, url,errorType);
+            const string testData = "test";
+            this.MockSendRequest(HttpMethod.Get, null, url,errorType, testData);
 
             var reqUtils = new HttpRequestUtils(this._httpClientMock, this._loggerMock.Object);
             byte[]? res;
@@ -75,7 +74,7 @@ namespace MergerLogicUnitTests.Utils
                 }
                 else
                 {
-                    CollectionAssert.AreEqual(res,Encoding.UTF8.GetBytes("test"));
+                    CollectionAssert.AreEqual(res,Encoding.UTF8.GetBytes(testData));
                 }
             }
             else
@@ -86,11 +85,76 @@ namespace MergerLogicUnitTests.Utils
             this._repository.VerifyAll();
         }
 
+        [TestMethod]
+        [DynamicData(nameof(GetDataBytesParameters), DynamicDataSourceType.Method)]
+        public void GetDataString(ErrorType errorType, bool ignoreNotFound)
+        {
+            const string url = "http://testUrl";
+            const string testData = "test";
+            this.MockSendRequest(HttpMethod.Get, null, url, errorType, testData);
+
+            var reqUtils = new HttpRequestUtils(this._httpClientMock, this._loggerMock.Object);
+            string? res;
+            if (errorType == ErrorType.None || (errorType == ErrorType.NotFound && ignoreNotFound))
+            {
+                res = reqUtils.GetDataString(url, ignoreNotFound);
+                if (errorType == ErrorType.NotFound && ignoreNotFound)
+                {
+                    Assert.IsNull(res);
+                }
+                else
+                {
+                    Assert.AreEqual(res, testData);
+                }
+            }
+            else
+            {
+                Assert.ThrowsException<HttpRequestException>(() => reqUtils.GetDataString(url, ignoreNotFound));
+            }
+
+            this._repository.VerifyAll();
+        }
+
+        class GenericTestType
+        {
+            public string Message { get; set; }
+        }
+
+        [TestMethod]
+        [DynamicData(nameof(GetDataBytesParameters), DynamicDataSourceType.Method)]
+        public void GetDataGeneric(ErrorType errorType, bool ignoreNotFound)
+        {
+            const string url = "http://testUrl";
+            //const string testData = "{\"Message\":\"test\"}";
+            GenericTestType testData = new GenericTestType() { Message = "test" };
+            this.MockSendRequest(HttpMethod.Get, null, url, errorType, testData);
+
+            var reqUtils = new HttpRequestUtils(this._httpClientMock, this._loggerMock.Object);
+            GenericTestType? res;
+            if (errorType == ErrorType.None || (errorType == ErrorType.NotFound && ignoreNotFound))
+            {
+                res = reqUtils.GetData<GenericTestType>(url, ignoreNotFound);
+                if (errorType == ErrorType.NotFound && ignoreNotFound)
+                {
+                    Assert.IsNull(res);
+                }
+                else
+                {
+                    Assert.AreEqual(res.Message, testData.Message);
+                }
+            }
+            else
+            {
+                Assert.ThrowsException<HttpRequestException>(() => reqUtils.GetData<GenericTestType>(url, ignoreNotFound));
+            }
+
+            this._repository.VerifyAll();
+        }
         #endregion
 
         #region helpers
 
-        private void MockSendRequest(HttpMethod method, HttpContent? content, string url, ErrorType errorType)
+        private void MockSendRequest(HttpMethod method, HttpContent? content, string url, ErrorType errorType,string expectedResponse)
         {
             this._httpMessageHandler.Protected().Setup<HttpResponseMessage>("Send", ItExpr.Is<HttpRequestMessage>(req =>
                 req.Method == method 
@@ -99,7 +163,20 @@ namespace MergerLogicUnitTests.Utils
                 ), ItExpr.IsAny<CancellationToken>())
                 .Returns(new HttpResponseMessage(errorType == ErrorType.None? HttpStatusCode.OK : errorType == ErrorType.NotFound ? HttpStatusCode.NotFound : HttpStatusCode.BadRequest)
                 {
-                    Content = new StringContent("test")
+                    Content = new StringContent(expectedResponse),
+                });
+        }
+
+        private void MockSendRequest<T>(HttpMethod method, HttpContent? content, string url, ErrorType errorType, T expectedResponse)
+        {
+            this._httpMessageHandler.Protected().Setup<HttpResponseMessage>("Send", ItExpr.Is<HttpRequestMessage>(req =>
+                    req.Method == method
+                    && req.Content == content
+                    && req.RequestUri.ToString() == new Uri(url).ToString()
+                ), ItExpr.IsAny<CancellationToken>())
+                .Returns(new HttpResponseMessage(errorType == ErrorType.None ? HttpStatusCode.OK : errorType == ErrorType.NotFound ? HttpStatusCode.NotFound : HttpStatusCode.BadRequest)
+                {
+                    Content =  JsonContent.Create(expectedResponse),
                 });
         }
 

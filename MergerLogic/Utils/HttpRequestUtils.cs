@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using System.Net;
+using System.Net.Http.Headers;
 
 namespace MergerLogic.Utils
 {
@@ -29,7 +30,7 @@ namespace MergerLogic.Utils
             {
                 Method = method,
                 RequestUri = new Uri(url),
-                Content = content
+                Content = content,
             })
             {
                 httpRes = this._httpClient.Send(req);
@@ -90,7 +91,9 @@ namespace MergerLogic.Utils
         {
             HttpContent? content = GetContent(url, HttpMethod.Get, null, ignoreNotFound);
             var bodyTask = content?.ReadAsAsync<T>()!;
-            return bodyTask.Result;
+            return bodyTask == null ? default : bodyTask.Result;
         }
+
+       
     }
 }
