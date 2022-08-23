@@ -291,20 +291,7 @@ namespace MergerLogic.Utils
             }
             return lastTile;
         }
-
-        public void CreateTileIndex()
-        {
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
-            {
-                connection.Open();
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = $"CREATE UNIQUE INDEX IF NOT EXISTS index_tiles on \"{this._tileCache}\" (zoom_level, tile_row, tile_column)";
-                    command.ExecuteNonQuery();
-                }
-            }
-        }
-
+        
         public void Vacuum()
         {
             Stopwatch stopWatch = new Stopwatch();
