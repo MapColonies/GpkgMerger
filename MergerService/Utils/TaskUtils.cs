@@ -66,7 +66,7 @@ namespace MergerService.Utils
             // TODO: add heartbeat stop method
         }
 
-        public void NotifyOnCompletion(string jobId, string taskId)
+        private void NotifyOnStatusChange(string jobId, string taskId)
         {
             using (this._activitySource.StartActivity("notify overseer on task completion"))
             {
@@ -111,6 +111,9 @@ namespace MergerService.Utils
                     Update(jobId, taskId, content);
                 }
             }
+
+            // Update overseer on task completion
+            NotifyOnStatusChange(jobId, taskId);
         }
 
         public void UpdateReject(string jobId, string taskId, int attempts, string reason, bool resettable)
@@ -120,14 +123,14 @@ namespace MergerService.Utils
                 // activity.AddTag("attempts", attempts);
                 // activity.AddTag("resettable", resettable);
 
+                attempts++;
+
                 // Check if the task should actually fail
                 if (!resettable || attempts == this._maxAttempts)
                 {
                     UpdateFailed(jobId, taskId, attempts, reason, resettable);
                     return;
                 }
-
-                attempts++;
 
                 using (var content = new StringContent(JsonConvert.SerializeObject(
                            new { status = Status.PENDING, attempts, reason, resettable },
@@ -145,8 +148,6 @@ namespace MergerService.Utils
             {
                 // activity.AddTag("reason", reason);
 
-                attempts++;
-
                 using (var content = new StringContent(JsonConvert.SerializeObject(
                            new { status = Status.FAILED, attempts, reason, resettable }, this._jsonSerializerSettings)))
                 {
@@ -154,6 +155,9 @@ namespace MergerService.Utils
                     Update(jobId, taskId, content);
                 }
             }
+
+            // Notify overseer on task failure
+            NotifyOnStatusChange(jobId, taskId);
         }
     }
 }
