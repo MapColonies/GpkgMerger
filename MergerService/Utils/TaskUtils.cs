@@ -19,7 +19,8 @@ namespace MergerService.Utils
         private string _overseerUrl;
         private string _jobManagerUrl;
 
-        public TaskUtils(IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<TaskUtils> logger, ActivitySource activitySource)
+        public TaskUtils(IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<TaskUtils> logger,
+            ActivitySource activitySource)
         {
             this._httpClient = httpClient;
             this._configuration = configuration;
@@ -44,7 +45,7 @@ namespace MergerService.Utils
             {
                 string relativeUri = $"tasks/{jobType}/{taskType}/startPending";
                 string url = new Uri(new Uri(_jobManagerUrl), relativeUri).ToString();
-                string? taskData = this._httpClient.PostDataString(url, null);
+                string? taskData = this._httpClient.PostData(url, null);
 
                 if (taskData is null)
                 {
@@ -73,7 +74,7 @@ namespace MergerService.Utils
                 this._logger.LogInformation($"Notifying overseer on completion, job: {jobId}, task: {taskId}");
                 string relativeUri = $"tasks/{jobId}/{taskId}/completed";
                 string url = new Uri(new Uri(_overseerUrl), relativeUri).ToString();
-                _ = this._httpClient.PostDataString(url, null);
+                _ = this._httpClient.PostData(url, null);
             }
         }
 
@@ -81,7 +82,7 @@ namespace MergerService.Utils
         {
             string relativeUri = $"jobs/{jobId}/tasks/{taskId}";
             string url = new Uri(new Uri(_jobManagerUrl), relativeUri).ToString();
-            _ = this._httpClient.PutDataString(url, content);
+            _ = this._httpClient.PutData(url, content);
         }
 
         public void UpdateProgress(string jobId, string taskId, int progress)
@@ -90,10 +91,8 @@ namespace MergerService.Utils
             {
                 // activity.AddTag("progress", progress);
 
-                using (var content = new StringContent(JsonConvert.SerializeObject(new
-                {
-                    percentage = progress
-                }, this._jsonSerializerSettings)))
+                using (var content = new StringContent(JsonConvert.SerializeObject(new { percentage = progress },
+                           this._jsonSerializerSettings)))
                 {
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                     Update(jobId, taskId, content);
@@ -105,11 +104,8 @@ namespace MergerService.Utils
         {
             using (this._activitySource.StartActivity("update task completed"))
             {
-                using (var content = new StringContent(JsonConvert.SerializeObject(new
-                {
-                    percentage = 100,
-                    status = Status.COMPLETED
-                }, this._jsonSerializerSettings)))
+                using (var content = new StringContent(JsonConvert.SerializeObject(
+                           new { percentage = 100, status = Status.COMPLETED }, this._jsonSerializerSettings)))
                 {
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                     Update(jobId, taskId, content);
@@ -133,13 +129,9 @@ namespace MergerService.Utils
 
                 attempts++;
 
-                using (var content = new StringContent(JsonConvert.SerializeObject(new
-                {
-                    status = Status.PENDING,
-                    attempts,
-                    reason,
-                    resettable
-                }, this._jsonSerializerSettings)))
+                using (var content = new StringContent(JsonConvert.SerializeObject(
+                           new { status = Status.PENDING, attempts, reason, resettable },
+                           this._jsonSerializerSettings)))
                 {
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                     Update(jobId, taskId, content);
@@ -155,13 +147,8 @@ namespace MergerService.Utils
 
                 attempts++;
 
-                using (var content = new StringContent(JsonConvert.SerializeObject(new
-                {
-                    status = Status.FAILED,
-                    attempts,
-                    reason,
-                    resettable
-                }, this._jsonSerializerSettings)))
+                using (var content = new StringContent(JsonConvert.SerializeObject(
+                           new { status = Status.FAILED, attempts, reason, resettable }, this._jsonSerializerSettings)))
                 {
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                     Update(jobId, taskId, content);
