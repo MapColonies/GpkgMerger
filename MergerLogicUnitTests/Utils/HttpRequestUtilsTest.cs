@@ -1,5 +1,4 @@
-﻿using MergerLogic.DataTypes;
-using MergerLogic.Utils;
+﻿using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
