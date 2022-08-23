@@ -107,7 +107,8 @@ namespace MergerLogicUnitTests.DataTypes
                     .Returns<int, int, int>((z, x, y) => z == 2);
             }
 
-            var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", 10, isOneXOne, origin);
+            Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
+            var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", 10, grid, origin);
 
             var expected = cords.Z == 2;
             if (useCoords)
@@ -154,7 +155,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._s3UtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
                 .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
 
-            var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", batchSize, false, GridOrigin.UPPER_LEFT);
+            var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", batchSize, Grid.TwoXOne, GridOrigin.UPPER_LEFT);
 
             var cords = new Coord(z, x, y);
             Assert.AreEqual(expectedNull ? null : existingTile, s3Source.GetCorrespondingTile(cords, false));
@@ -236,7 +237,8 @@ namespace MergerLogicUnitTests.DataTypes
                     .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
             }
 
-            var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", 10, isOneXOne, origin);
+            Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
+            var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", 10, grid, origin);
 
             var res = s3Source.GetCorrespondingTile(cords, enableUpscale);
             if (expectedNull)
@@ -348,7 +350,8 @@ namespace MergerLogicUnitTests.DataTypes
                     .Returns<Tile>(tile => tile);
             }
 
-            var fsSource = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", 10, isOneXOne, origin);
+            Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
+            var fsSource = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", 10, grid, origin);
 
             var upscaleCords = new Coord(5, 2, 3);
 
@@ -433,8 +436,8 @@ namespace MergerLogicUnitTests.DataTypes
                 }
             }
 
-
-            var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", 10, isOneXOne, origin);
+            Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
+            var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", 10, grid, origin);
 
             s3Source.UpdateTiles(testTiles);
 
@@ -485,7 +488,8 @@ namespace MergerLogicUnitTests.DataTypes
                 .Setup(s3 => s3.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(res);
 
-            var fsSource = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", 10, isOneXOne, origin);
+            Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
+            var fsSource = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", 10, grid, origin);
 
             Assert.AreEqual(exist, fsSource.Exists());
             this._s3ClientMock.Verify(s3 => s3.ListObjectsV2Async(It.Is<ListObjectsV2Request>(request =>
@@ -531,7 +535,8 @@ namespace MergerLogicUnitTests.DataTypes
                 .Setup(s3 => s3.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ListObjectsV2Response() { KeyCount = tiles });
 
-            var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", 10, isOneXOne, origin);
+            Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
+            var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", 10, grid, origin);
 
             Assert.AreEqual(tileCount, s3Source.TileCount());
 
@@ -563,7 +568,8 @@ namespace MergerLogicUnitTests.DataTypes
                     S3Objects = new List<S3Object>(0)
                 });
 
-            var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", 10, isOneXOne, origin);
+            Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
+            var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", 10, grid, origin);
 
             string testIdentifier = offset.ToString();
             s3Source.setBatchIdentifier(testIdentifier);
@@ -619,7 +625,8 @@ namespace MergerLogicUnitTests.DataTypes
                     .Returns<Tile>(t => t);
             }
 
-            var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", batchSize, isOneXOne, origin);
+            Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
+            var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", batchSize, grid, origin);
 
             s3Source.GetNextBatch(out string batchIdentifier);
             s3Source.GetNextBatch(out batchIdentifier);
@@ -705,7 +712,8 @@ namespace MergerLogicUnitTests.DataTypes
 
             }
 
-            var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", batchSize, isOneXOne, origin);
+            Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
+            var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", batchSize, grid, origin);
 
             var comparer = ComparerFactory.Create<Tile>((t1, t2) => t1?.Z == t2?.Z && t1?.X == t2?.X && t1?.Y == t2?.Y ? 0 : -1);
             for (int i = 0; i < tileBatches.Count; i++)
