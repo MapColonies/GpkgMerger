@@ -6,9 +6,9 @@ namespace MergerLogic.Utils
 
         string? GetDataString(string url, bool ignoreNotFound = false);
 
-        string? PostDataString(string url, HttpContent? content, bool ignoreNotFound = false);
+        string? PostData(string url, HttpContent? content, bool ignoreNotFound = false);
 
-        string? PutDataString(string url, HttpContent? content, bool ignoreNotFound = false);
+        string? PutData(string url, HttpContent? content, bool ignoreNotFound = false);
 
         T? GetData<T>(string url, bool ignoreNotFound = false);
     }
