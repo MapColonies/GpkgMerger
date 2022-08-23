@@ -489,7 +489,6 @@ namespace MergerLogicUnitTests.DataTypes
         {
             this.SetupRequiredBaseMocks(isBase);
             var seq = new MockSequence();
-            this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.CreateTileIndex());
             this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.UpdateTileMatrixTable(isOneXOne));
             this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.CreateTileCacheValidationTriggers());
             this._configurationManagerMock.InSequence(seq)
@@ -508,7 +507,6 @@ namespace MergerLogicUnitTests.DataTypes
                 isBase, extent);
 
             gpkg.Wrapup();
-            this._gpkgUtilsMock.Verify(utils => utils.CreateTileIndex(), Times.Once);
             this._gpkgUtilsMock.Verify(utils => utils.UpdateTileMatrixTable(isOneXOne), Times.Once);
             this._gpkgUtilsMock.Verify(utils => utils.CreateTileCacheValidationTriggers(), Times.Once);
             if (vacuum)

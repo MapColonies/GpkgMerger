@@ -125,41 +125,7 @@ namespace MergerLogicUnitTests.Utils
         }
 
         #endregion
-
-        #region CreateTileIndex
-
-        [TestMethod]
-        [TestCategory("CreateTileIndex")]
-        public void CreateTileIndex()
-        {
-            string path = this.GetGpkgPath();
-            using (var connection = new SQLiteConnection($"Data Source={path}"))
-            {
-                connection.Open();
-                this.SetupConstructorRequiredMocks(connection);
-                this.CreateTestTiles(connection, Array.Empty<Tile>()); //create tile table
-
-                var gpkgUtils = new GpkgUtils(path, this._timeUtilsMock.Object, this._loggerMock.Object,
-                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
-
-                gpkgUtils.CreateTileIndex();
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText =
-                        "SELECT count(*) FROM sqlite_master WHERE type = 'index' " +
-                        "AND tbl_name = 'test' " +
-                        "AND sql LIKE 'CREATE UNIQUE INDEX%'" +
-                        "AND sql LIKE '%zoom_level%'" +
-                        "AND sql LIKE '%tile_row%'" +
-                        "AND sql LIKE '%tile_column%'";
-                    Assert.AreEqual(1l, command.ExecuteScalar());
-                }
-            }
-            this.VerifyAll();
-        }
-
-        #endregion
-
+        
         #region GetBatch
         public static IEnumerable<object[]> GenGetBatchParams()
         {

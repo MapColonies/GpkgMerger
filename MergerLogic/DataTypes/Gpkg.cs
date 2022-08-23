@@ -120,7 +120,6 @@ namespace MergerLogic.DataTypes
 
         public override void Wrapup()
         {
-            this.Utils.CreateTileIndex();
             this.Utils.UpdateTileMatrixTable(this.IsOneXOne);
             this.Utils.CreateTileCacheValidationTriggers();
 
