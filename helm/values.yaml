@@ -61,7 +61,7 @@ rasterCommon:
         tilesSubPath: tiles
         gpkgSubPath: gpkgs
     s3:
-      endpointUrl: localhost:9000"
+      endpointUrl: "localhost:9000"
       tilesBucket: ""
       secretName: "s3-secret"
 
