@@ -69,8 +69,8 @@ namespace MergerCli
             } while (tiles.Count == batchSize);
 
             batchStatusManager.CompleteLayer(newData.Path);
-            baseData.Wrapup();
             newData.Reset();
+            // base data wrap up is in program as the same base data object is used in multiple calls 
         }
 
         public void Validate(IData baseData, IData newData)
