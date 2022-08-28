@@ -17,14 +17,37 @@ namespace MergerLogic.ImageProcessing
 
         public byte[]? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords)
         {
-            var images = this.GetImageList(tiles, targetCoords, out Tile lastProcessedTile);
+            var images = this.GetImageList(tiles, targetCoords, out Tile? lastProcessedTile, out bool singleImage);
+            byte[] data;
             switch (images.Count)
             {
                 case 0:
-                    return null;
+                    // There are no images
+                    if (!singleImage)
+                    {
+                        return null;
+                    }
+
+                    // Otherwise there is one image that wasn't loaded
+                    data = lastProcessedTile!.GetImageBytes();
+                    //check if magic is png
+                    if (data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 &&
+                        data[4] == 0x0D && data[5] == 0x0A
+                        && data[6] == 0x1A && data[7] == 0x0A)
+                    {
+                        return data;
+                    }
+                    return this._imageFormatter.ToPng(data);
                 case 1:
+                    if (images[0].Format != MagickFormat.Png && images[0].Format != MagickFormat.Png8 && images[0].Format != MagickFormat.Png00 &&
+                        images[0].Format != MagickFormat.Png24 && images[0].Format != MagickFormat.Png32 && images[0].Format != MagickFormat.Png48 &&
+                        images[0].Format != MagickFormat.Png64)
+                    {
+                        this._imageFormatter.ToPng(images[0]);
+                    }
+                    data = images[0].ToByteArray();
                     images[0].Dispose();
-                    return lastProcessedTile is not null ? this._imageFormatter.ToPng(lastProcessedTile.GetImageBytes()) : null;
+                    return data;
                 default:
                     using (var imageCollection = new MagickImageCollection())
                     {
@@ -42,47 +65,96 @@ namespace MergerLogic.ImageProcessing
             }
         }
 
-        private List<MagickImage> GetImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords, out Tile lastProcessedTile)
+        private List<MagickImage> GetImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords, out Tile? lastProcessedTile, out bool singleImage)
         {
             var images = new List<MagickImage>();
             lastProcessedTile = null;
-            for (var i = tiles.Count - 1; i >= 0; i--)
+            int i = tiles.Count - 1;
+            Tile? tile = null;
+            for (; i >= 0; i--)
             {
-                MagickImage tileImage = null;
-                try
+                tile = tiles[i]();
+                if (tile != null)
                 {
-                    var tile = tiles[i]();
+                    lastProcessedTile = tile;
+                    i--;
+                    break;
+                }
+            }
+
+            singleImage = false;
+            MagickImage? tileImage = null;
+            try
+            {
+                for (; i >= 0; i--)
+                {
+                    var tile2 = tiles[i]();
+                    if (tile2 == null)
+                    {
+                        continue;
+                    }
+
+                    this.AddTileToImageList(targetCoords, tile, images, ref tileImage);
+                    if (!tileImage!.HasAlpha)
+                    {
+                        singleImage = true;
+                        return images;
+                    }
+
+                    lastProcessedTile = tile2;
+                    this.AddTileToImageList(targetCoords, tile2, images, ref tileImage);
+                    if (!tileImage!.HasAlpha)
+                    {
+                        return images;
+                    }
+                    i--;
+                    break;
+                }
+
+                for (; i >= 0; i--)
+                {
+                    tile = tiles[i]();
                     if (tile == null)
                     {
                         continue;
                     }
+
                     lastProcessedTile = tile;
-                    if (tile.Z > targetCoords.Z)
+                    this.AddTileToImageList(targetCoords, tile, images, ref tileImage);
+                    if (!tileImage!.HasAlpha)
                     {
-                        throw new NotImplementedException("down scaling tiles is not supported");
+                        return images;
                     }
-                    var tileBytes = tile.GetImageBytes();
-                    tileImage = new MagickImage(tileBytes);
-                    if (tile.Z < targetCoords.Z)
-                    {
-                        this._tileScaler.Upscale(tileImage, tile, targetCoords);
-                    }
-                    images.Add(tileImage);
-                    if (!tileImage.HasAlpha)
-                    {
-                        break;
-                    }
-                }
-                catch
-                {
-                    //prevent memory leak in case of any exception while handling images
-                    images.ForEach(image => image.Dispose());
-                    if (tileImage != null)
-                        tileImage.Dispose();
-                    throw;
                 }
             }
+            catch
+            {
+                //prevent memory leak in case of any exception while handling images
+                images.ForEach(image => image.Dispose());
+                if (tileImage != null)
+                    tileImage.Dispose();
+                throw;
+            }
+
+            singleImage = images.Count == 0 && tile != null;
             return images;
+        }
+
+        private void AddTileToImageList(Coord targetCoords, Tile? tile, List<MagickImage> images, ref MagickImage? tileImage)
+        {
+            if (tile!.Z > targetCoords.Z)
+            {
+                throw new NotImplementedException("down scaling tiles is not supported");
+            }
+
+            var tileBytes = tile.GetImageBytes();
+            tileImage = new MagickImage(tileBytes);
+            if (tile.Z < targetCoords.Z)
+            {
+                this._tileScaler.Upscale(tileImage, tile, targetCoords);
+            }
+
+            images.Add(tileImage);
         }
     }
 }
