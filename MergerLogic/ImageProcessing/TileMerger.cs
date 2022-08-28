@@ -71,7 +71,6 @@ namespace MergerLogic.ImageProcessing
             lastProcessedTile = null;
             int i = tiles.Count - 1;
             Tile? tile = null;
-            
 
             singleImage = false;
             MagickImage? tileImage = null;
