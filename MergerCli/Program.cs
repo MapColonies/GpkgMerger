@@ -94,6 +94,7 @@ namespace MergerCli
                         _logger.LogInformation(timeUtils.FormatElapsedTime($"{sources[i].Path} validation time", ts));
                     }
                 }
+                baseData.Wrapup();
             }
             catch (Exception ex)
             {
