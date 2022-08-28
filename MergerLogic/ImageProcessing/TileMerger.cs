@@ -71,21 +71,13 @@ namespace MergerLogic.ImageProcessing
             lastProcessedTile = null;
             int i = tiles.Count - 1;
             Tile? tile = null;
-            for (; i >= 0; i--)
-            {
-                tile = tiles[i]();
-                if (tile != null)
-                {
-                    lastProcessedTile = tile;
-                    i--;
-                    break;
-                }
-            }
+            
 
             singleImage = false;
             MagickImage? tileImage = null;
             try
             {
+                tile = GetFirstTile(tiles, ref lastProcessedTile, ref i);
                 for (; i >= 0; i--)
                 {
                     var tile2 = tiles[i]();
@@ -138,6 +130,22 @@ namespace MergerLogic.ImageProcessing
 
             singleImage = images.Count == 0 && tile != null;
             return images;
+        }
+
+        private Tile? GetFirstTile(List<CorrespondingTileBuilder> tiles, ref Tile? lastProcessedTile, ref int i)
+        {
+            for (; i >= 0; i--)
+            {
+                Tile tile = tiles[i]();
+                if (tile != null)
+                {
+                    lastProcessedTile = tile;
+                    i--;
+                    return tile;
+                }
+            }
+
+            return null;
         }
 
         private void AddTileToImageList(Coord targetCoords, Tile? tile, List<MagickImage> images, ref MagickImage? tileImage)
