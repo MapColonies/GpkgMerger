@@ -26,13 +26,14 @@ namespace MergerLogic.Extensions
             {
                 collection = collection.RegisterServiceProvider();
             }
+
             return collection
                 .RegisterImageProcessors()
                 .RegisterMergerUtils()
                 .RegisterS3()
+                .RegisterHttp() //registering http override logs configuration so it must be registered before the telemetry 
                 .RegisterOpenTelemetry()
-                .RegisterFileSystem()
-                .RegisterHttp();
+                .RegisterFileSystem();
         }
 
         public static IServiceCollection RegisterImageProcessors(this IServiceCollection collection)
