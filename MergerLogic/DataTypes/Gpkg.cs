@@ -1,10 +1,11 @@
 using MergerLogic.Batching;
+using MergerLogic.Clients;
 using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
 
 namespace MergerLogic.DataTypes
 {
-    public class Gpkg : Data<IGpkgUtils>
+    public class Gpkg : Data<IGpkgClient>
     {
         private long _offset;
 

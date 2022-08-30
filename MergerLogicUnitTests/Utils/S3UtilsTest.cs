@@ -1,6 +1,7 @@
 ﻿using Amazon.S3;
 using Amazon.S3.Model;
 using MergerLogic.Batching;
+using MergerLogic.Clients;
 using MergerLogic.DataTypes;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
@@ -92,7 +93,7 @@ namespace MergerLogicUnitTests.Utils
                         .ThrowsAsync(new AggregateException("test"));
                 }
 
-                var s3Utils = new S3Utils(this._s3ClientMock.Object, this._pathUtilsMock.Object,
+                var s3Utils = new S3Client(this._s3ClientMock.Object, this._pathUtilsMock.Object,
                     this._geoUtilsMock.Object, "bucket", "test");
 
                 Tile tile = null;
@@ -168,7 +169,7 @@ namespace MergerLogicUnitTests.Utils
                     .ThrowsAsync(new Amazon.S3.AmazonS3Exception("test"));
             }
 
-            var s3Utils = new S3Utils(this._s3ClientMock.Object, this._pathUtilsMock.Object,
+            var s3Utils = new S3Client(this._s3ClientMock.Object, this._pathUtilsMock.Object,
                 this._geoUtilsMock.Object, "bucket", "test");
 
             Assert.AreEqual(exist, s3Utils.TileExists(0, 0, 0));
@@ -204,7 +205,7 @@ namespace MergerLogicUnitTests.Utils
                     return Task.FromResult(new PutObjectResponse());
                 });
 
-            var s3Utils = new S3Utils(this._s3ClientMock.Object, this._pathUtilsMock.Object,
+            var s3Utils = new S3Client(this._s3ClientMock.Object, this._pathUtilsMock.Object,
                 this._geoUtilsMock.Object, "bucket", "test");
             s3Utils.UpdateTile(new Tile(0, 0, 0, new byte[1]));
 

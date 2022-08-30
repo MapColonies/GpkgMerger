@@ -1,13 +1,14 @@
 ﻿using MergerLogic.Batching;
+using MergerLogic.Utils;
 
-namespace MergerLogic.Utils
+namespace MergerLogic.Clients
 {
-    public class HttpSourceUtils : DataUtils, IHttpSourceUtils
+    public class HttpSourceClient : DataUtils, IHttpSourceClient
     {
         private IHttpRequestUtils _httpClient;
         private IPathPatternUtils _pathPatternUtils;
 
-        public HttpSourceUtils(string path, IHttpRequestUtils httpClient, IPathPatternUtils pathPatternUtils, IGeoUtils geoUtils) : base(path, geoUtils)
+        public HttpSourceClient(string path, IHttpRequestUtils httpClient, IPathPatternUtils pathPatternUtils, IGeoUtils geoUtils) : base(path, geoUtils)
         {
             this._httpClient = httpClient;
             this._pathPatternUtils = pathPatternUtils;

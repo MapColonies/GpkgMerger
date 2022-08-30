@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using System.Net;
 
-namespace MergerLogic.Utils
+namespace MergerLogic.Clients
 {
     public class HttpRequestUtils : IHttpRequestUtils
     {
@@ -58,35 +58,35 @@ namespace MergerLogic.Utils
 
         public byte[]? GetData(string url, bool ignoreNotFound = false)
         {
-            HttpContent? resBody = GetContent(url, HttpMethod.Get, null, ignoreNotFound);
+            HttpContent? resBody = this.GetContent(url, HttpMethod.Get, null, ignoreNotFound);
             var bodyTask = resBody?.ReadAsByteArrayAsync()!;
             return bodyTask?.Result;
         }
 
         public string? PostData(string url, HttpContent? content, bool ignoreNotFound = false)
         {
-            HttpContent? resBody = GetContent(url, HttpMethod.Post, content, ignoreNotFound);
+            HttpContent? resBody = this.GetContent(url, HttpMethod.Post, content, ignoreNotFound);
             var bodyTask = resBody?.ReadAsStringAsync()!.Result;
             return bodyTask;
         }
 
         public string? PutData(string url, HttpContent? content, bool ignoreNotFound = false)
         {
-            HttpContent? resBody = GetContent(url, HttpMethod.Put, content, ignoreNotFound);
+            HttpContent? resBody = this.GetContent(url, HttpMethod.Put, content, ignoreNotFound);
             var bodyTask = resBody?.ReadAsStringAsync()!.Result;
             return bodyTask;
         }
 
         public string? GetDataString(string url, bool ignoreNotFound = false)
         {
-            HttpContent? resBody = GetContent(url, HttpMethod.Get, null, ignoreNotFound);
+            HttpContent? resBody = this.GetContent(url, HttpMethod.Get, null, ignoreNotFound);
             var bodyTask = resBody?.ReadAsStringAsync()!.Result;
             return bodyTask;
         }
 
         public T? GetData<T>(string url, bool ignoreNotFound = false)
         {
-            HttpContent? content = GetContent(url, HttpMethod.Get, null, ignoreNotFound);
+            HttpContent? content = this.GetContent(url, HttpMethod.Get, null, ignoreNotFound);
             var bodyTask = content?.ReadAsAsync<T>()!;
             return bodyTask == null ? default : bodyTask.Result;
         }

@@ -1,15 +1,16 @@
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 using MergerLogic.Extensions;
+using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO.Abstractions;
 using System.Text;
 
-namespace MergerLogic.Utils
+namespace MergerLogic.Clients
 {
-    public class GpkgUtils : DataUtils, IGpkgUtils
+    public class GpkgClient : DataUtils, IGpkgClient
     {
         private readonly string _tileCache;
 
@@ -17,7 +18,7 @@ namespace MergerLogic.Utils
         private readonly ILogger _logger;
         private readonly IFileSystem _fileSystem;
 
-        public GpkgUtils(string path, ITimeUtils timeUtils, ILogger<GpkgUtils> logger, IFileSystem fileSystem, IGeoUtils geoUtils) : base(path, geoUtils)
+        public GpkgClient(string path, ITimeUtils timeUtils, ILogger<GpkgClient> logger, IFileSystem fileSystem, IGeoUtils geoUtils) : base(path, geoUtils)
         {
             this._timeUtils = timeUtils;
             this._logger = logger;

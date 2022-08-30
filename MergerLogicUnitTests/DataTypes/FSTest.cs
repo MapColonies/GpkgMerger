@@ -25,7 +25,7 @@ namespace MergerLogicUnitTests.DataTypes
         private Mock<IServiceProvider> _serviceProviderMock;
         private Mock<IOneXOneConvertor> _oneXOneConvertorMock;
         private Mock<IUtilsFactory> _utilsFactoryMock;
-        private Mock<IFileUtils> _fsUtilsMock;
+        private Mock<IFileClient> _fsUtilsMock;
         private Mock<IGeoUtils> _geoUtilsMock;
         private Mock<IPathUtils> _pathUtilsMock;
         private Mock<ILoggerFactory> _loggerFactoryMock;
@@ -42,7 +42,7 @@ namespace MergerLogicUnitTests.DataTypes
         {
             this._repository = new MockRepository(MockBehavior.Strict);
             this._oneXOneConvertorMock = this._repository.Create<IOneXOneConvertor>();
-            this._fsUtilsMock = this._repository.Create<IFileUtils>();
+            this._fsUtilsMock = this._repository.Create<IFileClient>();
             this._geoUtilsMock = this._repository.Create<IGeoUtils>();
             this._pathUtilsMock = this._repository.Create<IPathUtils>();
             this._directoryMock = this._repository.Create<IDirectory>();
@@ -53,7 +53,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._fileSystemMock.SetupGet(fs => fs.FileInfo).Returns(this._fileInfoFactoryMock.Object);
             this._fileSystemMock.SetupGet(fs => fs.Path).Returns(this._pathMock.Object);
             this._utilsFactoryMock = this._repository.Create<IUtilsFactory>();
-            this._utilsFactoryMock.Setup(factory => factory.GetDataUtils<IFileUtils>(It.IsAny<string>()))
+            this._utilsFactoryMock.Setup(factory => factory.GetDataUtils<IFileClient>(It.IsAny<string>()))
                 .Returns(this._fsUtilsMock.Object);
             this._loggerMock = this._repository.Create<ILogger<FS>>(MockBehavior.Loose);
             this._loggerFactoryMock = this._repository.Create<ILoggerFactory>();

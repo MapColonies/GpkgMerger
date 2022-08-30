@@ -1,9 +1,10 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using MergerLogic.Utils;
 
-namespace MergerLogic.Utils
+namespace MergerLogic.Clients
 {
-    public interface IGpkgUtils : IDataUtils
+    public interface IGpkgClient : IDataUtils
     {
         List<Tile> GetBatch(int batchSize, long offset);
         Extent GetExtent();

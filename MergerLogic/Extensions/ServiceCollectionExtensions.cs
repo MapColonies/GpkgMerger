@@ -1,5 +1,6 @@
 ﻿using Amazon.Runtime;
 using Amazon.S3;
+using MergerLogic.Clients;
 using MergerLogic.ImageProcessing;
 using MergerLogic.Monitoring;
 using MergerLogic.Utils;

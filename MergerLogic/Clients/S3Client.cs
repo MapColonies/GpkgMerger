@@ -2,17 +2,18 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using MergerLogic.Utils;
 
-namespace MergerLogic.Utils
+namespace MergerLogic.Clients
 {
-    public class S3Utils : DataUtils, IS3Utils
+    public class S3Client : DataUtils, IS3Client
     {
         private readonly string _bucket;
 
         private readonly IAmazonS3 _client;
         private readonly IPathUtils _pathUtils;
 
-        public S3Utils(IAmazonS3 client, IPathUtils pathUtils, IGeoUtils geoUtils, string bucket, string path) : base(path, geoUtils)
+        public S3Client(IAmazonS3 client, IPathUtils pathUtils, IGeoUtils geoUtils, string bucket, string path) : base(path, geoUtils)
         {
             this._client = client;
             this._bucket = bucket;

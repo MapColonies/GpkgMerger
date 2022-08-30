@@ -1,12 +1,13 @@
 using Amazon.S3;
 using Amazon.S3.Model;
 using MergerLogic.Batching;
+using MergerLogic.Clients;
 using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
 
 namespace MergerLogic.DataTypes
 {
-    public class S3 : Data<IS3Utils>
+    public class S3 : Data<IS3Client>
     {
         private readonly IAmazonS3 _client;
         private readonly string _bucket;

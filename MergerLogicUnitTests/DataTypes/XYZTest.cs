@@ -1,4 +1,5 @@
 ﻿using MergerLogic.Batching;
+using MergerLogic.Clients;
 using MergerLogic.DataTypes;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
@@ -25,7 +26,7 @@ namespace MergerLogicUnitTests.DataTypes
         private Mock<IServiceProvider> _serviceProviderMock;
         private Mock<IOneXOneConvertor> _oneXOneConvertorMock;
         private Mock<IUtilsFactory> _utilsFactoryMock;
-        private Mock<IHttpSourceUtils> _httpUtilsMock;
+        private Mock<IHttpSourceClient> _httpUtilsMock;
         private Mock<IGeoUtils> _geoUtilsMock;
         private Mock<ILoggerFactory> _loggerFactoryMock;
         private Mock<ILogger<FS>> _loggerMock;
@@ -37,10 +38,10 @@ namespace MergerLogicUnitTests.DataTypes
         {
             this._repository = new MockRepository(MockBehavior.Strict);
             this._oneXOneConvertorMock = this._repository.Create<IOneXOneConvertor>();
-            this._httpUtilsMock = this._repository.Create<IHttpSourceUtils>();
+            this._httpUtilsMock = this._repository.Create<IHttpSourceClient>();
             this._geoUtilsMock = this._repository.Create<IGeoUtils>();
             this._utilsFactoryMock = this._repository.Create<IUtilsFactory>();
-            this._utilsFactoryMock.Setup(factory => factory.GetDataUtils<IHttpSourceUtils>(It.IsAny<string>()))
+            this._utilsFactoryMock.Setup(factory => factory.GetDataUtils<IHttpSourceClient>(It.IsAny<string>()))
                 .Returns(this._httpUtilsMock.Object);
             this._loggerMock = this._repository.Create<ILogger<FS>>(MockBehavior.Loose);
             this._loggerFactoryMock = this._repository.Create<ILoggerFactory>();

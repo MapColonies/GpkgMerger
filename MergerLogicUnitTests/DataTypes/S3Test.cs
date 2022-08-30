@@ -1,6 +1,7 @@
 ﻿using Amazon.S3;
 using Amazon.S3.Model;
 using MergerLogic.Batching;
+using MergerLogic.Clients;
 using MergerLogic.DataTypes;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
@@ -27,7 +28,7 @@ namespace MergerLogicUnitTests.DataTypes
         private Mock<IServiceProvider> _serviceProviderMock;
         private Mock<IOneXOneConvertor> _oneXOneConvertorMock;
         private Mock<IUtilsFactory> _utilsFactoryMock;
-        private Mock<IS3Utils> _s3UtilsMock;
+        private Mock<IS3Client> _s3UtilsMock;
         private Mock<IGeoUtils> _geoUtilsMock;
         private Mock<IPathUtils> _pathUtilsMock;
         private Mock<ILoggerFactory> _loggerFactoryMock;
@@ -41,11 +42,11 @@ namespace MergerLogicUnitTests.DataTypes
         {
             this._repository = new MockRepository(MockBehavior.Strict);
             this._oneXOneConvertorMock = this._repository.Create<IOneXOneConvertor>();
-            this._s3UtilsMock = this._repository.Create<IS3Utils>();
+            this._s3UtilsMock = this._repository.Create<IS3Client>();
             this._geoUtilsMock = this._repository.Create<IGeoUtils>();
             this._pathUtilsMock = this._repository.Create<IPathUtils>();
             this._utilsFactoryMock = this._repository.Create<IUtilsFactory>();
-            this._utilsFactoryMock.Setup(factory => factory.GetDataUtils<IS3Utils>(It.IsAny<string>()))
+            this._utilsFactoryMock.Setup(factory => factory.GetDataUtils<IS3Client>(It.IsAny<string>()))
                 .Returns(this._s3UtilsMock.Object);
             this._loggerMock = this._repository.Create<ILogger<S3>>(MockBehavior.Loose);
             this._loggerFactoryMock = this._repository.Create<ILoggerFactory>();

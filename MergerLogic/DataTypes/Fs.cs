@@ -6,7 +6,7 @@ using System.IO.Abstractions;
 
 namespace MergerLogic.DataTypes
 {
-    public class FS : Data<IFileUtils>
+    public class FS : Data<IFileClient>
     {
         private delegate string TilePathFunction(string path, Tile tile);
 
