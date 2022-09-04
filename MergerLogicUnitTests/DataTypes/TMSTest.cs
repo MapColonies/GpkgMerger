@@ -81,7 +81,7 @@ namespace MergerLogicUnitTests.DataTypes
         {
             this.SetupConstructorRequiredMocks();
             var seq = new MockSequence();
-            if (origin == GridOrigin.LOWER_LEFT)
+            if (origin == GridOrigin.UPPER_LEFT)
             {
                 this._geoUtilsMock
                     .InSequence(seq)
@@ -122,7 +122,7 @@ namespace MergerLogicUnitTests.DataTypes
                     ? Times.Once
                     : Times.Never);
             this._geoUtilsMock.Verify(utils => utils.FlipY(It.Is<Coord>(c => c.Z == cords.Z && c.X == cords.X && c.Y == cords.Y)),
-                    origin == GridOrigin.LOWER_LEFT
+                    origin == GridOrigin.UPPER_LEFT
                         ? Times.Once
                         : Times.Never);
             this._oneXOneConvertorMock.Verify(converter => converter.TryFromTwoXOne(It.Is<Coord>(c => c.Z == cords.Z && c.X == cords.X && c.Y == cords.Y)),
