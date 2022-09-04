@@ -8,11 +8,13 @@ namespace MergerLogic.Utils
     {
         private HttpClient _httpClient;
         private ILogger<IHttpRequestUtils> _logger;
+        private JsonSerializerSettings _LogJsonSerializerSettings;
 
         public HttpRequestUtils(HttpClient httpClient, ILogger<IHttpRequestUtils> logger)
         {
             this._httpClient = httpClient;
             this._logger = logger;
+            this._LogJsonSerializerSettings = new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore };
         }
 
         ~HttpRequestUtils()
@@ -43,14 +45,14 @@ namespace MergerLogic.Utils
 
                 string message = $"{url} not found";
                 this._logger.LogDebug(message);
-                this._logger.LogDebug($"Response: {JsonConvert.SerializeObject(httpRes)}");
+                this._logger.LogTrace($"Response: {JsonConvert.SerializeObject(httpRes, this._LogJsonSerializerSettings)}");
                 throw new HttpRequestException(message, null, HttpStatusCode.NotFound);
             }
             else if (httpRes.StatusCode != HttpStatusCode.OK)
             {
                 string message = $"Invalid response from {url}, status: {httpRes.StatusCode}";
                 this._logger.LogWarning(message);
-                this._logger.LogDebug($"Response: {JsonConvert.SerializeObject(httpRes)}");
+                this._logger.LogDebug($"Response: {JsonConvert.SerializeObject(httpRes, this._LogJsonSerializerSettings)}");
                 throw new HttpRequestException(message, null, httpRes.StatusCode);
             }
 
