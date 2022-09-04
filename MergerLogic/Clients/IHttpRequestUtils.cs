@@ -1,4 +1,4 @@
-namespace MergerLogic.Utils
+namespace MergerLogic.Clients
 {
     public interface IHttpRequestUtils
     {

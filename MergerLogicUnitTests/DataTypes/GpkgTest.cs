@@ -1,4 +1,5 @@
 ﻿using MergerLogic.Batching;
+using MergerLogic.Clients;
 using MergerLogic.DataTypes;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
@@ -24,7 +25,7 @@ namespace MergerLogicUnitTests.DataTypes
         private Mock<IServiceProvider> _serviceProviderMock;
         private Mock<IOneXOneConvertor> _oneXOneConvertorMock;
         private Mock<IUtilsFactory> _utilsFactoryMock;
-        private Mock<IGpkgUtils> _gpkgUtilsMock;
+        private Mock<IGpkgClient> _gpkgUtilsMock;
         private Mock<IGeoUtils> _geoUtilsMock;
         private Mock<ILoggerFactory> _loggerFactoryMock;
         private Mock<ILogger<Gpkg>> _loggerMock;
@@ -37,10 +38,10 @@ namespace MergerLogicUnitTests.DataTypes
             this._repository = new MockRepository(MockBehavior.Strict);
             this._configurationManagerMock = this._repository.Create<IConfigurationManager>();
             this._oneXOneConvertorMock = this._repository.Create<IOneXOneConvertor>();
-            this._gpkgUtilsMock = this._repository.Create<IGpkgUtils>();
+            this._gpkgUtilsMock = this._repository.Create<IGpkgClient>();
             this._geoUtilsMock = this._repository.Create<IGeoUtils>();
             this._utilsFactoryMock = this._repository.Create<IUtilsFactory>();
-            this._utilsFactoryMock.Setup(factory => factory.GetDataUtils<IGpkgUtils>(It.IsAny<string>()))
+            this._utilsFactoryMock.Setup(factory => factory.GetDataUtils<IGpkgClient>(It.IsAny<string>()))
                 .Returns(this._gpkgUtilsMock.Object);
             this._loggerMock = this._repository.Create<ILogger<Gpkg>>(MockBehavior.Loose);
             this._loggerFactoryMock = this._repository.Create<ILoggerFactory>();

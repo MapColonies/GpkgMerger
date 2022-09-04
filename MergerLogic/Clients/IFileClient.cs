@@ -1,6 +1,6 @@
 ﻿namespace MergerLogic.Utils
 {
-    public interface IFileUtils : IDataUtils
+    public interface IFileClient : IDataUtils
     {
     }
 }

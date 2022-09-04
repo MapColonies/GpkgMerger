@@ -1,4 +1,5 @@
-﻿using MergerLogic.DataTypes;
+﻿using MergerLogic.Clients;
+using MergerLogic.DataTypes;
 using MergerLogic.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -45,7 +46,7 @@ namespace MergerLogicUnitTests.Utils
             this._httpRequestUtilsMock.Setup(util => util.GetData("testPath", true))
                 .Returns(returnsNull ? null : data);
 
-            var httpSourceUtils = new HttpSourceUtils("http://testPath", this._httpRequestUtilsMock.Object,
+            var httpSourceUtils = new HttpSourceClient("http://testPath", this._httpRequestUtilsMock.Object,
                 this._pathPatternUtilsMock.Object, this._geoUtilsMock.Object);
 
             var res = useCoords ? httpSourceUtils.GetTile(cords) : httpSourceUtils.GetTile(cords.Z, cords.X, cords.Y);
@@ -80,7 +81,7 @@ namespace MergerLogicUnitTests.Utils
             this._httpRequestUtilsMock.Setup(util => util.GetData("testPath", true))
                 .Returns(exist ? data : null);
 
-            var httpSourceUtils = new HttpSourceUtils("http://testPath", this._httpRequestUtilsMock.Object,
+            var httpSourceUtils = new HttpSourceClient("http://testPath", this._httpRequestUtilsMock.Object,
                 this._pathPatternUtilsMock.Object, this._geoUtilsMock.Object);
 
             var res = httpSourceUtils.TileExists(cords.Z, cords.X, cords.Y);

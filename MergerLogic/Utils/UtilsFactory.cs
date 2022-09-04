@@ -2,7 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.IO.Abstractions;
-
+using MergerLogic.Clients;
+ 
 namespace MergerLogic.Utils
 {
     public class UtilsFactory : IUtilsFactory
@@ -26,24 +27,24 @@ namespace MergerLogic.Utils
 
         #region dataUtils
 
-        public IFileUtils GetFileUtils(string path)
+        public IFileClient GetFileUtils(string path)
         {
-            return new FileUtils(path, this._pathUtils, this._geoUtils, this._fileSystem);
+            return new FileClient(path, this._pathUtils, this._geoUtils, this._fileSystem);
         }
 
-        public IGpkgUtils GetGpkgUtils(string path)
+        public IGpkgClient GetGpkgUtils(string path)
         {
-            var logger = this._container.GetRequiredService<ILogger<GpkgUtils>>();
-            return new GpkgUtils(path, this._timeUtils, logger, this._fileSystem, this._geoUtils);
+            var logger = this._container.GetRequiredService<ILogger<GpkgClient>>();
+            return new GpkgClient(path, this._timeUtils, logger, this._fileSystem, this._geoUtils);
         }
 
-        public IHttpSourceUtils GetHttpUtils(string path)
+        public IHttpSourceClient GetHttpUtils(string path)
         {
             IPathPatternUtils pathPatternUtils = this.GetPathPatternUtils(path);
-            return new HttpSourceUtils(path, this._httpRequestUtils, pathPatternUtils, this._geoUtils);
+            return new HttpSourceClient(path, this._httpRequestUtils, pathPatternUtils, this._geoUtils);
         }
 
-        public IS3Utils GetS3Utils(string path)
+        public IS3Client GetS3Utils(string path)
         {
             string bucket = this._container.GetRequiredService<IConfigurationManager>().GetConfiguration("S3", "bucket");
             IAmazonS3? client = this._container.GetService<IAmazonS3>();
@@ -52,24 +53,24 @@ namespace MergerLogic.Utils
                 throw new Exception("S3 Data utils requires s3 client to be configured");
             }
 
-            return new S3Utils(client, this._pathUtils, this._geoUtils, bucket, path);
+            return new S3Client(client, this._pathUtils, this._geoUtils, bucket, path);
         }
 
         public T GetDataUtils<T>(string path) where T : IDataUtils
         {
-            if (typeof(IFileUtils).IsAssignableFrom(typeof(T)))
+            if (typeof(IFileClient).IsAssignableFrom(typeof(T)))
             {
                 return (T)(Object)this.GetFileUtils(path);
             }
-            if (typeof(IGpkgUtils).IsAssignableFrom(typeof(T)))
+            if (typeof(IGpkgClient).IsAssignableFrom(typeof(T)))
             {
                 return (T)(Object)this.GetGpkgUtils(path);
             }
-            if (typeof(IHttpSourceUtils).IsAssignableFrom(typeof(T)))
+            if (typeof(IHttpSourceClient).IsAssignableFrom(typeof(T)))
             {
                 return (T)(Object)this.GetHttpUtils(path);
             }
-            if (typeof(IS3Utils).IsAssignableFrom(typeof(T)))
+            if (typeof(IS3Client).IsAssignableFrom(typeof(T)))
             {
                 return (T)(Object)this.GetS3Utils(path);
             }
