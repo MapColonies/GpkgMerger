@@ -94,7 +94,7 @@ namespace MergerLogic.DataTypes
                 this.ToCurrentGrid = tile => tile;
             }
             this.GetTile = this.GetTileInitializer;
-            if (this.Origin == GridOrigin.LOWER_LEFT)
+            if (this.Origin == GridOrigin.UPPER_LEFT)
             {
                 this.ConvertOriginTile = tile =>
                 {

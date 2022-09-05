@@ -86,7 +86,7 @@ namespace MergerLogicUnitTests.DataTypes
         public void TileExists(Coord cords, bool isOneXOne, GridOrigin origin, bool useCoords)
         {
             var seq = new MockSequence();
-            if (origin == GridOrigin.LOWER_LEFT)
+            if (origin == GridOrigin.UPPER_LEFT)
             {
                 this._geoUtilsMock
                     .InSequence(seq)
@@ -126,7 +126,7 @@ namespace MergerLogicUnitTests.DataTypes
                     ? Times.Once
                     : Times.Never);
             this._geoUtilsMock.Verify(utils => utils.FlipY(It.Is<Coord>(c => c.Z == cords.Z && c.X == cords.X && c.Y == cords.Y)),
-                    origin == GridOrigin.LOWER_LEFT
+                    origin == GridOrigin.UPPER_LEFT
                         ? Times.Once
                         : Times.Never);
             this._oneXOneConvertorMock.Verify(converter => converter.TryFromTwoXOne(It.Is<Coord>(c => c.Z == cords.Z && c.X == cords.X && c.Y == cords.Y)),
@@ -413,7 +413,7 @@ namespace MergerLogicUnitTests.DataTypes
             var seq = new MockSequence();
             foreach (var tile in testTiles)
             {
-                if (origin == GridOrigin.LOWER_LEFT)
+                if (origin == GridOrigin.UPPER_LEFT)
                 {
                     this._geoUtilsMock
                         .InSequence(seq)
@@ -447,7 +447,7 @@ namespace MergerLogicUnitTests.DataTypes
             var tileComparer = EqualityComparerFactory.Create<Tile>(tileEqualFunc);
             foreach (var tile in testTiles)
             {
-                if (origin == GridOrigin.LOWER_LEFT)
+                if (origin == GridOrigin.UPPER_LEFT)
                 {
                     this._geoUtilsMock.Verify(utils => utils.FlipY(It.Is<Tile>(tile, tileComparer)), Times.Once);
                 }
@@ -613,7 +613,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._s3UtilsMock
                 .Setup(utils => utils.GetTile(It.IsAny<string>()))
                 .Returns(new Tile(0, 0, 0, Array.Empty<byte>()));
-            if (origin != GridOrigin.UPPER_LEFT)
+            if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock
                     .Setup(utils => utils.FlipY(It.IsAny<Tile>()))
@@ -702,7 +702,7 @@ namespace MergerLogicUnitTests.DataTypes
                         .Returns<Tile>(tile => tile.Z != 0 ? tile : null);
                 }
 
-                if (origin == GridOrigin.LOWER_LEFT && (!isOneXOne || tile.Z != 0))
+                if (origin == GridOrigin.UPPER_LEFT && (!isOneXOne || tile.Z != 0))
                 {
                     this._geoUtilsMock
                         .InSequence(seq)
@@ -747,7 +747,7 @@ namespace MergerLogicUnitTests.DataTypes
                             utils.GetTile($"{tile.Z}/{tile.X}/{tile.Y}.png"));
                     }
 
-                    if (origin == GridOrigin.LOWER_LEFT && (!isOneXOne || tile.Z != 0))
+                    if (origin == GridOrigin.UPPER_LEFT && (!isOneXOne || tile.Z != 0))
                     {
                         this._geoUtilsMock.Verify(converter => converter.FlipY(tile), Times.Once);
                     }
