@@ -159,7 +159,7 @@ namespace MergerLogicUnitTests.DataTypes
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
                 this._serviceProviderMock.Object, "test.gpkg", batchSize, Grid.TwoXOne,
-                GridOrigin.UPPER_LEFT, isBase, extent);
+                GridOrigin.LOWER_LEFT, isBase, extent);
 
             var cords = new Coord(z, x, y);
             Assert.AreEqual(expectedNull ? null : existingTile, gpkg.GetCorrespondingTile(cords, false));
@@ -208,7 +208,7 @@ namespace MergerLogicUnitTests.DataTypes
             Tile nullTile = null;
             var existingTile = new Tile(2, 2, 3, new byte[] { });
             var sequence = new MockSequence();
-            if (origin != GridOrigin.UPPER_LEFT)
+            if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock
                     .InSequence(sequence)
@@ -261,7 +261,7 @@ namespace MergerLogicUnitTests.DataTypes
                 Assert.IsTrue(res.Z == 2 && res.X == 2 && res.Y == 3);
             }
 
-            if (origin != GridOrigin.UPPER_LEFT)
+            if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock.Verify(utils => utils.FlipY(cords.Z, cords.Y), Times.Once);
             }
@@ -316,7 +316,7 @@ namespace MergerLogicUnitTests.DataTypes
             var tile = new Tile(2, 2, 3, new byte[] { });
             var sequence = new MockSequence();
 
-            if (origin != GridOrigin.UPPER_LEFT)
+            if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock
                     .InSequence(sequence)
@@ -370,7 +370,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             var expectedTile = isValidConversion ? tile : null;
             Assert.AreEqual(expectedTile, gpkg.GetCorrespondingTile(upscaleCords, true));
-            if (origin != GridOrigin.UPPER_LEFT)
+            if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock.Verify(utils => utils.FlipY(5, 3), Times.Once);
             }

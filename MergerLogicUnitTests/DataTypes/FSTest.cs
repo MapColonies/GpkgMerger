@@ -167,7 +167,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._fsUtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
                 .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
 
-            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", batchSize, Grid.TwoXOne, GridOrigin.UPPER_LEFT, isBase);
+            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", batchSize, Grid.TwoXOne, GridOrigin.LOWER_LEFT, isBase);
 
             var cords = new Coord(z, x, y);
             Assert.AreEqual(expectedNull ? null : existingTile, fsSource.GetCorrespondingTile(cords, false));
@@ -216,7 +216,7 @@ namespace MergerLogicUnitTests.DataTypes
             Tile nullTile = null;
             var existingTile = new Tile(2, 2, 3, new byte[] { });
             var sequence = new MockSequence();
-            if (origin != GridOrigin.UPPER_LEFT)
+            if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock
                     .InSequence(sequence)
@@ -266,7 +266,7 @@ namespace MergerLogicUnitTests.DataTypes
                 Assert.IsTrue(res.Z == 2 && res.X == 2 && res.Y == 3);
             }
 
-            if (origin != GridOrigin.UPPER_LEFT)
+            if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock.Verify(utils => utils.FlipY(cords.Z, cords.Y), Times.Once);
             }
@@ -321,7 +321,7 @@ namespace MergerLogicUnitTests.DataTypes
             var tile = new Tile(2, 2, 3, new byte[] { });
             var sequence = new MockSequence();
 
-            if (origin != GridOrigin.UPPER_LEFT)
+            if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock
                     .InSequence(sequence)
@@ -376,7 +376,7 @@ namespace MergerLogicUnitTests.DataTypes
             var expectedTile = isValidConversion ? tile : null;
             var expectedCallsAfterConversion = isValidConversion ? Times.Once() : Times.Never();
             Assert.AreEqual(expectedTile, fsSource.GetCorrespondingTile(upscaleCords, true));
-            if (origin != GridOrigin.UPPER_LEFT)
+            if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock.Verify(utils => utils.FlipY(5, 3), Times.Once);
             }

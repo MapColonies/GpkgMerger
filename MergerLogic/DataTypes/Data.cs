@@ -192,7 +192,7 @@ namespace MergerLogic.DataTypes
         protected Tile? GetTileInitializer(int z, int x, int y)
         {
             GetTileFromXYZFunction fixedGridGetTileFunction = this.IsOneXOne ? this.GetOneXOneTile : this.Utils.GetTile;
-            if (this.Origin == GridOrigin.LOWER_LEFT)
+            if (this.Origin != GridOrigin.LOWER_LEFT)
             {
                 this.GetTile = (z, x, y) =>
                 {
