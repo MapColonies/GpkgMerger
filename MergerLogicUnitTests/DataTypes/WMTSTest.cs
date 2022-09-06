@@ -153,7 +153,7 @@ namespace MergerLogicUnitTests.DataTypes
                 .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
-            var wmtsSource = new WMTS(this._serviceProviderMock.Object, "test", batchSize, extent, Grid.TwoXOne, GridOrigin.UPPER_LEFT, 21, 0);
+            var wmtsSource = new WMTS(this._serviceProviderMock.Object, "test", batchSize, extent, Grid.TwoXOne, GridOrigin.LOWER_LEFT, 21, 0);
 
             var cords = new Coord(z, x, y);
             Assert.AreEqual(expectedNull ? null : existingTile, wmtsSource.GetCorrespondingTile(cords, false));
@@ -200,7 +200,7 @@ namespace MergerLogicUnitTests.DataTypes
             Tile nullTile = null;
             var existingTile = new Tile(2, 2, 3, new byte[] { });
             var sequence = new MockSequence();
-            if (origin != GridOrigin.UPPER_LEFT)
+            if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock
                     .InSequence(sequence)
@@ -251,7 +251,7 @@ namespace MergerLogicUnitTests.DataTypes
                 Assert.IsTrue(res.Z == 2 && res.X == 2 && res.Y == 3);
             }
 
-            if (origin != GridOrigin.UPPER_LEFT)
+            if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock.Verify(utils => utils.FlipY(cords.Z, cords.Y), Times.Once);
             }
@@ -305,7 +305,7 @@ namespace MergerLogicUnitTests.DataTypes
             var tile = new Tile(2, 2, 3, new byte[] { });
             var sequence = new MockSequence();
 
-            if (origin != GridOrigin.UPPER_LEFT)
+            if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock
                     .InSequence(sequence)
@@ -361,7 +361,7 @@ namespace MergerLogicUnitTests.DataTypes
             var expectedTile = isValidConversion ? tile : null;
             var expectedCallsAfterConversion = isValidConversion ? Times.Once() : Times.Never();
             Assert.AreEqual(expectedTile, wmtsSource.GetCorrespondingTile(upscaleCords, true));
-            if (origin != GridOrigin.UPPER_LEFT)
+            if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock.Verify(utils => utils.FlipY(5, 3), Times.Once);
             }
@@ -552,7 +552,7 @@ namespace MergerLogicUnitTests.DataTypes
                 .Setup(utils => utils.ExtentToTileRange(It.IsAny<Extent>(), It.IsAny<int>(), It.IsAny<GridOrigin>()))
                 .Returns<Extent, int, GridOrigin>((extent, zoom, origin) => new TileBounds(zoom, 0, 1, 0, 1));
 
-            if (origin != GridOrigin.UPPER_LEFT)
+            if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock
                     .Setup(utils => utils.FlipY(It.IsAny<int>(), It.IsAny<int>()))
@@ -632,7 +632,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             for (int i = 0; i < tiles.Length; i++)
             {
-                if (origin != GridOrigin.UPPER_LEFT)
+                if (origin != GridOrigin.LOWER_LEFT)
                 {
                     this._geoUtilsMock
                         .InSequence(seq)
@@ -686,7 +686,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             for (int i = 0; i < tiles.Length; i++)
             {
-                if (origin != GridOrigin.UPPER_LEFT)
+                if (origin != GridOrigin.LOWER_LEFT)
                 {
                     this._geoUtilsMock.Verify(converter => converter.FlipY(i, 0), Times.Once);
                 }
@@ -714,7 +714,7 @@ namespace MergerLogicUnitTests.DataTypes
                 utils => utils.ExtentToTileRange(It.IsAny<Extent>(), It.IsAny<int>(), It.IsAny<GridOrigin>()),
                 Times.Exactly(maxZoom - minZoom + 1));
 
-            if (origin != GridOrigin.UPPER_LEFT)
+            if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock.Verify(converter => converter.FlipY(It.IsAny<int>(), It.IsAny<int>()),
                     Times.Exactly(tiles.Length));
