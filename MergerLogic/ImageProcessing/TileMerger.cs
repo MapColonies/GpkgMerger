@@ -54,10 +54,14 @@ namespace MergerLogic.ImageProcessing
                         for (var i = images.Count - 1; i >= 0; i--)
                         {
                             imageCollection.Add(images[i]);
-                        }
+                        } 
                         using (var mergedImage = imageCollection.Flatten())
+                        //using (var mergedImage = imageCollection.Merge())
+                        //using (var mergedImage = imageCollection.Combine())
+                        //using (var mergedImage = imageCollection.Mosaic())
                         {
                             this._imageFormatter.ToPng(mergedImage);
+                            //mergedImage.HasAlpha = true;
                             var mergedImageBytes = mergedImage.ToByteArray();
                             return mergedImageBytes;
                         }
