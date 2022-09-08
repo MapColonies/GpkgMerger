@@ -32,8 +32,7 @@ namespace MergerLogic.ImageProcessing
                     data = lastProcessedTile!.GetImageBytes();
                     //check if magic is png
                     if (data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 &&
-                        data[4] == 0x0D && data[5] == 0x0A
-                        && data[6] == 0x1A && data[7] == 0x0A)
+                        data[4] == 0x0D && data[5] == 0x0A && data[6] == 0x1A && data[7] == 0x0A)
                     {
                         return data;
                     }
@@ -41,9 +40,8 @@ namespace MergerLogic.ImageProcessing
                     return this._imageFormatter.ToPng(data);
                 case 1:
                     if (images[0].Format != MagickFormat.Png && images[0].Format != MagickFormat.Png8 &&
-                        images[0].Format != MagickFormat.Png00 &&
-                        images[0].Format != MagickFormat.Png24 && images[0].Format != MagickFormat.Png32 &&
-                        images[0].Format != MagickFormat.Png48 &&
+                        images[0].Format != MagickFormat.Png00 && images[0].Format != MagickFormat.Png24 &&
+                        images[0].Format != MagickFormat.Png32 && images[0].Format != MagickFormat.Png48 &&
                         images[0].Format != MagickFormat.Png64)
                     {
                         this._imageFormatter.ToPng(images[0]);
