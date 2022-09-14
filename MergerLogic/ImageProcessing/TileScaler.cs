@@ -6,8 +6,7 @@ namespace MergerLogic.ImageProcessing
 {
     public class TileScaler : ITileScaler
     {
-        private const int TILE_WIDTH = 256;
-        private const int TILE_HEIGHT = 256;
+        private const int TILE_SIZE = 256;
 
         public MagickImage Upscale(MagickImage baseImage, Tile baseTile, Coord targetCoords)
         {
@@ -16,44 +15,66 @@ namespace MergerLogic.ImageProcessing
 
             //find source pixels range
             double tilePartX = targetCoords.X % scale;
-            double tilePartY = targetCoords.Y % scale;
-            double tileSize = TILE_HEIGHT / (double)scale;
+            double tilePartY = scale - 1 - (targetCoords.Y % scale);// flip direction as tiles are LL and pixels are UL
+            double subTileSize = TILE_SIZE / (double)scale;
 
-            int pixelX = (int)(tilePartX * tileSize);
-            int pixelY = (int)(tilePartY * tileSize);
-            int srcSize = Math.Max((int)tileSize, 1);
-            int maxSrcX = pixelX + srcSize;
-            int maxSrcY = pixelY + srcSize;
+            int pixelX = (int)(tilePartX * subTileSize);
+            int pixelY = (int)(tilePartY * subTileSize);
+            int srcSize = Math.Max((int)subTileSize, 1);
 
-            //prepare pixels data 
-            var scaledImage = new MagickImage(MagickColor.FromRgba(0, 0, 0, 0), TILE_WIDTH, TILE_HEIGHT);
-            scaledImage.HasAlpha = baseImage.HasAlpha;
             var srcPixels = baseImage.GetPixels();
-            var targetPixels = scaledImage.GetPixels();
-            int byteCount = 4 * scale * scale;
-            var pixels = new byte[byteCount];
-
-            //loop relevant source pixels
-            for (int i = pixelX; i < maxSrcX; i++)
+            MagickImage scaledImage;
+            var colorSpace = baseImage.ColorSpace;
+            var colorType = baseImage.ColorType;
+            baseImage.ColorType = baseImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor; 
+            baseImage.ColorSpace = ColorSpace.sRGB;
+            if (scale >= 256)
             {
-                for (int j = pixelY; j < maxSrcY; j++)
-                {
-                    var srcPixel = srcPixels.GetValue(i, j);
-                    //copy only opaque pixels
-                    if (srcPixel![3] != 0)
-                    {
-                        //create new pixel data by duplicating source pixel data
-                        for (int k = 0; k < byteCount; k += 4)
-                        {
-                            srcPixel!.CopyTo(pixels, k); //copy all 4 channels 
-                        }
+                var color = srcPixels.GetPixel(pixelX, pixelY).ToColor()!;
+                scaledImage = new MagickImage(color,TILE_SIZE,TILE_SIZE);
+            }
+            else
+            {
+                int maxSrcX = pixelX + srcSize;
+                int maxSrcY = pixelY + srcSize;
 
-                        //update target pixels
-                        targetPixels.SetArea((i - pixelX) * scale, (j - pixelY) * scale, scale, scale, pixels);
+                int channels = baseImage.ChannelCount;
+                int byteCount = channels * TILE_SIZE * TILE_SIZE;
+                var pixels = new byte[byteCount];
+
+                int scaledChannels = scale * channels;
+                int maxl = TILE_SIZE * scaledChannels;
+                int lIncrement = TILE_SIZE * channels;
+
+                //loop relevant source pixels
+                for (int i = pixelX; i < maxSrcX; i++)
+                {
+                    for (int j = pixelY; j < maxSrcY; j++)
+                    {
+                        var srcPixel = srcPixels.GetValue(i, j);
+                        var targetXStart = (i - pixelX) * scale;
+                        var targetYStart = (j - pixelY) * scale;
+                        var targetPixelIdxStart = (targetXStart + (TILE_SIZE * targetYStart)) * channels;
+                        for (int k = 0; k < scaledChannels; k += channels)
+                        {
+                            for (int l = 0; l < maxl; l += lIncrement)
+                            {
+                                int pixelIdx = targetPixelIdxStart + k + l;
+                                srcPixel!.CopyTo(pixels, pixelIdx); //copy all channels 
+                            }
+                        }
                     }
                 }
+
+                var set = new PixelReadSettings(TILE_SIZE, TILE_SIZE, StorageType.Char,
+                    channels == 4 ? PixelMapping.RGBA : PixelMapping.RGB);
+                scaledImage = new MagickImage(pixels, set);
             }
 
+            scaledImage.Format = baseImage.Format;
+            scaledImage.HasAlpha = baseImage.HasAlpha;
+            scaledImage.ColorType = colorType;
+            scaledImage.ColorSpace = colorSpace;
             return scaledImage;
         }
     }

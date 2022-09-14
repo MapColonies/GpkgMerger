@@ -58,9 +58,11 @@ namespace MergerLogic.ImageProcessing
                             imageCollection.Add(images[i]);
                         }
 
-                        using (var mergedImage = imageCollection.Flatten())
+                        using (var mergedImage = imageCollection.Flatten(MagickColor.FromRgba(0, 0, 0, 0)))
                         {
                             this._imageFormatter.ToPng(mergedImage);
+                            mergedImage.ColorSpace = ColorSpace.sRGB;
+                            mergedImage.ColorType = mergedImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor;
                             var mergedImageBytes = mergedImage.ToByteArray();
                             return mergedImageBytes;
                         }
