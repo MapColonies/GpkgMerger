@@ -126,7 +126,7 @@ namespace MergerLogic.DataTypes
         {
             int z = coords.Z;
             int baseTileX = coords.X;
-            int baseTileY = coords.Y;
+            int baseTileY = this.ConvertOriginCoord(coords); //dont forget to use the correct origin when overriding this
 
             Tile? lastTile = null;
 

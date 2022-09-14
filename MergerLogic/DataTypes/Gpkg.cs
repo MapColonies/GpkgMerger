@@ -96,7 +96,7 @@ namespace MergerLogic.DataTypes
 
             int z = baseCoords.Z;
             int baseTileX = baseCoords.X;
-            int baseTileY = baseCoords.Y;
+            int baseTileY = this.ConvertOriginCoord(baseCoords);
             int arrayIterator = 0;
             for (int i = z - 1; i >= 0; i--)
             {

@@ -337,6 +337,13 @@ namespace MergerLogicUnitTests.DataTypes
                     .Setup(utils => utils.GetTile(5, 2, 3))
                     .Returns(nullTile);
             }
+            if (origin != GridOrigin.LOWER_LEFT)
+            {
+                this._geoUtilsMock
+                    .InSequence(sequence)
+                    .Setup(utils => utils.FlipY(It.Is<Coord>(c => c.Z == 5 && c.X == 2 && c.Y == 3)))
+                    .Returns<Coord>(c => c.Y);
+            }
 
             for (int i = 0; i < 5; i++)
             {
