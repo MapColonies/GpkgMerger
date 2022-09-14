@@ -74,6 +74,16 @@ namespace MergerCli
             return sources;
         }
 
+        private Grid? GetGrid(bool? isOneXOne)
+        {
+            if (isOneXOne is not null)
+            {
+                return (bool)isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
+            }
+
+            return null;
+        }
+
         private IData ParseFileSource(string[] args, ref int idx, int batchSize, bool isBase)
         {
             const int requiredParamCount = 2;
@@ -81,7 +91,7 @@ namespace MergerCli
             int paramCount = this.ValidateAndGetSourceLength(args, idx, requiredParamCount, optionalParamCount);
             string sourceType = args[idx];
             string sourcePath = args[idx + 1];
-            bool isOneXOne = false;
+            bool? isOneXOne = null;
             GridOrigin? origin = null;
             if (paramCount > requiredParamCount)
             {
@@ -91,7 +101,7 @@ namespace MergerCli
 
             }
             idx += paramCount;
-            Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
+            Grid? grid = GetGrid(isOneXOne);
             return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, grid, origin, null, isBase);
         }
 
@@ -102,7 +112,7 @@ namespace MergerCli
             int paramCount = this.ValidateAndGetSourceLength(args, idx, requiredParamCount, optionalParamCount);
             string sourceType = args[idx];
             string sourcePath = args[idx + 1];
-            bool isOneXOne = false;
+            bool? isOneXOne = null;
             GridOrigin? origin = null;
             Extent? extent = null; // this set extent for base gpkg
             if (paramCount > requiredParamCount)
@@ -116,7 +126,7 @@ namespace MergerCli
                 }
             }
             idx += paramCount;
-            Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
+            Grid? grid = GetGrid(isOneXOne);
             return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, grid, origin, extent, isBase);
         }
 
@@ -130,7 +140,7 @@ namespace MergerCli
             Extent extent = this.parseExtent(args[idx + 2]);
             int minZoom = int.Parse(args[idx + 3]);
             int maxZoom = int.Parse(args[idx + 4]);
-            bool isOneXOne = false;
+            bool? isOneXOne = null;
             GridOrigin? origin = null;
             if (paramCount > requiredParamCount)
             {
@@ -139,7 +149,7 @@ namespace MergerCli
                 this.ParseOptionalParameters(sourceType, sourcePath, ref isOneXOne, ref origin, optionalParams);
             }
             idx += paramCount;
-            Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
+            Grid? grid = GetGrid(isOneXOne);
             return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, isBase, extent, maxZoom, minZoom, grid, origin);
         }
 
@@ -156,7 +166,7 @@ namespace MergerCli
             return extent;
         }
 
-        private int ParseOptionalParameters(string sourceType, string sourcePath, ref bool isOneXOne, ref GridOrigin? origin, string[] optionalParams)
+        private int ParseOptionalParameters(string sourceType, string sourcePath, ref bool? isOneXOne, ref GridOrigin? origin, string[] optionalParams)
         {
             int parsed = 0;
             if (optionalParams.Contains("--1x1"))
