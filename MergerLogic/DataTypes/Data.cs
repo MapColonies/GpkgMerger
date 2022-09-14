@@ -34,6 +34,8 @@ namespace MergerLogic.DataTypes
 
     public abstract class Data<TUtilsType> : IData where TUtilsType : IDataUtils
     {
+        protected readonly int MaxZoomRead = 30;
+
         protected delegate int ValFromCoordFunction(Coord coord);
         protected delegate Tile? GetTileFromXYZFunction(int z, int x, int y);
         protected delegate Coord? GetCoordFromCoordFunction(Coord coord);

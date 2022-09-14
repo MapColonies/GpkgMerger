@@ -20,7 +20,7 @@ namespace MergerLogic.Clients
             this._pathUtils = pathUtils;
         }
 
-        private byte[] GetImageBytes(string key)
+        private byte[]? GetImageBytes(string key)
         {
             try
             {
@@ -50,7 +50,7 @@ namespace MergerLogic.Clients
             }
         }
 
-        public override Tile GetTile(int z, int x, int y)
+        public override Tile? GetTile(int z, int x, int y)
         {
             string key = this._pathUtils.GetTilePath(this.path, z, x, y, true);
             byte[]? imageBytes = this.GetImageBytes(key);
@@ -61,7 +61,7 @@ namespace MergerLogic.Clients
             return new Tile(z, x, y, imageBytes);
         }
 
-        public Tile GetTile(string key)
+        public Tile? GetTile(string key)
         {
             Coord coords = this._pathUtils.FromPath(key, true);
             byte[]? imageBytes = this.GetImageBytes(key);

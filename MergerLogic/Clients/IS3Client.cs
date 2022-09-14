@@ -6,6 +6,6 @@ namespace MergerLogic.Clients
     public interface IS3Client : IDataUtils
     {
         void UpdateTile(Tile tile);
-        Tile GetTile(string key);
+        Tile? GetTile(string key);
     }
 }

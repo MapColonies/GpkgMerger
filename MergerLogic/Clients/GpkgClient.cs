@@ -217,7 +217,7 @@ namespace MergerLogic.Clients
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT zoom_level, tile_column, tile_row, tile_data FROM \"{this._tileCache}\" limit $limit offset $offset";
+                    command.CommandText = $"SELECT zoom_level, tile_column, tile_row, tile_data FROM \"{this._tileCache}\" ORDER BY zoom_level ASC limit $limit offset $offset";
                     command.Parameters.AddWithValue("$limit", batchSize);
                     command.Parameters.AddWithValue("$offset", offset);
 
@@ -292,7 +292,7 @@ namespace MergerLogic.Clients
             }
             return lastTile;
         }
-        
+
         public void Vacuum()
         {
             Stopwatch stopWatch = new Stopwatch();
