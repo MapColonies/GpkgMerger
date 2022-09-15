@@ -47,7 +47,7 @@ namespace MergerLogic.DataTypes
 
         private IEnumerator<int> GetZoomLevels()
         {
-            for (int zoomLevel = 0; zoomLevel < this.MaxZoomRead; zoomLevel++)
+            for (int zoomLevel = 0; zoomLevel < Data<IS3Client>.MaxZoomRead; zoomLevel++)
             {
                 if (this.FolderExists($"{zoomLevel}/"))
                 {
@@ -70,7 +70,7 @@ namespace MergerLogic.DataTypes
                 }
 
                 string path = $"{this.Path}/{this._zoomLevels.Current}";
-                
+
                 var listRequests = new ListObjectsV2Request
                 {
                     BucketName = this._bucket,
@@ -113,11 +113,11 @@ namespace MergerLogic.DataTypes
         {
             this._continuationToken = batchIdentifier;
         }
-        
+
         private bool FolderExists(string directory)
         {
             directory = $"{this.Path}/{directory}";
-            
+
             var listRequests = new ListObjectsV2Request
             {
                 BucketName = this._bucket,
