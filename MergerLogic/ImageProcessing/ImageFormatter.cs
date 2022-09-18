@@ -1,25 +1,27 @@
 ﻿using ImageMagick;
 using MergerLogic.Batching;
+using System.Runtime.Serialization;
 
 namespace MergerLogic.ImageProcessing
 {
     public enum TileFormat
     {
-        Png,
-        Jpeg,
+        [EnumMember(Value = "png")] Png,
+        [EnumMember(Value = "jpeg")] Jpeg,
     }
+
     public class ImageFormatter : IImageFormatter
     {
         public Tile CovertToFormat(Tile tile, TileFormat format)
         {
             var tileData = tile.GetImageBytes();
-            var currentFormat = this.getTileFormat(tileData);
+            var currentFormat = this.GetTileFormat(tileData);
             if (currentFormat != format)
             {
                 using (var image = new MagickImage(tileData))
                 {
-                    this.CovertToFormat(image,format);
-                    return new Tile(tile.Z,tile.X,tile.Y,image.ToByteArray());
+                    this.CovertToFormat(image, format);
+                    return new Tile(tile.Z, tile.X, tile.Y, image.ToByteArray());
                 }
             }
 
@@ -28,7 +30,7 @@ namespace MergerLogic.ImageProcessing
 
         public byte[] CovertToFormat(byte[] tile, TileFormat format)
         {
-            var currentFormat = this.getTileFormat(tile);
+            var currentFormat = this.GetTileFormat(tile);
             if (currentFormat != format)
             {
                 using (var image = new MagickImage(tile))
@@ -54,7 +56,7 @@ namespace MergerLogic.ImageProcessing
             }
         }
 
-        private TileFormat? getTileFormat(byte[] tile)
+        public TileFormat? GetTileFormat(byte[] tile)
         {
             //files magic values: https://en.wikipedia.org/wiki/List_of_file_signatures
 
@@ -83,8 +85,8 @@ namespace MergerLogic.ImageProcessing
             {
                 return TileFormat.Jpeg;
             }
-            
-            
+
+
             return null;
         }
     }

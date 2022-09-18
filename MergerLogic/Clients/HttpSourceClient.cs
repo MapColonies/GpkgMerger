@@ -8,7 +8,8 @@ namespace MergerLogic.Clients
         private IHttpRequestUtils _httpClient;
         private IPathPatternUtils _pathPatternUtils;
 
-        public HttpSourceClient(string path, IHttpRequestUtils httpClient, IPathPatternUtils pathPatternUtils, IGeoUtils geoUtils) : base(path, geoUtils)
+        public HttpSourceClient(string path, IHttpRequestUtils httpClient, IPathPatternUtils pathPatternUtils,
+            IGeoUtils geoUtils) : base(path, geoUtils, null)
         {
             this._httpClient = httpClient;
             this._pathPatternUtils = pathPatternUtils;
@@ -22,6 +23,7 @@ namespace MergerLogic.Clients
             {
                 return null;
             }
+
             return new Tile(z, x, y, data);
         }
 

@@ -29,8 +29,10 @@ namespace MergerService.Src
         private readonly string _filePath;
         private readonly bool _shouldValidate;
 
-        public Run(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, IConfigurationManager configurationManager,
-            ILogger<Run> logger, ILogger<MergeTask> mergeTaskLogger, ILogger<TaskUtils> taskUtilsLogger, ActivitySource activitySource,
+        public Run(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils,
+            IConfigurationManager configurationManager,
+            ILogger<Run> logger, ILogger<MergeTask> mergeTaskLogger, ILogger<TaskUtils> taskUtilsLogger,
+            ActivitySource activitySource,
             ITaskUtils taskUtils, IHttpRequestUtils requestUtils, IFileSystem fileSystem)
         {
             this._dataFactory = dataFactory;
@@ -83,7 +85,8 @@ namespace MergerService.Src
                 if (paths.Length != 0)
                 {
                     string path = BuildPath(paths[0], true);
-                    sources.Add(this._dataFactory.CreateDataSource(paths[0].Type, path, batchSize, paths[0].Grid, paths[0].Origin, paths[0].Extent, true));
+                    sources.Add(this._dataFactory.CreateDataSource(paths[0].Type, path, batchSize, paths[0].Grid,
+                        paths[0].Origin, paths[0].Extent, true));
                     foreach (Source source in paths.Skip(1))
                     {
                         // TODO: add support for HTTP
@@ -125,7 +128,8 @@ namespace MergerService.Src
                 throw new Exception(message);
             }
 
-            ITaskUtils taskUtils = new TaskUtils(this._configurationManager, this._requestUtils, this._taskUtilsLogger, this._activitySource);
+            ITaskUtils taskUtils = new TaskUtils(this._configurationManager, this._requestUtils, this._taskUtilsLogger,
+                this._activitySource);
 
             this._logger.LogInformation("starting task polling loop");
             while (true)
@@ -144,11 +148,13 @@ namespace MergerService.Src
                     }
                     catch (Exception e)
                     {
-                        if (e is HttpRequestException && ((HttpRequestException)e).StatusCode == HttpStatusCode.NotFound)
+                        if (e is HttpRequestException &&
+                            ((HttpRequestException)e).StatusCode == HttpStatusCode.NotFound)
                         {
                             this._logger.LogDebug("No task was found to work on...");
                             continue;
                         }
+
                         this._logger.LogError($"Error in MergerService start - get task: {e.Message}");
                         continue;
                     }
@@ -165,7 +171,8 @@ namespace MergerService.Src
                     }
                     catch (Exception e)
                     {
-                        this._logger.LogError($"Error in MergerService while running task {task.Id}, error: {e.Message}");
+                        this._logger.LogError(
+                            $"Error in MergerService while running task {task.Id}, error: {e.Message}");
 
                         try
                         {
@@ -173,8 +180,10 @@ namespace MergerService.Src
                         }
                         catch (Exception innerError)
                         {
-                            this._logger.LogError($"Error in MergerService while updating reject status, RunTask catch block - update task failure: {innerError.Message}");
+                            this._logger.LogError(
+                                $"Error in MergerService while updating reject status, RunTask catch block - update task failure: {innerError.Message}");
                         }
+
                         continue;
                     }
 
@@ -213,8 +222,10 @@ namespace MergerService.Src
                 }
                 catch (Exception e)
                 {
-                    this._logger.LogError($"Error in MergerService run - update task failure on invalid parameters: {e.Message}");
+                    this._logger.LogError(
+                        $"Error in MergerService run - update task failure on invalid parameters: {e.Message}");
                 }
+
                 return;
             }
 
@@ -278,7 +289,8 @@ namespace MergerService.Src
                                             () => source.GetCorrespondingTile(coord, true));
                                     }
 
-                                    byte[]? blob = this._tileMerger.MergeTiles(correspondingTileBuilders, coord);
+                                    byte[]? blob = this._tileMerger.MergeTiles(correspondingTileBuilders, coord,
+                                        metadata.TargetFormat);
 
                                     if (blob != null)
                                     {
@@ -290,7 +302,8 @@ namespace MergerService.Src
                                     // Show progress every 1000 tiles
                                     if (tileProgressCount % 1000 == 0)
                                     {
-                                        this._logger.LogDebug($"Job: {task.JobId}, Task: {task.Id}, Tile Count: {tileProgressCount} / {totalTileCount}");
+                                        this._logger.LogDebug(
+                                            $"Job: {task.JobId}, Task: {task.Id}, Tile Count: {tileProgressCount} / {totalTileCount}");
 
                                         try
                                         {
@@ -299,7 +312,8 @@ namespace MergerService.Src
                                         }
                                         catch (Exception e)
                                         {
-                                            this._logger.LogError($"Error in MergerService run - update task percentage: {e.Message}");
+                                            this._logger.LogError(
+                                                $"Error in MergerService run - update task percentage: {e.Message}");
                                         }
                                     }
                                 }
@@ -337,11 +351,13 @@ namespace MergerService.Src
                                 {
                                     try
                                     {
-                                        taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, "Error in validation, target not valid after run", true);
+                                        taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts,
+                                            "Error in validation, target not valid after run", true);
                                     }
                                     catch (Exception innerError)
                                     {
-                                        this._logger.LogError($"Error in MergerService run - update task failure after validation failure: {innerError.Message}");
+                                        this._logger.LogError(
+                                            $"Error in MergerService run - update task failure after validation failure: {innerError.Message}");
                                     }
                                 }
                             }
@@ -359,7 +375,6 @@ namespace MergerService.Src
                     }
                 }
             }
-
         }
 
         private bool Validate(IData target, TileBounds bounds)

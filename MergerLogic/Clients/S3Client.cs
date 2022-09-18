@@ -2,6 +2,7 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 
 namespace MergerLogic.Clients
@@ -13,7 +14,8 @@ namespace MergerLogic.Clients
         private readonly IAmazonS3 _client;
         private readonly IPathUtils _pathUtils;
 
-        public S3Client(IAmazonS3 client, IPathUtils pathUtils, IGeoUtils geoUtils, string bucket, string path) : base(path, geoUtils)
+        public S3Client(IAmazonS3 client, IPathUtils pathUtils, IGeoUtils geoUtils, IImageFormatter formatter,
+            string bucket, string path) : base(path, geoUtils, formatter)
         {
             this._client = client;
             this._bucket = bucket;
@@ -24,11 +26,7 @@ namespace MergerLogic.Clients
         {
             try
             {
-                var request = new GetObjectRequest()
-                {
-                    BucketName = this._bucket,
-                    Key = key
-                };
+                var request = new GetObjectRequest() { BucketName = this._bucket, Key = key };
                 var getObjectTask = this._client.GetObjectAsync(request);
                 GetObjectResponse res = getObjectTask.Result;
 
@@ -39,6 +37,7 @@ namespace MergerLogic.Clients
                     {
                         responseStream.CopyTo(ms);
                     }
+
                     image = ms.ToArray();
                 }
 
@@ -52,56 +51,40 @@ namespace MergerLogic.Clients
 
         public override Tile GetTile(int z, int x, int y)
         {
-            string key = this._pathUtils.GetTilePath(this.path, z, x, y, true);
-            byte[]? imageBytes = this.GetImageBytes(key);
-            if (imageBytes == null)
+            string key = this.GetTileKey(z, x, y);
+            if (key == null)
             {
                 return null;
             }
-            return new Tile(z, x, y, imageBytes);
+
+            byte[]? imageBytes = this.GetImageBytes(key);
+            return this.createTile(z, x, y, imageBytes);
         }
 
         public Tile GetTile(string key)
         {
-            Coord coords = this._pathUtils.FromPath(key, true);
+            Coord coords = this._pathUtils.FromPath(key, out TileFormat format, true);
             byte[]? imageBytes = this.GetImageBytes(key);
             if (imageBytes == null)
             {
                 return null;
             }
-            return new Tile(coords, imageBytes);
+
+            return new Tile(coords, imageBytes, format);
         }
 
         public override bool TileExists(int z, int x, int y)
         {
-            string key = this._pathUtils.GetTilePath(this.path, z, x, y, true);
-            var request = new GetObjectMetadataRequest()
-            {
-                BucketName = this._bucket,
-                Key = key
-            };
-
-            try
-            {
-                var task = this._client.GetObjectMetadataAsync(request);
-                _ = task.Result;
-                return true;
-            }
-            catch (AggregateException e)
-            {
-                return false;
-            }
+            return this.GetTileKey(z, x, y) != null;
         }
 
         public void UpdateTile(Tile tile)
         {
-            string key = this._pathUtils.GetTilePath(this.path, tile.Z, tile.X, tile.Y, true);
+            string key = this._pathUtils.GetTilePath(this.path, tile, true);
 
             var request = new PutObjectRequest()
             {
-                BucketName = this._bucket,
-                CannedACL = S3CannedACL.PublicRead,
-                Key = String.Format(key)
+                BucketName = this._bucket, CannedACL = S3CannedACL.PublicRead, Key = String.Format(key)
             };
 
             byte[] buffer = tile.GetImageBytes();
@@ -111,6 +94,15 @@ namespace MergerLogic.Clients
                 var task = this._client.PutObjectAsync(request);
                 var res = task.Result;
             }
+        }
+
+        private string? GetTileKey(int z, int x, int y)
+        {
+            string keyPrefix = this._pathUtils.GetTilePathWithoutExtension(this.path, z, x, y, true);
+            var listRequests = new ListObjectsV2Request { BucketName = this._bucket, Prefix = keyPrefix, MaxKeys = 1 };
+
+            var listObjectsTask = this._client.ListObjectsV2Async(listRequests);
+            return listObjectsTask.Result.S3Objects.FirstOrDefault()?.Key;
         }
     }
 }

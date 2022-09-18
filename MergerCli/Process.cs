@@ -10,13 +10,15 @@ namespace MergerCli
     {
         private readonly ITileMerger _tileMerger;
         private readonly ILogger _logger;
+
         public Process(ITileMerger tileMerger, ILogger<Process> logger)
         {
             this._tileMerger = tileMerger;
             this._logger = logger;
         }
 
-        public void Start(IData baseData, IData newData, int batchSize, BatchStatusManager batchStatusManager)
+        public void Start(TileFormat format, IData baseData, IData newData, int batchSize,
+            BatchStatusManager batchStatusManager)
         {
             batchStatusManager.InitilaizeLayer(newData.Path);
             List<Tile> tiles = new List<Tile>(batchSize);
@@ -48,11 +50,10 @@ namespace MergerCli
                     var targetCoords = newTile.GetCoord();
                     List<CorrespondingTileBuilder> correspondingTileBuilders = new List<CorrespondingTileBuilder>()
                     {
-                        () => baseData.GetCorrespondingTile(targetCoords,true),
-                        () => newTile
+                        () => baseData.GetCorrespondingTile(targetCoords, true), () => newTile
                     };
 
-                    byte[]? image = this._tileMerger.MergeTiles(correspondingTileBuilders, targetCoords);
+                    byte[]? image = this._tileMerger.MergeTiles(correspondingTileBuilders, targetCoords, format);
 
                     if (image != null)
                     {
@@ -65,7 +66,6 @@ namespace MergerCli
 
                 tileProgressCount += tiles.Count;
                 this._logger.LogInformation($"Tile Count: {tileProgressCount} / {totalTileCount}");
-
             } while (tiles.Count == batchSize);
 
             batchStatusManager.CompleteLayer(newData.Path);
@@ -107,13 +107,11 @@ namespace MergerCli
                 tilesChecked += newTiles.Count;
                 this._logger.LogInformation($"Total tiles checked: {tilesChecked}/{totalTileCount}");
                 hasSameTiles = newTileCount == baseMatchCount;
-
             } while (hasSameTiles && newTiles.Count > 0);
 
             newData.Reset();
 
             this._logger.LogInformation($"Target's valid: {hasSameTiles}");
         }
-
     }
 }
