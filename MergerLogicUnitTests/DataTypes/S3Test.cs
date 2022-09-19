@@ -86,6 +86,8 @@ namespace MergerLogicUnitTests.DataTypes
         public void TileExists(Coord cords, bool isOneXOne, GridOrigin origin, bool useCoords)
         {
             var seq = new MockSequence();
+            this.SetupConstructorRequiredMocks(seq);
+
             if (origin == GridOrigin.UPPER_LEFT)
             {
                 this._geoUtilsMock
@@ -109,7 +111,8 @@ namespace MergerLogicUnitTests.DataTypes
             }
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", 10, grid, origin);
+            var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", 10, grid, origin); 
+            this.VerifyConstructorRequiredMocks();
 
             var expected = cords.Z == 2;
             if (useCoords)
@@ -121,6 +124,7 @@ namespace MergerLogicUnitTests.DataTypes
                 var tile = new Tile(cords, new byte[] { });
                 Assert.AreEqual(expected, s3Source.TileExists(tile));
             }
+
             this._s3UtilsMock.Verify(util => util.TileExists(cords.Z, cords.X, cords.Y),
                 cords.Z != 0 || !isOneXOne
                     ? Times.Once
@@ -153,6 +157,8 @@ namespace MergerLogicUnitTests.DataTypes
         {
             Tile nullTile = null;
             var existingTile = new Tile(2, 2, 3, new byte[] { });
+            this.SetupConstructorRequiredMocks();
+
             this._s3UtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
                 .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
 
@@ -201,6 +207,8 @@ namespace MergerLogicUnitTests.DataTypes
             Tile nullTile = null;
             var existingTile = new Tile(2, 2, 3, new byte[] { });
             var sequence = new MockSequence();
+            this.SetupConstructorRequiredMocks(sequence);
+
             if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock
@@ -302,6 +310,7 @@ namespace MergerLogicUnitTests.DataTypes
             Tile nullTile = null;
             var tile = new Tile(2, 2, 3, new byte[] { });
             var sequence = new MockSequence();
+            this.SetupConstructorRequiredMocks(sequence);
 
             if (origin != GridOrigin.LOWER_LEFT)
             {
@@ -418,6 +427,8 @@ namespace MergerLogicUnitTests.DataTypes
                 new Tile(2, 2, 3, new byte[] { })
             };
             var seq = new MockSequence();
+            this.SetupConstructorRequiredMocks(seq);
+
             foreach (var tile in testTiles)
             {
                 if (origin == GridOrigin.UPPER_LEFT)
@@ -502,9 +513,9 @@ namespace MergerLogicUnitTests.DataTypes
             Assert.AreEqual(exist, fsSource.Exists());
             this._s3ClientMock.Verify(s3 => s3.ListObjectsV2Async(It.Is<ListObjectsV2Request>(request =>
                 request.BucketName == "bucket" &&
-                request.Prefix == "test" &&
+                request.Prefix == "test/" &&
                 request.MaxKeys == 1 &&
-                request.StartAfter == "test"), It.IsAny<CancellationToken>()), Times.Once);
+                request.StartAfter == "test/"), It.IsAny<CancellationToken>()), Times.Once);
             this.VerifyAll();
         }
 
@@ -529,6 +540,8 @@ namespace MergerLogicUnitTests.DataTypes
             var seq = new MockSequence();
             int token = 0;
             int tiles = tileCount;
+            this.SetupConstructorRequiredMocks(seq);
+
             while (tiles > 1000)
             {
                 this._s3ClientMock
@@ -670,59 +683,152 @@ namespace MergerLogicUnitTests.DataTypes
                 new Tile(2, 2, 2, new byte[] { }), new Tile(3, 3, 3, new byte[] { }),
             };
             var tileBatches = tiles.Chunk(batchSize).ToList();
+            var tileZoomCounts = tiles.GroupBy(n => n.Z).Select(g => (g.Key, g.Count())).OrderBy(z => z.Key);
+            List<int> requestSizes = new List<int>();
+            for (int reqSize = batchSize;
+                 reqSize > 0 && batchSize - reqSize < tiles.Length;
+                 reqSize -= s3ResponseTiles)
+            {
+                requestSizes.Add(reqSize);
+            }
             var tileIdx = 0;
             int batchId = 0;
+            
             var seq = new MockSequence();
-            this._s3ClientMock
-                .Setup(s3 =>
-                    s3.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), It.IsAny<CancellationToken>()))
-                .Returns<ListObjectsV2Request, CancellationToken>((req, _) =>
-                {
-                    int remaining = tiles.Length - tileIdx;
-                    int keys = new int[] { req.MaxKeys, s3ResponseTiles, remaining }.Min();
-                    bool done = keys == remaining;
-                    var res = new ListObjectsV2Response()
-                    {
-                        KeyCount = keys,
-                        NextContinuationToken = done ? null : batchId.ToString(),
-                        IsTruncated = !done,
-                        S3Objects = tiles.Skip(tileIdx).Take(keys)
-                            .Select(t => new S3Object() { Key = $"{t.Z}/{t.X}/{t.Y}.png" }).ToList()
-                    };
-                    tileIdx += keys;
-                    batchId++;
-                    return Task.FromResult(res);
-                });
+            this.SetupConstructorRequiredMocks(seq);
 
-            foreach (var tile in tiles)
+            int countRequests = 0;
+            int remainder = 0;
+            int currentTile = 0;
+            foreach (var group in tileZoomCounts)
             {
-                this._s3UtilsMock
+                int zoomCount = group.Item2;
+                while (zoomCount >= s3ResponseTiles + remainder)
+                {
+                    zoomCount -= s3ResponseTiles;
+                    remainder = 0;
+                    countRequests++;
+                    
+                    this._s3ClientMock
                     .InSequence(seq)
-                    .Setup(utils => utils.GetTile(It.IsAny<string>()))
-                    .Returns<string>(key => tiles[int.Parse(key[..1])]);
+                    .Setup(s3 =>
+                        s3.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), It.IsAny<CancellationToken>()))
+                    .Returns<ListObjectsV2Request, CancellationToken>((req, _) =>
+                    {
+                        int remaining = tiles.Length - tileIdx;
+                        int keys = new int[] { req.MaxKeys, s3ResponseTiles, remaining }.Min();
+                        bool done = keys == remaining;
+                        var res = new ListObjectsV2Response()
+                        {
+                            KeyCount = keys,
+                            NextContinuationToken = done ? null : batchId.ToString(),
+                            IsTruncated = !done,
+                            S3Objects = tiles.Skip(tileIdx).Take(keys)
+                                .Select(t => new S3Object() { Key = $"{t.Z}/{t.X}/{t.Y}.png" }).ToList()
+                        };
+                        tileIdx += keys;
+                        batchId++;
+                        return Task.FromResult(res);
+                    });
 
-                if (isOneXOne)
+                for (int j = 0; j < s3ResponseTiles; j++)
                 {
-                    this._oneXOneConvertorMock
+                    currentTile++;
+                    
+                    this._s3UtilsMock
                         .InSequence(seq)
-                        .Setup(converter => converter.TryToTwoXOne(It.IsAny<Tile>()))
-                        .Returns<Tile>(tile => tile.Z != 0 ? tile : null);
+                        .Setup(utils => utils.GetTile(It.IsAny<string>()))
+                        .Returns<string>(key => tiles[int.Parse(key[..1])]);
+
+                    if (isOneXOne)
+                    {
+                        this._oneXOneConvertorMock
+                            .InSequence(seq)
+                            .Setup(converter => converter.TryToTwoXOne(It.IsAny<Tile>()))
+                            .Returns<Tile>(tile => tile.Z != 0 ? tile : null);
+                    }
+
+                    if (origin == GridOrigin.UPPER_LEFT && (!isOneXOne || tiles[currentTile]?.Z != 0))
+                    {
+                        this._geoUtilsMock
+                            .InSequence(seq)
+                            .Setup(converter => converter.FlipY(It.IsAny<Tile>()))
+                            .Returns<Tile>(t => t.Y);
+                    }
+                }
                 }
 
-                if (origin == GridOrigin.UPPER_LEFT && (!isOneXOne || tile.Z != 0))
-                {
-                    this._geoUtilsMock
-                        .InSequence(seq)
-                        .Setup(converter => converter.FlipY(It.IsAny<Tile>()))
-                        .Returns<Tile>(t => t.Y);
-                }
-
-
+                remainder += zoomCount;
             }
+
+            if (remainder > 0)
+            {
+                countRequests++;
+            }
+
+            // for (int i = 0; i < countRequests; i++)
+            // {
+                this._s3ClientMock
+                    .InSequence(seq)
+                    .Setup(s3 =>
+                        s3.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), It.IsAny<CancellationToken>()))
+                    .Returns<ListObjectsV2Request, CancellationToken>((req, _) =>
+                    {
+                        int remaining = tiles.Length - tileIdx;
+                        int keys = new int[] { req.MaxKeys, s3ResponseTiles, remaining }.Min();
+                        bool done = keys == remaining;
+                        var res = new ListObjectsV2Response()
+                        {
+                            KeyCount = keys,
+                            NextContinuationToken = done ? null : batchId.ToString(),
+                            IsTruncated = !done,
+                            S3Objects = tiles.Skip(tileIdx).Take(keys)
+                                .Select(t => new S3Object() { Key = $"{t.Z}/{t.X}/{t.Y}.png" }).ToList()
+                        };
+                        tileIdx += keys;
+                        batchId++;
+                        return Task.FromResult(res);
+                    });
+
+                for (int j = 0; j < remainder; j++)
+                {
+                    currentTile++;
+                    this._s3UtilsMock
+                        .InSequence(seq)
+                        .Setup(utils => utils.GetTile(It.IsAny<string>()))
+                        .Returns<string>(key => tiles[int.Parse(key[..1])]);
+
+                    if (isOneXOne)
+                    {
+                        this._oneXOneConvertorMock
+                            .InSequence(seq)
+                            .Setup(converter => converter.TryToTwoXOne(It.IsAny<Tile>()))
+                            .Returns<Tile>(tile => tile.Z != 0 ? tile : null);
+                    }
+
+                    if (origin == GridOrigin.UPPER_LEFT && (!isOneXOne || tiles[currentTile]?.Z != 0))
+                    {
+                        this._geoUtilsMock
+                            .InSequence(seq)
+                            .Setup(converter => converter.FlipY(It.IsAny<Tile>()))
+                            .Returns<Tile>(t => t.Y);
+                    }
+                }
+            // }
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
             var s3Source = new S3(this._pathUtilsMock.Object, this._s3ClientMock.Object, this._serviceProviderMock.Object, "bucket", "test", batchSize, grid, origin);
-
+            VerifyConstructorRequiredMocks();
+            // for (int z = 0; z < Data<IS3Client>.MaxZoomRead; z++)
+            // {
+            //     this._s3ClientMock.Verify(s3 => s3.ListObjectsV2Async(It.Is<ListObjectsV2Request>(req =>
+            //         req.BucketName == "bucket" &&
+            //         req.Prefix == $"test/{z}/" &&
+            //         req.StartAfter == $"test/{z}/" &&
+            //         req.MaxKeys == 1
+            //     ), It.IsAny<CancellationToken>()), Times.Once);
+            // }
+            
             var comparer = ComparerFactory.Create<Tile>((t1, t2) => t1?.Z == t2?.Z && t1?.X == t2?.X && t1?.Y == t2?.Y ? 0 : -1);
             for (int i = 0; i < tileBatches.Count; i++)
             {
@@ -733,18 +839,73 @@ namespace MergerLogicUnitTests.DataTypes
                 string? expectedBatchId = batch < 0 ? null : batch.ToString();
                 Assert.AreEqual(expectedBatchId, batchIdentifier);
 
-                int s3ButchNum = batch;
-                for (int reqSize = batchSize; reqSize > 0 && batchSize - reqSize < tiles.Length; reqSize -= s3ResponseTiles)
-                {
-                    this._s3ClientMock.Verify(s3 => s3.ListObjectsV2Async(It.Is<ListObjectsV2Request>(req =>
-                        req.BucketName == "bucket" &&
-                        req.ContinuationToken == (s3ButchNum < 0 ? null : s3ButchNum.ToString()) &&
-                        req.Prefix == "test" &&
-                        req.StartAfter == "test" &&
-                        req.MaxKeys == reqSize
-                    ), It.IsAny<CancellationToken>()), Times.Once);
-                    s3ButchNum++;
-                }
+                int s3BatchNum = batch;
+                var tileZooms = res.Select(tile => tile.Z).OrderBy(z => z);
+
+                // Check amount of calls to ListObjectsV2Async
+                // if (s3ResponseTiles != 1)
+                // {
+                // foreach (var z in tileZooms)
+                // {
+                //     this._s3ClientMock.Verify(s3 => s3.ListObjectsV2Async(It.Is<ListObjectsV2Request>(req =>
+                //         req.BucketName == "bucket" &&
+                //         req.ContinuationToken == (s3BatchNum < 0 ? null : s3BatchNum.ToString()) &&
+                //         req.Prefix == $"test/{z}/" &&
+                //         req.StartAfter == $"test/{z}/" &&
+                //         req.MaxKeys == It.IsAny<int>()
+                //     ), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+                // }
+                // }
+                // else
+                // {
+                //     for (int z = 0; z < Data<IS3Client>.MaxZoomRead; z++)
+                //     {
+                //         this._s3ClientMock.Verify(s3 => s3.ListObjectsV2Async(It.Is<ListObjectsV2Request>(req =>
+                //             req.BucketName == "bucket" &&
+                //             req.ContinuationToken == (s3BatchNum < 0 ? null : s3BatchNum.ToString()) &&
+                //             req.Prefix == $"test/{z}/" &&
+                //             req.StartAfter == $"test/{z}/" &&
+                //             req.MaxKeys == 1
+                //         ), It.IsAny<CancellationToken>()), tileZooms.Contains(z) ? Times.Exactly(2) : Times.Exactly(1));
+                //     }
+                // }
+
+                // this._s3ClientMock.Verify(s3 => s3.ListObjectsV2Async(It.Is<ListObjectsV2Request>(req =>
+                //         req.BucketName == "bucket" &&
+                //         req.ContinuationToken == (s3BatchNum < 0 ? null : s3BatchNum.ToString()) &&
+                //         req.Prefix == "test/" &&
+                //         req.StartAfter == "test/" &&
+                //         req.MaxKeys == 1
+                //     ), It.IsAny<CancellationToken>()), Times.Exactly(Data<IS3Client>.MaxZoomRead));
+                
+                // tileZoomCounts = res.GroupBy(n => n.Z).Select(g => (g.Key, g.Count())).OrderBy(z => z.Key);
+                //
+                // foreach (var item in tileZoomCounts.Zip(requestSizes))
+                // {
+                //     int z = item.First.Key;
+                //     int count = item.First.Item2 + 1;
+                //     int requestSize = item.Second;
+                //     // var times = tileZoomCounts.Contains(item.First) ? Times.Exactly(2) : Times.Exactly(1);
+                //     this._s3ClientMock.Verify(s3 => s3.ListObjectsV2Async(It.Is<ListObjectsV2Request>(req =>
+                //         req.BucketName == "bucket" &&
+                //         req.ContinuationToken == (s3BatchNum < 0 ? null : s3BatchNum.ToString()) &&
+                //         req.Prefix == $"test/{z}/" &&
+                //         req.StartAfter == $"test/{z}/" &&
+                //         req.MaxKeys == requestSize
+                //     ), It.IsAny<CancellationToken>()), Times.AtLeast(1));
+                // }
+                
+                // for (int reqSize = batchSize; reqSize > 0 && batchSize - reqSize < tiles.Length; reqSize -= s3ResponseTiles)
+                // {
+                //     this._s3ClientMock.Verify(s3 => s3.ListObjectsV2Async(It.Is<ListObjectsV2Request>(req =>
+                //         req.BucketName == "bucket" &&
+                //         req.ContinuationToken == (s3BatchNum < 0 ? null : s3BatchNum.ToString()) &&
+                //         req.Prefix == "test/" &&
+                //         req.StartAfter == "test/" &&
+                //         req.MaxKeys == reqSize
+                //     ), It.IsAny<CancellationToken>()), Times.Once);
+                //     s3BatchNum++;
+                // }
 
                 foreach (var tile in tileBatches[i])
                 {
@@ -766,8 +927,8 @@ namespace MergerLogicUnitTests.DataTypes
                 }
             }
 
-            int calls = (int)Math.Ceiling((double)Math.Min(batchSize, tiles.Length) / s3ResponseTiles) * (int)Math.Ceiling((double)tiles.Length / batchSize);
-            this._s3ClientMock.Verify(s3 => s3.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), It.IsAny<CancellationToken>()), Times.Exactly(calls));
+            // int calls = (int)Math.Ceiling((double)Math.Min(batchSize, tiles.Length) / s3ResponseTiles) * (int)Math.Ceiling((double)tiles.Length / batchSize);
+            this._s3ClientMock.Verify(s3 => s3.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), It.IsAny<CancellationToken>()), Times.Exactly(countRequests + Data<IS3Client>.MaxZoomRead));
             this._s3UtilsMock.Verify(utils => utils.GetTile(It.IsAny<string>()), Times.Exactly(tiles.Length));
             this.VerifyAll();
         }
@@ -775,6 +936,33 @@ namespace MergerLogicUnitTests.DataTypes
         #endregion
 
         #region helper
+
+        private void SetupConstructorRequiredMocks(MockSequence? sequence = null)
+        {
+            var seq = sequence ?? new MockSequence();
+
+            // Mock existance check for each zoom level until MaxZoomRead
+            for (int i = 0; i < Data<IS3Client>.MaxZoomRead; i++)
+            {
+                this._s3ClientMock
+                    .InSequence(seq)
+                    .Setup(s3 => s3.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new ListObjectsV2Response() { KeyCount = 1 });
+            }
+        }
+
+        private void VerifyConstructorRequiredMocks()
+        {
+            for (int z = 0; z < Data<IS3Client>.MaxZoomRead; z++)
+            {
+                this._s3ClientMock.Verify(s3 => s3.ListObjectsV2Async(It.Is<ListObjectsV2Request>(req =>
+                    req.BucketName == "bucket" &&
+                    req.Prefix == $"test/{z}/" &&
+                    req.StartAfter == $"test/{z}/" &&
+                    req.MaxKeys == 1
+                ), It.IsAny<CancellationToken>()), Times.Once);
+            }
+        }
 
         private void VerifyAll()
         {
