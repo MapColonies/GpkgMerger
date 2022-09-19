@@ -1,9 +1,12 @@
 using MergerLogic.Clients;
 using MergerLogic.DataTypes;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
+using MergerLogicUnitTests.testUtils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
+using System.Collections.Generic;
 using System.IO.Abstractions;
 
 namespace MergerLogicUnitTests.Clients
@@ -20,6 +23,7 @@ namespace MergerLogicUnitTests.Clients
         private Mock<IGeoUtils> _geoUtilsMock;
         private Mock<IFileSystem> _fsMock;
         private Mock<IFile> _fileMock;
+        private Mock<IImageFormatter> _imageFormatterMock;
         #endregion
 
         [TestInitialize]
@@ -30,24 +34,31 @@ namespace MergerLogicUnitTests.Clients
             this._geoUtilsMock = this._repository.Create<IGeoUtils>();
             this._fsMock = this._repository.Create<IFileSystem>();
             this._fileMock = this._repository.Create<IFile>();
-
             this._fsMock.SetupGet(fs => fs.File).Returns(this._fileMock.Object);
+            this._imageFormatterMock = this._repository.Create<IImageFormatter>();
         }
 
         #region GetTile
 
+        public static IEnumerable<object[]> GetGetTileParams()
+        {
+            return DynamicDataGenerator.GeneratePrams(new object[][]
+            {
+                new object[] { true, false }, //useCoords
+                new object[] { true, false }, // return null
+                new object[] { TileFormat.Png, TileFormat.Jpeg }
+            });
+        }
+
         [TestMethod]
-        [DataRow(true, true)]
-        [DataRow(true, false)]
-        [DataRow(false, true)]
-        [DataRow(false, false)]
-        public void GetTile(bool useCoords, bool returnsNull)
+        [DynamicData(nameof(GetGetTileParams),DynamicDataSourceType.Method)]
+        public void GetTile(bool useCoords, bool returnsNull, TileFormat targetFormat)
         {
             Coord cords = new Coord(1, 2, 3);
             byte[] data = Array.Empty<byte>();
 
             var seq = new MockSequence();
-            this._pathUtilsMock.InSequence(seq).Setup(util => util.GetTilePath("testFilePath",cords.Z,cords.X,cords.Y,false))
+            this._pathUtilsMock.InSequence(seq).Setup(util => util.GetTilePath("testFilePath",cords.Z,cords.X,cords.Y,targetFormat,false))
                 .Returns("testTilePath");
             this._fileMock.InSequence(seq).Setup(util => util.Exists("testTilePath"))
                 .Returns(!returnsNull);
@@ -58,7 +69,7 @@ namespace MergerLogicUnitTests.Clients
             }
 
             var fileClient = new FileClient("testFilePath", this._pathUtilsMock.Object,
-                this._geoUtilsMock.Object,this._fsMock.Object);
+                this._geoUtilsMock.Object,this._fsMock.Object, this._imageFormatterMock.Object);
 
             var res = useCoords ? fileClient.GetTile(cords) : fileClient.GetTile(cords.Z, cords.X, cords.Y);
             if (returnsNull)
@@ -88,13 +99,13 @@ namespace MergerLogicUnitTests.Clients
             byte[] data = Array.Empty<byte>();
 
             var seq = new MockSequence();
-            this._pathUtilsMock.InSequence(seq).Setup(util => util.GetTilePath("testFilePath",cords.Z,cords.X,cords.Y,false))
+            this._pathUtilsMock.InSequence(seq).Setup(util => util.GetTilePathWithoutExtension("testFilePath",cords.Z,cords.X,cords.Y, false))
                 .Returns("testTilePath");
             this._fileMock.InSequence(seq).Setup(util => util.Exists("testTilePath"))
                 .Returns(exist);
 
             var fileClient = new FileClient("testFilePath", this._pathUtilsMock.Object,
-                this._geoUtilsMock.Object,this._fsMock.Object);
+                this._geoUtilsMock.Object,this._fsMock.Object, this._imageFormatterMock.Object);
 
             var res = fileClient.TileExists(cords.Z, cords.X, cords.Y);
 

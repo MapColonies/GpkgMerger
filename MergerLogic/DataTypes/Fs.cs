@@ -9,8 +9,6 @@ namespace MergerLogic.DataTypes
 {
     public class FS : Data<IFileClient>
     {
-        private delegate string TilePathFunction(string path, Tile tile);
-
         private IEnumerator<Tile> _tiles;
         private bool _done;
         private long _completedTiles;
@@ -61,7 +59,7 @@ namespace MergerLogic.DataTypes
                          .EnumerateFiles(this.Path, "*.*", SearchOption.AllDirectories)
                          .Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
             {
-                Coord coord = this._pathUtils.FromPath(filePath, out TileFormat format);
+                Coord coord = this._pathUtils.FromPath(filePath, out _);
                 Tile tile = this.Utils.GetTile(coord);
                 if (tile != null)
                 {
