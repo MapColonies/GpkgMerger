@@ -11,7 +11,8 @@ namespace MergerLogic.DataTypes
     {
         private readonly IAmazonS3 _client;
         private readonly string _bucket;
-        private IEnumerator<int> _zoomLevels;
+        private readonly List<int> _zoomLevels;
+        private IEnumerator<int> _zoomEnumerator;
         private string? _continuationToken;
         private bool _endOfRead;
 
@@ -29,7 +30,9 @@ namespace MergerLogic.DataTypes
 
             // This should always happen after the definition of the client
             this._zoomLevels = this.GetZoomLevels();
-            this._zoomLevels.MoveNext();
+            this._zoomEnumerator = this._zoomLevels.GetEnumerator();
+            // In order to get a correct first value we must do an initial MoveNext call
+            this._zoomEnumerator.MoveNext();
         }
 
         protected override GridOrigin DefaultOrigin()
@@ -41,19 +44,24 @@ namespace MergerLogic.DataTypes
         {
             this._continuationToken = null;
             this._endOfRead = false;
-            this._zoomLevels = this.GetZoomLevels();
-            this._zoomLevels.MoveNext();
+            this._zoomEnumerator = this._zoomLevels.GetEnumerator();
+            // In order to get a correct first value we must do an initial MoveNext call
+            this._zoomEnumerator.MoveNext();
         }
 
-        private IEnumerator<int> GetZoomLevels()
+        private List<int> GetZoomLevels()
         {
+            List<int> zoomLevels = new List<int>();
+            
             for (int zoomLevel = 0; zoomLevel < Data<IS3Client>.MaxZoomRead; zoomLevel++)
             {
                 if (this.FolderExists($"{zoomLevel}/"))
                 {
-                    yield return zoomLevel;
+                    zoomLevels.Add(zoomLevel);
                 }
             }
+
+            return zoomLevels;
         }
 
         public override List<Tile> GetNextBatch(out string batchIdentifier)
@@ -64,12 +72,12 @@ namespace MergerLogic.DataTypes
 
             while (missingTiles > 0)
             {
-                if (this._endOfRead && !this._zoomLevels.MoveNext())
+                if (this._endOfRead && !this._zoomEnumerator.MoveNext())
                 {
                     break;
                 }
 
-                string path = $"{this.Path}/{this._zoomLevels.Current}";
+                string path = $"{this.Path}/{this._zoomEnumerator.Current}/";
 
                 var listRequests = new ListObjectsV2Request
                 {
