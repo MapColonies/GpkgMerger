@@ -17,16 +17,14 @@ public class FileClient : DataUtils, IFileClient
         this._fileSystem = fileSystem;
     }
 
-    public override Tile GetTile(int z, int x, int y)
+    public override Tile? GetTile(int z, int x, int y)
     {
-        string tilePath = this._pathUtils.GetTilePath(this.path, z, x, y, format!.Value);
-        this._fileSystem.Directory
-            .EnumerateFiles(this.path, $".*", SearchOption.AllDirectories)
+        var tilePath = this.GetTilePath(z, x, y);
 
-        if (this._fileSystem.File.Exists(tilePath))
+        if (tilePath != null)
         {
             byte[] fileBytes = this._fileSystem.File.ReadAllBytes(tilePath);
-            return new Tile(z, x, y, fileBytes);
+            return this.createTile(z, x, y, fileBytes);
         }
         else
         {
@@ -36,7 +34,20 @@ public class FileClient : DataUtils, IFileClient
 
     public override bool TileExists(int z, int x, int y)
     {
-        string fullPath = this._pathUtils.GetTilePath(this.path, z, x, y, format!.Value);
-        return this._fileSystem.File.Exists(fullPath);
+        return this.GetTilePath(z,x,y) != null;
+    }
+
+    private string? GetTilePath(int z, int x, int y)
+    {
+        var tilePath = this._fileSystem.Path.Join(z.ToString(), x.ToString(), y.ToString());
+        try
+        {
+            return this._fileSystem.Directory
+                .EnumerateFiles(this.path, $"{tilePath}.*", SearchOption.TopDirectoryOnly).FirstOrDefault();
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return null;
+        }
     }
 }

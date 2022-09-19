@@ -49,9 +49,9 @@ namespace MergerLogic.Clients
             }
         }
 
-        public override Tile GetTile(int z, int x, int y)
+        public override Tile? GetTile(int z, int x, int y)
         {
-            string key = this.GetTileKey(z, x, y);
+            var key = this.GetTileKey(z, x, y);
             if (key == null)
             {
                 return null;
@@ -61,7 +61,7 @@ namespace MergerLogic.Clients
             return this.createTile(z, x, y, imageBytes);
         }
 
-        public Tile GetTile(string key)
+        public Tile? GetTile(string key)
         {
             Coord coords = this._pathUtils.FromPath(key, out TileFormat format, true);
             byte[]? imageBytes = this.GetImageBytes(key);

@@ -8,7 +8,7 @@ namespace MergerCli
 {
     internal class SourceParser : ISourceParser
     {
-        private readonly HashSet<string> sourceTypes =
+        private readonly HashSet<string> _sourceTypes =
             new HashSet<string>(new[] { "fs", "s3", "gpkg", "wmts", "tms", "xyz" });
 
         private readonly IDataFactory _dataFactory;
@@ -211,7 +211,7 @@ namespace MergerCli
             // check required parameters
             for (; i < startIdx + minExpectedParamCount; i++)
             {
-                if (i >= args.Length || this.sourceTypes.Contains(args[i].ToLower()))
+                if (i >= args.Length || this._sourceTypes.Contains(args[i].ToLower()))
                 {
                     throw new Exception($"invalid source parameters for {args[startIdx]} {args[startIdx + 1]}");
                 }
@@ -220,7 +220,7 @@ namespace MergerCli
             // check optional parameters
             for (; i <= startIdx + minExpectedParamCount + optionalParamCount; i++)
             {
-                if (i == args.Length || this.sourceTypes.Contains(args[i].ToLower()))
+                if (i == args.Length || this._sourceTypes.Contains(args[i].ToLower()))
                 {
                     return i - startIdx;
                 }
