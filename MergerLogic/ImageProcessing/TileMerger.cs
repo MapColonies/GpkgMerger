@@ -90,7 +90,6 @@ namespace MergerLogic.ImageProcessing
                     {
                         return images;
                     }
-
                     i--;
                     break;
                 }
