@@ -133,6 +133,31 @@ namespace MergerLogicUnitTests.Clients
             this._repository.VerifyAll();
         }
 
+        [TestMethod]
+        public void TileExistsReturnFalseWhenDirectoryDontExist()
+        {
+            Coord cords = new Coord(1, 2, 3);
+            byte[] data = Array.Empty<byte>();
+
+            var seq = new MockSequence();
+            this._pathMock
+                .InSequence(seq)
+                .Setup(util => util.Join(cords.Z.ToString(), cords.X.ToString(), cords.Y.ToString()))
+                .Returns("testTilePath");
+            this._directoryMock
+                .InSequence(seq)
+                .Setup(dir => dir.EnumerateFiles("testFilePath", "testTilePath.*", SearchOption.TopDirectoryOnly))
+                .Throws<DirectoryNotFoundException>();
+
+            var fileClient = new FileClient("testFilePath",
+                this._geoUtilsMock.Object, this._fsMock.Object, this._imageFormatterMock.Object);
+
+            var res = fileClient.TileExists(cords.Z, cords.X, cords.Y);
+
+            Assert.AreEqual(false, res);
+            this._repository.VerifyAll();
+        }
+
         #endregion
 
     }
