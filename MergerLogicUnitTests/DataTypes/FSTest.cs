@@ -769,7 +769,7 @@ namespace MergerLogicUnitTests.DataTypes
                 this._pathUtilsMock
                     .InSequence(seq)
                     .Setup(utils => utils.FromPath(It.IsAny<string>(),out testFormat, false))
-                    .Returns<string, bool>((path, _) =>
+                    .Returns<string,TileFormat, bool>((path, _, _) =>
                     {
                         int coord = int.Parse(path[..1]);
                         return new Coord(coord, coord, coord);

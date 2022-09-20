@@ -7,13 +7,11 @@ namespace MergerLogic.Clients;
 
 public class FileClient : DataUtils, IFileClient
 {
-    private readonly IPathUtils _pathUtils;
     private readonly IFileSystem _fileSystem;
 
-    public FileClient(string path, IPathUtils pathUtils, IGeoUtils geoUtils, IFileSystem fileSystem, IImageFormatter formatter) 
+    public FileClient(string path, IGeoUtils geoUtils, IFileSystem fileSystem, IImageFormatter formatter) 
         : base(path, geoUtils, formatter)
     {
-        this._pathUtils = pathUtils;
         this._fileSystem = fileSystem;
     }
 

@@ -33,7 +33,7 @@ namespace MergerLogic.Utils
 
         public IFileClient GetFileUtils(string path)
         {
-            return new FileClient(path, this._pathUtils, this._geoUtils, this._fileSystem, this._imageFormatter);
+            return new FileClient(path, this._geoUtils, this._fileSystem, this._imageFormatter);
         }
 
         public IGpkgClient GetGpkgUtils(string path)
