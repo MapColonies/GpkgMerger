@@ -137,7 +137,6 @@ namespace MergerLogicUnitTests.Clients
         public void TileExistsReturnFalseWhenDirectoryDontExist()
         {
             Coord cords = new Coord(1, 2, 3);
-            byte[] data = Array.Empty<byte>();
 
             var seq = new MockSequence();
             this._pathMock

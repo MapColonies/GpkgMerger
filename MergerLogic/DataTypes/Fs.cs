@@ -16,6 +16,8 @@ namespace MergerLogic.DataTypes
         private readonly IPathUtils _pathUtils;
         private readonly IFileSystem _fileSystem;
 
+        private readonly string[] _supportedFileExtensions = { ".png", ".jpg", "jpeg" };
+
         public FS(IPathUtils pathUtils, IServiceProvider container,
             string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false)
             : base(container, DataType.FOLDER, path, batchSize, grid, origin)
@@ -53,11 +55,10 @@ namespace MergerLogic.DataTypes
         private IEnumerator<Tile> GetTiles()
         {
             // From: https://stackoverflow.com/a/7430971/11915280 and https://stackoverflow.com/a/19961761/11915280
-            string[] ext = { ".png", ".jpg", ".jpeg" };
             // Go over directory and count png and jpg files
             foreach (string filePath in this._fileSystem.Directory
                          .EnumerateFiles(this.Path, "*.*", SearchOption.AllDirectories)
-                         .Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
+                         .Where(file => this._supportedFileExtensions.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
             {
                 Coord coord = this._pathUtils.FromPath(filePath, out _);
                 Tile tile = this.Utils.GetTile(coord);
@@ -110,10 +111,9 @@ namespace MergerLogic.DataTypes
         public override long TileCount()
         {
             // From: https://stackoverflow.com/a/7430971/11915280 and https://stackoverflow.com/a/19961761/11915280
-            string[] ext = { ".png", ".jpg", "jpeg" };
             // Go over directory and count png and jpg files
             return this._fileSystem.Directory.EnumerateFiles(this.Path, "*.*", SearchOption.AllDirectories)
-                .Count(file => ext.Any(x => file.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
+                .Count(file => this._supportedFileExtensions.Any(x => file.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
         }
 
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)

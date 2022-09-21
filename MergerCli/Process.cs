@@ -17,7 +17,7 @@ namespace MergerCli
             this._logger = logger;
         }
 
-        public void Start(TileFormat format, IData baseData, IData newData, int batchSize,
+        public void Start(TileFormat targetFormat, IData baseData, IData newData, int batchSize,
             BatchStatusManager batchStatusManager)
         {
             batchStatusManager.InitilaizeLayer(newData.Path);
@@ -53,7 +53,7 @@ namespace MergerCli
                         () => baseData.GetCorrespondingTile(targetCoords, true), () => newTile
                     };
 
-                    byte[]? image = this._tileMerger.MergeTiles(correspondingTileBuilders, targetCoords, format);
+                    byte[]? image = this._tileMerger.MergeTiles(correspondingTileBuilders, targetCoords, targetFormat);
 
                     if (image != null)
                     {
