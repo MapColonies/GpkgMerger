@@ -24,7 +24,7 @@ namespace MergerLogic.Utils
         public string GetTilePathWithoutExtension(string basePath, int z, int x, int y, bool isS3 = false)
         {
             char separator = this.GetSeparator(isS3);
-            return $"{basePath}{separator}{z}{separator}{x}{separator}{y}";
+            return $"{basePath}{separator}{z}{separator}{x}{separator}{y}.";
         }
 
         public string GetTilePath(string basePath, Tile tile, bool isS3 = false)
@@ -35,7 +35,7 @@ namespace MergerLogic.Utils
 
         public string GetTilePath(string basePath, int z, int x, int y, TileFormat format, bool isS3 = false)
         {
-            return $"{this.GetTilePathWithoutExtension(basePath, z, x, y, isS3)}.{format.ToString().ToLower()}";
+            return $"{this.GetTilePathWithoutExtension(basePath, z, x, y, isS3)}{format.ToString().ToLower()}";
         }
 
         public Coord FromPath(string path, out TileFormat format, bool isS3 = false)

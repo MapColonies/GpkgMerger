@@ -39,13 +39,13 @@ namespace MergerLogic.Utils
         public IGpkgClient GetGpkgUtils(string path)
         {
             var logger = this._container.GetRequiredService<ILogger<GpkgClient>>();
-            return new GpkgClient(path, this._timeUtils, logger, this._fileSystem, this._geoUtils);
+            return new GpkgClient(path, this._timeUtils, logger, this._fileSystem, this._geoUtils, this._imageFormatter);
         }
 
         public IHttpSourceClient GetHttpUtils(string path)
         {
             IPathPatternUtils pathPatternUtils = this.GetPathPatternUtils(path);
-            return new HttpSourceClient(path, this._httpRequestUtils, pathPatternUtils, this._geoUtils);
+            return new HttpSourceClient(path, this._httpRequestUtils, pathPatternUtils, this._geoUtils, this._imageFormatter);
         }
 
         public IS3Client GetS3Utils(string path)

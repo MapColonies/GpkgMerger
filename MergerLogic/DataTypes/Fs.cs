@@ -16,7 +16,7 @@ namespace MergerLogic.DataTypes
         private readonly IPathUtils _pathUtils;
         private readonly IFileSystem _fileSystem;
 
-        private readonly string[] _supportedFileExtensions = { ".png", ".jpg", "jpeg" };
+        private readonly string[] _supportedFileExtensions = { ".png", ".jpg", ".jpeg" };
 
         public FS(IPathUtils pathUtils, IServiceProvider container,
             string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false)

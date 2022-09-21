@@ -1,6 +1,7 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.Clients;
 using MergerLogic.DataTypes;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
 using Microsoft.Extensions.Logging;
@@ -30,6 +31,7 @@ namespace MergerLogicUnitTests.Utils
         private Mock<IFileSystem> _fileSystemMock;
         private Mock<IPath> _pathMock;
         private Mock<IFile> _fileMock;
+        private Mock<IImageFormatter> _imageFormatterMock;
 
         #endregion
 
@@ -45,6 +47,8 @@ namespace MergerLogicUnitTests.Utils
             this._fileSystemMock.SetupGet(fs => fs.File).Returns(this._fileMock.Object);
             this._fileSystemMock.SetupGet(fs => fs.Path).Returns(this._pathMock.Object);
             this._loggerMock = this._repository.Create<ILogger<GpkgClient>>(MockBehavior.Loose);
+            this._imageFormatterMock = this._repository.Create<IImageFormatter>();
+
         }
 
         #region GetTile
@@ -75,7 +79,7 @@ namespace MergerLogicUnitTests.Utils
                 this.CreateTestTiles(connection, testTiles); //create tile table
 
                 var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
-                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object, this._imageFormatterMock.Object);
 
                 var res = useCoords ? gpkgUtils.GetTile(cords) : gpkgUtils.GetTile(cords.Z, cords.X, cords.Y);
 
@@ -116,7 +120,7 @@ namespace MergerLogicUnitTests.Utils
                 this.CreateTestTiles(connection, testTiles); //create tile table
 
                 var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
-                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object, this._imageFormatterMock.Object);
 
                 var res = gpkgUtils.TileExists(cords.Z, cords.X, cords.Y);
 
@@ -156,7 +160,7 @@ namespace MergerLogicUnitTests.Utils
                 this.CreateTestTiles(connection, testTiles);
 
                 var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
-                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object, this._imageFormatterMock.Object);
 
                 var comparer = ComparerFactory.Create<Tile>((t1, t2) => t1?.Z == t2?.Z && t1?.X == t2?.X && t1?.Y == t2?.Y ? 0 : -1);
                 var res = gpkgUtils.GetBatch(batchSize, offset);
@@ -184,7 +188,7 @@ namespace MergerLogicUnitTests.Utils
                 this.CreateTestTiles(connection, testTiles);
 
                 var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
-                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object, this._imageFormatterMock.Object);
 
                 var res = gpkgUtils.GetBatch(21, offset);
                 CollectionAssert.AreEqual(Array.Empty<Tile>(), res);
@@ -222,7 +226,7 @@ namespace MergerLogicUnitTests.Utils
                 this.SetupConstructorRequiredMocks(connection, extent: extent);
 
                 var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
-                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object, this._imageFormatterMock.Object);
 
                 var res = gpkgUtils.GetExtent();
                 Assert.AreEqual(extent, res);
@@ -263,7 +267,7 @@ namespace MergerLogicUnitTests.Utils
                 this.CreateTestTiles(connection, testTiles);
 
                 var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
-                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object, this._imageFormatterMock.Object);
                 var coords = new List<int>();
                 for (int i = 0; i < baseCoords.Z; i++)
                 {
@@ -318,7 +322,7 @@ namespace MergerLogicUnitTests.Utils
                 this.CreateTestTiles(connection, testTiles);
 
                 var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
-                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object, this._imageFormatterMock.Object);
 
                 var res = gpkgUtils.GetTileCount();
                 Assert.AreEqual(tileCount, res);
@@ -349,7 +353,7 @@ namespace MergerLogicUnitTests.Utils
                 this.CreateTestTiles(connection, existingTiles);
 
                 var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
-                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object, this._imageFormatterMock.Object);
 
                 gpkgUtils.InsertTiles(testTiles);
 
@@ -396,7 +400,7 @@ namespace MergerLogicUnitTests.Utils
                 this.SetupConstructorRequiredMocks(connection);
 
                 var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
-                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object, this._imageFormatterMock.Object);
                 gpkgUtils.UpdateExtent(extent);
 
                 using (var command = connection.CreateCommand())
@@ -446,7 +450,7 @@ namespace MergerLogicUnitTests.Utils
                     .Returns(exist);
 
                 var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
-                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object, this._imageFormatterMock.Object);
 
 
                 Assert.AreEqual(exist, gpkgUtils.Exist());
@@ -481,7 +485,7 @@ namespace MergerLogicUnitTests.Utils
                 }
 
                 var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
-                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object, this._imageFormatterMock.Object);
 
                 gpkgUtils.DeleteTileTableTriggers();
 
@@ -513,7 +517,7 @@ namespace MergerLogicUnitTests.Utils
                 this.CreateTestTiles(connection, Array.Empty<Tile>());
 
                 var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
-                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object, this._imageFormatterMock.Object);
 
                 gpkgUtils.CreateTileCacheValidationTriggers();
 
@@ -574,7 +578,7 @@ namespace MergerLogicUnitTests.Utils
                 }
 
                 var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
-                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object, this._imageFormatterMock.Object);
 
                 gpkgUtils.UpdateTileMatrixTable(isOneXOne);
 
@@ -687,7 +691,7 @@ namespace MergerLogicUnitTests.Utils
                 }
 
                 var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
-                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object, this._imageFormatterMock.Object);
 
                 Assert.AreEqual(expected, gpkgUtils.IsValidGrid(isOneXOne));
             }
@@ -753,7 +757,7 @@ namespace MergerLogicUnitTests.Utils
                 }
 
                 var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
-                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object, this._imageFormatterMock.Object);
 
                 Assert.AreEqual(expected, gpkgUtils.IsValidGrid(isOneXOne));
             }

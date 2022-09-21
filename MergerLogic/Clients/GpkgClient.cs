@@ -1,6 +1,7 @@
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 using MergerLogic.Extensions;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
 using System.Data.SQLite;
@@ -19,7 +20,7 @@ namespace MergerLogic.Clients
         private readonly IFileSystem _fileSystem;
 
         public GpkgClient(string path, ITimeUtils timeUtils, ILogger<GpkgClient> logger, IFileSystem fileSystem,
-            IGeoUtils geoUtils) : base(path, geoUtils, null)
+            IGeoUtils geoUtils, IImageFormatter formatter) : base(path, geoUtils, formatter)
         {
             this._timeUtils = timeUtils;
             this._logger = logger;

@@ -40,6 +40,7 @@ public class FileClient : DataUtils, IFileClient
         var tilePath = this._fileSystem.Path.Join(z.ToString(), x.ToString(), y.ToString());
         try
         {
+            //this may or may not be faster then checking specific files of every supported type depending on the used file system
             return this._fileSystem.Directory
                 .EnumerateFiles(this.path, $"{tilePath}.*", SearchOption.TopDirectoryOnly).FirstOrDefault();
         }

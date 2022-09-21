@@ -1,4 +1,5 @@
 ﻿using MergerLogic.Batching;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 
 namespace MergerLogic.Clients
@@ -9,7 +10,7 @@ namespace MergerLogic.Clients
         private IPathPatternUtils _pathPatternUtils;
 
         public HttpSourceClient(string path, IHttpRequestUtils httpClient, IPathPatternUtils pathPatternUtils,
-            IGeoUtils geoUtils) : base(path, geoUtils, null)
+            IGeoUtils geoUtils, IImageFormatter formatter) : base(path, geoUtils, formatter)
         {
             this._httpClient = httpClient;
             this._pathPatternUtils = pathPatternUtils;
