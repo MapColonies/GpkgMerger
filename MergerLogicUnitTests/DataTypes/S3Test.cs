@@ -703,10 +703,12 @@ namespace MergerLogicUnitTests.DataTypes
             foreach (var group in tileZoomCounts)
             {
                 int zoomCount = group.Item2;
-                while (zoomCount >= s3ResponseTiles + remainder)
+                while (zoomCount + remainder >= s3ResponseTiles)
                 {
-                    zoomCount -= s3ResponseTiles;
-                    remainder = 0;
+                    remainder = zoomCount + remainder - s3ResponseTiles;
+                    zoomCount = 0;
+                    // zoomCount -= s3ResponseTiles;
+                    // remainder = 0;
                     countRequests++;
                     
                     this._s3ClientMock
@@ -731,31 +733,31 @@ namespace MergerLogicUnitTests.DataTypes
                         return Task.FromResult(res);
                     });
 
-                for (int j = 0; j < s3ResponseTiles; j++)
-                {
-                    currentTile++;
-                    
-                    this._s3UtilsMock
-                        .InSequence(seq)
-                        .Setup(utils => utils.GetTile(It.IsAny<string>()))
-                        .Returns<string>(key => tiles[int.Parse(key[..1])]);
-
-                    if (isOneXOne)
+                    for (int j = 0; j < s3ResponseTiles; j++)
                     {
-                        this._oneXOneConvertorMock
+                        currentTile++;
+                        
+                        this._s3UtilsMock
                             .InSequence(seq)
-                            .Setup(converter => converter.TryToTwoXOne(It.IsAny<Tile>()))
-                            .Returns<Tile>(tile => tile.Z != 0 ? tile : null);
-                    }
+                            .Setup(utils => utils.GetTile(It.IsAny<string>()))
+                            .Returns<string>(key => tiles[int.Parse(key[..1])]);
 
-                    if (origin == GridOrigin.UPPER_LEFT && (!isOneXOne || tiles[currentTile]?.Z != 0))
-                    {
-                        this._geoUtilsMock
-                            .InSequence(seq)
-                            .Setup(converter => converter.FlipY(It.IsAny<Tile>()))
-                            .Returns<Tile>(t => t.Y);
+                        if (isOneXOne)
+                        {
+                            this._oneXOneConvertorMock
+                                .InSequence(seq)
+                                .Setup(converter => converter.TryToTwoXOne(It.IsAny<Tile>()))
+                                .Returns<Tile>(tile => tile.Z != 0 ? tile : null);
+                        }
+
+                        if (origin == GridOrigin.UPPER_LEFT && (!isOneXOne || tiles[currentTile]?.Z != 0))
+                        {
+                            this._geoUtilsMock
+                                .InSequence(seq)
+                                .Setup(converter => converter.FlipY(It.IsAny<Tile>()))
+                                .Returns<Tile>(t => t.Y);
+                        }
                     }
-                }
                 }
 
                 remainder += zoomCount;
