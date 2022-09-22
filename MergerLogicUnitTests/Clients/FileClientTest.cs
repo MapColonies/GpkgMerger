@@ -1,9 +1,13 @@
 using MergerLogic.Clients;
 using MergerLogic.DataTypes;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
+using MergerLogicUnitTests.testUtils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.IO.Abstractions;
 
 namespace MergerLogicUnitTests.Clients
@@ -16,49 +20,71 @@ namespace MergerLogicUnitTests.Clients
     {
         #region mocks
         private MockRepository _repository;
-        private Mock<IPathUtils> _pathUtilsMock;
         private Mock<IGeoUtils> _geoUtilsMock;
         private Mock<IFileSystem> _fsMock;
         private Mock<IFile> _fileMock;
+        private Mock<IPath> _pathMock;
+        private Mock<IDirectory> _directoryMock;   
+        private Mock<IImageFormatter> _imageFormatterMock;
         #endregion
 
         [TestInitialize]
         public void beforeEach()
         {
             this._repository = new MockRepository(MockBehavior.Strict);
-            this._pathUtilsMock = this._repository.Create<IPathUtils>();
             this._geoUtilsMock = this._repository.Create<IGeoUtils>();
-            this._fsMock = this._repository.Create<IFileSystem>();
+            this._fsMock = new Mock<IFileSystem>(MockBehavior.Strict);
             this._fileMock = this._repository.Create<IFile>();
-
+            this._pathMock = this._repository.Create<IPath>();
+            this._directoryMock = this._repository.Create<IDirectory>();
             this._fsMock.SetupGet(fs => fs.File).Returns(this._fileMock.Object);
+            this._fsMock.SetupGet(fs => fs.Path).Returns(this._pathMock.Object);
+            this._fsMock.SetupGet(fs => fs.Directory).Returns(this._directoryMock.Object);
+            this._imageFormatterMock = this._repository.Create<IImageFormatter>();
         }
 
         #region GetTile
 
+        public static IEnumerable<object[]> GetGetTileParams()
+        {
+            return DynamicDataGenerator.GeneratePrams(new object[][]
+            {
+                new object[] { true, false }, //useCoords
+                new object[] { true, false }, // return null
+                new object[] { TileFormat.Png, TileFormat.Jpeg }
+            });
+        }
+
         [TestMethod]
-        [DataRow(true, true)]
-        [DataRow(true, false)]
-        [DataRow(false, true)]
-        [DataRow(false, false)]
-        public void GetTile(bool useCoords, bool returnsNull)
+        [DynamicData(nameof(GetGetTileParams),DynamicDataSourceType.Method)]
+        public void GetTile(bool useCoords, bool returnsNull, TileFormat targetFormat)
         {
             Coord cords = new Coord(1, 2, 3);
             byte[] data = Array.Empty<byte>();
 
             var seq = new MockSequence();
-            this._pathUtilsMock.InSequence(seq).Setup(util => util.GetTilePath("testFilePath",cords.Z,cords.X,cords.Y,false))
+            this._pathMock
+                .InSequence(seq)
+                .Setup(util => util.Join(cords.Z.ToString(), cords.X.ToString(), cords.Y.ToString()))
                 .Returns("testTilePath");
-            this._fileMock.InSequence(seq).Setup(util => util.Exists("testTilePath"))
-                .Returns(!returnsNull);
+            this._directoryMock
+                .InSequence(seq)
+                .Setup(dir => dir.EnumerateFiles("testFilePath", "testTilePath.*", SearchOption.TopDirectoryOnly))
+                .Returns(returnsNull ? Array.Empty<string>() : new string[] { "testTilePath" });
             if (!returnsNull)
             {
-                this._fileMock.InSequence(seq).Setup(util => util.ReadAllBytes("testTilePath"))
+                this._fileMock
+                    .InSequence(seq)
+                    .Setup(util => util.ReadAllBytes("testTilePath"))
                     .Returns(data);
+                this._imageFormatterMock
+                    .InSequence(seq)
+                    .Setup(formatter => formatter.GetTileFormat(data))
+                    .Returns(targetFormat);
             }
 
-            var fileClient = new FileClient("testFilePath", this._pathUtilsMock.Object,
-                this._geoUtilsMock.Object,this._fsMock.Object);
+            var fileClient = new FileClient("testFilePath",
+                this._geoUtilsMock.Object,this._fsMock.Object, this._imageFormatterMock.Object);
 
             var res = useCoords ? fileClient.GetTile(cords) : fileClient.GetTile(cords.Z, cords.X, cords.Y);
             if (returnsNull)
@@ -70,6 +96,7 @@ namespace MergerLogicUnitTests.Clients
                 Assert.AreEqual(cords.X, res.X);
                 Assert.AreEqual(cords.Y, res.Y);
                 Assert.AreEqual(cords.Z, res.Z);
+                Assert.AreEqual(targetFormat,res.Format);
                 CollectionAssert.AreEqual(data, res.GetImageBytes());
             }
             this._repository.VerifyAll();
@@ -88,17 +115,45 @@ namespace MergerLogicUnitTests.Clients
             byte[] data = Array.Empty<byte>();
 
             var seq = new MockSequence();
-            this._pathUtilsMock.InSequence(seq).Setup(util => util.GetTilePath("testFilePath",cords.Z,cords.X,cords.Y,false))
+            this._pathMock
+                .InSequence(seq)
+                .Setup(util => util.Join(cords.Z.ToString(),cords.X.ToString(),cords.Y.ToString()))
                 .Returns("testTilePath");
-            this._fileMock.InSequence(seq).Setup(util => util.Exists("testTilePath"))
-                .Returns(exist);
+            this._directoryMock
+                .InSequence(seq)
+                .Setup(dir => dir.EnumerateFiles("testFilePath", "testTilePath.*", SearchOption.TopDirectoryOnly))
+                .Returns(exist ? new string[]{"testFile"} : Array.Empty<string>());
 
-            var fileClient = new FileClient("testFilePath", this._pathUtilsMock.Object,
-                this._geoUtilsMock.Object,this._fsMock.Object);
+            var fileClient = new FileClient("testFilePath",
+                this._geoUtilsMock.Object,this._fsMock.Object, this._imageFormatterMock.Object);
 
             var res = fileClient.TileExists(cords.Z, cords.X, cords.Y);
 
            Assert.AreEqual(exist,res);
+            this._repository.VerifyAll();
+        }
+
+        [TestMethod]
+        public void TileExistsReturnFalseWhenDirectoryDontExist()
+        {
+            Coord cords = new Coord(1, 2, 3);
+
+            var seq = new MockSequence();
+            this._pathMock
+                .InSequence(seq)
+                .Setup(util => util.Join(cords.Z.ToString(), cords.X.ToString(), cords.Y.ToString()))
+                .Returns("testTilePath");
+            this._directoryMock
+                .InSequence(seq)
+                .Setup(dir => dir.EnumerateFiles("testFilePath", "testTilePath.*", SearchOption.TopDirectoryOnly))
+                .Throws<DirectoryNotFoundException>();
+
+            var fileClient = new FileClient("testFilePath",
+                this._geoUtilsMock.Object, this._fsMock.Object, this._imageFormatterMock.Object);
+
+            var res = fileClient.TileExists(cords.Z, cords.X, cords.Y);
+
+            Assert.AreEqual(false, res);
             this._repository.VerifyAll();
         }
 

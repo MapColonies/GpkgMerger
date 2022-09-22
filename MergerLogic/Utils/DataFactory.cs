@@ -13,16 +13,14 @@ namespace MergerLogic.Utils
         private readonly IPathUtils _pathUtils;
         private readonly IServiceProvider _container;
         private readonly ILogger _logger;
-        private readonly IFileSystem _fileSystem;
         private readonly string _bucket;
 
-        public DataFactory(IConfigurationManager configuration, IPathUtils pathUtils, IServiceProvider container, ILogger<DataFactory> logger, IFileSystem fileSystem)
+        public DataFactory(IConfigurationManager configuration, IPathUtils pathUtils, IServiceProvider container, ILogger<DataFactory> logger)
         {
             this._configurationManager = configuration;
             this._pathUtils = pathUtils;
             this._container = container;
             this._logger = logger;
-            this._fileSystem = fileSystem;
 
             _bucket = this._configurationManager.GetConfiguration("S3", "bucket");
         }

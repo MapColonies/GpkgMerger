@@ -1,5 +1,6 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
 using Microsoft.Extensions.Logging;
@@ -451,7 +452,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._fileInfoFactoryMock
                 .Setup(fac => fac.FromFileName(It.IsAny<string>()))
                 .Returns(fileMock.Object);
-            this._pathUtilsMock.Setup(utils => utils.GetTilePath("test", It.IsAny<Tile>())).Returns("testPath");
+            this._pathUtilsMock.Setup(utils => utils.GetTilePath("test", It.IsAny<Tile>(),false)).Returns("testPath");
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
             var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, grid, origin, isBase);
@@ -683,6 +684,8 @@ namespace MergerLogicUnitTests.DataTypes
         [DynamicData(nameof(GenResetParams), DynamicDataSourceType.Method)]
         public void Reset(bool isOneXOne, bool isBase, GridOrigin origin, int batchSize)
         {
+            var testFormat = TileFormat.Png; //this is needed for mocks but shouldn't effect the tested function.
+
             this.SetupConstructorRequiredMocks(isBase);
             var fileList = new List<string>();
             for (int i = 0; i < 10; i++)
@@ -696,7 +699,7 @@ namespace MergerLogicUnitTests.DataTypes
                 .Setup(d => d.EnumerateFiles("test", "*.*", SearchOption.AllDirectories))
                 .Returns(fileList);
             this._pathUtilsMock
-                .Setup(utils => utils.FromPath(It.IsAny<string>(), false))
+                .Setup(utils => utils.FromPath(It.IsAny<string>(), out testFormat, false))
                 .Returns(new Coord(0, 0, 0));
             this._fsUtilsMock
                 .Setup(utils => utils.GetTile(It.IsAny<Coord>()))
@@ -745,6 +748,8 @@ namespace MergerLogicUnitTests.DataTypes
         [DynamicData(nameof(GenGetNextBatchParams), DynamicDataSourceType.Method)]
         public void GetNextBatch(bool isOneXOne, bool isBase, GridOrigin origin, int batchSize)
         {
+            var testFormat = TileFormat.Png; //this is needed for mocks but shouldn't effect the tested function.
+
             var tiles = new Tile?[]
             {
                 new Tile(0, 0, 0, new byte[] { }), new Tile(1, 1, 1, new byte[] { }), null,
@@ -763,8 +768,8 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._pathUtilsMock
                     .InSequence(seq)
-                    .Setup(utils => utils.FromPath(It.IsAny<string>(), false))
-                    .Returns<string, bool>((path, _) =>
+                    .Setup(utils => utils.FromPath(It.IsAny<string>(),out testFormat, false))
+                    .Returns<string,TileFormat, bool>((path, _, _) =>
                     {
                         int coord = int.Parse(path[..1]);
                         return new Coord(coord, coord, coord);
@@ -807,7 +812,7 @@ namespace MergerLogicUnitTests.DataTypes
                 Assert.AreEqual(expectedBatchId, batchIdentifier);
                 foreach (var tile in tileBatches[i])
                 {
-                    this._pathUtilsMock.Verify(utils => utils.FromPath(It.IsRegex($"^{tile.Z}\\.(png|jpg)$"), false), Times.Once);
+                    this._pathUtilsMock.Verify(utils => utils.FromPath(It.IsRegex($"^{tile.Z}\\.(png|jpg)$"), out It.Ref<TileFormat>.IsAny, false), Times.Once);
                     this._fsUtilsMock.Verify(utils => utils.GetTile(It.Is<Coord>(c => c.Z == tile.Z && c.X == tile.X && c.Y == tile.Y)));
                     if (origin == GridOrigin.UPPER_LEFT)
                     {

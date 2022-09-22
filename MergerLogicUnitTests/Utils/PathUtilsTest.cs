@@ -1,8 +1,11 @@
 ﻿using MergerLogic.Batching;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
+using MergerLogicUnitTests.testUtils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
+using System.Collections.Generic;
 using System.IO.Abstractions;
 
 namespace MergerLogicUnitTests.Utils
@@ -17,6 +20,7 @@ namespace MergerLogicUnitTests.Utils
         private MockRepository _repository;
         private Mock<IFileSystem> _fileSystemMock;
         private Mock<IPath> _pathMock;
+        private Mock<IImageFormatter> _imageFormaterMock;
 
         #endregion
 
@@ -28,6 +32,7 @@ namespace MergerLogicUnitTests.Utils
             this._pathMock.SetupGet(path => path.DirectorySeparatorChar).Returns('#');//test separator is used to distinguish from s3 separator
             this._fileSystemMock = this._repository.Create<IFileSystem>();
             this._fileSystemMock.SetupGet(fs => fs.Path).Returns(this._pathMock.Object);
+            this._imageFormaterMock = this._repository.Create<IImageFormatter>();
         }
 
         #region RemoveTrailingSlash
@@ -37,7 +42,7 @@ namespace MergerLogicUnitTests.Utils
         [DataRow(false)]
         public void RemoveTrailingSlash(bool isS3)
         {
-            var utils = new PathUtils(this._fileSystemMock.Object);
+            var utils = new PathUtils(this._fileSystemMock.Object,this._imageFormaterMock.Object);
             var expectedPath = "22#222#sdgsdgtw";
             string testPath;
             if (isS3)
@@ -59,29 +64,39 @@ namespace MergerLogicUnitTests.Utils
         #region GetTilePath
 
         [TestMethod]
-        public void GetTilePathTile()
+        [DataRow(TileFormat.Jpeg)]
+        [DataRow(TileFormat.Png)]
+        public void GetTilePathTile(TileFormat format)
         {
-            var utils = new PathUtils(this._fileSystemMock.Object);
-            var res = utils.GetTilePath("test#subTest", new Tile(0, 1, 2, Array.Empty<byte>()));
-            Assert.AreEqual("test#subTest#0#1#2.png", res);
+            var utils = new PathUtils(this._fileSystemMock.Object,this._imageFormaterMock.Object);
+            var res = utils.GetTilePath("test#subTest", new Tile(0, 1, 2, Array.Empty<byte>(),format));
+            Assert.AreEqual($"test#subTest#0#1#2.{format.ToString().ToLower()}", res);
+        }
+
+        public static IEnumerable<object[]> GenGetTilePathCoordsParams()
+        {
+            return DynamicDataGenerator.GeneratePrams(new object[][]
+            {
+                new object[] { true, false }, // isS3
+                new object[] { TileFormat.Png, TileFormat.Jpeg } // tile format
+            });
         }
 
         [TestMethod]
-        [DataRow(true)]
-        [DataRow(false)]
-        public void GetTilePathCoords(bool isS3)
+        [DynamicData(nameof(GenGetTilePathCoordsParams),DynamicDataSourceType.Method)]
+        public void GetTilePathCoords(bool isS3, TileFormat format)
         {
-            var utils = new PathUtils(this._fileSystemMock.Object);
+            var utils = new PathUtils(this._fileSystemMock.Object,this._imageFormaterMock.Object);
 
             var testPath = "test#subTest";
-            var expected = "test#subTest#0#1#2.png";
+            var expected = $"test#subTest#0#1#2.{format.ToString().ToLower()}";
             if (isS3)
             {
                 testPath = testPath.Replace('#', '/');
                 expected = expected.Replace('#', '/');
             }
 
-            var res = utils.GetTilePath(testPath, 0, 1, 2, isS3);
+            var res = utils.GetTilePath(testPath, 0, 1, 2, format, isS3);
 
             Assert.AreEqual(expected, res);
         }
@@ -90,24 +105,33 @@ namespace MergerLogicUnitTests.Utils
 
         #region FromPath
 
-        [TestMethod]
-        [DataRow(true)]
-        [DataRow(false)]
-        public void FromPath(bool isS3)
+        public static IEnumerable<object[]> GenFromPathParams()
         {
-            var utils = new PathUtils(this._fileSystemMock.Object);
+            return DynamicDataGenerator.GeneratePrams(new object[][]
+            {
+                new object[] { true, false }, // isS3
+                new object[] { TileFormat.Png, TileFormat.Jpeg } // tile format
+            });
+        }
 
-            var testPath = "test#subTest#0#1#2.png";
+        [TestMethod]
+        [DynamicData(nameof(GenFromPathParams),DynamicDataSourceType.Method)]
+        public void FromPath(bool isS3, TileFormat expectedFormat)
+        {
+            var utils = new PathUtils(this._fileSystemMock.Object,this._imageFormaterMock.Object);
+
+            var testPath = $"test#subTest#0#1#2.{expectedFormat.ToString().ToLower()}";
             if (isS3)
             {
                 testPath = testPath.Replace('#', '/');
             }
 
-            var res = utils.FromPath(testPath, isS3);
+            var res = utils.FromPath(testPath,out TileFormat format, isS3);
 
             Assert.AreEqual(0, res.Z);
             Assert.AreEqual(1, res.X);
             Assert.AreEqual(2, res.Y);
+            Assert.AreEqual(expectedFormat,format);
         }
 
         #endregion

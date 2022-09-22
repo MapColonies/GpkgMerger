@@ -1,4 +1,5 @@
 using MergerLogic.Batching;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -8,14 +9,14 @@ namespace MergerLogic.DataTypes
 {
     public class FS : Data<IFileClient>
     {
-        private delegate string TilePathFunction(string path, Tile tile);
-
         private IEnumerator<Tile> _tiles;
         private bool _done;
         private long _completedTiles;
 
         private readonly IPathUtils _pathUtils;
         private readonly IFileSystem _fileSystem;
+
+        private readonly string[] _supportedFileExtensions = { ".png", ".jpg", ".jpeg" };
 
         public FS(IPathUtils pathUtils, IServiceProvider container,
             string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false)
@@ -27,6 +28,7 @@ namespace MergerLogic.DataTypes
             {
                 this._fileSystem.Directory.CreateDirectory(path);
             }
+
             this.Reset();
         }
 
@@ -53,12 +55,12 @@ namespace MergerLogic.DataTypes
         private IEnumerator<Tile> GetTiles()
         {
             // From: https://stackoverflow.com/a/7430971/11915280 and https://stackoverflow.com/a/19961761/11915280
-            string[] ext = { ".png", ".jpg" };
             // Go over directory and count png and jpg files
-            foreach (string filePath in this._fileSystem.Directory.EnumerateFiles(this.Path, "*.*", SearchOption.AllDirectories)
-                                                    .Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
+            foreach (string filePath in this._fileSystem.Directory
+                         .EnumerateFiles(this.Path, "*.*", SearchOption.AllDirectories)
+                         .Where(file => this._supportedFileExtensions.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
             {
-                Coord coord = this._pathUtils.FromPath(filePath);
+                Coord coord = this._pathUtils.FromPath(filePath, out _);
                 Tile tile = this.Utils.GetTile(coord);
                 if (tile != null)
                 {
@@ -109,9 +111,9 @@ namespace MergerLogic.DataTypes
         public override long TileCount()
         {
             // From: https://stackoverflow.com/a/7430971/11915280 and https://stackoverflow.com/a/19961761/11915280
-            string[] ext = { ".png", ".jpg" };
             // Go over directory and count png and jpg files
-            return this._fileSystem.Directory.EnumerateFiles(this.Path, "*.*", SearchOption.AllDirectories).Count(file => ext.Any(x => file.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
+            return this._fileSystem.Directory.EnumerateFiles(this.Path, "*.*", SearchOption.AllDirectories)
+                .Count(file => this._supportedFileExtensions.Any(x => file.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
         }
 
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
