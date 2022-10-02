@@ -1,4 +1,5 @@
 using MergerLogic.Batching;
+using MergerLogic.ImageProcessing;
 using System.IO.Abstractions;
 using MergerLogic.Utils;
 
@@ -6,22 +7,22 @@ namespace MergerLogic.Clients;
 
 public class FileClient : DataUtils, IFileClient
 {
-    private readonly IPathUtils _pathUtils;
     private readonly IFileSystem _fileSystem;
 
-    public FileClient(string path, IPathUtils pathUtils, IGeoUtils geoUtils, IFileSystem fileSystem) : base(path, geoUtils)
+    public FileClient(string path, IGeoUtils geoUtils, IFileSystem fileSystem, IImageFormatter formatter) 
+        : base(path, geoUtils, formatter)
     {
-        this._pathUtils = pathUtils;
         this._fileSystem = fileSystem;
     }
 
-    public override Tile GetTile(int z, int x, int y)
+    public override Tile? GetTile(int z, int x, int y)
     {
-        string tilePath = this._pathUtils.GetTilePath(this.path, z, x, y);
-        if (this._fileSystem.File.Exists(tilePath))
+        var tilePath = this.GetTilePath(z, x, y);
+
+        if (tilePath != null)
         {
             byte[] fileBytes = this._fileSystem.File.ReadAllBytes(tilePath);
-            return new Tile(z, x, y, fileBytes);
+            return this.createTile(z, x, y, fileBytes);
         }
         else
         {
@@ -31,7 +32,21 @@ public class FileClient : DataUtils, IFileClient
 
     public override bool TileExists(int z, int x, int y)
     {
-        string fullPath = this._pathUtils.GetTilePath(this.path, z, x, y);
-        return this._fileSystem.File.Exists(fullPath);
+        return this.GetTilePath(z,x,y) != null;
+    }
+
+    private string? GetTilePath(int z, int x, int y)
+    {
+        var tilePath = this._fileSystem.Path.Join(z.ToString(), x.ToString(), y.ToString());
+        try
+        {
+            //this may or may not be faster then checking specific files of every supported type depending on the used file system
+            return this._fileSystem.Directory
+                .EnumerateFiles(this.path, $"{tilePath}.*", SearchOption.TopDirectoryOnly).FirstOrDefault();
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return null;
+        }
     }
 }

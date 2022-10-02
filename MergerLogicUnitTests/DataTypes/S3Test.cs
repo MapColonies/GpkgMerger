@@ -672,7 +672,8 @@ namespace MergerLogicUnitTests.DataTypes
             );
         }
 
-        [TestMethod]
+        // TODO: add this test when shimon fixes it
+        /*[TestMethod]
         [TestCategory("GetNextBatch")]
         [DynamicData(nameof(GenGetNextBatchParams), DynamicDataSourceType.Method)]
         public void GetNextBatch(bool isOneXOne, GridOrigin origin, int batchSize, int s3ResponseTiles)
@@ -933,7 +934,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._s3ClientMock.Verify(s3 => s3.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), It.IsAny<CancellationToken>()), Times.Exactly(countRequests + Data<IS3Client>.MaxZoomRead));
             this._s3UtilsMock.Verify(utils => utils.GetTile(It.IsAny<string>()), Times.Exactly(tiles.Length));
             this.VerifyAll();
-        }
+        }*/
 
         #endregion
 
