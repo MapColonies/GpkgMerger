@@ -86,7 +86,7 @@ namespace MergerLogic.DataTypes
                              .EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
                              .Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
                 {
-                    Coord coord = this._pathUtils.FromPath(filePath);
+                    Coord coord = this._pathUtils.FromPath(filePath, out _);
                     Tile? tile = this.Utils.GetTile(coord);
                     if (tile is null)
                     {
