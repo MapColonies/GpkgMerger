@@ -534,6 +534,9 @@ namespace MergerLogicUnitTests.DataTypes
         public void Wrapup(bool isOneXOne, bool isBase, GridOrigin origin)
         {
             this.SetupConstructorRequiredMocks(isBase);
+            this._directoryMock
+                .Setup(directory => directory.GetDirectories("test"))
+                .Returns(new string[] { "1" });
             this._fileSystemMock
                 .Setup(fs => fs.Directory.EnumerateFiles(It.IsAny<string>(), "*.*", SearchOption.AllDirectories))
                 .Returns(Array.Empty<string>());
@@ -610,7 +613,7 @@ namespace MergerLogicUnitTests.DataTypes
         public void TileCount(bool isOneXOne, bool isBase, GridOrigin origin, int tileCount)
         {
             var seq = new MockSequence();
-            this.SetupConstructorRequiredMocks(isBase, seq);
+            this.SetupConstructorRequiredMocks(isBase, seq, new string[] { "1" });
             var fileList = new List<string>();
             for (int i = 0; i < tileCount; i++)
             {
@@ -622,14 +625,18 @@ namespace MergerLogicUnitTests.DataTypes
 
             this._directoryMock
                 .InSequence(seq)
-                .Setup(d => d.EnumerateFiles("test", "*.*", SearchOption.AllDirectories))
+                .Setup(directory => directory.GetDirectories("test"))
+                .Returns(new string[] { "1" });
+            this._directoryMock
+                .InSequence(seq)
+                .Setup(d => d.EnumerateFiles("test/1", "*.*", SearchOption.AllDirectories))
                 .Returns(fileList);
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
             var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, grid, origin, isBase);
 
             Assert.AreEqual(tileCount, fsSource.TileCount());
-            this._directoryMock.Verify(d => d.EnumerateFiles("test", "*.*", SearchOption.AllDirectories), Times.Exactly(2));
+            this._directoryMock.Verify(d => d.EnumerateFiles("test/1", "*.*", SearchOption.AllDirectories), Times.Exactly(2));
             this.VerifyAll();
         }
 
@@ -695,8 +702,12 @@ namespace MergerLogicUnitTests.DataTypes
                 //invalid files
                 fileList.Add(string.Empty);
             }
+            
             this._directoryMock
-                .Setup(d => d.EnumerateFiles("test", "*.*", SearchOption.AllDirectories))
+                .Setup(directory => directory.GetDirectories("test"))
+                .Returns(new string[] { "1" });
+            this._directoryMock
+                .Setup(d => d.EnumerateFiles(It.IsAny<string>(), "*.*", SearchOption.AllDirectories))
                 .Returns(fileList);
             this._pathUtilsMock
                 .Setup(utils => utils.FromPath(It.IsAny<string>(), out testFormat, false))
@@ -757,12 +768,9 @@ namespace MergerLogicUnitTests.DataTypes
             };
             var tileBatches = tiles.Where(t => t is not null && (!isOneXOne || t.Z != 0)).Chunk(batchSize).ToList();
             var batchIdx = 0;
-            this.SetupConstructorRequiredMocks(isBase);
             var seq = new MockSequence();
-            this._fileSystemMock
-                .InSequence(seq)
-                .Setup(fs => fs.Directory.EnumerateFiles(It.IsAny<string>(), "*.*", SearchOption.AllDirectories))
-                .Returns(new string[] { "0.png", "1.jpg", "2.png", "invalid", "3.png", "4.png" });
+            this.SetupConstructorRequiredMocks(isBase, seq, new[] { "1" }, 
+                new string[] { "0.png", "1.jpg", "2.png", "invalid", "3.png", "4.png" });
 
             foreach (var tile in tiles)
             {
@@ -847,20 +855,9 @@ namespace MergerLogicUnitTests.DataTypes
         public void FsCreation(bool isOneXOne, bool isBase, GridOrigin origin)
         {
             var seq = new MockSequence();
+            this.SetupConstructorRequiredMocks(isBase, seq);
 
             IDirectoryInfo nullInfo = null;
-            if (isBase)
-            {
-                this._directoryMock
-                    .InSequence(seq)
-                    .Setup(directory => directory.CreateDirectory(It.IsAny<string>())).Returns(nullInfo);
-            }
-
-            this._fileSystemMock
-                .InSequence(seq)
-                .Setup(fs => fs.Directory.EnumerateFiles(It.IsAny<string>(), "*.*", SearchOption.AllDirectories))
-                .Returns(Array.Empty<string>());
-
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
             new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, grid, origin, isBase);
 
@@ -874,7 +871,7 @@ namespace MergerLogicUnitTests.DataTypes
 
         #region helper
 
-        private void SetupConstructorRequiredMocks(bool isBase, MockSequence? sequence = null)
+        private void SetupConstructorRequiredMocks(bool isBase, MockSequence? sequence = null, string[]? directories = null, string[]? files = null)
         {
             var seq = sequence ?? new MockSequence();
             if (isBase)
@@ -885,11 +882,15 @@ namespace MergerLogicUnitTests.DataTypes
                     .Setup(directory => directory.CreateDirectory(It.IsAny<string>())).Returns(nullInfo);
             }
 
+            this._directoryMock
+                .InSequence(seq)
+                .Setup(directory => directory.GetDirectories("test"))
+                .Returns(directories ?? new string[] {});
+
             this._fileSystemMock
                 .InSequence(seq)
                 .Setup(fs => fs.Directory.EnumerateFiles(It.IsAny<string>(), "*.*", SearchOption.AllDirectories))
-                .Returns(Array.Empty<string>());
-
+                .Returns(files ?? Array.Empty<string>());
         }
 
         private void VerifyAll()

@@ -225,8 +225,8 @@ namespace MergerLogic.Clients
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText =
-                        $"SELECT zoom_level, tile_column, tile_row, tile_data FROM \"{this._tileCache}\" limit $limit offset $offset";
+                    command.CommandText = 
+                        $"SELECT zoom_level, tile_column, tile_row, tile_data FROM \"{this._tileCache}\" ORDER BY zoom_level ASC limit $limit offset $offset";
                     command.Parameters.AddWithValue("$limit", batchSize);
                     command.Parameters.AddWithValue("$offset", offset);
 
@@ -249,14 +249,14 @@ namespace MergerLogic.Clients
             return tiles;
         }
 
-        public Tile GetLastTile(int[] coords, Coord baseCoords)
+        public Tile? GetLastTile(int[] coords, int currentTileZoom)
         {
             if (coords.Length < 2)
             {
                 return null;
             }
 
-            Tile lastTile = null;
+            Tile? lastTile = null;
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
@@ -267,8 +267,7 @@ namespace MergerLogic.Clients
                     StringBuilder commandBuilder = new StringBuilder(
                         $"SELECT zoom_level, tile_column, tile_row, tile_data FROM \"{this._tileCache}\" where ");
 
-                    int zoomLevel = baseCoords.Z;
-                    int maxZoomLevel = zoomLevel - 1;
+                    int maxZoomLevel = currentTileZoom - 1;
                     int arrayIdx = 0;
                     for (int currentZoomLevel = maxZoomLevel; currentZoomLevel >= 0; currentZoomLevel--)
                     {

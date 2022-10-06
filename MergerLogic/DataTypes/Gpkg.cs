@@ -107,7 +107,7 @@ namespace MergerLogic.DataTypes
                 coords[arrayIterator + 1] = baseTileY;
             }
 
-            Tile lastTile = this.Utils.GetLastTile(coords, baseCoords);
+            Tile lastTile = this.Utils.GetLastTile(coords, z);
             return lastTile;
         }
 

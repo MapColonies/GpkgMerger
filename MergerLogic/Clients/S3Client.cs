@@ -22,7 +22,7 @@ namespace MergerLogic.Clients
             this._pathUtils = pathUtils;
         }
 
-        private byte[] GetImageBytes(string key)
+        private byte[]? GetImageBytes(string key)
         {
             try
             {

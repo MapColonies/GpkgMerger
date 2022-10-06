@@ -52,24 +52,54 @@ namespace MergerLogic.DataTypes
             return this._fileSystem.Directory.Exists(fullPath);
         }
 
+        private IEnumerable<int> GetZoomLevels()
+        {
+            List<int> zoomLevels = new List<int>();
+
+            // Get all sub-directories which represent zoom levels
+            foreach (string dirPath in this._fileSystem.Directory.GetDirectories(this.Path))
+            {
+                FileInfo fileInfo = new FileInfo(dirPath);
+                if (int.TryParse(fileInfo.Name, out int zoom))
+                {
+                    zoomLevels.Add(zoom);
+                }
+            }
+
+            // Return zoom levels in ASC order
+            zoomLevels.Sort();
+            return zoomLevels;
+        }
+
         private IEnumerator<Tile> GetTiles()
         {
             // From: https://stackoverflow.com/a/7430971/11915280 and https://stackoverflow.com/a/19961761/11915280
-            // Go over directory and count png and jpg files
-            foreach (string filePath in this._fileSystem.Directory
-                         .EnumerateFiles(this.Path, "*.*", SearchOption.AllDirectories)
-                         .Where(file => this._supportedFileExtensions.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
+            IEnumerable<int> zoomLevels = this.GetZoomLevels();
+
+            foreach (int zoomLevel in zoomLevels)
             {
-                Coord coord = this._pathUtils.FromPath(filePath, out _);
-                Tile tile = this.Utils.GetTile(coord);
-                if (tile != null)
+                string path = $"{this.Path}/{zoomLevel}";
+
+                // Go over directory and count png and jpg files
+                foreach (string filePath in this._fileSystem.Directory
+                            .EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
+                            .Where(file => this._supportedFileExtensions.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
                 {
-                    tile = this.ToCurrentGrid(tile);
-                    if (tile != null)
+                    Coord coord = this._pathUtils.FromPath(filePath, out _);
+                    Tile? tile = this.Utils.GetTile(coord);
+                    if (tile is null)
                     {
-                        tile = this.ConvertOriginTile(tile);
-                        yield return tile;
+                        continue;
                     }
+
+                    tile = this.ToCurrentGrid(tile);
+                    if (tile is null)
+                    {
+                        continue;
+                    }
+
+                    tile = this.ConvertOriginTile(tile);
+                    yield return tile;
                 }
             }
         }
@@ -111,9 +141,19 @@ namespace MergerLogic.DataTypes
         public override long TileCount()
         {
             // From: https://stackoverflow.com/a/7430971/11915280 and https://stackoverflow.com/a/19961761/11915280
-            // Go over directory and count png and jpg files
-            return this._fileSystem.Directory.EnumerateFiles(this.Path, "*.*", SearchOption.AllDirectories)
-                .Count(file => this._supportedFileExtensions.Any(x => file.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
+            IEnumerable<int> zoomLevels = this.GetZoomLevels();
+            long count = 0;
+
+            foreach (int zoomLevel in zoomLevels)
+            {
+                string path = $"{this.Path}/{zoomLevel}";
+
+                // Go over directory and count png and jpg files
+                count += this._fileSystem.Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
+                    .LongCount(file => this._supportedFileExtensions.Any(x => file.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            return count;
         }
 
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)

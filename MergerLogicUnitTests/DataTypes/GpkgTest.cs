@@ -358,7 +358,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             this._gpkgUtilsMock
                 .InSequence(sequence)
-                .Setup(utils => utils.GetLastTile(It.IsAny<int[]>(), It.Is<Coord>(c => c.Z == 5 && c.X == 2 && c.Y == 3)))
+                .Setup(utils => utils.GetLastTile(It.IsAny<int[]>(), It.Is<int>(z => z == 5)))
                 .Returns(tile);
             if (isOneXOne)
             {
@@ -392,7 +392,7 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._gpkgUtilsMock.Verify(utils => utils.GetTile(5, 2, 3), Times.Once);
             }
-            this._gpkgUtilsMock.Verify(utils => utils.GetLastTile(new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 }, upscaleCords), isValidConversion ? Times.Once : Times.Never);
+            this._gpkgUtilsMock.Verify(utils => utils.GetLastTile(new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 }, upscaleCords.Z), isValidConversion ? Times.Once : Times.Never);
 
             if (isOneXOne)
             {

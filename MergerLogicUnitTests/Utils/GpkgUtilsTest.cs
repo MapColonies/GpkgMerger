@@ -274,7 +274,7 @@ namespace MergerLogicUnitTests.Utils
                     coords.Add(i);
                     coords.Add(i);
                 }
-                var res = gpkgUtils.GetLastTile(coords.ToArray(), baseCoords);
+                var res = gpkgUtils.GetLastTile(coords.ToArray(), baseCoords.Z);
 
                 Tile expected = null;
                 if (baseCoords.Z > 6)

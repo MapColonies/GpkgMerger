@@ -1,6 +1,5 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.Clients;
-using MergerLogic.Utils;
 
 namespace MergerLogic.DataTypes
 {
@@ -9,6 +8,7 @@ namespace MergerLogic.DataTypes
         protected TileBounds[] TileRanges;
         protected IEnumerator<Tile[]> Batches;
         protected int BatchIndex = 0;
+
         protected HttpDataSource(IServiceProvider container,
             DataType type, string path, int batchSize, Extent extent, GridOrigin? origin, Grid? grid, int maxZoom, int minZoom = 0)
             : base(container, type, path, batchSize, grid, origin)
