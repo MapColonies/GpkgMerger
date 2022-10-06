@@ -74,7 +74,6 @@ namespace MergerLogic.DataTypes
         private IEnumerator<Tile> GetTiles()
         {
             // From: https://stackoverflow.com/a/7430971/11915280 and https://stackoverflow.com/a/19961761/11915280
-            string[] ext = { ".png", ".jpg" };
             IEnumerable<int> zoomLevels = this.GetZoomLevels();
 
             foreach (int zoomLevel in zoomLevels)
@@ -83,8 +82,8 @@ namespace MergerLogic.DataTypes
 
                 // Go over directory and count png and jpg files
                 foreach (string filePath in this._fileSystem.Directory
-                             .EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
-                             .Where(file => ext.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
+                            .EnumerateFiles(this.Path, "*.*", SearchOption.AllDirectories)
+                            .Where(file => this._supportedFileExtensions.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
                 {
                     Coord coord = this._pathUtils.FromPath(filePath, out _);
                     Tile? tile = this.Utils.GetTile(coord);
@@ -142,7 +141,6 @@ namespace MergerLogic.DataTypes
         public override long TileCount()
         {
             // From: https://stackoverflow.com/a/7430971/11915280 and https://stackoverflow.com/a/19961761/11915280
-            string[] ext = { ".png", ".jpg" };
             IEnumerable<int> zoomLevels = this.GetZoomLevels();
             long count = 0;
 
@@ -152,7 +150,7 @@ namespace MergerLogic.DataTypes
 
                 // Go over directory and count png and jpg files
                 count += this._fileSystem.Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
-                    .LongCount(file => ext.Any(x => file.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
+                    .LongCount(file => this._supportedFileExtensions.Any(x => file.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
             }
 
             return count;

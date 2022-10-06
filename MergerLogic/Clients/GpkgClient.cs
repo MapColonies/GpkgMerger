@@ -248,14 +248,14 @@ namespace MergerLogic.Clients
             return tiles;
         }
 
-        public Tile GetLastTile(int[] coords, int currentTileZoom)
+        public Tile? GetLastTile(int[] coords, int currentTileZoom)
         {
             if (coords.Length < 2)
             {
                 return null;
             }
 
-            Tile lastTile = null;
+            Tile? lastTile = null;
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
