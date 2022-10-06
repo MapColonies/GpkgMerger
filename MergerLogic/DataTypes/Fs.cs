@@ -82,7 +82,7 @@ namespace MergerLogic.DataTypes
 
                 // Go over directory and count png and jpg files
                 foreach (string filePath in this._fileSystem.Directory
-                            .EnumerateFiles(this.Path, "*.*", SearchOption.AllDirectories)
+                            .EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
                             .Where(file => this._supportedFileExtensions.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
                 {
                     Coord coord = this._pathUtils.FromPath(filePath, out _);
