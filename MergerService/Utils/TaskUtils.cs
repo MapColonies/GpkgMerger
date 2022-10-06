@@ -11,14 +11,14 @@ namespace MergerService.Utils
     // TODO: rename all utils to clients
     public class TaskUtils : ITaskUtils
     {
-        private IHttpRequestUtils _httpClient;
-        private IConfigurationManager _configuration;
-        private ILogger _logger;
-        private ActivitySource _activitySource;
-        private int _maxAttempts;
-        private JsonSerializerSettings _jsonSerializerSettings;
-        private string _overseerUrl;
-        private string _jobManagerUrl;
+        private readonly IHttpRequestUtils _httpClient;
+        private readonly IConfigurationManager _configuration;
+        private readonly ILogger _logger;
+        private readonly ActivitySource _activitySource;
+        private readonly int _maxAttempts;
+        private readonly JsonSerializerSettings _jsonSerializerSettings;
+        private readonly string _overseerUrl;
+        private readonly string _jobManagerUrl;
 
         public TaskUtils(IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<TaskUtils> logger,
             ActivitySource activitySource)

@@ -1,4 +1,5 @@
 using MergerLogic.Batching;
+using MergerLogic.ImageProcessing;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System.ComponentModel;
@@ -9,33 +10,27 @@ namespace MergerService.Controllers
 {
     public enum Status
     {
-        [EnumMember(Value = "Pending")]
-        PENDING,
-        [EnumMember(Value = "In-Progress")]
-        IN_PROGRESS,
-        [EnumMember(Value = "Completed")]
-        COMPLETED,
-        [EnumMember(Value = "Failed")]
-        FAILED,
-        [EnumMember(Value = "Expired")]
-        EXPIRED,
-        [EnumMember(Value = "Aborted")]
-        ABORTED
+        [EnumMember(Value = "Pending")] PENDING,
+        [EnumMember(Value = "In-Progress")] IN_PROGRESS,
+        [EnumMember(Value = "Completed")] COMPLETED,
+        [EnumMember(Value = "Failed")] FAILED,
+        [EnumMember(Value = "Expired")] EXPIRED,
+        [EnumMember(Value = "Aborted")] ABORTED
     }
 
     public class MergeMetadata
     {
-        [JsonInclude]
-        public TileBounds[]? Batches { get; }
+        [JsonInclude] public TileFormat TargetFormat { get; }
+        [JsonInclude] public TileBounds[]? Batches { get; }
 
-        [JsonInclude]
-        public Source[]? Sources { get; }
+        [JsonInclude] public Source[]? Sources { get; }
 
         [System.Text.Json.Serialization.JsonIgnore]
         private JsonSerializerSettings _jsonSerializerSettings;
 
-        public MergeMetadata(TileBounds[] batches, Source[] sources)
+        public MergeMetadata(TileFormat format, TileBounds[] batches, Source[] sources)
         {
+            this.TargetFormat = format;
             this.Batches = batches;
             this.Sources = sources;
 
@@ -56,50 +51,39 @@ namespace MergerService.Controllers
 
     public class MergeTask
     {
-        [JsonInclude]
-        public string Id { get; }
+        [JsonInclude] public string Id { get; }
 
-        [JsonInclude]
-        public string Type { get; }
+        [JsonInclude] public string Type { get; }
 
-        [JsonInclude]
-        public string Description { get; }
+        [JsonInclude] public string Description { get; }
 
-        [JsonInclude]
-        public MergeMetadata Parameters { get; }
+        [JsonInclude] public MergeMetadata Parameters { get; }
 
-        [JsonInclude]
-        public Status Status { get; }
+        [JsonInclude] public Status Status { get; }
 
         [DefaultValue(0)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
         [JsonInclude]
         public int Percentage { get; set; }
 
-        [JsonInclude]
-        public string Reason { get; }
+        [JsonInclude] public string Reason { get; }
 
-        [JsonInclude]
-        public int Attempts { get; }
+        [JsonInclude] public int Attempts { get; }
 
-        [JsonInclude]
-        public string JobId { get; }
+        [JsonInclude] public string JobId { get; }
 
-        [JsonInclude]
-        public bool Resettable { get; }
+        [JsonInclude] public bool Resettable { get; }
 
-        [JsonInclude]
-        public DateTime Created { get; }
+        [JsonInclude] public DateTime Created { get; }
 
-        [JsonInclude]
-        public DateTime Updated { get; }
+        [JsonInclude] public DateTime Updated { get; }
 
         [System.Text.Json.Serialization.JsonIgnore]
         private JsonSerializerSettings _jsonSerializerSettings;
 
         public MergeTask(string id, string type, string description, MergeMetadata parameters,
-                            Status status, int? percentage, string reason, int attempts,
-                            string jobId, bool resettable, DateTime created, DateTime updated)
+            Status status, int? percentage, string reason, int attempts,
+            string jobId, bool resettable, DateTime created, DateTime updated)
         {
             this.Id = id;
             this.Type = type;
@@ -111,6 +95,7 @@ namespace MergerService.Controllers
             {
                 percentage = 0;
             }
+
             this.Percentage = (int)percentage;
 
             this.Reason = reason;

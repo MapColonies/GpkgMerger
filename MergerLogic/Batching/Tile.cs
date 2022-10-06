@@ -1,4 +1,5 @@
 using MergerLogic.DataTypes;
+using MergerLogic.ImageProcessing;
 
 namespace MergerLogic.Batching
 {
@@ -7,37 +8,43 @@ namespace MergerLogic.Batching
     public class Tile
     {
         public int Z
-        { get; private set; }
+        {
+            get;
+            private set;
+        }
 
         public int X
-        { get; private set; }
+        {
+            get;
+            private set;
+        }
 
         public int Y
-        { get; internal set; }
+        {
+            get;
+            internal set;
+        }
+
+        public TileFormat? Format { get; internal set; }
 
         private byte[] _data;
 
-        public Tile(int z, int x, int y, byte[] data)
+        public Tile(int z, int x, int y, byte[] data, TileFormat? format = null)
         {
             this.Z = z;
             this.X = x;
             this.Y = y;
             this._data = data;
+            this.Format = format;
         }
 
-        public Tile(Coord cords, byte[] data)
+        public Tile(Coord cords, byte[] data, TileFormat? format = null)
         {
             this.Z = cords.Z;
             this.X = cords.X;
             this.Y = cords.Y;
             this._data = data;
-        }
-
-        protected Tile(int z, int x, int y)
-        {
-            this.Z = z;
-            this.X = x;
-            this.Y = y;
+            this.Format = format;
         }
 
         public bool HasCoords(int z, int x, int y)

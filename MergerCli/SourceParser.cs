@@ -1,5 +1,6 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
 
@@ -7,7 +8,9 @@ namespace MergerCli
 {
     internal class SourceParser : ISourceParser
     {
-        private readonly HashSet<string> sourceTypes = new HashSet<string>(new[] { "fs", "s3", "gpkg", "wmts", "tms", "xyz" });
+        private readonly HashSet<string> _sourceTypes =
+            new HashSet<string>(new[] { "fs", "s3", "gpkg", "wmts", "tms", "xyz" });
+
         private readonly IDataFactory _dataFactory;
         private readonly ILogger _logger;
 
@@ -17,10 +20,16 @@ namespace MergerCli
             this._logger = logger;
         }
 
-        public List<IData> ParseSources(string[] args, int batchSize)
+        public List<IData> ParseSources(string[] args, int batchSize, out TileFormat format)
         {
             List<IData> sources = new List<IData>();
-            int idx = 2;
+            if (!TileFormat.TryParse(args[2], true, out format))
+            {
+                this._logger.LogError($"invalid target tile format: {args[2]}");
+                Environment.Exit(1);
+            }
+
+            int idx = 3;
             bool isBase = true;
             while (idx < args.Length)
             {
@@ -38,6 +47,7 @@ namespace MergerCli
                             this._logger.LogError($"{source} data does not exist.");
                             Environment.Exit(1);
                         }
+
                         break;
                     case "fs":
                     case "s3":
@@ -51,6 +61,7 @@ namespace MergerCli
                             this._logger.LogError($"{source} data does not exist.");
                             Environment.Exit(1);
                         }
+
                         break;
                     case "wmts":
                     case "xyz":
@@ -65,12 +76,15 @@ namespace MergerCli
                             this._logger.LogError($"{source} data does not exist.");
                             Environment.Exit(1);
                         }
+
                         break;
                     default:
                         throw new Exception($"Currently there is no support for the data type '{args[idx]}'");
                 }
+
                 isBase = false;
             }
+
             return sources;
         }
 
@@ -98,8 +112,8 @@ namespace MergerCli
                 // not using set as it allows optional prams with dynamic values aka. --minZoom 3 
                 var optionalParams = args.Skip(idx + requiredParamCount).Take(optionalParamCount).ToArray();
                 this.ParseOptionalParameters(sourceType, sourcePath, ref isOneXOne, ref origin, optionalParams);
-
             }
+
             idx += paramCount;
             Grid? grid = GetGrid(isOneXOne);
             return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, grid, origin, null, isBase);
@@ -119,12 +133,14 @@ namespace MergerCli
             {
                 // not using set as it allows optional prams with dynamic values aka. --minZoom 3
                 var optionalParams = args.Skip(idx + requiredParamCount).Take(optionalParamCount).ToArray();
-                int parsedOptionals = this.ParseOptionalParameters(sourceType, sourcePath, ref isOneXOne, ref origin, optionalParams);
+                int parsedOptionals =
+                    this.ParseOptionalParameters(sourceType, sourcePath, ref isOneXOne, ref origin, optionalParams);
                 if (paramCount - requiredParamCount - parsedOptionals == 1)
                 {
                     extent = this.parseExtent(args[idx + 2]);
                 }
             }
+
             idx += paramCount;
             Grid? grid = GetGrid(isOneXOne);
             return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, grid, origin, extent, isBase);
@@ -148,6 +164,7 @@ namespace MergerCli
                 var optionalParams = args.Skip(idx + requiredParamCount).Take(optionalParamCount).ToArray();
                 this.ParseOptionalParameters(sourceType, sourcePath, ref isOneXOne, ref origin, optionalParams);
             }
+
             idx += paramCount;
             Grid? grid = GetGrid(isOneXOne);
             return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, isBase, extent, maxZoom, minZoom, grid, origin);
@@ -174,30 +191,35 @@ namespace MergerCli
                 isOneXOne = true;
                 parsed++;
             }
+
             if (optionalParams.Contains("--UL"))
             {
                 origin = GridOrigin.UPPER_LEFT;
                 parsed++;
             }
+
             if (optionalParams.Contains("--LL"))
             {
                 if (origin != null)
                 {
                     throw new Exception($"layer {sourceType} {sourcePath} cant be both UL and LL");
                 }
+
                 origin = GridOrigin.LOWER_LEFT;
                 parsed++;
             }
+
             return parsed;
         }
 
-        private int ValidateAndGetSourceLength(string[] args, int startIdx, int minExpectedParamCount, int optionalParamCount)
+        private int ValidateAndGetSourceLength(string[] args, int startIdx, int minExpectedParamCount,
+            int optionalParamCount)
         {
             int i = startIdx + 1;
             // check required parameters
             for (; i < startIdx + minExpectedParamCount; i++)
             {
-                if (i >= args.Length || this.sourceTypes.Contains(args[i].ToLower()))
+                if (i >= args.Length || this._sourceTypes.Contains(args[i].ToLower()))
                 {
                     throw new Exception($"invalid source parameters for {args[startIdx]} {args[startIdx + 1]}");
                 }
@@ -206,11 +228,12 @@ namespace MergerCli
             // check optional parameters
             for (; i <= startIdx + minExpectedParamCount + optionalParamCount; i++)
             {
-                if (i == args.Length || this.sourceTypes.Contains(args[i].ToLower()))
+                if (i == args.Length || this._sourceTypes.Contains(args[i].ToLower()))
                 {
                     return i - startIdx;
                 }
             }
+
             throw new Exception($"invalid source parameters for {args[startIdx]} {args[startIdx + 1]}");
         }
     }
