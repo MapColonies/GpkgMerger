@@ -248,7 +248,7 @@ namespace MergerLogic.Clients
             return tiles;
         }
 
-        public Tile GetLastTile(int[] coords, Coord baseCoords)
+        public Tile GetLastTile(int[] coords, int currentTileZoom)
         {
             if (coords.Length < 2)
             {
@@ -266,8 +266,7 @@ namespace MergerLogic.Clients
                     StringBuilder commandBuilder = new StringBuilder(
                         $"SELECT zoom_level, tile_column, tile_row, tile_data FROM \"{this._tileCache}\" where ");
 
-                    int zoomLevel = baseCoords.Z;
-                    int maxZoomLevel = zoomLevel - 1;
+                    int maxZoomLevel = currentTileZoom - 1;
                     int arrayIdx = 0;
                     for (int currentZoomLevel = maxZoomLevel; currentZoomLevel >= 0; currentZoomLevel--)
                     {
