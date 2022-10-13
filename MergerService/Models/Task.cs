@@ -28,9 +28,9 @@ namespace MergerService.Controllers
         [System.Text.Json.Serialization.JsonIgnore]
         private JsonSerializerSettings _jsonSerializerSettings;
 
-        public MergeMetadata(TileFormat format, TileBounds[] batches, Source[] sources)
+        public MergeMetadata(TileFormat targetFormat, TileBounds[] batches, Source[] sources)
         {
-            this.TargetFormat = format;
+            this.TargetFormat = targetFormat;
             this.Batches = batches;
             this.Sources = sources;
 
