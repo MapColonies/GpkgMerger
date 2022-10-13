@@ -20,6 +20,12 @@ namespace MergerCli
             this._logger = logger;
         }
 
+        private void LogDataErrorAndExit(bool isBase, Exception e) {
+            string source = isBase ? "base" : "new";
+            this._logger.LogError($"{source} data does not exist, error: {e.Message}");
+            Environment.Exit(1);
+        }
+
         public List<IData> ParseSources(string[] args, int batchSize, out TileFormat format)
         {
             List<IData> sources = new List<IData>();
@@ -42,10 +48,7 @@ namespace MergerCli
                         }
                         catch (Exception e)
                         {
-                            this._logger.LogError(e.Message);
-                            string source = isBase ? "base" : "new";
-                            this._logger.LogError($"{source} data does not exist.");
-                            Environment.Exit(1);
+                            this.LogDataErrorAndExit(isBase, e);
                         }
 
                         break;
@@ -55,11 +58,9 @@ namespace MergerCli
                         {
                             sources.Add(this.ParseFileSource(args, ref idx, batchSize, isBase));
                         }
-                        catch
+                        catch (Exception e)
                         {
-                            string source = isBase ? "base" : "new";
-                            this._logger.LogError($"{source} data does not exist.");
-                            Environment.Exit(1);
+                            this.LogDataErrorAndExit(isBase, e);
                         }
 
                         break;
@@ -70,11 +71,9 @@ namespace MergerCli
                         {
                             sources.Add(this.ParseHttpSource(args, ref idx, batchSize, isBase));
                         }
-                        catch
+                        catch (Exception e)
                         {
-                            string source = isBase ? "base" : "new";
-                            this._logger.LogError($"{source} data does not exist.");
-                            Environment.Exit(1);
+                            this.LogDataErrorAndExit(isBase, e);
                         }
 
                         break;
