@@ -70,27 +70,41 @@ namespace MergerLogic.Extensions
 
         public static IServiceCollection RegisterS3(this IServiceCollection collection)
         {
+            // AWSConfigs.LoggingConfig.LogTo = LoggingOptions.Console;
             return collection.AddSingleton<IAmazonS3>(sp =>
             {
                 var config = sp.GetRequiredService<IConfigurationManager>();
-                string s3Url = config.GetConfiguration("S3", "url");
-                string accessKey = Environment.GetEnvironmentVariable("S3_ACCESS_KEY");
-                string secretKey = Environment.GetEnvironmentVariable("S3_SECRET_KEY");
 
-                if (string.IsNullOrEmpty(s3Url) || string.IsNullOrEmpty(accessKey) || string.IsNullOrEmpty(secretKey))
+                // TODO: remove
+                var options =  config.GetAWSOptions();
+                var client = options.CreateServiceClient<IAmazonS3>();
+
+                string s3Url = config.GetConfiguration("S3", "url");
+                // string region = Environment.GetEnvironmentVariable(EnvironmentVariableAWSRegion.ENVIRONMENT_VARIABLE_REGION);
+                string accessKey = Environment.GetEnvironmentVariable(EnvironmentVariablesAWSCredentials.ENVIRONMENT_VARIABLE_ACCESSKEY);
+                string secretKey = Environment.GetEnvironmentVariable(EnvironmentVariablesAWSCredentials.ENVIRONMENT_VARIABLE_SECRETKEY);
+
+                var temp = config.GetConfiguration("S3", "request");
+                int timeoutSec = config.GetConfiguration<int>("S3", "request", "timeoutSec");
+                int retries = config.GetConfiguration<int>("S3", "request", "retries");
+
+                if (string.IsNullOrEmpty(s3Url) || string.IsNullOrEmpty(accessKey)
+                                                || string.IsNullOrEmpty(secretKey))
                 {
                     throw new Exception("s3 configuration is required");
                 }
 
                 var s3Config = new AmazonS3Config
                 {
-                    RegionEndpoint = Amazon.RegionEndpoint.USEast1,
                     ServiceURL = s3Url,
-                    ForcePathStyle = true
+                    ForcePathStyle = true,
+                    Timeout = new TimeSpan(0, 0, timeoutSec),
+                    MaxErrorRetry = retries,
                 };
+
                 var credentials = new BasicAWSCredentials(accessKey, secretKey);
                 return new AmazonS3Client(credentials, s3Config);
-
+                // return client;
             });
         }
 
