@@ -14,6 +14,7 @@ namespace MergerService.Utils
         private IHttpRequestUtils _httpClient;
         private IConfigurationManager _configuration;
         private ILogger _logger;
+        private IHeartbeatClient _heartbeatClient;
         private ActivitySource _activitySource;
         private int _maxAttempts;
         private JsonSerializerSettings _jsonSerializerSettings;
@@ -21,11 +22,12 @@ namespace MergerService.Utils
         private string _jobManagerUrl;
 
         public TaskUtils(IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<TaskUtils> logger,
-            ActivitySource activitySource)
+            ActivitySource activitySource, IHeartbeatClient heartbeatClient)
         {
             this._httpClient = httpClient;
             this._configuration = configuration;
             this._logger = logger;
+            this._heartbeatClient = heartbeatClient;
             this._activitySource = activitySource;
             this._maxAttempts = this._configuration.GetConfiguration<int>("TASK", "maxAttempts");
 
@@ -41,6 +43,8 @@ namespace MergerService.Utils
         public MergeTask? GetTask(string jobType, string taskType)
         {
             // TODO: add heartbeat start method
+            Console.WriteLine(jobType);
+            Console.WriteLine(taskType);
 
             using (this._activitySource.StartActivity("dequeue task"))
             {
@@ -55,16 +59,21 @@ namespace MergerService.Utils
 
                 try
                 {
-                    return JsonConvert.DeserializeObject<MergeTask>(taskData, this._jsonSerializerSettings)!;
+                    MergeTask mergeTask = JsonConvert.DeserializeObject<MergeTask>(taskData, this._jsonSerializerSettings)!;
+                    this._heartbeatClient.Start(mergeTask.Id);
+                    
+                    return mergeTask;
                 }
                 catch (Exception e)
                 {
+
                     this._logger.LogWarning(e, "Error deserializing returned task");
                     return null;
                 }
             }
 
             // TODO: add heartbeat stop method
+            this._heartbeatClient.Stop();
         }
 
         private void NotifyOnStatusChange(string jobId, string taskId)
