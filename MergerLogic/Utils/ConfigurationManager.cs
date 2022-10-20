@@ -1,4 +1,3 @@
-using Amazon.Extensions.NETCore.Setup;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel;
@@ -58,11 +57,6 @@ namespace MergerLogic.Utils
                 this._logger?.LogError(message);
                 throw new Exception(message, e);
             }
-        }
-        
-        public AWSOptions GetAWSOptions()
-        {
-            return this.config.GetAWSOptions();
         }
     }
 }

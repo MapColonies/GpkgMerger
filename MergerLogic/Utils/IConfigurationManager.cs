@@ -1,5 +1,4 @@
-﻿using Amazon.Extensions.NETCore.Setup;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 
 namespace MergerLogic.Utils
 {
@@ -10,7 +9,5 @@ namespace MergerLogic.Utils
         string GetConfiguration(params string[] configPath);
 
         T GetConfiguration<T>(params string[] configPath);
-
-        AWSOptions GetAWSOptions();
     }
 }
