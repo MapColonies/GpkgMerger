@@ -1,6 +1,7 @@
 ﻿using MergerCli.Utils;
 using MergerLogic.DataTypes;
 using MergerLogic.Extensions;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -36,11 +37,12 @@ namespace MergerCli
             PrepareStatusManger(ref args);
 
             int batchSize = int.Parse(args[1]);
+            TileFormat format;
             List<IData> sources;
             try
             {
                 var parser = container.GetRequiredService<ISourceParser>();
-                sources = parser.ParseSources(args, batchSize);
+                sources = parser.ParseSources(args, batchSize, out format);
             }
             catch (Exception ex)
             {
@@ -71,7 +73,8 @@ namespace MergerCli
                     {
                         continue;
                     }
-                    process.Start(baseData, sources[i], batchSize, _batchStatusManager);
+
+                    process.Start(format, baseData, sources[i], batchSize, _batchStatusManager);
                     stopWatch.Stop();
 
                     // Get the elapsed time as a TimeSpan value.
@@ -94,6 +97,7 @@ namespace MergerCli
                         _logger.LogInformation(timeUtils.FormatElapsedTime($"{sources[i].Path} validation time", ts));
                     }
                 }
+
                 baseData.Wrapup();
             }
             catch (Exception ex)
@@ -103,6 +107,7 @@ namespace MergerCli
                 _logger.LogError(ex, ex.Message);
                 return;
             }
+
             totalTimeStopWatch.Stop();
             // Get the elapsed time as a TimeSpan value.
             ts = totalTimeStopWatch.Elapsed;
@@ -131,7 +136,7 @@ namespace MergerCli
                         gpkg <path>  [bbox - in format 'minX,minY,maxX,maxY' - required base] [--1x1] [--UL / --LL] 
                     **** please note all layers must be 2X1 EPSG:4326 layers ****
                                     
-                merge sources: {programName} <batch_size> <base source> <additional source> [<another source>...]
+                merge sources: {programName} <batch_size> <target tiles format: png/jpeg> <base source> <additional source> [<another source>...]
                 Examples:
                 {programName} 1000 gpkg area1.gpkg gpkg area2.gpkg
                 {programName} 1000 s3 /path1/on/s3 s3 /path2/on/s3
@@ -161,6 +166,7 @@ namespace MergerCli
                     _logger.LogError($"invalid status file {args[1]}");
                     Environment.Exit(-1);
                 }
+
                 string json = File.ReadAllText(args[1]);
                 _batchStatusManager = BatchStatusManager.FromJson(json);
                 args = _batchStatusManager.Command;
@@ -174,6 +180,7 @@ namespace MergerCli
             {
                 _batchStatusManager = new BatchStatusManager(args);
             }
+
             //save status on program exit
             AssemblyLoadContext.Default.Unloading += delegate { OnFailure(); };
             //save status on SigInt (ctrl + c)

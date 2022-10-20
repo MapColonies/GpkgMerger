@@ -34,6 +34,8 @@ namespace MergerLogic.DataTypes
 
     public abstract class Data<TUtilsType> : IData where TUtilsType : IDataUtils
     {
+        public const int MaxZoomRead = 25;
+
         protected delegate int ValFromCoordFunction(Coord coord);
         protected delegate Tile? GetTileFromXYZFunction(int z, int x, int y);
         protected delegate Coord? GetCoordFromCoordFunction(Coord coord);
@@ -126,7 +128,7 @@ namespace MergerLogic.DataTypes
         {
             int z = coords.Z;
             int baseTileX = coords.X;
-            int baseTileY = coords.Y;
+            int baseTileY = this.ConvertOriginCoord(coords); //dont forget to use the correct origin when overriding this
 
             Tile? lastTile = null;
 

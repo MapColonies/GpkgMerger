@@ -15,7 +15,7 @@ namespace MergerLogic.ImageProcessing
             this._imageFormatter = imageFormatter;
         }
 
-        public byte[]? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords)
+        public byte[]? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords,TileFormat format)
         {
             var images = this.GetImageList(tiles, targetCoords, out Tile? lastProcessedTile, out bool singleImage);
             byte[] data;
@@ -30,21 +30,9 @@ namespace MergerLogic.ImageProcessing
 
                     // Otherwise there is one image that wasn't loaded
                     data = lastProcessedTile!.GetImageBytes();
-                    //check if magic is png
-                    if (data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 &&
-                        data[4] == 0x0D && data[5] == 0x0A
-                        && data[6] == 0x1A && data[7] == 0x0A)
-                    {
-                        return data;
-                    }
-                    return this._imageFormatter.ToPng(data);
+                    return this._imageFormatter.CovertToFormat(data, format);
                 case 1:
-                    if (images[0].Format != MagickFormat.Png && images[0].Format != MagickFormat.Png8 && images[0].Format != MagickFormat.Png00 &&
-                        images[0].Format != MagickFormat.Png24 && images[0].Format != MagickFormat.Png32 && images[0].Format != MagickFormat.Png48 &&
-                        images[0].Format != MagickFormat.Png64)
-                    {
-                        this._imageFormatter.ToPng(images[0]);
-                    }
+                    this._imageFormatter.CovertToFormat(images[0], format);
                     data = images[0].ToByteArray();
                     images[0].Dispose();
                     return data;
@@ -55,9 +43,12 @@ namespace MergerLogic.ImageProcessing
                         {
                             imageCollection.Add(images[i]);
                         }
-                        using (var mergedImage = imageCollection.Flatten())
+
+                        using (var mergedImage = imageCollection.Flatten(MagickColor.FromRgba(0, 0, 0, 0)))
                         {
-                            this._imageFormatter.ToPng(mergedImage);
+                            mergedImage.ColorSpace = ColorSpace.sRGB;
+                            mergedImage.ColorType = mergedImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor;
+                            this._imageFormatter.CovertToFormat(mergedImage,format);
                             var mergedImageBytes = mergedImage.ToByteArray();
                             return mergedImageBytes;
                         }
@@ -65,7 +56,8 @@ namespace MergerLogic.ImageProcessing
             }
         }
 
-        private List<MagickImage> GetImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords, out Tile? lastProcessedTile, out bool singleImage)
+        private List<MagickImage> GetImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords,
+            out Tile? lastProcessedTile, out bool singleImage)
         {
             var images = new List<MagickImage>();
             lastProcessedTile = null;
@@ -147,7 +139,8 @@ namespace MergerLogic.ImageProcessing
             return null;
         }
 
-        private void AddTileToImageList(Coord targetCoords, Tile? tile, List<MagickImage> images, ref MagickImage? tileImage)
+        private void AddTileToImageList(Coord targetCoords, Tile? tile, List<MagickImage> images,
+            ref MagickImage? tileImage)
         {
             if (tile!.Z > targetCoords.Z)
             {
@@ -158,7 +151,9 @@ namespace MergerLogic.ImageProcessing
             tileImage = new MagickImage(tileBytes);
             if (tile.Z < targetCoords.Z)
             {
-                this._tileScaler.Upscale(tileImage, tile, targetCoords);
+                var upscale = this._tileScaler.Upscale(tileImage, tile, targetCoords);
+                tileImage.Dispose();
+                tileImage = upscale;
             }
 
             images.Add(tileImage);

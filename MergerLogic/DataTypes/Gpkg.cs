@@ -96,7 +96,7 @@ namespace MergerLogic.DataTypes
 
             int z = baseCoords.Z;
             int baseTileX = baseCoords.X;
-            int baseTileY = baseCoords.Y;
+            int baseTileY = this.ConvertOriginCoord(baseCoords);
             int arrayIterator = 0;
             for (int i = z - 1; i >= 0; i--)
             {
@@ -107,7 +107,7 @@ namespace MergerLogic.DataTypes
                 coords[arrayIterator + 1] = baseTileY;
             }
 
-            Tile lastTile = this.Utils.GetLastTile(coords, baseCoords);
+            Tile lastTile = this.Utils.GetLastTile(coords, z);
             return lastTile;
         }
 

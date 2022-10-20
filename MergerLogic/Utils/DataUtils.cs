@@ -1,5 +1,6 @@
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using MergerLogic.ImageProcessing;
 
 namespace MergerLogic.Utils
 {
@@ -7,11 +8,13 @@ namespace MergerLogic.Utils
     {
         protected readonly string path;
         protected readonly IGeoUtils GeoUtils;
+        protected readonly IImageFormatter Formatter;
 
-        public DataUtils(string path, IGeoUtils geoUtils)
+        public DataUtils(string path, IGeoUtils geoUtils, IImageFormatter formatter)
         {
             this.path = path;
             this.GeoUtils = geoUtils;
+            this.Formatter = formatter;
         }
 
         public abstract Tile? GetTile(int z, int x, int y);
@@ -22,5 +25,16 @@ namespace MergerLogic.Utils
         }
 
         public abstract bool TileExists(int z, int x, int y);
+
+        protected Tile? createTile(int z, int x, int y, byte[]? data)
+        {
+            if (data == null)
+            {
+                return null;
+            }
+
+            var format = this.Formatter.GetTileFormat(data);
+            return new Tile(z, x, y, data, format);
+        }
     }
 }
