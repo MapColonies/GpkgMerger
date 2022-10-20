@@ -42,10 +42,6 @@ namespace MergerService.Utils
 
         public MergeTask? GetTask(string jobType, string taskType)
         {
-            // TODO: add heartbeat start method
-            Console.WriteLine(jobType);
-            Console.WriteLine(taskType);
-
             using (this._activitySource.StartActivity("dequeue task"))
             {
                 string relativeUri = $"tasks/{jobType}/{taskType}/startPending";
@@ -59,10 +55,8 @@ namespace MergerService.Utils
 
                 try
                 {
-                    MergeTask mergeTask = JsonConvert.DeserializeObject<MergeTask>(taskData, this._jsonSerializerSettings)!;
-                    this._heartbeatClient.Start(mergeTask.Id);
                     
-                    return mergeTask;
+                    return JsonConvert.DeserializeObject<MergeTask>(taskData, this._jsonSerializerSettings)!;
                 }
                 catch (Exception e)
                 {
@@ -71,9 +65,6 @@ namespace MergerService.Utils
                     return null;
                 }
             }
-
-            // TODO: add heartbeat stop method
-            this._heartbeatClient.Stop();
         }
 
         private void NotifyOnStatusChange(string jobId, string taskId)

@@ -13,7 +13,7 @@ namespace MergerLogic.Clients
         private readonly string _baseUrl;
         private readonly int _intervalMs;
         private string _taskId;
-        
+
         public HeartbeatClient(ILogger<GpkgClient> logger, IConfigurationManager configurationManager, IHttpRequestUtils httpClient)
         {
             this._logger = logger;
@@ -25,35 +25,47 @@ namespace MergerLogic.Clients
 
         public void Start(string taskId)
         {
-            Console.WriteLine("DANI");
-            this._logger.LogInformation($"Starts heartbeats for task");
-            Console.WriteLine("TIMER:");
+            this._logger.LogInformation($"Starts heartbeats for task={taskId}");
+            if (this._timer != null) {
+                this.Stop();
+            }
             this._timer = new System.Timers.Timer();
             this._timer.Enabled = true;
-            Console.WriteLine("AFTER");
             this._taskId = taskId;
-            
             this._timer.Interval = this._intervalMs;
             this._timer.Elapsed += this.Send;
         }
 
         public void Stop()
         {
-            if (!this._timer.Enabled)
+            if (this._timer == null || !this._timer.Enabled)
             {
-                throw new Exception("Timer must be running in order to stop it.");
+                throw new Exception("Heartbeat interval must be running in order to stop it.");
             }
             this._logger.LogInformation($"Stops heartbeats for taskId={this._taskId}");
             this._timer.Enabled = false;
+            this._timer.Elapsed -= this.Send;
+            this._timer.Stop();
+            this._timer.Dispose();
+            this._timer = null;
         }
 
         public
          void Send(object? sender, ElapsedEventArgs elapsedEventArgs)
         {
-            this._logger.LogDebug($"Sending heartbeat for taskId={this._taskId}");
-            string relativeUri = $"heartbeat/{this._taskId}";
-            string url = new Uri(new Uri(this._baseUrl), relativeUri).ToString();
-            this._httpClient.PostData(url, null);
+            try
+            {
+                this._logger.LogDebug($"Sending heartbeat for taskId={this._taskId}");
+                string relativeUri = $"heartbeat/{this._taskId}";
+                string url = new Uri(new Uri(this._baseUrl), relativeUri).ToString();
+                this._httpClient.PostData(url, null);
+            }
+            catch (Exception e)
+            {
+                this._logger.LogError($"Could not send heartbeat for task={this._taskId}, {e.Message}");
+                throw;
+            }
+
         }
     }
 }
