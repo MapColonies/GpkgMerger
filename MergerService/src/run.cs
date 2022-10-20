@@ -30,17 +30,9 @@ namespace MergerService.Src
         private readonly string _filePath;
         private readonly bool _shouldValidate;
 
-<<<<<<< HEAD
         public Run(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, IConfigurationManager configurationManager,
             ILogger<Run> logger, ILogger<MergeTask> mergeTaskLogger, ILogger<TaskUtils> taskUtilsLogger, ActivitySource activitySource,
             ITaskUtils taskUtils, IHttpRequestUtils requestUtils, IFileSystem fileSystem, IHeartbeatClient heartbeatClient)
-=======
-        public Run(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils,
-            IConfigurationManager configurationManager,
-            ILogger<Run> logger, ILogger<MergeTask> mergeTaskLogger, ILogger<TaskUtils> taskUtilsLogger,
-            ActivitySource activitySource,
-            ITaskUtils taskUtils, IHttpRequestUtils requestUtils, IFileSystem fileSystem)
->>>>>>> 0f32391cd3b6280b9eeaf96ebc09b235d64b1518
         {
             this._dataFactory = dataFactory;
             this._tileMerger = tileMerger;
