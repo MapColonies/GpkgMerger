@@ -27,6 +27,7 @@ namespace MergerLogic.Clients
         }
 
         ~HeartbeatClient() {
+            this._timer.Elapsed -= this.Send;
             this._timer.Dispose();
         }
 
