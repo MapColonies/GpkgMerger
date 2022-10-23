@@ -25,10 +25,10 @@ namespace MergerLogic.Clients
 
         public void Start(string taskId)
         {
-            this._logger.LogInformation($"Starts heartbeats for task={taskId}");
             if (this._timer != null) {
                 this.Stop();
             }
+            this._logger.LogInformation($"Starts heartbeats for task={taskId}");
             this._timer = new System.Timers.Timer();
             this._timer.Enabled = true;
             this._taskId = taskId;
@@ -48,14 +48,13 @@ namespace MergerLogic.Clients
             this._timer.Stop();
             this._timer.Dispose();
             this._timer = null;
+            this._taskId = null;
         }
 
-        public
-         void Send(object? sender, ElapsedEventArgs elapsedEventArgs)
+        public void Send(object? sender, ElapsedEventArgs elapsedEventArgs)
         {
             try
             {
-                this._logger.LogDebug($"Sending heartbeat for taskId={this._taskId}");
                 string relativeUri = $"heartbeat/{this._taskId}";
                 string url = new Uri(new Uri(this._baseUrl), relativeUri).ToString();
                 this._httpClient.PostData(url, null);

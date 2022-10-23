@@ -76,6 +76,9 @@ env:
         taskType: 'tilesMerging'
     pollingTime: 1000
     maxAttempts: 3
+  heartbeat: 
+    baseUrl: "http://localhost:8082"
+    intervalMs: 300
   HTTP:
     retries: 2
   logging:

@@ -55,12 +55,10 @@ namespace MergerService.Utils
 
                 try
                 {
-                    
                     return JsonConvert.DeserializeObject<MergeTask>(taskData, this._jsonSerializerSettings)!;
                 }
                 catch (Exception e)
                 {
-
                     this._logger.LogWarning(e, "Error deserializing returned task");
                     return null;
                 }
