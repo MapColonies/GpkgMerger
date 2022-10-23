@@ -168,12 +168,10 @@ namespace MergerService.Src
                     {
                         this._heartbeatClient.Start(task.Id);
                         RunTask(task, taskUtils);
-                        this._heartbeatClient.Stop();
                     }
                     catch (Exception e)
                     {
                         this._logger.LogError($"Error in MergerService while running task {task.Id}, error: {e.Message}");
-                        this._heartbeatClient.Stop();
 
                         try
                         {
@@ -186,6 +184,9 @@ namespace MergerService.Src
                         }
 
                         continue;
+                    }
+                    finally {
+                        this._heartbeatClient.Stop();
                     }
 
                     activatedAny = true;
