@@ -9,7 +9,7 @@ namespace MergerLogic.Clients
         private readonly ILogger _logger;
         private readonly IConfigurationManager _configurationManager;
         private readonly IHttpRequestUtils _httpClient;
-        private System.Timers.Timer? _timer;
+        private System.Timers.Timer _timer;
         private readonly string _baseUrl;
         private readonly int _intervalMs;
         private string? _taskId;
@@ -36,7 +36,7 @@ namespace MergerLogic.Clients
             if (this._timer.Enabled) {
                 this.Stop();
             }
-            this._logger.LogInformation($"Starting heartbeats for task={taskId}");
+            this._logger.LogInformation($"Starting heartbeat for task={taskId}");
             this._timer.Enabled = true;
             this._taskId = taskId;
         }
