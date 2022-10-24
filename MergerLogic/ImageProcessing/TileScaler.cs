@@ -8,7 +8,7 @@ namespace MergerLogic.ImageProcessing
     {
         private const int TILE_SIZE = 256;
 
-        public MagickImage Upscale(MagickImage baseImage, Tile baseTile, Coord targetCoords)
+        public MagickImage? Upscale(MagickImage baseImage, Tile baseTile, Coord targetCoords)
         {
             int zoomLevelDiff = targetCoords.Z - baseTile.Z;
             int scale = 1 << zoomLevelDiff;
@@ -74,7 +74,15 @@ namespace MergerLogic.ImageProcessing
             scaledImage.HasAlpha = baseImage.HasAlpha;
             scaledImage.ColorType = colorType;
             scaledImage.ColorSpace = colorSpace;
-            return scaledImage;
+            // TODO: return null only when the one color is black or white
+            return scaledImage.TotalColors > 1 ? scaledImage : null;
+        }
+        
+        private static bool IsWhite(MagickImage image)
+        {
+            MagickColor white = MagickColors.White;
+            using var pixels = image.GetPixels();
+            return !pixels.Select(pixel => pixel.ToColor()).Any(color => (MagickColor)color != white);
         }
 
         public MagickImage UpscaleFix(MagickImage baseImage, Tile baseTile, Coord targetCoords)
