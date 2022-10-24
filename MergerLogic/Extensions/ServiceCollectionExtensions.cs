@@ -1,4 +1,5 @@
-﻿using Amazon.Runtime;
+﻿using Amazon.CertificateManager;
+using Amazon.Runtime;
 using Amazon.S3;
 using MergerLogic.Clients;
 using MergerLogic.ImageProcessing;
@@ -16,6 +17,9 @@ using Polly.Extensions.Http;
 using System.Diagnostics;
 using System.IO.Abstractions;
 using System.Reflection;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 namespace MergerLogic.Extensions
 {
@@ -81,13 +85,13 @@ namespace MergerLogic.Extensions
                 {
                     throw new Exception("s3 configuration is required");
                 }
-
                 var s3Config = new AmazonS3Config
                 {
                     RegionEndpoint = Amazon.RegionEndpoint.USEast1,
                     ServiceURL = s3Url,
                     ForcePathStyle = true
                 };
+                Console.WriteLine(s3Config.ServiceURL);
                 var credentials = new BasicAWSCredentials(accessKey, secretKey);
                 return new AmazonS3Client(credentials, s3Config);
 
@@ -100,11 +104,35 @@ namespace MergerLogic.Extensions
             var maxAttempts = _config.GetConfiguration<int>("HTTP", "retries");
             var retryPolicy = HttpPolicyExtensions.HandleTransientHttpError()
                 .WaitAndRetryAsync(maxAttempts, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)));
-            collection.AddHttpClient("httpClient")
+            
+            // var handler = new HttpClientHandler{
+            //     ClientCertificateOptions = ClientCertificateOption.Manual,
+            //     SslProtocols = SslProtocols.Tls12,
+            //     ClientCertificates = { X509Certificate.CreateFromCertFile("/home/shlomiko/Documents/rootCA.crt") }
+            // };
+
+            // var cert = new X509Certificate2("/home/shlomiko/Documents/rootCA.crt");
+            // handler.ClientCertificates.Add(cert);
+            // HttpClient httpClient = new HttpClient(handler);
+            
+            collection.AddHttpClient( "httpClient")
+                .ConfigureHttpMessageHandlerBuilder((c) =>
+                    new HttpClientHandler()
+                    {
+                        ClientCertificateOptions = ClientCertificateOption.Manual,
+                        SslProtocols = SslProtocols.Tls12,
+                        ClientCertificates =
+                        {
+                            X509Certificate.CreateFromCertFile("/home/shlomiko/Downloads/Deployments/minio/public.crt")
+                        }
+                    }
+                )
                 .AddPolicyHandler(retryPolicy);
             collection.AddHttpClient("httpClientWithoutRetry")
                 .AddPolicyHandler(retryPolicy);
+            // collection.AddTransient<HttpClient>(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("httpClient"));
             collection.AddTransient<HttpClient>(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("httpClient"));
+            // collection.AddTransient<HttpClient>(sp => httpClient);
             collection.AddTransient<IHttpRequestUtils, HttpRequestUtils>();
             return collection;
         }
