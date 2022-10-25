@@ -84,6 +84,12 @@ namespace MergerLogic.ImageProcessing
             using var pixels = image.GetPixels();
             return !pixels.Select(pixel => pixel.ToColor()).Any(color => (MagickColor)color != white);
         }
+        
+        private static bool IsFullyTransparent(MagickImage image)
+        {
+            using var pixels = image.GetPixels();
+            return !pixels.Select(pixel => pixel.ToColor()).Any(color => color.A != 255);
+        }
 
         public MagickImage UpscaleFix(MagickImage baseImage, Tile baseTile, Coord targetCoords)
         {

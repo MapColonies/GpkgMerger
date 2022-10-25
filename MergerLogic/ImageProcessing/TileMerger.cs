@@ -161,7 +161,7 @@ namespace MergerLogic.ImageProcessing
             }
             else
             {
-                hasAlpha = false;
+                hasAlpha = true;
             }
         }
     }
