@@ -17,7 +17,6 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "AWS_ACCESS_KEY_ID": "minio123",
         "AWS_SECRET_ACCESS_KEY": "minio123",
-        "AWS_REGION": "custom",
         "S3__url": "http://custom.localhost:9000",
         "S3__bucket": "tiles"
       }
@@ -30,9 +29,8 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "AWS_ACCESS_KEY_ID": "Q3AM3UQ867SPQQA43P2F",
         "AWS_SECRET_ACCESS_KEY": "zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG",
-        "AWS_REGION": "custom",
         "S3__url": "https://play.min.io:9000",
-        "S3__bucket": "shimon"
+        "S3__bucket": "tiles"
       }
     },
     "Docker": {

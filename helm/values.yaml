@@ -67,6 +67,7 @@ rasterCommon:
       request:
         timeoutSec: 5
         retries: 3
+      logToConsole: false
 
 env:
   general:
