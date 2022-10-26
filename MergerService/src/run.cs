@@ -24,16 +24,15 @@ namespace MergerService.Src
         private readonly ITaskUtils _taskUtils;
         private readonly IHttpRequestUtils _requestUtils;
         private readonly IFileSystem _fileSystem;
+        private readonly IHeartbeatClient _heartbeatClient;
         private readonly string _inputPath;
         private readonly string _gpkgPath;
         private readonly string _filePath;
         private readonly bool _shouldValidate;
 
-        public Run(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils,
-            IConfigurationManager configurationManager,
-            ILogger<Run> logger, ILogger<MergeTask> mergeTaskLogger, ILogger<TaskUtils> taskUtilsLogger,
-            ActivitySource activitySource,
-            ITaskUtils taskUtils, IHttpRequestUtils requestUtils, IFileSystem fileSystem)
+        public Run(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, IConfigurationManager configurationManager,
+            ILogger<Run> logger, ILogger<MergeTask> mergeTaskLogger, ILogger<TaskUtils> taskUtilsLogger, ActivitySource activitySource,
+            ITaskUtils taskUtils, IHttpRequestUtils requestUtils, IFileSystem fileSystem, IHeartbeatClient heartbeatClient)
         {
             this._dataFactory = dataFactory;
             this._tileMerger = tileMerger;
@@ -46,6 +45,7 @@ namespace MergerService.Src
             this._taskUtils = taskUtils;
             this._requestUtils = requestUtils;
             this._fileSystem = fileSystem;
+            this._heartbeatClient = heartbeatClient;
             this._inputPath = this._configurationManager.GetConfiguration("GENERAL", "inputPath");
             this._gpkgPath = this._configurationManager.GetConfiguration("GENERAL", "gpkgPath");
             this._filePath = this._configurationManager.GetConfiguration("GENERAL", "filePath");
@@ -128,8 +128,7 @@ namespace MergerService.Src
                 throw new Exception(message);
             }
 
-            ITaskUtils taskUtils = new TaskUtils(this._configurationManager, this._requestUtils, this._taskUtilsLogger,
-                this._activitySource);
+            ITaskUtils taskUtils = new TaskUtils(this._configurationManager, this._requestUtils, this._taskUtilsLogger, this._activitySource, this._heartbeatClient);
 
             this._logger.LogInformation("starting task polling loop");
             while (true)
@@ -167,12 +166,12 @@ namespace MergerService.Src
 
                     try
                     {
+                        this._heartbeatClient.Start(task.Id);
                         RunTask(task, taskUtils);
                     }
                     catch (Exception e)
                     {
-                        this._logger.LogError(
-                            $"Error in MergerService while running task {task.Id}, error: {e.Message}");
+                        this._logger.LogError($"Error in MergerService while running task {task.Id}, error: {e.Message}");
 
                         try
                         {
@@ -185,6 +184,9 @@ namespace MergerService.Src
                         }
 
                         continue;
+                    }
+                    finally {
+                        this._heartbeatClient.Stop();
                     }
 
                     activatedAny = true;
