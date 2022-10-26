@@ -13,8 +13,9 @@ namespace MergerCli
     internal class Program
     {
         private static BatchStatusManager _batchStatusManager;
-        private static bool _done = false;
         private static ILogger<Program> _logger;
+        private static bool _done = false;
+        private static string _resumeFilePath;
 
         private static void Main(string[] args)
         {
@@ -33,6 +34,11 @@ namespace MergerCli
                 PrintHelp(programName);
                 return;
             }
+
+            var config = container.GetRequiredService<IConfigurationManager>();
+            var pathUtils = container.GetRequiredService<IPathUtils>();
+            string outputPath = pathUtils.RemoveTrailingSlash(config.GetConfiguration("GENERAL", "resumeOutputFolder"));
+            _resumeFilePath = $"{outputPath}/status.json";
 
             PrepareStatusManger(ref args);
 
@@ -63,7 +69,6 @@ namespace MergerCli
             var timeUtils = container.GetRequiredService<ITimeUtils>();
             try
             {
-                var config = container.GetRequiredService<IConfigurationManager>();
                 bool validate = config.GetConfiguration<bool>("GENERAL", "validate");
                 for (int i = 1; i < sources.Count; i++)
                 {
@@ -161,13 +166,13 @@ namespace MergerCli
         {
             if (args.Length == 2)
             {
-                if (!File.Exists(args[1]))
+                if (!File.Exists(_resumeFilePath))
                 {
-                    _logger.LogError($"invalid status file {args[1]}");
+                    _logger.LogError($"invalid status file {_resumeFilePath}");
                     Environment.Exit(-1);
                 }
 
-                string json = File.ReadAllText(args[1]);
+                string json = File.ReadAllText(_resumeFilePath);
                 _batchStatusManager = BatchStatusManager.FromJson(json);
                 args = _batchStatusManager.Command;
                 _logger.LogInformation("resuming layers merge operation. layers progress:");
@@ -192,11 +197,11 @@ namespace MergerCli
             if (!_done)
             {
                 string status = _batchStatusManager.ToString();
-                File.WriteAllText("status.json", status);
+                File.WriteAllText(_resumeFilePath, status);
             }
             else
             {
-                File.Delete("status.json");
+                File.Delete(_resumeFilePath);
             }
         }
     }
