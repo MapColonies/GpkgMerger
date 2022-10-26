@@ -34,12 +34,9 @@ namespace MergerLogic.Utils
 
         public string GetConfiguration(params string[] configPath)
         {
-            var config = this.config.GetSection(configPath[0]);
-            for (int i = 1; i < configPath.Length - 1; i++)
-            {
-                config = this.config.GetSection(configPath[i]);
-            }
-            return config[configPath[configPath.Length - 1]];
+            // Configuration options: https://stackoverflow.com/a/41330941/11915280
+            string key = string.Join(":", configPath);
+            return this.config.GetValue<string>(key);
         }
 
         public T GetConfiguration<T>(params string[] configPath)
@@ -61,6 +58,5 @@ namespace MergerLogic.Utils
                 throw new Exception(message, e);
             }
         }
-
     }
 }

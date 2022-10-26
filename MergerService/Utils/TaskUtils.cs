@@ -13,7 +13,8 @@ namespace MergerService.Utils
     {
         private readonly IHttpRequestUtils _httpClient;
         private readonly IConfigurationManager _configuration;
-        private readonly ILogger _logger;
+        private  readonly ILogger _logger;
+        private readonly IHeartbeatClient _heartbeatClient;
         private readonly ActivitySource _activitySource;
         private readonly int _maxAttempts;
         private readonly JsonSerializerSettings _jsonSerializerSettings;
@@ -21,11 +22,12 @@ namespace MergerService.Utils
         private readonly string _jobManagerUrl;
 
         public TaskUtils(IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<TaskUtils> logger,
-            ActivitySource activitySource)
+            ActivitySource activitySource, IHeartbeatClient heartbeatClient)
         {
             this._httpClient = httpClient;
             this._configuration = configuration;
             this._logger = logger;
+            this._heartbeatClient = heartbeatClient;
             this._activitySource = activitySource;
             this._maxAttempts = this._configuration.GetConfiguration<int>("TASK", "maxAttempts");
 
@@ -40,8 +42,6 @@ namespace MergerService.Utils
 
         public MergeTask? GetTask(string jobType, string taskType)
         {
-            // TODO: add heartbeat start method
-
             using (this._activitySource.StartActivity("dequeue task"))
             {
                 string relativeUri = $"tasks/{jobType}/{taskType}/startPending";
@@ -63,8 +63,6 @@ namespace MergerService.Utils
                     return null;
                 }
             }
-
-            // TODO: add heartbeat stop method
         }
 
         private void NotifyOnStatusChange(string jobId, string taskId)
