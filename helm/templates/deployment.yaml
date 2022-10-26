@@ -79,12 +79,12 @@ spec:
               value: {{ $gpkgPath }}
             - name: GENERAL__filePath
               value: {{ $tilePath }}
-            - name: S3_ACCESS_KEY
+            - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.rasterCommon.storage.s3.secretName }}
                   key: accessKeyId
-            - name: S3_SECRET_KEY
+            - name: AWS_SECRET_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.rasterCommon.storage.s3.secretName }}

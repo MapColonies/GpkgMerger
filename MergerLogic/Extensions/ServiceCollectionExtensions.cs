@@ -82,8 +82,8 @@ namespace MergerLogic.Extensions
                 }
 
                 string s3Url = config.GetConfiguration("S3", "url");
-                string accessKey = Environment.GetEnvironmentVariable(EnvironmentVariablesAWSCredentials.ENVIRONMENT_VARIABLE_ACCESSKEY);
-                string secretKey = Environment.GetEnvironmentVariable(EnvironmentVariablesAWSCredentials.ENVIRONMENT_VARIABLE_SECRETKEY);
+                string? accessKey = Environment.GetEnvironmentVariable(EnvironmentVariablesAWSCredentials.ENVIRONMENT_VARIABLE_ACCESSKEY);
+                string? secretKey = Environment.GetEnvironmentVariable(EnvironmentVariablesAWSCredentials.ENVIRONMENT_VARIABLE_SECRETKEY);
                 int timeoutSec = config.GetConfiguration<int>("S3", "request", "timeoutSec");
                 int retries = config.GetConfiguration<int>("S3", "request", "retries");
 
@@ -92,7 +92,7 @@ namespace MergerLogic.Extensions
                     throw new Exception("s3 configuration is required");
                 }
                 if (retries < 1) {
-                    throw new Exception("s3 crequest retries should have a value of at least 1");
+                    throw new Exception("s3 request retries should have a value of at least 1");
                 }
 
                 var s3Config = new AmazonS3Config
