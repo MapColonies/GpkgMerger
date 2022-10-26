@@ -19,6 +19,9 @@ data:
   TASK__maxAttempts: {{ .Values.env.TASK.maxAttempts | quote }}
   S3__url: {{ printf "%s%s" "http://" .Values.rasterCommon.storage.s3.endpointUrl | quote }}
   S3__bucket: {{ .Values.rasterCommon.storage.s3.tilesBucket | quote }}
+  S3__request_timeoutSec: {{ .Values.rasterCommon.storage.s3.request.timeoutSec | quote }}
+  S3__request_retries: {{ .Values.rasterCommon.storage.s3.request.retries | quote }}
+  S3__logToConsole: {{ .Values.rasterCommon.storage.s3.logToConsole | quote }}
   Logging__LogLevel__Default: {{ .Values.env.logging.logLevel.default | quote }}
   Logging__Microsoft.AspNetCore: {{ .Values.env.logging.logLevel.aspNetCore | quote }}
   {{ if .Values.env.tracing.enabled }}

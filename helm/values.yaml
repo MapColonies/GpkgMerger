@@ -64,6 +64,10 @@ rasterCommon:
       endpointUrl: "localhost:9000"
       tilesBucket: ""
       secretName: "s3-secret"
+      request:
+        timeoutSec: 5
+        retries: 3
+      logToConsole: false
 
 env:
   general:
