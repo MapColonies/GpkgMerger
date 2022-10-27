@@ -13,8 +13,9 @@ namespace MergerCli
     internal class Program
     {
         private static BatchStatusManager _batchStatusManager;
-        private static bool _done = false;
         private static ILogger<Program> _logger;
+        private static bool _done = false;
+        private static string _resumeFilePath;
 
         private static void Main(string[] args)
         {
@@ -27,12 +28,17 @@ namespace MergerCli
             string programName = args[0];
 
             // Require input of wanted batch size and 2 types and paths (base and new gpkg)
-            if (args.Length < 6 && args.Length != 2)
+            if (args.Length < 6 && args.Length != 1)
             {
                 _logger.LogError("invalid command.");
                 PrintHelp(programName);
                 return;
             }
+
+            var config = container.GetRequiredService<IConfigurationManager>();
+            var pathUtils = container.GetRequiredService<IPathUtils>();
+            string outputPath = pathUtils.RemoveTrailingSlash(config.GetConfiguration("GENERAL", "resumeOutputFolder"));
+            _resumeFilePath = $"{outputPath}/status.json";
 
             PrepareStatusManger(ref args);
 
@@ -63,7 +69,6 @@ namespace MergerCli
             var timeUtils = container.GetRequiredService<ITimeUtils>();
             try
             {
-                var config = container.GetRequiredService<IConfigurationManager>();
                 bool validate = config.GetConfiguration<bool>("GENERAL", "validate");
                 for (int i = 1; i < sources.Count; i++)
                 {
@@ -81,7 +86,6 @@ namespace MergerCli
                     ts = stopWatch.Elapsed;
                     _logger.LogInformation(timeUtils.FormatElapsedTime($"{sources[i].Path} merge runtime", ts));
 
-
                     if (validate)
                     {
                         // Reset stopwatch for validation time measure
@@ -97,7 +101,6 @@ namespace MergerCli
                         _logger.LogInformation(timeUtils.FormatElapsedTime($"{sources[i].Path} validation time", ts));
                     }
                 }
-
                 baseData.Wrapup();
             }
             catch (Exception ex)
@@ -127,7 +130,6 @@ namespace MergerCli
         private static void PrintHelp(string programName)
         {
             _logger.LogInformation($@"Usage:
-
                 Supported sources parameters:
                     web sources (cant be base source):
                         <'xyz' / 'wmts' / 'tms'> <url template> <bbox - in format 'minX,minY,maxX,maxY'> <min zoom> <max zoom> [--1x1] [--UL / --LL] 
@@ -159,15 +161,15 @@ namespace MergerCli
 
         private static void PrepareStatusManger(ref string[] args)
         {
-            if (args.Length == 2)
+            if (args.Length == 1)
             {
-                if (!File.Exists(args[1]))
+                if (!File.Exists(_resumeFilePath))
                 {
-                    _logger.LogError($"invalid status file {args[1]}");
+                    _logger.LogError($"invalid status file {_resumeFilePath}");
                     Environment.Exit(-1);
                 }
 
-                string json = File.ReadAllText(args[1]);
+                string json = File.ReadAllText(_resumeFilePath);
                 _batchStatusManager = BatchStatusManager.FromJson(json);
                 args = _batchStatusManager.Command;
                 _logger.LogInformation("resuming layers merge operation. layers progress:");
@@ -192,11 +194,11 @@ namespace MergerCli
             if (!_done)
             {
                 string status = _batchStatusManager.ToString();
-                File.WriteAllText("status.json", status);
+                File.WriteAllText(_resumeFilePath, status);
             }
             else
             {
-                File.Delete("status.json");
+                File.Delete(_resumeFilePath);
             }
         }
     }
