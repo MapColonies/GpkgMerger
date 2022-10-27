@@ -64,7 +64,10 @@ rasterCommon:
       endpointUrl: "localhost:9000"
       tilesBucket: ""
       secretName: "s3-secret"
-
+  ca:
+    secretName: ''
+    path: '/usr/local/share/ca-certificates'
+    key: 'ca.crt'  
 env:
   general:
     validate: true
