@@ -91,23 +91,35 @@ namespace MergerLogic.DataTypes
                 var listObjectsTask = this._client.ListObjectsV2Async(listRequests);
                 var response = listObjectsTask.Result;
 
-                foreach (S3Object item in response.S3Objects)
-                {
-                    Tile? tile = this.Utils.GetTile(item.Key);
-                    if (tile is null)
-                    {
-                        continue;
-                    }
-
+                var tasks = this.Utils.GetImages(response.S3Objects);
+                Task.WaitAll(tasks);
+                var tileRes = tasks?.Where(t => t is not null)
+                .Select(t => {
+                    Tile? tile = t.Result;
                     tile = this.ToCurrentGrid(tile);
-                    if (tile is null)
-                    {
-                        continue;
-                    }
+                    return tile;
+                })
+                .Where(t => t is not null)
+                .Select(t => this.ConvertOriginTile(t!)!);
+                tiles.AddRange(tileRes!);
 
-                    tile = this.ConvertOriginTile(tile)!;
-                    tiles.Add(tile);
-                }
+                // foreach (S3Object item in response.S3Objects)
+                // {
+                //     Tile? tile = this.Utils.GetTile(item.Key);
+                //     if (tile is null)
+                //     {
+                //         continue;
+                //     }
+
+                //     tile = this.ToCurrentGrid(tile);
+                //     if (tile is null)
+                //     {
+                //         continue;
+                //     }
+
+                //     tile = this.ConvertOriginTile(tile)!;
+                //     tiles.Add(tile);
+                // }
 
                 missingTiles -= response.KeyCount;
                 this._continuationToken = response.NextContinuationToken;
@@ -172,10 +184,12 @@ namespace MergerLogic.DataTypes
 
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
         {
-            foreach (var tile in targetTiles)
-            {
-                this.Utils.UpdateTile(tile);
-            }
+            // foreach (var tile in targetTiles)
+            // {
+            //     this.Utils.UpdateTile(tile);
+            // }
+
+            this.Utils.UpdateTiles(targetTiles);
         }
     }
 }

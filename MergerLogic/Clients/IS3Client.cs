@@ -1,4 +1,5 @@
-﻿using MergerLogic.Batching;
+﻿using Amazon.S3.Model;
+using MergerLogic.Batching;
 using MergerLogic.Utils;
 
 namespace MergerLogic.Clients
@@ -7,5 +8,7 @@ namespace MergerLogic.Clients
     {
         void UpdateTile(Tile tile);
         Tile? GetTile(string key);
+        Task<Tile?>[] GetImages(List<S3Object> s3Objects);
+        void UpdateTiles(IEnumerable<Tile> tiles);
     }
 }

@@ -73,6 +73,69 @@ namespace MergerLogic.Clients
             return new Tile(coords, imageBytes, format);
         }
 
+        public Task<Tile?>[] GetImages(List<S3Object> s3Objects)
+        {
+            var tasks = s3Objects.Select(o => {
+                string key = o.Key;
+                Coord coords = this._pathUtils.FromPath(key, out TileFormat format, true);
+
+                var request = new GetObjectRequest() { BucketName = this._bucket, Key = o.Key };
+                var getObjectTask = this._client.GetObjectAsync(request);
+                var toImageTask = getObjectTask.ContinueWith(t => {
+                    byte[] image;
+                    try {
+                        using (MemoryStream ms = new MemoryStream())
+                        {
+                            t.Result.ResponseStream.CopyTo(ms);
+                            image = ms.ToArray();
+                        }
+                        return new Tile(coords, image, format);
+                    }
+                    catch (AggregateException)
+                    {
+                        return null;
+                    }
+                });
+
+                return toImageTask;
+            }).ToArray();
+
+            return tasks;
+
+            // Task.WaitAll(tasks);
+
+            // return tasks.Select(t => t.Result).ToList();
+        }
+
+        // public Tile? GetTile(List<S3Object> s3Objects)
+        // {
+        //     s3Objects.Select(o => {
+        //         var request = new GetObjectRequest() { BucketName = this._bucket, Key = o.Key };
+        //         // Task<GetObjectResponse> response = Task.Factory.FromAsync<GetObjectRequest, GetObjectResponse>(
+        //         //     this._client.GetObjectAsync, this._client.WriteGetObjectResponseAsync, request, null
+        //         // );
+
+        //         Task<GetObjectResponse> response = new Task<GetObjectResponse>(() => this._client.GetObjectAsync(request));
+        //         response.ContinueWith(t => {
+
+        //         });
+        //     });
+
+        //     var request = new GetObjectRequest() { BucketName = this._bucket, Key = key };
+        //     Task<GetObjectResponse> response = Task.Factory.FromAsync<GetObjectRequest, GetObjectResponse>(
+        //         this._client.GetObjectAsync, this._client.WriteGetObjectResponseAsync,  
+        //     );
+
+        //     Coord coords = this._pathUtils.FromPath(key, out TileFormat format, true);
+        //     byte[]? imageBytes = this.GetImageBytes(key);
+        //     if (imageBytes == null)
+        //     {
+        //         return null;
+        //     }
+
+        //     return new Tile(coords, imageBytes, format);
+        // }
+
         public override bool TileExists(int z, int x, int y)
         {
             return this.GetTileKey(z, x, y) != null;
@@ -95,6 +158,52 @@ namespace MergerLogic.Clients
                 var res = task.Result;
             }
         }
+
+        public void UpdateTiles(IEnumerable<Tile> tiles)
+        {
+            var tasks = tiles.Select(t => {
+                string key = this._pathUtils.GetTilePath(this.path, t, true);
+
+                var request = new PutObjectRequest()
+                {
+                    BucketName = this._bucket, CannedACL = S3CannedACL.PublicRead, Key = String.Format(key)
+                };
+
+                byte[] buffer = t.GetImageBytes();
+                // using (var ms = new MemoryStream(buffer))
+                // {
+                    var ms = new MemoryStream(buffer);
+                    request.InputStream = ms;
+                    ms = null;
+                    return this._client.PutObjectAsync(request);
+                    // var res = task.Result;
+                // }
+            }).ToArray();
+            Task.WaitAll(tasks);
+        }
+
+        // public void UpdateTiles(IEnumerable<Tile> tiles)
+        // {
+        //     tiles.ToList().ForEach(t => {
+        //         string key = this._pathUtils.GetTilePath(this.path, t, true);
+
+        //         var request = new PutObjectRequest()
+        //         {
+        //             BucketName = this._bucket, CannedACL = S3CannedACL.PublicRead, Key = String.Format(key)
+        //         };
+
+        //         byte[] buffer = t.GetImageBytes();
+        //         using (var ms = new MemoryStream(buffer))
+        //         {
+        //             // var ms = new MemoryStream(buffer);
+        //             request.InputStream = ms;
+        //             // ms = null;
+        //             var task = this._client.PutObjectAsync(request);
+        //             var res = task.Result;
+        //         }
+        //     });
+        //     // Task.WaitAll(tasks);
+        // }
 
         private string? GetTileKey(int z, int x, int y)
         {
