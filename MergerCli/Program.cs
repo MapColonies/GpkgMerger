@@ -28,7 +28,7 @@ namespace MergerCli
             string programName = args[0];
 
             // Require input of wanted batch size and 2 types and paths (base and new gpkg)
-            if (args.Length < 6 && args.Length != 2)
+            if (args.Length < 6 && args.Length != 1)
             {
                 _logger.LogError("invalid command.");
                 PrintHelp(programName);
@@ -161,7 +161,7 @@ namespace MergerCli
 
         private static void PrepareStatusManger(ref string[] args)
         {
-            if (args.Length == 2)
+            if (args.Length == 1)
             {
                 if (!File.Exists(_resumeFilePath))
                 {
