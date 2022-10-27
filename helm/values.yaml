@@ -68,7 +68,10 @@ rasterCommon:
         timeoutSec: 5
         retries: 3
       logToConsole: false
-
+  ca:
+    secretName: ''
+    path: '/usr/local/share/ca-certificates'
+    key: 'ca.crt'
 env:
   general:
     validate: true
