@@ -1,6 +1,7 @@
 {{- $chartName := include "gpkg-merger.name" . -}}
 {{- $tracingUrl := include "gpkg-merger.tracingUrl" . -}}
 {{- $metricsUrl := include "gpkg-merger.metricsUrl" . -}}
+{{- $s3HttpProtocol := ternary "https://" "http://" .Values.rasterCommon.storage.s3.sslEnabled -}}
 
 {{- if .Values.enabled -}}
 apiVersion: v1
@@ -17,7 +18,7 @@ data:
   {{- end }}
   TASK__pollingTime: {{ .Values.env.TASK.pollingTime | quote }}
   TASK__maxAttempts: {{ .Values.env.TASK.maxAttempts | quote }}
-  S3__url: {{ printf "%s%s" "http://" .Values.rasterCommon.storage.s3.endpointUrl | quote }}
+  S3__url: {{ printf "%s%s" $s3HttpProtocol .Values.rasterCommon.storage.s3.endpointUrl | quote }}
   S3__bucket: {{ .Values.rasterCommon.storage.s3.tilesBucket | quote }}
   S3__request_timeoutSec: {{ .Values.rasterCommon.storage.s3.request.timeoutSec | quote }}
   S3__request_retries: {{ .Values.rasterCommon.storage.s3.request.retries | quote }}
