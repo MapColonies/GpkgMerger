@@ -13,6 +13,7 @@ namespace MergerLogic.DataTypes
         private readonly string _bucket;
         private readonly List<int> _zoomLevels;
         private IEnumerator<int> _zoomEnumerator;
+        // private IAsyncEnumerator<Tile> _tileEnumerator;
         private string? _continuationToken;
         private bool _endOfRead;
 
@@ -31,8 +32,10 @@ namespace MergerLogic.DataTypes
             // This should always happen after the definition of the client
             this._zoomLevels = this.GetZoomLevels();
             this._zoomEnumerator = this._zoomLevels.GetEnumerator();
+            // this._tileEnumerator = this.GetTiles();
             // In order to get a correct first value we must do an initial MoveNext call
             this._zoomEnumerator.MoveNext();
+            // this._tileEnumerator.MoveNextAsync();
         }
 
         protected override GridOrigin DefaultOrigin()
@@ -91,35 +94,35 @@ namespace MergerLogic.DataTypes
                 var listObjectsTask = this._client.ListObjectsV2Async(listRequests);
                 var response = listObjectsTask.Result;
 
-                var tasks = this.Utils.GetImages(response.S3Objects);
-                Task.WaitAll(tasks);
-                var tileRes = tasks?.Where(t => t is not null)
-                .Select(t => {
-                    Tile? tile = t.Result;
-                    tile = this.ToCurrentGrid(tile);
-                    return tile;
-                })
-                .Where(t => t is not null)
-                .Select(t => this.ConvertOriginTile(t!)!);
-                tiles.AddRange(tileRes!);
-
-                // foreach (S3Object item in response.S3Objects)
-                // {
-                //     Tile? tile = this.Utils.GetTile(item.Key);
-                //     if (tile is null)
-                //     {
-                //         continue;
-                //     }
-
+                // var tasks = this.Utils.GetImages(response.S3Objects);
+                // Task.WaitAll(tasks);
+                // var tileRes = tasks?.Where(t => t is not null)
+                // .Select(t => {
+                //     Tile? tile = t.Result;
                 //     tile = this.ToCurrentGrid(tile);
-                //     if (tile is null)
-                //     {
-                //         continue;
-                //     }
+                //     return tile;
+                // })
+                // .Where(t => t is not null)
+                // .Select(t => this.ConvertOriginTile(t!)!);
+                // tiles.AddRange(tileRes!);
 
-                //     tile = this.ConvertOriginTile(tile)!;
-                //     tiles.Add(tile);
-                // }
+                foreach (S3Object item in response.S3Objects)
+                {
+                    Tile? tile = this.Utils.GetTile(item.Key);
+                    if (tile is null)
+                    {
+                        continue;
+                    }
+
+                    tile = this.ToCurrentGrid(tile);
+                    if (tile is null)
+                    {
+                        continue;
+                    }
+
+                    tile = this.ConvertOriginTile(tile)!;
+                    tiles.Add(tile);
+                }
 
                 missingTiles -= response.KeyCount;
                 this._continuationToken = response.NextContinuationToken;
@@ -128,6 +131,57 @@ namespace MergerLogic.DataTypes
 
             return tiles;
         }
+
+        // public override List<Tile> GetNextBatch(out string batchIdentifier)
+        // {
+        //     List<Tile> tiles = new List<Tile>();
+        //     int missingTiles = this.BatchSize;
+        //
+        //     while (missingTiles > 0 && this._tileEnumerator.MoveNextAsync().Result)
+        //     {
+        //         Tile tile = this._tileEnumerator.Current;
+        //         tiles.Add(tile);
+        //         missingTiles--;
+        //     }
+        //
+        //     return tiles;
+        // }
+
+        // private async IAsyncEnumerator<Tile> GetTiles()
+        // {
+        //     foreach (var zoom in this._zoomLevels)
+        //     {
+        //         string path = $"{this.Path}/{zoom}/";
+        //         var paginator = this._client.Paginators.ListObjectsV2(new ListObjectsV2Request
+        //         {
+        //             BucketName = this._bucket,
+        //             Prefix = path,
+        //             StartAfter = path,
+        //             ContinuationToken = this._continuationToken
+        //         });
+        //         
+        //         await foreach (var response in paginator.Responses)
+        //         {
+        //             foreach (S3Object item in response.S3Objects)
+        //             {
+        //                 Tile? tile = this.Utils.GetTile(item.Key);
+        //                 if (tile is null)
+        //                 {
+        //                     continue;
+        //                 }
+        //
+        //                 tile = this.ToCurrentGrid(tile);
+        //                 if (tile is null)
+        //                 {
+        //                     continue;
+        //                 }
+        //
+        //                 tile = this.ConvertOriginTile(tile)!;
+        //                 yield return tile;
+        //             }
+        //         }
+        //     }
+        // }
 
         public override void setBatchIdentifier(string batchIdentifier)
         {
@@ -184,12 +238,12 @@ namespace MergerLogic.DataTypes
 
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
         {
-            // foreach (var tile in targetTiles)
-            // {
-            //     this.Utils.UpdateTile(tile);
-            // }
+            foreach (var tile in targetTiles)
+            {
+                this.Utils.UpdateTile(tile);
+            }
 
-            this.Utils.UpdateTiles(targetTiles);
+            // this.Utils.UpdateTiles(targetTiles);
         }
     }
 }
