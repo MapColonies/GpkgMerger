@@ -78,7 +78,7 @@ spec:
           env:
             {{- if .Values.rasterCommon.ca.secretName }}
             - name: SSL_CERT_DIR
-              value: /usr/local/share/ca-certificates/
+              value: {{ .Values.rasterCommon.ca.path | quote }}
             {{- end }} 
             - name: SERVER_PORT
               value: "8080"
