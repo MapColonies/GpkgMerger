@@ -63,6 +63,11 @@ spec:
       - name: output-storage
         persistentVolumeClaim:
           claimName: {{ .Values.rasterCommon.storage.fs.internalPvc.name }}
+      {{- if .Values.rasterCommon.ca.secretName }}
+      - name: root-ca
+        secret:
+          secretName: {{ .Values.rasterCommon.ca.secretName }}
+      {{- end }}
     #   nodeSelector:
     #     knownNode: eastus-1-node-1
       containers:
@@ -71,6 +76,10 @@ spec:
           image: {{ $cloudProviderDockerRegistryUrl }}{{ .repository }}:{{ .tag }}
           {{- end }}
           env:
+            {{- if .Values.rasterCommon.ca.secretName }}
+            - name: SSL_CERT_DIR
+              value: {{ .Values.rasterCommon.ca.path | quote }}
+            {{- end }} 
             - name: SERVER_PORT
               value: "8080"
             - name: GENERAL__inputPath
@@ -101,6 +110,11 @@ spec:
               mountPath: /layerSources
             - name: output-storage
               mountPath: /app/tiles_outputs
+            {{- if .Values.rasterCommon.ca.secretName }}
+            - name: root-ca
+              mountPath: {{ printf "%s/%s" .Values.rasterCommon.ca.path .Values.rasterCommon.ca.key | quote }}
+              subPath: {{ .Values.rasterCommon.ca.key | quote }} 
+            {{- end }} 
           {{- if .Values.resources.enabled }}
           resources:
             {{- toYaml .Values.resources.value | nindent 12 }}
