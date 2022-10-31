@@ -44,6 +44,7 @@ namespace MergerLogic.DataTypes
 
         public DataType Type { get; }
         public string Path { get; }
+        public bool IsBase { get; private set; }
         public bool IsOneXOne => this.Grid == Grid.OneXOne;
         public Grid Grid { get; protected set; }
         public GridOrigin Origin { get; protected set; }
@@ -66,10 +67,11 @@ namespace MergerLogic.DataTypes
         protected TileConvertorFunction ConvertOriginTile;
         protected ValFromCoordFunction ConvertOriginCoord;
 
-        protected Data(IServiceProvider container, DataType type, string path, int batchSize, Grid? grid, GridOrigin? origin)
+        protected Data(IServiceProvider container, DataType type, string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase)
         {
             this.Type = type;
             this.Path = path;
+            this.IsBase = isBase;
             this.BatchSize = batchSize;
             var utilsFactory = container.GetRequiredService<IUtilsFactory>();
             this.Utils = utilsFactory.GetDataUtils<TUtilsType>(path);
@@ -113,7 +115,26 @@ namespace MergerLogic.DataTypes
                 this.ConvertOriginTile = tile => tile;
                 this.ConvertOriginCoord = coord => coord.Y;
             }
+
+            this._logger.LogInformation($"Checking if exists, {this.Type}: {this.Path}");
+            if (isBase)
+            {
+                if(!this.Exists()) {
+                    this.Create();
+                }
+                else {
+                    this.Validate();
+                }
+            }
+            else
+            {
+                throw new Exception($"{this.Type} source {path} does not exist.");
+            }
         }
+
+        protected abstract void Create();
+
+        protected abstract void Validate();
 
         protected abstract GridOrigin DefaultOrigin();
 

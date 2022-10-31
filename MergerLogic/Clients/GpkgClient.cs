@@ -689,7 +689,7 @@ namespace MergerLogic.Clients
             }
         }
 
-        public bool IsValidGrid(bool isOneXOne = false)
+        public override bool IsValidGrid(bool isOneXOne = false)
         {
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {

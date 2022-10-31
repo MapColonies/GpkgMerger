@@ -19,8 +19,8 @@ namespace MergerLogic.DataTypes
         private readonly IPathUtils _pathUtils;
 
         public S3(IPathUtils pathUtils, IAmazonS3 client, IServiceProvider container,
-            string bucket, string path, int batchSize, Grid? grid, GridOrigin? origin)
-            : base(container, DataType.S3, path, batchSize, grid, origin)
+            string bucket, string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase)
+            : base(container, DataType.S3, path, batchSize, grid, origin, isBase)
         {
             this._pathUtils = pathUtils;
             this._bucket = bucket;

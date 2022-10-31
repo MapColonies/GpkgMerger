@@ -41,7 +41,7 @@ namespace MergerLogic.Utils
                         throw new Exception("s3 configuration is required");
                     }
                     path = this._pathUtils.RemoveTrailingSlash(path);
-                    data = new S3(this._pathUtils, client, this._container, _bucket, path, batchSize, grid, origin);
+                    data = new S3(this._pathUtils, client, this._container, _bucket, path, batchSize, grid, origin, isBase);
                     break;
                 case "fs":
                     data = new FS(this._pathUtils, this._container, path, batchSize, grid, origin, isBase);
