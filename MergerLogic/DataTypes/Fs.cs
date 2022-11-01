@@ -20,16 +20,15 @@ namespace MergerLogic.DataTypes
 
         public FS(IPathUtils pathUtils, IServiceProvider container,
             string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false)
-            : base(container, DataType.FOLDER, path, batchSize, grid, origin)
+            : base(container, DataType.FOLDER, path, batchSize, grid, origin, isBase)
         {
             this._pathUtils = pathUtils;
             this._fileSystem = container.GetRequiredService<IFileSystem>();
-            if (isBase)
-            {
-                this._fileSystem.Directory.CreateDirectory(path);
-            }
-
             this.Reset();
+        }
+
+        protected override void Create() {
+            this._fileSystem.Directory.CreateDirectory(this.Path);
         }
 
         protected override GridOrigin DefaultOrigin()

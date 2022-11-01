@@ -117,24 +117,25 @@ namespace MergerLogic.DataTypes
             }
 
             this._logger.LogInformation($"Checking if exists, {this.Type}: {this.Path}");
-            if (isBase)
+            if (isBase && !this.Exists())
             {
-                if(!this.Exists()) {
-                    this.Create();
-                }
-                else {
-                    this.Validate();
-                }
+                this.Create();
             }
-            else
-            {
+            
+            if(!this.Exists()) {
                 throw new Exception($"{this.Type} source {path} does not exist.");
             }
+
+            this.Validate();
         }
 
-        protected abstract void Create();
+        protected virtual void Create() {
+            this._logger.LogDebug($"{this.Type} source, skipping creation phase");
+        }
 
-        protected abstract void Validate();
+        protected virtual void Validate() {
+            this._logger.LogDebug($"{this.Type} source, skipping validation phase");
+        }
 
         protected abstract GridOrigin DefaultOrigin();
 
@@ -262,7 +263,7 @@ namespace MergerLogic.DataTypes
         public virtual void Wrapup()
         {
             this.Reset();
-            this._logger.LogInformation($"{this.Type} source, skipping wrapup phase");
+            this._logger.LogDebug($"{this.Type} source, skipping wrapup phase");
         }
 
         public abstract bool Exists();
