@@ -14,6 +14,7 @@ namespace MergerCli
     {
         private static BatchStatusManager _batchStatusManager;
         private static ILogger<Program> _logger;
+        private static bool _resumed = false;
         private static bool _done = false;
         private static string _resumeFilePath;
 
@@ -40,7 +41,17 @@ namespace MergerCli
             string outputPath = pathUtils.RemoveTrailingSlash(config.GetConfiguration("GENERAL", "resumeOutputFolder"));
             _resumeFilePath = $"{outputPath}/status.json";
 
-            PrepareStatusManger(ref args);
+            // If should resume, load status manager file and update states, else create from arguments
+            if (args.Length == 1)
+            {
+                _resumed = true;
+                LoadStatusManager(ref args);
+            }
+            else
+            {
+                _batchStatusManager = new BatchStatusManager(args);
+            }
+            PrepareStatusManger();
 
             int batchSize = int.Parse(args[1]);
             TileFormat format;
@@ -58,6 +69,16 @@ namespace MergerCli
             }
 
             IData baseData = sources[0];
+            if(_resumed) {
+                bool isNew = _batchStatusManager.IsBaseLayerNew();
+                if (isNew) {
+                    baseData.markAsNew();
+                }
+            }
+            else {
+                _batchStatusManager.BaseLayer.IsNew = baseData.IsNew;
+            }
+
             if (sources.Count < 2)
             {
                 _logger.LogError("minimum of 2 sources is required");
@@ -159,30 +180,25 @@ namespace MergerCli
                 Minimal requirement is supplying at least one source.");
         }
 
-        private static void PrepareStatusManger(ref string[] args)
+        private static void LoadStatusManager(ref string[] args) {
+            if (!File.Exists(_resumeFilePath))
+            {
+                _logger.LogError($"invalid status file {_resumeFilePath}");
+                Environment.Exit(-1);
+            }
+
+            string json = File.ReadAllText(_resumeFilePath);
+            _batchStatusManager = BatchStatusManager.FromJson(json);
+            args = _batchStatusManager.Command;
+            _logger.LogInformation("resuming layers merge operation. layers progress:");
+            foreach (var item in _batchStatusManager.States)
+            {
+                _logger.LogInformation($"{item.Key} {item.Value.BatchIdentifier}");
+            }
+        }
+
+        private static void PrepareStatusManger()
         {
-            if (args.Length == 1)
-            {
-                if (!File.Exists(_resumeFilePath))
-                {
-                    _logger.LogError($"invalid status file {_resumeFilePath}");
-                    Environment.Exit(-1);
-                }
-
-                string json = File.ReadAllText(_resumeFilePath);
-                _batchStatusManager = BatchStatusManager.FromJson(json);
-                args = _batchStatusManager.Command;
-                _logger.LogInformation("resuming layers merge operation. layers progress:");
-                foreach (var item in _batchStatusManager.States)
-                {
-                    _logger.LogInformation($"{item.Key} {item.Value.BatchIdentifier}");
-                }
-            }
-            else
-            {
-                _batchStatusManager = new BatchStatusManager(args);
-            }
-
             //save status on program exit
             AssemblyLoadContext.Default.Unloading += delegate { OnFailure(); };
             //save status on SigInt (ctrl + c)

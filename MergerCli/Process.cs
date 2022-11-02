@@ -20,7 +20,7 @@ namespace MergerCli
         public void Start(TileFormat targetFormat, IData baseData, IData newData, int batchSize,
             BatchStatusManager batchStatusManager)
         {
-            batchStatusManager.InitilaizeLayer(newData.Path);
+            batchStatusManager.InitializeLayer(newData.Path);
             List<Tile> tiles = new List<Tile>(batchSize);
             long totalTileCount = newData.TileCount();
             long tileProgressCount = 0;
@@ -36,7 +36,7 @@ namespace MergerCli
                 }
             }
 
-            this._logger.LogInformation($"Total amount of tiles to merge: {totalTileCount}");
+            this._logger.LogInformation($"Total amount of tiles to merge: {totalTileCount - tileProgressCount}");
 
             do
             {
@@ -50,7 +50,13 @@ namespace MergerCli
                     var targetCoords = newTile.GetCoord();
                     List<CorrespondingTileBuilder> correspondingTileBuilders = new List<CorrespondingTileBuilder>()
                     {
-                        () => baseData.GetCorrespondingTile(targetCoords, true), () => newTile
+                        () => {
+                            if (baseData.IsNew) {
+                                return null;
+                            }
+                            return baseData.GetCorrespondingTile(targetCoords, true);
+                        },
+                        () => newTile
                     };
 
                     byte[]? image = this._tileMerger.MergeTiles(correspondingTileBuilders, targetCoords, targetFormat);
