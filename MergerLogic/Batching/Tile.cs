@@ -3,7 +3,7 @@ using MergerLogic.ImageProcessing;
 
 namespace MergerLogic.Batching
 {
-    public delegate Tile CorrespondingTileBuilder();
+    public delegate Tile? CorrespondingTileBuilder();
 
     public class Tile
     {

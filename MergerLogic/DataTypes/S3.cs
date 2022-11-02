@@ -3,13 +3,14 @@ using Amazon.S3.Model;
 using MergerLogic.Batching;
 using MergerLogic.Clients;
 using MergerLogic.Utils;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace MergerLogic.DataTypes
 {
     public class S3 : Data<IS3Client>
     {
-        private readonly IAmazonS3 _client;
+        private IAmazonS3 _client;
         private readonly string _bucket;
         private readonly List<int> _zoomLevels;
         private IEnumerator<int> _zoomEnumerator;
@@ -18,7 +19,7 @@ namespace MergerLogic.DataTypes
 
         private readonly IPathUtils _pathUtils;
 
-        public S3(IPathUtils pathUtils, IAmazonS3 client, IServiceProvider container,
+        public S3(IPathUtils pathUtils, IServiceProvider container,
             string bucket, string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase)
             : base(container, DataType.S3, path, batchSize, grid, origin, isBase)
         {
@@ -26,13 +27,18 @@ namespace MergerLogic.DataTypes
             this._bucket = bucket;
             this._continuationToken = null;
             this._endOfRead = false;
-            this._client = client;
 
             // This should always happen after the definition of the client
             this._zoomLevels = this.GetZoomLevels();
             this._zoomEnumerator = this._zoomLevels.GetEnumerator();
             // In order to get a correct first value we must do an initial MoveNext call
             this._zoomEnumerator.MoveNext();
+        }
+
+        protected override void Initialize()
+        {
+            var client = this._container.GetService<IAmazonS3>();
+            this._client = client ?? throw new Exception("s3 configuration is required");
         }
 
         protected override GridOrigin DefaultOrigin()

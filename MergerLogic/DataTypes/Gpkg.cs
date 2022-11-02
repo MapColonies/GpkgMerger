@@ -1,42 +1,31 @@
 using MergerLogic.Batching;
 using MergerLogic.Clients;
 using MergerLogic.Utils;
-using Microsoft.Extensions.Logging;
 
 namespace MergerLogic.DataTypes
 {
     public class Gpkg : Data<IGpkgClient>
     {
         private long _offset;
-
-        private Extent _extent;
-
         private readonly IConfigurationManager _configManager;
 
         public Gpkg(IConfigurationManager configuration, IServiceProvider container,
             string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false, Extent? extent = null)
-            : base(container, DataType.GPKG, path, batchSize, grid, origin, isBase)
+            : base(container, DataType.GPKG, path, batchSize, grid, origin, isBase, extent)
         {
             this._offset = 0;
             this._configManager = configuration;
 
             if (isBase)
             {
-                if (extent is null)
-                {
-                    //throw error if extent is missing in base
-                    throw new Exception($" base gpkg '{path}' must have extent");
-                }
-
-                this._extent = extent.Value;
                 this.Utils.DeleteTileTableTriggers();
-                this.Utils.UpdateExtent(extent.Value);
+                this.Utils.UpdateExtent(this.Extent);
             }
         }
 
         protected override void Create()
         {
-            this.Utils.Create(this._extent, this.IsOneXOne);
+            this.Utils.Create(this.Extent, this.IsOneXOne);
         }
 
         protected override void Validate() {

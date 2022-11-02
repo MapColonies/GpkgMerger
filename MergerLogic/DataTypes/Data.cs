@@ -39,17 +39,21 @@ namespace MergerLogic.DataTypes
         protected delegate int ValFromCoordFunction(Coord coord);
         protected delegate Tile? GetTileFromXYZFunction(int z, int x, int y);
         protected delegate Coord? GetCoordFromCoordFunction(Coord coord);
-        protected delegate Tile GetTileFromCoordFunction(Coord coord);
-        protected delegate Tile? TileConvertorFunction(Tile tile);
+        protected delegate Tile? GetTileFromCoordFunction(Coord coord);
+        protected delegate Tile TileConvertorFunction(Tile tile);
+        protected delegate Tile? NullableTileConvertorFunction(Tile tile);
 
+        protected IServiceProvider _container;
         public DataType Type { get; }
         public string Path { get; }
-        public bool IsBase { get; private set; }
-        public bool IsOneXOne => this.Grid == Grid.OneXOne;
         public Grid Grid { get; protected set; }
         public GridOrigin Origin { get; protected set; }
+        public Extent Extent { get; protected set; }
+        public bool IsBase { get; private set; }
+        public bool IsNew { get; private set; }
+        public bool IsOneXOne => this.Grid == Grid.OneXOne;
+        
         protected readonly int BatchSize;
-
         protected TUtilsType Utils;
         protected GetTileFromXYZFunction GetTile;
         protected readonly GetTileFromCoordFunction GetLastExistingTile;
@@ -58,28 +62,31 @@ namespace MergerLogic.DataTypes
 
         #region tile grid converters
         protected IOneXOneConvertor OneXOneConvertor = null;
-        protected TileConvertorFunction FromCurrentGridTile;
+        protected NullableTileConvertorFunction FromCurrentGridTile;
         protected GetCoordFromCoordFunction FromCurrentGridCoord;
-        protected TileConvertorFunction ToCurrentGrid;
+        protected NullableTileConvertorFunction ToCurrentGrid;
         #endregion tile grid converters
 
         //origin converters
         protected TileConvertorFunction ConvertOriginTile;
         protected ValFromCoordFunction ConvertOriginCoord;
 
-        protected Data(IServiceProvider container, DataType type, string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase)
+        protected Data(IServiceProvider container, DataType type, string path, int batchSize, Grid? grid, 
+            GridOrigin? origin, bool isBase, Extent? extent = null)
         {
+            this._container = container;
+            var loggerFactory = container.GetRequiredService<ILoggerFactory>();
+            this._logger = loggerFactory.CreateLogger(this.GetType());
             this.Type = type;
             this.Path = path;
-            this.IsBase = isBase;
             this.BatchSize = batchSize;
             var utilsFactory = container.GetRequiredService<IUtilsFactory>();
             this.Utils = utilsFactory.GetDataUtils<TUtilsType>(path);
             this.GeoUtils = container.GetRequiredService<IGeoUtils>();
-            this.Grid = grid is null ? DefaultGrid() : (Grid)grid.Value;
-            this.Origin = origin is null ? DefaultOrigin() : (GridOrigin)origin.Value;
-            var loggerFactory = container.GetRequiredService<ILoggerFactory>();
-            this._logger = loggerFactory.CreateLogger(this.GetType());
+            this.Grid = grid ?? this.DefaultGrid();
+            this.Origin = origin ?? this.DefaultOrigin();
+            this.Extent = extent ?? this.DefaultExtent();
+            this.IsBase = isBase;
 
             // The following delegates are for code performance and to reduce branching while handling tiles
             if (this.IsOneXOne)
@@ -115,18 +122,28 @@ namespace MergerLogic.DataTypes
                 this.ConvertOriginTile = tile => tile;
                 this.ConvertOriginCoord = coord => coord.Y;
             }
+            
+            this.Initialize();
 
             this._logger.LogInformation($"Checking if exists, {this.Type}: {this.Path}");
-            if (isBase && !this.Exists())
+            bool exists = this.Exists();
+            if (!exists)
             {
-                this.Create();
-            }
-            
-            if(!this.Exists()) {
-                throw new Exception($"{this.Type} source {path} does not exist.");
+                if (this.IsBase) {
+                    this.IsNew = true;
+                    this.Create();
+                }
+                else {
+                    throw new Exception($"{this.Type} source {path} does not exist.");
+                }
             }
 
             this.Validate();
+        }
+
+        protected virtual void Initialize()
+        {
+            this._logger.LogDebug($"{this.Type} source, skipping initialization phase");
         }
 
         protected virtual void Create() {
@@ -144,9 +161,18 @@ namespace MergerLogic.DataTypes
             return Grid.TwoXOne;
         }
 
+        private Extent DefaultExtent()
+        {
+            this._logger.LogDebug($"No extent provided for type {this.Type}, assigning default extent");
+            return this.IsOneXOne ?
+                new Extent() { MinX = -180, MinY = -180, MaxX = 180, MaxY = 180 }
+                :
+                new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
+        }
+
         public abstract void Reset();
 
-        protected virtual Tile InternalGetLastExistingTile(Coord coords)
+        protected virtual Tile? InternalGetLastExistingTile(Coord coords)
         {
             int z = coords.Z;
             int baseTileX = coords.X;
@@ -178,36 +204,36 @@ namespace MergerLogic.DataTypes
         public bool TileExists(Coord coord)
         {
             coord.Y = this.ConvertOriginCoord(coord);
-            coord = this.FromCurrentGridCoord(coord);
+            Coord? newCoord = this.FromCurrentGridCoord(coord);
 
-            if (coord is null)
+            if (newCoord is null)
             {
                 return false;
             }
 
-            return this.Utils.TileExists(coord.Z, coord.X, coord.Y);
+            return this.Utils.TileExists(newCoord.Z, newCoord.X, newCoord.Y);
         }
 
         //TODO: move to util after IOC
-        protected Tile GetLastOneXOneExistingTile(Coord coords)
+        protected Tile? GetLastOneXOneExistingTile(Coord coords)
         {
-            coords = this.FromCurrentGridCoord(coords);
-            if (coords is null)
+            Coord? newCoords = this.FromCurrentGridCoord(coords);
+            if (newCoords is null)
             {
                 return null;
             }
-            Tile? tile = this.InternalGetLastExistingTile(coords);
+            Tile? tile = this.InternalGetLastExistingTile(newCoords);
             return tile != null ? this.OneXOneConvertor.ToTwoXOne(tile) : null;
         }
 
-        protected virtual Tile GetOneXOneTile(int z, int x, int y)
+        protected virtual Tile? GetOneXOneTile(int z, int x, int y)
         {
             Coord? oneXoneBaseCoords = this.OneXOneConvertor.TryFromTwoXOne(z, x, y);
             if (oneXoneBaseCoords == null)
             {
                 return null;
             }
-            Tile tile = this.Utils.GetTile(oneXoneBaseCoords);
+            Tile? tile = this.Utils.GetTile(oneXoneBaseCoords);
             return tile != null ? this.OneXOneConvertor.ToTwoXOne(tile) : null;
         }
 
@@ -236,9 +262,9 @@ namespace MergerLogic.DataTypes
 
         public abstract List<Tile> GetNextBatch(out string batchIdentifier);
 
-        public Tile GetCorrespondingTile(Coord coords, bool upscale)
+        public Tile? GetCorrespondingTile(Coord coords, bool upscale)
         {
-            Tile correspondingTile = this.GetTile(coords.Z, coords.X, coords.Y);
+            Tile? correspondingTile = this.GetTile(coords.Z, coords.X, coords.Y);
 
             if (upscale && correspondingTile == null)
             {
@@ -251,10 +277,10 @@ namespace MergerLogic.DataTypes
         {
             var targetTiles = tiles.Select(tile =>
             {
-                var targetTile = this.ConvertOriginTile(tile);
-                targetTile = this.FromCurrentGridTile(targetTile);
+                Tile convertedTile = this.ConvertOriginTile(tile);
+                Tile? targetTile = this.FromCurrentGridTile(convertedTile);
                 return targetTile;
-            }).Where(tile => tile != null);
+            }).Where(tile => tile is not null);
             this.InternalUpdateTiles(targetTiles);
         }
 
@@ -272,5 +298,8 @@ namespace MergerLogic.DataTypes
 
         public abstract void setBatchIdentifier(string batchIdentifier);
 
+        public void markAsNew() {
+            this.IsNew = true;
+        }
     }
 }

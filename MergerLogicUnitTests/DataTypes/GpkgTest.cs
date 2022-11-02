@@ -546,20 +546,21 @@ namespace MergerLogicUnitTests.DataTypes
         {
             var seq = new MockSequence();
             this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.Exist()).Returns(exist);
-            if (exist)
-            {
-                this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.IsValidGrid(It.IsAny<bool>())).Returns(true);
-                if (isBase)
-                {
-                    this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.DeleteTileTableTriggers());
-                    this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.UpdateExtent(It.IsAny<Extent>()));
-                }
-            }
-            else if (isBase)
+            
+            if (!exist && isBase)
             {
                 this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.Create(It.IsAny<Extent>(), isOneXOne));
+            }
+            
+            this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.IsValidGrid(It.IsAny<bool>())).Returns(true);
+
+            if (isBase)
+            {
+                this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.DeleteTileTableTriggers());
                 this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.UpdateExtent(It.IsAny<Extent>()));
             }
+            
+            this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.Exist()).Returns(true);
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
@@ -568,20 +569,21 @@ namespace MergerLogicUnitTests.DataTypes
                 var gpkg = new Gpkg(this._configurationManagerMock.Object,
                     this._serviceProviderMock.Object, "test.gpkg", 10, grid, origin,
                     isBase, extent);
-
+                
                 Assert.AreEqual(true, gpkg.Exists());
             };
 
             if (!exist && !isBase)
             {
                 Assert.ThrowsException<Exception>(action);
+                this._gpkgUtilsMock.Verify(utils => utils.Exist(), Times.Once);
             }
             else
             {
                 action();
+                this._gpkgUtilsMock.Verify(utils => utils.Exist(), Times.Exactly(2));
             }
 
-            this._gpkgUtilsMock.Verify(utils => utils.Exist(), Times.Once);
             this.VerifyAll();
         }
 
@@ -812,14 +814,18 @@ namespace MergerLogicUnitTests.DataTypes
             var seq = new MockSequence();
             this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.Exist()).Returns(false);
             this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.Create(extent, isOneXOne));
+            this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.IsValidGrid(isOneXOne)).Returns(true);
+            this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.DeleteTileTableTriggers());
             this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.UpdateExtent(extent));
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
             new Gpkg(this._configurationManagerMock.Object,
                 this._serviceProviderMock.Object, "test.gpkg", 10, grid, origin,
                 true, extent);
-            this._gpkgUtilsMock.Verify(utils => utils.Create(extent, isOneXOne), Times.Once);
             this._gpkgUtilsMock.Verify(utils => utils.Exist(), Times.Once);
+            this._gpkgUtilsMock.Verify(utils => utils.Create(extent, isOneXOne), Times.Once);
+            this._gpkgUtilsMock.Verify(utils => utils.IsValidGrid(isOneXOne), Times.Once);
+            this._gpkgUtilsMock.Verify(utils => utils.DeleteTileTableTriggers(), Times.Once);
             this._gpkgUtilsMock.Verify(utils => utils.UpdateExtent(extent), Times.Once);
             this.VerifyAll();
         }
@@ -827,14 +833,22 @@ namespace MergerLogicUnitTests.DataTypes
         [TestMethod]
         [TestCategory("gpkgCreation")]
         [DynamicData(nameof(GenGpkgCreationParams), DynamicDataSourceType.Method)]
-        public void GpkgCreationThrowWithoutExtent(bool isOneXOne, GridOrigin origin)
+        public void GpkgCreationDefaultExtent(bool isOneXOne, GridOrigin origin)
         {
-            Extent? extent = null;
+            Extent extent = isOneXOne ?
+                new Extent() { MinX = -180, MinY = -180, MaxX = 180, MaxY = 180 }
+                :
+                new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };;
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            Assert.ThrowsException<Exception>(() =>
-                new Gpkg(this._configurationManagerMock.Object,
+            this._gpkgUtilsMock.Setup(utils => utils.Exist()).Returns(false);
+            this._gpkgUtilsMock.Setup(utils => utils.Create(It.IsAny<Extent>(), isOneXOne));
+            this._gpkgUtilsMock.Setup(utils => utils.IsValidGrid(isOneXOne)).Returns(true);
+            this._gpkgUtilsMock.Setup(utils => utils.DeleteTileTableTriggers());
+            this._gpkgUtilsMock.Setup(utils => utils.UpdateExtent(extent));
+            var gpkg = new Gpkg(this._configurationManagerMock.Object,
                     this._serviceProviderMock.Object, "test.gpkg", 10, grid,
-                    origin, true, extent));
+                    origin, true);
+            Assert.AreEqual(gpkg.Extent, extent);
             this.VerifyAll();
         }
 
