@@ -1,9 +1,6 @@
-﻿using Amazon.S3;
-using MergerLogic.Batching;
+﻿using MergerLogic.Batching;
 using MergerLogic.DataTypes;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.IO.Abstractions;
 
 namespace MergerLogic.Utils
 {
@@ -13,7 +10,6 @@ namespace MergerLogic.Utils
         private readonly IPathUtils _pathUtils;
         private readonly IServiceProvider _container;
         private readonly ILogger _logger;
-        private readonly string _bucket;
 
         public DataFactory(IConfigurationManager configuration, IPathUtils pathUtils, IServiceProvider container, ILogger<DataFactory> logger)
         {
@@ -21,8 +17,6 @@ namespace MergerLogic.Utils
             this._pathUtils = pathUtils;
             this._container = container;
             this._logger = logger;
-
-            _bucket = this._configurationManager.GetConfiguration("S3", "bucket");
         }
 
         public IData CreateDataSource(string type, string path, int batchSize, Grid? grid = null, GridOrigin? origin = null, Extent? extent = null, bool isBase = false)
@@ -36,7 +30,7 @@ namespace MergerLogic.Utils
                     break;
                 case "s3":
                     path = this._pathUtils.RemoveTrailingSlash(path);
-                    data = new S3(this._pathUtils, this._container, _bucket, path, batchSize, grid, origin, isBase);
+                    data = new S3(this._pathUtils, this._container, path, batchSize, grid, origin, isBase);
                     break;
                 case "fs":
                     data = new FS(this._pathUtils, this._container, path, batchSize, grid, origin, isBase);

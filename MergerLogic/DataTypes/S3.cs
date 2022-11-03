@@ -11,7 +11,7 @@ namespace MergerLogic.DataTypes
     public class S3 : Data<IS3Client>
     {
         private IAmazonS3 _client;
-        private readonly string _bucket;
+        private string _bucket;
         private readonly List<int> _zoomLevels;
         private IEnumerator<int> _zoomEnumerator;
         private string? _continuationToken;
@@ -20,11 +20,10 @@ namespace MergerLogic.DataTypes
         private readonly IPathUtils _pathUtils;
 
         public S3(IPathUtils pathUtils, IServiceProvider container,
-            string bucket, string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase)
+            string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase)
             : base(container, DataType.S3, path, batchSize, grid, origin, isBase)
         {
             this._pathUtils = pathUtils;
-            this._bucket = bucket;
             this._continuationToken = null;
             this._endOfRead = false;
 
@@ -37,8 +36,10 @@ namespace MergerLogic.DataTypes
 
         protected override void Initialize()
         {
+            var configurationManager = this._container.GetRequiredService<IConfigurationManager>();
             var client = this._container.GetService<IAmazonS3>();
             this._client = client ?? throw new Exception("s3 configuration is required");
+            this._bucket = configurationManager.GetConfiguration("S3", "bucket");
         }
 
         protected override GridOrigin DefaultOrigin()
