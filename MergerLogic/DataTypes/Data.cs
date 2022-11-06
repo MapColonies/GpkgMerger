@@ -48,7 +48,7 @@ namespace MergerLogic.DataTypes
         public string Path { get; }
         public Grid Grid { get; protected set; }
         public GridOrigin Origin { get; protected set; }
-        public Extent Extent { get; protected set; }
+        public Extent Extent { get => this.GetExtent(); protected set => this.SetExtent(value); }
         public bool IsBase { get; private set; }
         public bool IsNew { get; private set; }
         public bool IsOneXOne => this.Grid == Grid.OneXOne;
@@ -85,8 +85,8 @@ namespace MergerLogic.DataTypes
             this.GeoUtils = container.GetRequiredService<IGeoUtils>();
             this.Grid = grid ?? this.DefaultGrid();
             this.Origin = origin ?? this.DefaultOrigin();
-            this.Extent = extent ?? this.DefaultExtent();
             this.IsBase = isBase;
+            this.SetExtent(extent);
 
             // The following delegates are for code performance and to reduce branching while handling tiles
             if (this.IsOneXOne)
@@ -161,13 +161,12 @@ namespace MergerLogic.DataTypes
             return Grid.TwoXOne;
         }
 
-        private Extent DefaultExtent()
-        {
-            this._logger.LogDebug($"No extent provided for type {this.Type}, assigning default extent");
-            return this.IsOneXOne ?
-                new Extent() { MinX = -180, MinY = -180, MaxX = 180, MaxY = 180 }
-                :
-                new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
+        protected virtual void SetExtent(Extent? extent) {
+            this._logger.LogDebug($"{this.Type} source, skipping extent set phase");
+        }
+
+        protected virtual Extent GetExtent() {
+            return this.GeoUtils.DefaultExtent(this.IsOneXOne);
         }
 
         public abstract void Reset();

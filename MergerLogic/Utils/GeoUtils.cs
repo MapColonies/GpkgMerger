@@ -83,5 +83,13 @@ namespace MergerLogic.Utils
             double maxY = (tileSizeDeg * bounds.MaxY) - 90;
             return new Extent() { MinX = minX, MinY = minY, MaxX = maxX, MaxY = maxY };
         }
+
+        public Extent DefaultExtent(bool isOneXOne)
+        {
+            return isOneXOne ?
+                new Extent() { MinX = -180, MinY = -180, MaxX = 180, MaxY = 180 }
+                :
+                new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
+        }
     }
 }

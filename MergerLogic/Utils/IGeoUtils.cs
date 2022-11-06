@@ -12,5 +12,6 @@ namespace MergerLogic.Utils
         Extent SnapExtentToTileGrid(Extent extent, int zoom);
         TileBounds ExtentToTileRange(Extent extent, int zoom, GridOrigin origin = GridOrigin.UPPER_LEFT);
         Extent TileRangeToExtent(TileBounds bounds);
+        Extent DefaultExtent(bool isOneXOne);
     }
 }

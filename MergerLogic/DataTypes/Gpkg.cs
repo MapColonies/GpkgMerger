@@ -7,6 +7,7 @@ namespace MergerLogic.DataTypes
     public class Gpkg : Data<IGpkgClient>
     {
         private long _offset;
+        private Extent _extent;
         private readonly IConfigurationManager _configManager;
 
         public Gpkg(IConfigurationManager configuration, IServiceProvider container,
@@ -19,20 +20,36 @@ namespace MergerLogic.DataTypes
             if (isBase)
             {
                 this.Utils.DeleteTileTableTriggers();
-                this.Utils.UpdateExtent(this.Extent);
+                this.Utils.UpdateExtent(this._extent);
             }
+        }
+
+        protected override void SetExtent(Extent? extent)
+        {
+            if (extent is null)
+            {
+                //throw error if extent is missing in base
+                throw new Exception($"base {this.Type} '{this.Path}' must have extent");
+            }
+
+            this._extent = extent.Value;
+        }
+
+        protected override Extent GetExtent()
+        {
+            return this._extent;
         }
 
         protected override void Create()
         {
-            this.Utils.Create(this.Extent, this.IsOneXOne);
+            this.Utils.Create(this._extent, this.IsOneXOne);
         }
 
         protected override void Validate() {
             if (!this.Utils.IsValidGrid(this.IsOneXOne))
             {
                 var gridType = this.IsOneXOne ? "1X1" : "2X1";
-                throw new Exception($"gpkg source {this.Path} don't have valid {gridType} grid.");
+                throw new Exception($"{this.Type} source {this.Path} don't have valid {gridType} grid.");
             }
         }
 

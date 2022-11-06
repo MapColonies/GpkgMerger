@@ -591,6 +591,35 @@ namespace MergerLogicUnitTests.DataTypes
             this._directoryMock.Verify(directory => directory.Exists("/test/test"), Times.Once);
             this.VerifyAll();
         }
+        
+        public static IEnumerable<object[]> GenDefaultExtentParams()
+        {
+            return DynamicDataGenerator.GeneratePrams(
+                new object[] { true, false }, //is one on one
+                new object[] { GridOrigin.LOWER_LEFT, GridOrigin.UPPER_LEFT } //origin
+            );
+        }
+        
+        [TestMethod]
+        [TestCategory("Exists")]
+        [DynamicData(nameof(GenDefaultExtentParams), DynamicDataSourceType.Method)]
+        public void FsCreationDefaultExtent(bool isOneXOne, GridOrigin origin)
+        {
+            Extent extent = isOneXOne ?
+                new Extent() { MinX = -180, MinY = -180, MaxX = 180, MaxY = 180 }
+                :
+                new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
+            Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
+            
+            var seq = new MockSequence();
+            this.SetupConstructorRequiredMocks(false, true, seq);
+            this._geoUtilsMock.Setup(geoUtils => geoUtils.DefaultExtent(It.IsAny<bool>())).Returns(extent);
+
+            var fs = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, 
+                "test", 10, grid, origin);
+            Assert.AreEqual(fs.Extent, extent);
+            this.VerifyAll();
+        }
 
         #endregion
 

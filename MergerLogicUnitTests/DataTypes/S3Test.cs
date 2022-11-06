@@ -540,6 +540,28 @@ namespace MergerLogicUnitTests.DataTypes
                 request.StartAfter == "test/"), It.IsAny<CancellationToken>()), Times.Exactly(listInvocationCount));
             this.VerifyAll();
         }
+        
+        [TestMethod]
+        [TestCategory("Exists")]
+        [DynamicData(nameof(GenExistParams), DynamicDataSourceType.Method)]
+        public void S3CreationDefaultExtent(bool isOneXOne, GridOrigin origin, bool exists)
+        {
+            Extent extent = isOneXOne ?
+                new Extent() { MinX = -180, MinY = -180, MaxX = 180, MaxY = 180 }
+                :
+                new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
+            Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
+            ListObjectsV2Response res = new ListObjectsV2Response() { KeyCount = 1 };
+            this._s3ClientMock
+                .Setup(s3 => s3.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(res);
+            this._geoUtilsMock.Setup(geoUtils => geoUtils.DefaultExtent(It.IsAny<bool>())).Returns(extent);
+
+            var s3 = new S3(this._pathUtilsMock.Object, this._serviceProviderMock.Object, 
+                "test", 10, grid, origin, false);
+            Assert.AreEqual(s3.Extent, extent);
+            this.VerifyAll();
+        }
 
         #endregion
 

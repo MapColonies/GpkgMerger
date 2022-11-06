@@ -833,22 +833,14 @@ namespace MergerLogicUnitTests.DataTypes
         [TestMethod]
         [TestCategory("gpkgCreation")]
         [DynamicData(nameof(GenGpkgCreationParams), DynamicDataSourceType.Method)]
-        public void GpkgCreationDefaultExtent(bool isOneXOne, GridOrigin origin)
+        public void GpkgCreationThrowWithoutExtent(bool isOneXOne, GridOrigin origin)
         {
-            Extent extent = isOneXOne ?
-                new Extent() { MinX = -180, MinY = -180, MaxX = 180, MaxY = 180 }
-                :
-                new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };;
+            Extent? extent = null;
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            this._gpkgUtilsMock.Setup(utils => utils.Exist()).Returns(false);
-            this._gpkgUtilsMock.Setup(utils => utils.Create(It.IsAny<Extent>(), isOneXOne));
-            this._gpkgUtilsMock.Setup(utils => utils.IsValidGrid(isOneXOne)).Returns(true);
-            this._gpkgUtilsMock.Setup(utils => utils.DeleteTileTableTriggers());
-            this._gpkgUtilsMock.Setup(utils => utils.UpdateExtent(extent));
-            var gpkg = new Gpkg(this._configurationManagerMock.Object,
+            Assert.ThrowsException<Exception>(() =>
+                new Gpkg(this._configurationManagerMock.Object,
                     this._serviceProviderMock.Object, "test.gpkg", 10, grid,
-                    origin, true);
-            Assert.AreEqual(gpkg.Extent, extent);
+                    origin, true, extent));
             this.VerifyAll();
         }
 
@@ -862,6 +854,7 @@ namespace MergerLogicUnitTests.DataTypes
                 new object[] { GridOrigin.LOWER_LEFT, GridOrigin.UPPER_LEFT } //origin
             );
         }
+        
         [TestMethod]
         [TestCategory("gridValidation")]
         [DynamicData(nameof(GenGridValidationParams), DynamicDataSourceType.Method)]
