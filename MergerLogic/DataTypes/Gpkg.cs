@@ -22,17 +22,27 @@ namespace MergerLogic.DataTypes
                 this.Utils.DeleteTileTableTriggers();
                 this.Utils.UpdateExtent(this._extent);
             }
+            else
+            {
+                this._extent = this.Utils.GetExtent();
+            }
         }
 
         protected override void SetExtent(Extent? extent)
         {
-            if (extent is null)
+            if (this.IsBase)
             {
-                //throw error if extent is missing in base
-                throw new Exception($"base {this.Type} '{this.Path}' must have extent");
+                if (extent is null)
+                {
+                    //throw error if extent is missing in base
+                    throw new Exception($"base {this.Type} '{this.Path}' must have extent");
+                }
+                this._extent = extent.Value;
             }
-
-            this._extent = extent.Value;
+            else
+            {
+                this._extent = base.GetExtent();
+            }
         }
 
         protected override Extent GetExtent()
