@@ -334,6 +334,11 @@ namespace MergerLogic.Clients
         public void Create(Extent extent, bool isOneXOne = false)
         {
             this._logger.LogInformation($"creating new gpkg: {this.path}");
+            
+            // Create hierarchy if needed
+            string dir = this._fileSystem.Path.GetDirectoryName(this.path);
+            this._fileSystem.Directory.CreateDirectory(dir);
+            
             SQLiteConnection.CreateFile(this.path);
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
