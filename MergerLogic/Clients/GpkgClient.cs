@@ -337,7 +337,9 @@ namespace MergerLogic.Clients
             
             // Create hierarchy if needed
             string dir = this._fileSystem.Path.GetDirectoryName(this.path);
-            this._fileSystem.Directory.CreateDirectory(dir);
+            if(!this._fileSystem.Directory.Exists(dir)) {
+                this._fileSystem.Directory.CreateDirectory(dir);
+            }
             
             SQLiteConnection.CreateFile(this.path);
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
