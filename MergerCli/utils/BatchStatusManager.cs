@@ -9,12 +9,26 @@ namespace MergerCli.Utils
         {
             public string? BatchIdentifier { get; set; }
             public bool IsDone { get; set; }
+
             public LayerStatus()
             {
                 this.BatchIdentifier = null;
                 this.IsDone = false;
             }
         }
+
+        internal class BaseLayerStatus
+        {
+            public bool IsNew { get; set; }
+
+            public BaseLayerStatus()
+            {
+                this.IsNew = false;
+            }
+        }
+
+        [JsonInclude]
+        public BaseLayerStatus BaseLayer { get; private set; }
 
         [JsonInclude]
         public Dictionary<string, LayerStatus> States { get; private set; }
@@ -24,6 +38,7 @@ namespace MergerCli.Utils
 
         public BatchStatusManager(string[] command)
         {
+            this.BaseLayer = new BaseLayerStatus();
             this.States = new Dictionary<string, LayerStatus>();
             this.Command = command;
         }
@@ -33,7 +48,7 @@ namespace MergerCli.Utils
             this.States[layer].BatchIdentifier = batchIdentifier;
         }
 
-        public void InitilaizeLayer(string layer)
+        public void InitializeLayer(string layer)
         {
             if (!this.States.ContainsKey(layer))
             {
@@ -44,11 +59,17 @@ namespace MergerCli.Utils
         public void CompleteLayer(string layer)
         {
             this.States[layer].IsDone = true;
+            this.BaseLayer.IsNew = false;
         }
 
         public bool IsLayerCompleted(string layer)
         {
             return this.States.ContainsKey(layer) && this.States[layer].IsDone;
+        }
+
+        public bool IsBaseLayerNew()
+        {
+            return this.BaseLayer.IsNew;
         }
 
         public string? GetLayerBatchIdentifier(string layer)

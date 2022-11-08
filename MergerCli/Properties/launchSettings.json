@@ -10,11 +10,21 @@
         "S3__bucket": "tiles"
       }
     },
-    "temp": {
+    "s3 to gpkg": {
+      "workingDirectory": "",
       "commandName": "Project",
-      "commandLineArgs": "Program.cs 1000 jpeg s3 area2-copy gpkg area2.gpkg",
+      "commandLineArgs": "Program.cs 1000 jpeg gpkg area2-copy.gpkg -180,-90,180,90 s3 area3Cli",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
+        "AWS_ACCESS_KEY_ID": "minio123",
+        "AWS_SECRET_ACCESS_KEY": "minio123",
+        "S3__bucket": "tiles"
+      }
+    },
+    "resume": {
+      "workingDirectory": "",
+      "commandName": "Project",
+      "commandLineArgs": "Program.cs",
+      "environmentVariables": {
         "AWS_ACCESS_KEY_ID": "minio123",
         "AWS_SECRET_ACCESS_KEY": "minio123",
         "S3__url": "http://custom.localhost:9000",

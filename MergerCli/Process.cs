@@ -8,6 +8,8 @@ namespace MergerCli
 {
     internal class Process : IProcess
     {
+        private Func<Coord, Tile?> _getTileByCoord;
+
         private readonly ITileMerger _tileMerger;
         private readonly ILogger _logger;
 
@@ -20,7 +22,7 @@ namespace MergerCli
         public void Start(TileFormat targetFormat, IData baseData, IData newData, int batchSize,
             BatchStatusManager batchStatusManager)
         {
-            batchStatusManager.InitilaizeLayer(newData.Path);
+            batchStatusManager.InitializeLayer(newData.Path);
             List<Tile> tiles = new List<Tile>(batchSize);
             long totalTileCount = newData.TileCount();
             long tileProgressCount = 0;
@@ -36,7 +38,12 @@ namespace MergerCli
                 }
             }
 
-            this._logger.LogInformation($"Total amount of tiles to merge: {totalTileCount}");
+            this._logger.LogInformation($"Total amount of tiles to merge: {totalTileCount - tileProgressCount}");
+
+            _getTileByCoord = baseData.IsNew ?
+                (_) => null
+                :
+                (targetCoords) => baseData.GetCorrespondingTile(targetCoords, true);
 
             do
             {
@@ -50,7 +57,8 @@ namespace MergerCli
                     var targetCoords = newTile.GetCoord();
                     List<CorrespondingTileBuilder> correspondingTileBuilders = new List<CorrespondingTileBuilder>()
                     {
-                        () => baseData.GetCorrespondingTile(targetCoords, true), () => newTile
+                        () => _getTileByCoord(targetCoords),
+                        () => newTile
                     };
 
                     byte[]? image = this._tileMerger.MergeTiles(correspondingTileBuilders, targetCoords, targetFormat);

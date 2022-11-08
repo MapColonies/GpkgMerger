@@ -1,59 +1,65 @@
 using MergerLogic.Batching;
 using MergerLogic.Clients;
 using MergerLogic.Utils;
-using Microsoft.Extensions.Logging;
 
 namespace MergerLogic.DataTypes
 {
     public class Gpkg : Data<IGpkgClient>
     {
         private long _offset;
-
+        private Extent _extent;
         private readonly IConfigurationManager _configManager;
 
         public Gpkg(IConfigurationManager configuration, IServiceProvider container,
             string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false, Extent? extent = null)
-            : base(container, DataType.GPKG, path, batchSize, grid, origin)
+            : base(container, DataType.GPKG, path, batchSize, grid, origin, isBase, extent)
         {
             this._offset = 0;
             this._configManager = configuration;
 
             if (isBase)
             {
-                if (extent is null)
-                {
-                    //throw error if extent is missing in base
-                    throw new Exception($" base gpkg '{path}' must have extent");
-                }
-
-                this._logger.LogInformation($"Checking if exists, gpkg: {this.Path}");
-                if (!this.Utils.Exist())
-                {
-                    this.Utils.Create(extent.Value, this.IsOneXOne);
-                }
-                else
-                {
-                    if (!this.Utils.IsValidGrid(this.IsOneXOne))
-                    {
-                        var gridType = this.IsOneXOne ? "1X1" : "2X1";
-                        throw new Exception($"gpkg source {path} don't have valid {gridType} grid.");
-                    };
-                    this.Utils.DeleteTileTableTriggers();
-                }
-                this.Utils.UpdateExtent(extent.Value);
+                this.Utils.DeleteTileTableTriggers();
+                this.Utils.UpdateExtent(this._extent);
             }
             else
             {
-                this._logger.LogInformation($"Checking if exists, gpkg: {this.Path}");
-                if (!this.Utils.Exist())
+                this._extent = this.Utils.GetExtent();
+            }
+        }
+
+        protected override void SetExtent(Extent? extent)
+        {
+            if (this.IsBase)
+            {
+                if (extent is null)
                 {
-                    throw new Exception($"gpkg source {path} does not exist.");
+                    //throw error if extent is missing in base
+                    throw new Exception($"base {this.Type} '{this.Path}' must have extent");
                 }
-                if (!this.Utils.IsValidGrid(this.IsOneXOne))
-                {
-                    var gridType = this.IsOneXOne ? "1X1" : "2X1";
-                    throw new Exception($"gpkg source {path} don't have valid {gridType} grid.");
-                };
+                this._extent = extent.Value;
+            }
+            else
+            {
+                this._extent = base.GetExtent();
+            }
+        }
+
+        protected override Extent GetExtent()
+        {
+            return this._extent;
+        }
+
+        protected override void Create()
+        {
+            this.Utils.Create(this._extent, this.IsOneXOne);
+        }
+
+        protected override void Validate() {
+            if (!this.Utils.IsValidGrid(this.IsOneXOne))
+            {
+                var gridType = this.IsOneXOne ? "1X1" : "2X1";
+                throw new Exception($"{this.Type} source {this.Path} don't have valid {gridType} grid.");
             }
         }
 
@@ -135,7 +141,7 @@ namespace MergerLogic.DataTypes
 
         public override bool Exists()
         {
-            return true; //exists validation is now part of the constructor
+            return this.Utils.Exist();
         }
 
         public override long TileCount()
