@@ -21,6 +21,7 @@ namespace MergerCli.Utils
 
         [JsonInclude]
         public string[] Command { get; private set; }
+        static readonly object _locker = new object();
 
         public BatchStatusManager(string[] command)
         {
@@ -33,11 +34,20 @@ namespace MergerCli.Utils
             this.States[layer].BatchIdentifier = batchIdentifier;
         }
 
+        public string GetCurrentBatch(string layer)
+        {
+            return this.States[layer].BatchIdentifier;
+            return this.States[layer].BatchIdentifier;
+        }
+
         public void InitilaizeLayer(string layer)
         {
-            if (!this.States.ContainsKey(layer))
+            lock (_locker)
             {
-                this.States.Add(layer, new LayerStatus());
+                if (!this.States.ContainsKey(layer))
+                {
+                    this.States.Add(layer, new LayerStatus());
+                }
             }
         }
 

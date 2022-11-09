@@ -17,7 +17,7 @@ namespace MergerCli
             this._logger = logger;
         }
 
-        public void Start(TileFormat targetFormat, IData baseData, IData newData, int batchSize,
+        public long Start(TileFormat targetFormat, IData baseData, IData newData, int batchSize,
             BatchStatusManager batchStatusManager)
         {
             batchStatusManager.InitilaizeLayer(newData.Path);
@@ -36,41 +36,35 @@ namespace MergerCli
                 }
             }
 
-            this._logger.LogInformation($"Total amount of tiles to merge: {totalTileCount}");
+            List<Tile> newTiles = newData.GetNextBatch(out string batchIdentifier);
+            batchStatusManager.SetCurrentBatch(newData.Path, batchIdentifier);
 
-            do
+            tiles.Clear();
+            for (int i = 0; i < newTiles.Count; i++)
             {
-                List<Tile> newTiles = newData.GetNextBatch(out string batchIdentifier);
-                batchStatusManager.SetCurrentBatch(newData.Path, batchIdentifier);
-
-                tiles.Clear();
-                for (int i = 0; i < newTiles.Count; i++)
+                var newTile = newTiles[i];
+                var targetCoords = newTile.GetCoord();
+                List<CorrespondingTileBuilder> correspondingTileBuilders = new List<CorrespondingTileBuilder>()
                 {
-                    var newTile = newTiles[i];
-                    var targetCoords = newTile.GetCoord();
-                    List<CorrespondingTileBuilder> correspondingTileBuilders = new List<CorrespondingTileBuilder>()
-                    {
-                        () => baseData.GetCorrespondingTile(targetCoords, true), () => newTile
-                    };
+                    () => baseData.GetCorrespondingTile(targetCoords, true), () => newTile
+                };
 
-                    byte[]? image = this._tileMerger.MergeTiles(correspondingTileBuilders, targetCoords, targetFormat);
+                byte[]? image = this._tileMerger.MergeTiles(correspondingTileBuilders, targetCoords, targetFormat);
 
-                    if (image != null)
-                    {
-                        newTile = new Tile(newTile.Z, newTile.X, newTile.Y, image);
-                        tiles.Add(newTile);
-                    }
+                if (image != null)
+                {
+                    newTile = new Tile(newTile.Z, newTile.X, newTile.Y, image);
+                    tiles.Add(newTile);
                 }
+            }
 
-                baseData.UpdateTiles(tiles);
-
-                tileProgressCount += tiles.Count;
-                this._logger.LogInformation($"Tile Count: {tileProgressCount} / {totalTileCount}");
-            } while (tiles.Count == batchSize);
+            baseData.UpdateTiles(tiles);
+            Console.WriteLine($"Tiles Count {tiles.Count}");
 
             batchStatusManager.CompleteLayer(newData.Path);
             newData.Reset();
             // base data wrap up is in program as the same base data object is used in multiple calls 
+            return tiles.Count;
         }
 
         public void Validate(IData baseData, IData newData)

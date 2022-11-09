@@ -10,6 +10,8 @@ namespace MergerLogic.DataTypes
         private long _offset;
 
         private readonly IConfigurationManager _configManager;
+        
+        static readonly object _locker = new object();
 
         public Gpkg(IConfigurationManager configuration, IServiceProvider container,
             string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false, Extent? extent = null)
@@ -69,19 +71,24 @@ namespace MergerLogic.DataTypes
 
         public override List<Tile> GetNextBatch(out string batchIdentifier)
         {
-            batchIdentifier = this._offset.ToString();
-            //TODO: optimize after IOC refactoring
-            int counter = 0;
-            List<Tile> tiles = this.Utils.GetBatch(this.BatchSize, this._offset)
-                .Select(t =>
-                {
-                    Tile tile = this.ConvertOriginTile(t);
-                    tile = this.ToCurrentGrid(tile);
-                    counter++;
-                    return tile;
-                }).Where(t => t != null).ToList();
-            this._offset += counter;
-            return tiles;
+            lock (_locker)
+            {
+                batchIdentifier = this._offset.ToString();
+                Console.WriteLine($"batchIdentifier: {batchIdentifier}");
+                //TODO: optimize after IOC refactoring
+                int counter = 0;
+                List<Tile> tiles = this.Utils.GetBatch(this.BatchSize, this._offset)
+                    .Select(t =>
+                    {
+                        Tile tile = this.ConvertOriginTile(t);
+                        tile = this.ToCurrentGrid(tile);
+                        counter++;
+                        return tile;
+                    }).Where(t => t != null).ToList();
+                this._offset += counter;
+                batchIdentifier = this._offset.ToString();
+                return tiles;
+            }
         }
 
         public override void setBatchIdentifier(string batchIdentifier)

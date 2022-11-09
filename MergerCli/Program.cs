@@ -78,8 +78,29 @@ namespace MergerCli
                     {
                         continue;
                     }
+                    
+                    List<string> batches = new List<string>(5);
+                    batches.Add("0");
 
-                    process.Start(format, baseData, sources[i], batchSize, _batchStatusManager);
+                    long totalTileCount = sources[i].TileCount();
+                    _logger.LogInformation($"Total amount of tiles to merge: {totalTileCount}");
+
+                    long totalTilesCompletedTilesCount = 0;
+                    
+                    do
+                    {
+                        Parallel.ForEach(batches, b =>
+                        {
+                            //Console.WriteLine($"Calling start with identifier: {CurrentLayerBatchIdentifier}");
+                            long completedTilesCount = process.Start(format, baseData, sources[i], batchSize,
+                                _batchStatusManager);
+                            Console.WriteLine($"Completed Tiles: {completedTilesCount}");
+                            totalTilesCompletedTilesCount += completedTilesCount;
+                            _logger.LogInformation($"Tile Count: {totalTilesCompletedTilesCount} / {totalTileCount}");
+                        });
+                    Console.WriteLine($"ALL THREADS END!!!!!!!!!!!!!!!!!!!");
+                    Console.WriteLine($"CURRENT IDENTIFIER: {_batchStatusManager.GetLayerBatchIdentifier(sources[i].Path)}");
+                    } while (_batchStatusManager.GetLayerBatchIdentifier(sources[i].Path) != "2283");
                     stopWatch.Stop();
 
                     // Get the elapsed time as a TimeSpan value.
