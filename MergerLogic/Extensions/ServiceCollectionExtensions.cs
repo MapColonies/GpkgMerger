@@ -1,4 +1,5 @@
-﻿using Amazon.Runtime;
+﻿using Amazon;
+using Amazon.Runtime;
 using Amazon.S3;
 using MergerLogic.Clients;
 using MergerLogic.ImageProcessing;
@@ -73,24 +74,37 @@ namespace MergerLogic.Extensions
             return collection.AddSingleton<IAmazonS3>(sp =>
             {
                 var config = sp.GetRequiredService<IConfigurationManager>();
+
+                // Get configuration if should log S3 SDK operations to console
+                bool logToConsole = config.GetConfiguration<bool>("S3", "logToConsole");
+                if (logToConsole) {
+                    AWSConfigs.LoggingConfig.LogTo = LoggingOptions.Console;
+                }
+
                 string s3Url = config.GetConfiguration("S3", "url");
-                string accessKey = Environment.GetEnvironmentVariable("S3_ACCESS_KEY");
-                string secretKey = Environment.GetEnvironmentVariable("S3_SECRET_KEY");
+                string? accessKey = Environment.GetEnvironmentVariable(EnvironmentVariablesAWSCredentials.ENVIRONMENT_VARIABLE_ACCESSKEY);
+                string? secretKey = Environment.GetEnvironmentVariable(EnvironmentVariablesAWSCredentials.ENVIRONMENT_VARIABLE_SECRETKEY);
+                int timeoutSec = config.GetConfiguration<int>("S3", "request", "timeoutSec");
+                int retries = config.GetConfiguration<int>("S3", "request", "retries");
 
                 if (string.IsNullOrEmpty(s3Url) || string.IsNullOrEmpty(accessKey) || string.IsNullOrEmpty(secretKey))
                 {
                     throw new Exception("s3 configuration is required");
                 }
+                if (retries < 1) {
+                    throw new Exception("s3 request retries should have a value of at least 1");
+                }
 
                 var s3Config = new AmazonS3Config
                 {
-                    RegionEndpoint = Amazon.RegionEndpoint.USEast1,
                     ServiceURL = s3Url,
-                    ForcePathStyle = true
+                    ForcePathStyle = true,
+                    Timeout = new TimeSpan(0, 0, timeoutSec),
+                    MaxErrorRetry = retries,
                 };
+
                 var credentials = new BasicAWSCredentials(accessKey, secretKey);
                 return new AmazonS3Client(credentials, s3Config);
-
             });
         }
 

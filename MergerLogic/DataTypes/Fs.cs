@@ -14,22 +14,25 @@ namespace MergerLogic.DataTypes
         private long _completedTiles;
 
         private readonly IPathUtils _pathUtils;
-        private readonly IFileSystem _fileSystem;
+        private IFileSystem _fileSystem;
 
         private readonly string[] _supportedFileExtensions = { ".png", ".jpg", ".jpeg" };
 
         public FS(IPathUtils pathUtils, IServiceProvider container,
             string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false)
-            : base(container, DataType.FOLDER, path, batchSize, grid, origin)
+            : base(container, DataType.FOLDER, path, batchSize, grid, origin, isBase)
         {
             this._pathUtils = pathUtils;
-            this._fileSystem = container.GetRequiredService<IFileSystem>();
-            if (isBase)
-            {
-                this._fileSystem.Directory.CreateDirectory(path);
-            }
-
             this.Reset();
+        }
+
+        protected override void Initialize()
+        {
+            this._fileSystem = this._container.GetRequiredService<IFileSystem>();
+        }
+
+        protected override void Create() {
+            this._fileSystem.Directory.CreateDirectory(this.Path);
         }
 
         protected override GridOrigin DefaultOrigin()

@@ -13,8 +13,10 @@ namespace MergerCli
     internal class Program
     {
         private static BatchStatusManager _batchStatusManager;
-        private static bool _done = false;
         private static ILogger<Program> _logger;
+        private static bool _resumed = false;
+        private static bool _done = false;
+        private static string _resumeFilePath;
 
         private static void Main(string[] args)
         {
@@ -27,14 +29,29 @@ namespace MergerCli
             string programName = args[0];
 
             // Require input of wanted batch size and 2 types and paths (base and new gpkg)
-            if (args.Length < 6 && args.Length != 2)
+            if (args.Length < 6 && args.Length != 1)
             {
                 _logger.LogError("invalid command.");
                 PrintHelp(programName);
                 return;
             }
 
-            PrepareStatusManger(ref args);
+            var config = container.GetRequiredService<IConfigurationManager>();
+            var pathUtils = container.GetRequiredService<IPathUtils>();
+            string outputPath = pathUtils.RemoveTrailingSlash(config.GetConfiguration("GENERAL", "resumeOutputFolder"));
+            _resumeFilePath = $"{outputPath}/status.json";
+
+            // If should resume, load status manager file and update states, else create from arguments
+            if (args.Length == 1)
+            {
+                _resumed = true;
+                LoadStatusManager(ref args);
+            }
+            else
+            {
+                _batchStatusManager = new BatchStatusManager(args);
+            }
+            PrepareStatusManger();
 
             int batchSize = int.Parse(args[1]);
             TileFormat format;
@@ -52,6 +69,16 @@ namespace MergerCli
             }
 
             IData baseData = sources[0];
+            if(_resumed) {
+                bool isNew = _batchStatusManager.IsBaseLayerNew();
+                if (isNew) {
+                    baseData.markAsNew();
+                }
+            }
+            else {
+                _batchStatusManager.BaseLayer.IsNew = baseData.IsNew;
+            }
+
             if (sources.Count < 2)
             {
                 _logger.LogError("minimum of 2 sources is required");
@@ -63,7 +90,6 @@ namespace MergerCli
             var timeUtils = container.GetRequiredService<ITimeUtils>();
             try
             {
-                var config = container.GetRequiredService<IConfigurationManager>();
                 bool validate = config.GetConfiguration<bool>("GENERAL", "validate");
                 for (int i = 1; i < sources.Count; i++)
                 {
@@ -81,7 +107,6 @@ namespace MergerCli
                     ts = stopWatch.Elapsed;
                     _logger.LogInformation(timeUtils.FormatElapsedTime($"{sources[i].Path} merge runtime", ts));
 
-
                     if (validate)
                     {
                         // Reset stopwatch for validation time measure
@@ -97,7 +122,6 @@ namespace MergerCli
                         _logger.LogInformation(timeUtils.FormatElapsedTime($"{sources[i].Path} validation time", ts));
                     }
                 }
-
                 baseData.Wrapup();
             }
             catch (Exception ex)
@@ -127,7 +151,6 @@ namespace MergerCli
         private static void PrintHelp(string programName)
         {
             _logger.LogInformation($@"Usage:
-
                 Supported sources parameters:
                     web sources (cant be base source):
                         <'xyz' / 'wmts' / 'tms'> <url template> <bbox - in format 'minX,minY,maxX,maxY'> <min zoom> <max zoom> [--1x1] [--UL / --LL] 
@@ -157,30 +180,25 @@ namespace MergerCli
                 Minimal requirement is supplying at least one source.");
         }
 
-        private static void PrepareStatusManger(ref string[] args)
+        private static void LoadStatusManager(ref string[] args) {
+            if (!File.Exists(_resumeFilePath))
+            {
+                _logger.LogError($"invalid status file {_resumeFilePath}");
+                Environment.Exit(-1);
+            }
+
+            string json = File.ReadAllText(_resumeFilePath);
+            _batchStatusManager = BatchStatusManager.FromJson(json);
+            args = _batchStatusManager.Command;
+            _logger.LogInformation("resuming layers merge operation. layers progress:");
+            foreach (var item in _batchStatusManager.States)
+            {
+                _logger.LogInformation($"{item.Key} {item.Value.BatchIdentifier}");
+            }
+        }
+
+        private static void PrepareStatusManger()
         {
-            if (args.Length == 2)
-            {
-                if (!File.Exists(args[1]))
-                {
-                    _logger.LogError($"invalid status file {args[1]}");
-                    Environment.Exit(-1);
-                }
-
-                string json = File.ReadAllText(args[1]);
-                _batchStatusManager = BatchStatusManager.FromJson(json);
-                args = _batchStatusManager.Command;
-                _logger.LogInformation("resuming layers merge operation. layers progress:");
-                foreach (var item in _batchStatusManager.States)
-                {
-                    _logger.LogInformation($"{item.Key} {item.Value.BatchIdentifier}");
-                }
-            }
-            else
-            {
-                _batchStatusManager = new BatchStatusManager(args);
-            }
-
             //save status on program exit
             AssemblyLoadContext.Default.Unloading += delegate { OnFailure(); };
             //save status on SigInt (ctrl + c)
@@ -192,11 +210,11 @@ namespace MergerCli
             if (!_done)
             {
                 string status = _batchStatusManager.ToString();
-                File.WriteAllText("status.json", status);
+                File.WriteAllText(_resumeFilePath, status);
             }
             else
             {
-                File.Delete("status.json");
+                File.Delete(_resumeFilePath);
             }
         }
     }

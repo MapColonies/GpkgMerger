@@ -18,6 +18,5 @@ namespace MergerLogic.Clients
         public void DeleteTileTableTriggers();
         public void CreateTileCacheValidationTriggers();
         public void UpdateTileMatrixTable(bool isOneXOne = false);
-        public bool IsValidGrid(bool isOneXOne = false);
     }
 }

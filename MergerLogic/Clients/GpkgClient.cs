@@ -334,6 +334,13 @@ namespace MergerLogic.Clients
         public void Create(Extent extent, bool isOneXOne = false)
         {
             this._logger.LogInformation($"creating new gpkg: {this.path}");
+            
+            // Create hierarchy if needed
+            string dir = this._fileSystem.Path.GetDirectoryName(this.path);
+            if(!this._fileSystem.Directory.Exists(dir)) {
+                this._fileSystem.Directory.CreateDirectory(dir);
+            }
+            
             SQLiteConnection.CreateFile(this.path);
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
@@ -347,7 +354,7 @@ namespace MergerLogic.Clients
                     this.CreateTileMatrixSetTable(connection);
                     this.CreateTileMatrixTable(connection);
                     this.CreateExtentionTable(connection);
-                    this.CreateTileTable(connection, extent);
+                    this.CreateTileTable(connection);
                     if (isOneXOne)
                     {
                         this.Add1X1MatrixSet(connection);
@@ -356,7 +363,8 @@ namespace MergerLogic.Clients
                     {
                         this.Add2X1MatrixSet(connection);
                     }
-
+                    
+                    this.CreateGpkgContentsTable(connection, extent);
                     this.CreateTileMatrixValidationTriggers(connection);
                     transaction.Commit();
                 }
@@ -542,7 +550,7 @@ namespace MergerLogic.Clients
             }
         }
 
-        private void CreateTileTable(SQLiteConnection connection, Extent extent)
+        private void CreateTileTable(SQLiteConnection connection)
         {
             using (var command = connection.CreateCommand())
             {
@@ -556,7 +564,10 @@ namespace MergerLogic.Clients
                                       "PRIMARY KEY(\"id\" AUTOINCREMENT));";
                 command.ExecuteNonQuery();
             }
+        }
 
+        private void CreateGpkgContentsTable(SQLiteConnection connection, Extent extent)
+        {
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = "INSERT INTO \"gpkg_contents\" " +
@@ -673,8 +684,9 @@ namespace MergerLogic.Clients
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"SELECT  MAX(zoom_level) AS maxZoom FROM \"{this._tileCache}\";";
-                    maxZoom = int.Parse(command.ExecuteScalar().ToString());
+                    command.CommandText = $"SELECT MAX(zoom_level) AS maxZoom FROM \'{this._tileCache}\';";
+                    var res = command.ExecuteScalar();
+                    maxZoom = res != DBNull.Value ? int.Parse(res.ToString()) : 0;
                 }
 
                 if (isOneXOne)
@@ -688,7 +700,7 @@ namespace MergerLogic.Clients
             }
         }
 
-        public bool IsValidGrid(bool isOneXOne = false)
+        public override bool IsValidGrid(bool isOneXOne = false)
         {
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {

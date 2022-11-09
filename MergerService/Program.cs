@@ -1,4 +1,5 @@
 using MergerLogic.Extensions;
+using MergerLogic.Clients;
 using MergerService.Src;
 using MergerService.Utils;
 
@@ -12,6 +13,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.RegisterMergerLogicType();
 builder.Services.AddSingleton<IRun, Run>();
 builder.Services.AddSingleton<ITaskUtils, TaskUtils>();
+builder.Services.AddSingleton<IHeartbeatClient, HeartbeatClient>();
 
 var app = builder.Build();
 

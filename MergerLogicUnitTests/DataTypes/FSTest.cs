@@ -571,25 +571,53 @@ namespace MergerLogicUnitTests.DataTypes
         [DynamicData(nameof(GenExistParams), DynamicDataSourceType.Method)]
         public void Exists(bool isOneXOne, bool isBase, GridOrigin origin, bool exist)
         {
-            this.SetupConstructorRequiredMocks(isBase);
             var seq = new MockSequence();
-            this._pathMock
-                .InSequence(seq)
-                .Setup(path => path.GetFullPath("test"))
-                .Returns("/test/test");
-            this._directoryMock
-                .InSequence(seq)
-                .Setup(directory => directory.Exists("/test/test"))
-                .Returns(exist);
+            this.SetupConstructorRequiredMocks(isBase, exist, seq);
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, grid, origin, isBase);
+            var action = () => new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, 
+                    "test", 10, grid, origin, isBase);
 
-            Assert.AreEqual(exist, fsSource.Exists());
+            if (!exist && !isBase)
+            {
+                Assert.ThrowsException<Exception>(action);
+            }
+            else
+            {
+                action();
+            }
 
             this._pathMock.Verify(path => path.GetFullPath("test"), Times.Once);
             this._directoryMock.Verify(directory => directory.Exists("/test/test"), Times.Once);
+            this.VerifyAll();
+        }
+        
+        public static IEnumerable<object[]> GenDefaultExtentParams()
+        {
+            return DynamicDataGenerator.GeneratePrams(
+                new object[] { true, false }, //is one on one
+                new object[] { GridOrigin.LOWER_LEFT, GridOrigin.UPPER_LEFT } //origin
+            );
+        }
+        
+        [TestMethod]
+        [TestCategory("Exists")]
+        [DynamicData(nameof(GenDefaultExtentParams), DynamicDataSourceType.Method)]
+        public void FsCreationDefaultExtent(bool isOneXOne, GridOrigin origin)
+        {
+            Extent extent = isOneXOne ?
+                new Extent() { MinX = -180, MinY = -180, MaxX = 180, MaxY = 180 }
+                :
+                new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
+            Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
+            
+            var seq = new MockSequence();
+            this.SetupConstructorRequiredMocks(false, true, seq);
+            this._geoUtilsMock.Setup(geoUtils => geoUtils.DefaultExtent(It.IsAny<bool>())).Returns(extent);
 
+            var fs = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, 
+                "test", 10, grid, origin);
+            Assert.AreEqual(fs.Extent, extent);
             this.VerifyAll();
         }
 
@@ -613,7 +641,7 @@ namespace MergerLogicUnitTests.DataTypes
         public void TileCount(bool isOneXOne, bool isBase, GridOrigin origin, int tileCount)
         {
             var seq = new MockSequence();
-            this.SetupConstructorRequiredMocks(isBase, seq, new string[] { "1" });
+            this.SetupConstructorRequiredMocks(isBase, true, seq, new string[] { "1" });
             var fileList = new List<string>();
             for (int i = 0; i < tileCount; i++)
             {
@@ -769,7 +797,7 @@ namespace MergerLogicUnitTests.DataTypes
             var tileBatches = tiles.Where(t => t is not null && (!isOneXOne || t.Z != 0)).Chunk(batchSize).ToList();
             var batchIdx = 0;
             var seq = new MockSequence();
-            this.SetupConstructorRequiredMocks(isBase, seq, new[] { "1" }, 
+            this.SetupConstructorRequiredMocks(isBase, true, seq, new[] { "1" }, 
                 new string[] { "0.png", "1.jpg", "2.png", "invalid", "3.png", "4.png" });
 
             foreach (var tile in tiles)
@@ -845,6 +873,7 @@ namespace MergerLogicUnitTests.DataTypes
             return DynamicDataGenerator.GeneratePrams(
                 new object[] { true, false }, //is one on one
                 new object[] { true, false }, //is base
+                new object[] { true, false }, //exists
                 new object[] { GridOrigin.LOWER_LEFT, GridOrigin.UPPER_LEFT } //origin
             );
         }
@@ -852,16 +881,27 @@ namespace MergerLogicUnitTests.DataTypes
         [TestMethod]
         [TestCategory("FsCreation")]
         [DynamicData(nameof(GenFsCreationParams), DynamicDataSourceType.Method)]
-        public void FsCreation(bool isOneXOne, bool isBase, GridOrigin origin)
+        public void FsCreation(bool isOneXOne, bool isBase, bool exists, GridOrigin origin)
         {
             var seq = new MockSequence();
-            this.SetupConstructorRequiredMocks(isBase, seq);
+            this.SetupConstructorRequiredMocks(isBase, exists, seq);
 
             IDirectoryInfo nullInfo = null;
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, grid, origin, isBase);
+            
+            var action = () => new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 
+                10, grid, origin, isBase);
 
-            this._directoryMock.Verify(dir => dir.CreateDirectory("test"), isBase ? Times.Once : Times.Never);
+            if (!exists && !isBase)
+            {
+                Assert.ThrowsException<Exception>(action);
+            }
+            else
+            {
+                action();
+            }
+
+            this._directoryMock.Verify(dir => dir.CreateDirectory("test"), !exists && isBase ? Times.Once : Times.Never);
             this.VerifyAll();
         }
 
@@ -871,10 +911,21 @@ namespace MergerLogicUnitTests.DataTypes
 
         #region helper
 
-        private void SetupConstructorRequiredMocks(bool isBase, MockSequence? sequence = null, string[]? directories = null, string[]? files = null)
+        private void SetupConstructorRequiredMocks(bool isBase, bool exists = true, MockSequence? sequence = null, 
+            string[]? directories = null, string[]? files = null)
         {
             var seq = sequence ?? new MockSequence();
-            if (isBase)
+            
+            this._pathMock
+                .InSequence(seq)
+                .Setup(path => path.GetFullPath("test"))
+                .Returns("/test/test");
+            this._directoryMock
+                .InSequence(seq)
+                .Setup(directory => directory.Exists("/test/test"))
+                .Returns(exists);
+            
+            if (!exists && isBase)
             {
                 IDirectoryInfo nullInfo = null;
                 this._directoryMock

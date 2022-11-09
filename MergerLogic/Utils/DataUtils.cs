@@ -17,6 +17,10 @@ namespace MergerLogic.Utils
             this.Formatter = formatter;
         }
 
+        public virtual bool IsValidGrid(bool isOneXOne = false) {
+            return true;
+        }
+
         public abstract Tile? GetTile(int z, int x, int y);
 
         public virtual Tile? GetTile(Coord coord)
