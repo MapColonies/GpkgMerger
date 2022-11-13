@@ -1,6 +1,7 @@
 using ImageMagick;
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using MergerLogic.Utils;
 
 namespace MergerLogic.ImageProcessing
 {
@@ -75,20 +76,18 @@ namespace MergerLogic.ImageProcessing
             scaledImage.ColorType = colorType;
             scaledImage.ColorSpace = colorSpace;
             // TODO: return null only when the one color is black or white
-            return scaledImage.TotalColors > 1 ? scaledImage : null;
+            // return scaledImage.TotalColors > 1 ? scaledImage : null;
+            // return IsWhite(scaledImage) || IsFullyTransparent(scaledImage) ? null : scaledImage;
+            return ImageUtils.IsTransparent(scaledImage) ? null : scaledImage;
         }
-        
-        private static bool IsWhite(MagickImage image)
+
+        public Tile? Upscale(Tile tile, Coord targetCoords)
         {
-            MagickColor white = MagickColors.White;
-            using var pixels = image.GetPixels();
-            return !pixels.Select(pixel => pixel.ToColor()).Any(color => (MagickColor)color != white);
-        }
-        
-        private static bool IsFullyTransparent(MagickImage image)
-        {
-            using var pixels = image.GetPixels();
-            return !pixels.Select(pixel => pixel.ToColor()).Any(color => color.A != 255);
+            var tileBytes = tile.GetImageBytes();
+            MagickImage tileImage = new MagickImage(tileBytes);
+            MagickImage? upscale = this.Upscale(tileImage, tile, targetCoords);
+            tileImage.Dispose();
+            return upscale is null ? null : new Tile(targetCoords, upscale.ToByteArray());
         }
 
         public MagickImage UpscaleFix(MagickImage baseImage, Tile baseTile, Coord targetCoords)
