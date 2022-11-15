@@ -14,7 +14,6 @@
       "launchBrowser": false,
       "launchUrl": "swagger",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
         "AWS_ACCESS_KEY_ID": "minio123",
         "AWS_SECRET_ACCESS_KEY": "minio123",
         "S3__url": "http://localhost:9000",

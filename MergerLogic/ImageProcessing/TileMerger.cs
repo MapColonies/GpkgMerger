@@ -65,28 +65,28 @@ namespace MergerLogic.ImageProcessing
             Tile? tile = null;
 
             singleImage = false;
-            MagickImage? tileImage = null;
+            bool hasAlpha = false;
             try
             {
-                tile = GetFirstTile(tiles, ref lastProcessedTile, ref i);
+                tile = GetFirstTile(tiles, targetCoords, ref lastProcessedTile, ref i);
                 for (; i >= 0; i--)
                 {
                     var tile2 = tiles[i]();
-                    if (tile2 == null)
+                    if (tile2 is null)
                     {
                         continue;
                     }
 
-                    this.AddTileToImageList(targetCoords, tile, images, ref tileImage);
-                    if (!tileImage!.HasAlpha)
+                    this.AddTileToImageList(targetCoords, tile, images, out hasAlpha);
+                    if (!hasAlpha)
                     {
                         singleImage = true;
                         return images;
                     }
 
                     lastProcessedTile = tile2;
-                    this.AddTileToImageList(targetCoords, tile2, images, ref tileImage);
-                    if (!tileImage!.HasAlpha)
+                    this.AddTileToImageList(targetCoords, tile2, images, out hasAlpha);
+                    if (!hasAlpha)
                     {
                         return images;
                     }
@@ -97,14 +97,14 @@ namespace MergerLogic.ImageProcessing
                 for (; i >= 0; i--)
                 {
                     tile = tiles[i]();
-                    if (tile == null)
+                    if (tile is null)
                     {
                         continue;
                     }
 
                     lastProcessedTile = tile;
-                    this.AddTileToImageList(targetCoords, tile, images, ref tileImage);
-                    if (!tileImage!.HasAlpha)
+                    this.AddTileToImageList(targetCoords, tile, images, out hasAlpha);
+                    if (!hasAlpha)
                     {
                         return images;
                     }
@@ -114,8 +114,6 @@ namespace MergerLogic.ImageProcessing
             {
                 //prevent memory leak in case of any exception while handling images
                 images.ForEach(image => image.Dispose());
-                if (tileImage != null)
-                    tileImage.Dispose();
                 throw;
             }
 
@@ -123,13 +121,20 @@ namespace MergerLogic.ImageProcessing
             return images;
         }
 
-        private Tile? GetFirstTile(List<CorrespondingTileBuilder> tiles, ref Tile? lastProcessedTile, ref int i)
+        private Tile? GetFirstTile(List<CorrespondingTileBuilder> tiles, Coord targetCoords, ref Tile? lastProcessedTile, ref int i)
         {
             for (; i >= 0; i--)
             {
-                Tile tile = tiles[i]();
+                Tile? tile = tiles[i]();
                 if (tile != null)
                 {
+                    // Check if should upscale tile (first tile does not upscale if there are no other tiles)
+                    // TODO: refactor code in this class
+                    if (tile.Z < targetCoords.Z)
+                    {
+                        tile = this._tileScaler.Upscale(tile, targetCoords);
+                    }
+                    
                     lastProcessedTile = tile;
                     i--;
                     return tile;
@@ -139,8 +144,7 @@ namespace MergerLogic.ImageProcessing
             return null;
         }
 
-        private void AddTileToImageList(Coord targetCoords, Tile? tile, List<MagickImage> images,
-            ref MagickImage? tileImage)
+        private void AddTileToImageList(Coord targetCoords, Tile? tile, List<MagickImage> images, out bool hasAlpha)
         {
             if (tile!.Z > targetCoords.Z)
             {
@@ -148,7 +152,7 @@ namespace MergerLogic.ImageProcessing
             }
 
             var tileBytes = tile.GetImageBytes();
-            tileImage = new MagickImage(tileBytes);
+            MagickImage? tileImage = new MagickImage(tileBytes);
             if (tile.Z < targetCoords.Z)
             {
                 var upscale = this._tileScaler.Upscale(tileImage, tile, targetCoords);
@@ -156,7 +160,15 @@ namespace MergerLogic.ImageProcessing
                 tileImage = upscale;
             }
 
-            images.Add(tileImage);
+            if (tileImage is not null)
+            {
+                hasAlpha = tileImage.HasAlpha;
+                images.Add(tileImage);
+            }
+            else
+            {
+                hasAlpha = true;
+            }
         }
     }
 }
