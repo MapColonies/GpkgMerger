@@ -2,6 +2,7 @@ using MergerCli.Utils;
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 using MergerLogic.ImageProcessing;
+using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
 
 namespace MergerCli
@@ -10,11 +11,13 @@ namespace MergerCli
     {
         private Func<Coord, Tile?> _getTileByCoord;
 
+        private readonly IConfigurationManager _config;
         private readonly ITileMerger _tileMerger;
         private readonly ILogger _logger;
 
-        public Process(ITileMerger tileMerger, ILogger<Process> logger)
+        public Process(IConfigurationManager configuration, ITileMerger tileMerger, ILogger<Process> logger)
         {
+            this._config = configuration;
             this._tileMerger = tileMerger;
             this._logger = logger;
         }
@@ -40,7 +43,8 @@ namespace MergerCli
 
             this._logger.LogInformation($"Total amount of tiles to merge: {totalTileCount - tileProgressCount}");
 
-            _getTileByCoord = baseData.IsNew ?
+            bool uploadOnly = _config.GetConfiguration<bool>("GENERAL", "uploadOnly");
+            _getTileByCoord = uploadOnly || baseData.IsNew ?
                 (_) => null
                 :
                 (targetCoords) => baseData.GetCorrespondingTile(targetCoords, true);
