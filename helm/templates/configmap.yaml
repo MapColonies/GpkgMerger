@@ -28,7 +28,7 @@ data:
   {{ if .Values.env.tracing.enabled }}
   TRACING__enabled: 'true'
   TRACING__url: {{ $tracingUrl }}
-  TRACING__ratio: {{ .Values.env.tracing.ratio | quote}} 
+  TRACING__ratio: {{ .Values.env.tracing.ratio | quote}}
   {{ end }}
   {{ if .Values.env.metrics.enabled }}
   METRICS__enabled: 'true'
