@@ -36,6 +36,6 @@ data:
   METRICS__interval: {{ .Values.env.metrics.interval | quote}}
   {{ end }}
   HTTP__retries: {{ .Values.env.HTTP.retries | quote }}
-  HEARTBEAT__baseUrl: {{ .Values.env.heartbeat.baseUrl | quote }}
+  HEARTBEAT__baseUrl: {{ .Values.rasterCommon.serviceUrls.heartbeatManager | quote }}
   HEARTBEAT__intervalMs: {{ .Values.env.heartbeat.intervalMs | quote }}
 {{- end -}}
