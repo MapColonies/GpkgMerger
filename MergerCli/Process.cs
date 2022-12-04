@@ -69,7 +69,6 @@ namespace MergerCli
         {
             ConcurrentBag<Tile> tiles = new ConcurrentBag<Tile>();
             List<Tile> newTiles = newData.GetNextBatch(out string currentBatchIdentifier, out string? nextBatchIdentifier, inCompletedBatchIdentifier, totalTileCount);
-            Console.WriteLine($"newTiles count: {newTiles.Count}");
             if (!resumeMode && newTiles.Count > 0)
             {
                 batchStatusManager.AssignBatch(newData.Path, currentBatchIdentifier);
@@ -95,9 +94,6 @@ namespace MergerCli
                     {
                         newTile = new Tile(newTile.Z, newTile.X, newTile.Y, image);
                         tiles.Add(newTile);
-                        
-                        //Console.WriteLine($"Tiles Count: {tiles.Count}, Thread: {Thread.CurrentThread.ManagedThreadId}, {newData.IsNew}");
-
                     }
                 }
             }

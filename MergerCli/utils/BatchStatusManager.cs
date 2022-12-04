@@ -107,7 +107,6 @@ namespace MergerCli.Utils
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"Exception: {e}");
                     return null;
                 }
             }

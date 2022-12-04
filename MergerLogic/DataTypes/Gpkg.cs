@@ -78,7 +78,6 @@ namespace MergerLogic.DataTypes
         {
             lock (_locker)
             {
-                Console.WriteLine($"Inside SQLIte");
                 if (inCompletedBatchIdentifier is not null)
                 {
                     long.TryParse(inCompletedBatchIdentifier, out long result);
@@ -90,8 +89,7 @@ namespace MergerLogic.DataTypes
                 {
                     //TODO: optimize after IOC refactoring
                     int counter = 0;
-                    Console.WriteLine($"Working on {this._offset} - {this.BatchSize}, ThreadId: {Thread.CurrentThread.ManagedThreadId}, offset: {this._offset}");
-                    
+
                     tiles = this.Utils.GetBatch(this.BatchSize, this._offset)
                         .Select(t =>
                         {
@@ -108,7 +106,6 @@ namespace MergerLogic.DataTypes
                     return tiles;
                 }
                 nextBatchIdentifier = this._offset.ToString();
-                Console.WriteLine($"NextBatchIdnetifier: {nextBatchIdentifier}");
                 return tiles;
             }
         }
