@@ -50,9 +50,11 @@ namespace MergerCli
             }
 
             this._logger.LogInformation($"Total amount of tiles to merge: {totalTileCount - tileProgressCount}");
-            _getTileByCoord = baseData.IsNew
-                ? (_) => null
-                : (targetCoords) => baseData.GetCorrespondingTile(targetCoords, true);
+            bool uploadOnly = this._configManager.GetConfiguration<bool>("GENERAL", "uploadOnly");
+            _getTileByCoord = uploadOnly || baseData.IsNew ?
+                (_) => null
+                :
+                (targetCoords) => baseData.GetCorrespondingTile(targetCoords, true);
             
             int threadsNumber = this._configManager.GetConfiguration<int>("GENERAL", "threads", "number");
             int maxDegreeOfParallelism = this._configManager.GetConfiguration<int>("GENERAL", "threads", "maxDegreeOfParallelism");
