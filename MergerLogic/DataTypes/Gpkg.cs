@@ -74,31 +74,51 @@ namespace MergerLogic.DataTypes
             this._offset = 0;
         }
 
-        public override List<Tile> GetNextBatch(out string batchIdentifier)
+        public override List<Tile> GetNextBatch(out string currentBatchIdentifier, out string? nextBatchIdentifier, string? inCompletedBatchIdentifier, long? totalTilesCount)
         {
             lock (_locker)
             {
-                batchIdentifier = this._offset.ToString();
-                Console.WriteLine($"SQLITE BatchIdentier: {batchIdentifier}");
-                //TODO: optimize after IOC refactoring
-                int counter = 0;
-                //Console.WriteLine($"Working on {this._offset} - {this.BatchSize}");
-                List<Tile> tiles = this.Utils.GetBatch(this.BatchSize, this._offset)
-                    .Select(t =>
+                Console.WriteLine($"Inside SQLIte");
+                if (inCompletedBatchIdentifier is not null)
+                {
+                    long.TryParse(inCompletedBatchIdentifier, out long result);
+                    this._offset = result;
+                }
+                currentBatchIdentifier = this._offset.ToString();
+                List<Tile> tiles = new List<Tile>();
+                if (this._offset != totalTilesCount)
+                {
+                    //TODO: optimize after IOC refactoring
+                    int counter = 0;
+                    Console.WriteLine($"Working on {this._offset} - {this.BatchSize}, ThreadId: {Thread.CurrentThread.ManagedThreadId}, offset: {this._offset}");
+                    
+                    tiles = this.Utils.GetBatch(this.BatchSize, this._offset)
+                        .Select(t =>
+                        {
+                            Tile tile = this.ConvertOriginTile(t);
+                            tile = this.ToCurrentGrid(tile);
+                            counter++;
+                            return tile;
+                        }).Where(t => t != null).ToList();
+                    if (inCompletedBatchIdentifier is null)
                     {
-                        Tile tile = this.ConvertOriginTile(t);
-                        tile = this.ToCurrentGrid(tile);
-                        counter++;
-                        return tile;
-                    }).Where(t => t != null).ToList();
-                this._offset += counter;
+                        this._offset += counter;
+                    }
+                    nextBatchIdentifier = this._offset.ToString();
+                    return tiles;
+                }
+                nextBatchIdentifier = this._offset.ToString();
+                Console.WriteLine($"NextBatchIdnetifier: {nextBatchIdentifier}");
                 return tiles;
             }
         }
 
         public override void setBatchIdentifier(string batchIdentifier)
         {
-            this._offset = long.Parse(batchIdentifier);
+            lock (_locker)
+            {
+                this._offset = long.Parse(batchIdentifier);
+            }
         }
 
         protected override Tile InternalGetLastExistingTile(Coord baseCoords)

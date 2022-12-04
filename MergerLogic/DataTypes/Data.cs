@@ -259,7 +259,7 @@ namespace MergerLogic.DataTypes
             return this.GetTile(z, x, y);
         }
 
-        public abstract List<Tile> GetNextBatch(out string batchIdentifier);
+        public abstract List<Tile> GetNextBatch(out string batchIdentifier, out string? nextBatchIdentifier, string? inCompletedBatchIdentifier, long? totalTilesCount);
 
         public Tile? GetCorrespondingTile(Coord coords, bool upscale)
         {

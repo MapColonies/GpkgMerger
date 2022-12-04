@@ -134,6 +134,7 @@ namespace MergerCli
                 var optionalParams = args.Skip(idx + requiredParamCount).Take(optionalParamCount).ToArray();
                 int parsedOptionals =
                     this.ParseOptionalParameters(sourceType, sourcePath, ref isOneXOne, ref origin, optionalParams);
+                Console.WriteLine($"paramCount: {paramCount}, requiredParamCount: {requiredParamCount}, parsedOptionals: {parsedOptionals}");
                 if (paramCount - requiredParamCount - parsedOptionals == 1)
                 {
                     extent = this.parseExtent(args[idx + 2]);
