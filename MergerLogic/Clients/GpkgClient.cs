@@ -337,7 +337,7 @@ namespace MergerLogic.Clients
             
             // Create hierarchy if needed
             string dir = this._fileSystem.Path.GetDirectoryName(this.path);
-            if(!this._fileSystem.Directory.Exists(dir)) {
+            if(dir.Length > 0 && !this._fileSystem.Directory.Exists(dir)) {
                 this._fileSystem.Directory.CreateDirectory(dir);
             }
             

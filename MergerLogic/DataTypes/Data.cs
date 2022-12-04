@@ -46,10 +46,10 @@ namespace MergerLogic.DataTypes
         protected IServiceProvider _container;
         public DataType Type { get; }
         public string Path { get; }
-        public Grid Grid { get; protected set; }
-        public GridOrigin Origin { get; protected set; }
+        public Grid Grid { get; }
+        public GridOrigin Origin { get; }
         public Extent Extent { get => this.GetExtent(); protected set => this.SetExtent(value); }
-        public bool IsBase { get; private set; }
+        public bool IsBase { get; }
         public bool IsNew { get; private set; }
         public bool IsOneXOne => this.Grid == Grid.OneXOne;
         

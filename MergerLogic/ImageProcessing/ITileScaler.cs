@@ -6,6 +6,7 @@ namespace MergerLogic.ImageProcessing
 {
     public interface ITileScaler
     {
-        MagickImage Upscale(MagickImage baseImage, Tile baseTile, Coord targetCoords);
+        MagickImage? Upscale(MagickImage baseImage, Tile baseTile, Coord targetCoords);
+        public Tile? Upscale(Tile tile, Coord targetCoords);
     }
 }

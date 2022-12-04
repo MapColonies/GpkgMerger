@@ -42,7 +42,7 @@ namespace MergerCli.Utils
 
         [JsonInclude]
         public string[] Command { get; private set; }
-
+        
         static readonly object _locker = new object();
 
         public BatchStatusManager(string[] command)
@@ -87,10 +87,8 @@ namespace MergerCli.Utils
         {
             lock (_locker)
             {
-                try
+                if (this.States.ContainsKey(layer))
                 {
-                    if (this.States.ContainsKey(layer))
-                    {
                         if (!this.States[layer].Batches.IsEmpty)
                         {
                             KeyValuePair<string, bool>? inCompletedBatch = null;
@@ -102,17 +100,12 @@ namespace MergerCli.Utils
                             }
                             return null;
                         }
-                    }
-                    return null;
                 }
-                catch (Exception e)
-                {
-                    return null;
-                }
+                return null;
             }
         }
 
-        public void CompleteBatch(string layer, string batchIdentifier, long totalCompletedTiles)
+        public void CompleteBatch(string layer, string? batchIdentifier, long totalCompletedTiles)
         {
             lock (_locker)
             {

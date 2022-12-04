@@ -51,6 +51,7 @@ rasterCommon:
   serviceUrls:
     discreteOverseer: http://localhost:8080
     jobManager: http://localhost:8084
+    heartbeatManager: http://localhost:8082
   storage:
     fs:
       ingestionSourcePvc:
@@ -84,8 +85,7 @@ env:
         taskType: 'tilesMerging'
     pollingTime: 1000
     maxAttempts: 3
-  heartbeat: 
-    baseUrl: "http://localhost:8082"
+  heartbeat:
     intervalMs: 300
   HTTP:
     retries: 2

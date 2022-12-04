@@ -108,12 +108,12 @@ namespace MergerService.Controllers
             this._jsonSerializerSettings = new JsonSerializerSettings();
             this._jsonSerializerSettings.Converters.Add(new StringEnumConverter());
         }
-
+        
         public void Print()
         {
             Console.WriteLine($"{this.ToString()}");
         }
-
+        
         public override string ToString()
         {
             return JsonConvert.SerializeObject(this, this._jsonSerializerSettings)!;
