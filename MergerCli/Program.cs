@@ -209,6 +209,7 @@ namespace MergerCli
         {
             if (!_done)
             {
+                _batchStatusManager.ResetBatchStatus();
                 string status = _batchStatusManager.ToString();
                 File.WriteAllText(_resumeFilePath, status);
             }

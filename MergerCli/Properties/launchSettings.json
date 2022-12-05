@@ -5,9 +5,9 @@
       "commandName": "Project",
       "commandLineArgs": "Program.cs 1000 jpeg s3 area2-copy gpkg area2.gpkg",
       "environmentVariables": {
-        "AWS_ACCESS_KEY_ID": "minio123",
-        "AWS_SECRET_ACCESS_KEY": "minio123",
-        "S3__bucket": "tiles"
+        "AWS_ACCESS_KEY_ID": "minioadmin",
+        "AWS_SECRET_ACCESS_KEY": "minioadmin",
+        "S3__bucket": "dtm"
       }
     },
     "s3 to gpkg": {
