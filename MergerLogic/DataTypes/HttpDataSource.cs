@@ -23,7 +23,7 @@ namespace MergerLogic.DataTypes
             return true;
         }
 
-        public override List<Tile> GetNextBatch(out string batchIdentifier)
+        public override List<Tile> GetNextBatch(out string batchIdentifier, out string? nextBatchIdentifier, string? inCompletedBatchIdentifier, long? totalTilesCount)
         {
             if (this.Batches == null)
             {
@@ -31,6 +31,7 @@ namespace MergerLogic.DataTypes
             }
             batchIdentifier = this.BatchIndex.ToString();
             this.BatchIndex += this.BatchSize;
+            nextBatchIdentifier = this.BatchIndex.ToString();
             if (!this.Batches.MoveNext())
             {
                 return new List<Tile>(0);

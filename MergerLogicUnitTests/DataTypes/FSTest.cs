@@ -694,7 +694,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             string testIdentifier = offset.ToString();
             fsSource.setBatchIdentifier(testIdentifier);
-            fsSource.GetNextBatch(out string batchIdentifier);
+            fsSource.GetNextBatch(out string batchIdentifier, out string? _, null, null );
             Assert.AreEqual(testIdentifier, batchIdentifier);
 
             this.VerifyAll();
@@ -759,11 +759,11 @@ namespace MergerLogicUnitTests.DataTypes
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
             var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", batchSize, grid, origin, isBase);
 
-            fsSource.GetNextBatch(out string batchIdentifier);
-            fsSource.GetNextBatch(out batchIdentifier);
+            fsSource.GetNextBatch(out string batchIdentifier, out string? _, null, null);
+            fsSource.GetNextBatch(out batchIdentifier, out string? _, null, null);
             Assert.AreNotEqual("0", batchIdentifier);
             fsSource.Reset();
-            fsSource.GetNextBatch(out batchIdentifier);
+            fsSource.GetNextBatch(out batchIdentifier, out string? _, null, null);
             Assert.AreEqual("0", batchIdentifier);
             this.VerifyAll();
         }
@@ -841,7 +841,7 @@ namespace MergerLogicUnitTests.DataTypes
             for (int i = 0; i < tileBatches.Count; i++)
             {
                 var exactedBatch = tileBatches[i];
-                var res = fsSource.GetNextBatch(out string batchIdentifier);
+                var res = fsSource.GetNextBatch(out string batchIdentifier, out string? _, null, null);
 
                 CollectionAssert.AreEqual(exactedBatch.ToArray(), res, comparer);
                 string expectedBatchId = Math.Min(i * batchSize, tiles.Length).ToString();
