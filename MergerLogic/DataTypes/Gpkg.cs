@@ -100,7 +100,7 @@ namespace MergerLogic.DataTypes
                         }).Where(t => t != null).ToList();
                     if (inCompletedBatchIdentifier is null)
                     {
-                        this._offset += counter;
+                        Interlocked.Add(ref this._offset, counter);
                     }
                     nextBatchIdentifier = this._offset.ToString();
                     return tiles;

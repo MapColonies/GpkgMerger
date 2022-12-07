@@ -115,13 +115,10 @@ namespace MergerLogic.DataTypes
                 batchIdentifier = this._completedTiles.ToString();
                 List<Tile> tiles = new List<Tile>(this.BatchSize);
                 nextBatchIdentifier = batchIdentifier;
-
                 if (this._done)
                 {
-                    //this.Reset();
                     return tiles;
                 }
-
                 while (!this._done && tiles.Count < this.BatchSize)
                 {
                     Tile tile = this._tiles.Current;

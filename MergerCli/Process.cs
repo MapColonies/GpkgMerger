@@ -25,7 +25,6 @@ namespace MergerCli
         public void Start(TileFormat targetFormat, IData baseData, IData newData, int batchSize,
             BatchStatusManager batchStatusManager)
         {
-            // ConcurrentBag<Tile> tiles = new ConcurrentBag<Tile>();
             long totalTileCount = newData.TileCount();
             batchStatusManager.InitializeLayer(newData.Path);
             long tileProgressCount = 0;
@@ -36,11 +35,10 @@ namespace MergerCli
             if (resumeBatchIdentifier != null)
             {
                 resumeMode = true;
+                this._logger.LogInformation($"Resume mode activated");
                 // fix resume progress bug for gpkg, fs and web, fixing it for s3 requires storing additional data.
                 if (newData.Type != DataType.S3)
                 {
-                    // resumeBatchIdentifier is not the total tiles completed already.
-                    //tileProgressCount = int.Parse(resumeBatchIdentifier);
                     long? totalCompletedTiles = batchStatusManager.GetTotalCompletedTiles(newData.Path);
                     if (totalCompletedTiles.HasValue)
                     {
@@ -50,16 +48,13 @@ namespace MergerCli
             }
 
             this._logger.LogInformation($"Total amount of tiles to merge: {totalTileCount - tileProgressCount}");
-            bool uploadOnly = this._configManager.GetConfiguration<bool>("GENERAL", "uploadOnly");
+            var uploadOnly = this._configManager.GetConfiguration<bool>("GENERAL", "uploadOnly");
             _getTileByCoord = uploadOnly || baseData.IsNew ?
                 (_) => null
                 :
                 (targetCoords) => baseData.GetCorrespondingTile(targetCoords, true);
-            
-            int threadsNumber = this._configManager.GetConfiguration<int>("GENERAL", "threads", "number");
-            int maxDegreeOfParallelism = this._configManager.GetConfiguration<int>("GENERAL", "threads", "maxDegreeOfParallelism");
 
-            ParallelRun(threadsNumber, maxDegreeOfParallelism, targetFormat, baseData, newData, batchStatusManager,
+            ParallelRun(targetFormat, baseData, newData, batchStatusManager,
                 tileProgressCount, totalTileCount, resumeBatchIdentifier, resumeMode, pollForBatch);
             
             batchStatusManager.CompleteLayer(newData.Path);
@@ -77,7 +72,6 @@ namespace MergerCli
                 batchStatusManager.SetCurrentBatch(newData.Path, nextBatchIdentifier);
             }
             
-            tiles.Clear();
             if (newTiles.Count > 0)
             {
                 for (int i = 0; i < newTiles.Count; i++)
@@ -113,10 +107,13 @@ namespace MergerCli
             }
         }
 
-        private void ParallelRun(int threadsNumber, int maxDegreeOfParallelism, TileFormat targetFormat, IData baseData, IData newData,
-            BatchStatusManager batchStatusManager, long tileProgressCount, long totalTileCount, string resumeBatchIdentifier, bool resumeMode,bool pollForBatch)
+        private void ParallelRun(TileFormat targetFormat, IData baseData, IData newData,
+            BatchStatusManager batchStatusManager, long tileProgressCount, long totalTileCount, string? resumeBatchIdentifier, bool resumeMode,bool pollForBatch)
         {
-            Parallel.For(0, threadsNumber, new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism }, i =>
+            var parallelTasksNumber = this._configManager.GetConfiguration<int>("GENERAL", "parallel", "tasksNumber");
+            var maxDegreeOfParallelism = this._configManager.GetConfiguration<int>("GENERAL", "parallel", "maxDegreeOfParallelism");
+            
+            Parallel.For(0, parallelTasksNumber, new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism }, i =>
             {
                 while (tileProgressCount != totalTileCount && pollForBatch)
                 {
@@ -142,7 +139,7 @@ namespace MergerCli
                     if (tileProgressCount != totalTileCount)
                     {
                         DoWork(targetFormat, baseData, newData, batchStatusManager, ref tileProgressCount,
-                            totalTileCount, resumeMode,ref pollForBatch);
+                            totalTileCount, resumeMode, ref pollForBatch);
                     }
                 }
             });

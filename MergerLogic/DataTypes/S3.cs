@@ -17,6 +17,7 @@ namespace MergerLogic.DataTypes
         private string? _continuationToken;
         private bool _endOfRead;
         static readonly object _locker = new object();
+        private const string nullStringValue = "Null";
 
         private readonly IPathUtils _pathUtils;
 
@@ -76,7 +77,8 @@ namespace MergerLogic.DataTypes
         {
             lock (_locker)
             {
-                currentBatchIdentifier = this._continuationToken ?? "Null";
+                
+                currentBatchIdentifier = this._continuationToken ?? nullStringValue;
                 List<Tile> tiles = new List<Tile>();
                 int missingTiles = this.BatchSize;
                 while (missingTiles > 0)
@@ -123,7 +125,7 @@ namespace MergerLogic.DataTypes
                 }
                 
                 nextBatchIdentifier = this._continuationToken;
-                
+
                 return tiles;
             }
         }
