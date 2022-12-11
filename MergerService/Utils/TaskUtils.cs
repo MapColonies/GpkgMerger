@@ -18,7 +18,6 @@ namespace MergerService.Utils
         private readonly ActivitySource _activitySource;
         private readonly int _maxAttempts;
         private readonly JsonSerializerSettings _jsonSerializerSettings;
-        private readonly string _overseerUrl;
         private readonly string _jobManagerUrl;
 
         public TaskUtils(IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<TaskUtils> logger,
@@ -35,7 +34,6 @@ namespace MergerService.Utils
             _jsonSerializerSettings = new JsonSerializerSettings();
             _jsonSerializerSettings.Converters.Add(new StringEnumConverter());
 
-            _overseerUrl = this._configuration.GetConfiguration("TASK", "overseerUrl");
             _jobManagerUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
             //TODO: add tracing
         }
@@ -65,14 +63,14 @@ namespace MergerService.Utils
             }
         }
 
-        private void NotifyOnStatusChange(string jobId, string taskId)
+        private void NotifyOnStatusChange(string jobId, string taskId, string managerCallbackUrl)
         {
             using (this._activitySource.StartActivity("notify overseer on task completion"))
             {
                 // Notify overseer on task completion
                 this._logger.LogInformation($"Notifying overseer on completion, job: {jobId}, task: {taskId}");
                 string relativeUri = $"tasks/{jobId}/{taskId}/completed";
-                string url = new Uri(new Uri(_overseerUrl), relativeUri).ToString();
+                string url = new Uri(new Uri(managerCallbackUrl), relativeUri).ToString();
                 _ = this._httpClient.PostData(url, null);
             }
         }
@@ -99,7 +97,7 @@ namespace MergerService.Utils
             }
         }
 
-        public void UpdateCompletion(string jobId, string taskId)
+        public void UpdateCompletion(string jobId, string taskId, string? managerCallbackUrl)
         {
             using (this._activitySource.StartActivity("update task completed"))
             {
@@ -111,11 +109,14 @@ namespace MergerService.Utils
                 }
             }
 
+            if (managerCallbackUrl is not null)
+            {
             // Update overseer on task completion
-            NotifyOnStatusChange(jobId, taskId);
+            NotifyOnStatusChange(jobId, taskId, managerCallbackUrl);
+            }
         }
 
-        public void UpdateReject(string jobId, string taskId, int attempts, string reason, bool resettable)
+        public void UpdateReject(string jobId, string taskId, int attempts, string reason, bool resettable, string? managerCallbackUrl)
         {
             using (var activity = this._activitySource.StartActivity("reject task"))
             {
@@ -125,9 +126,9 @@ namespace MergerService.Utils
                 attempts++;
 
                 // Check if the task should actually fail
-                if (!resettable || attempts == this._maxAttempts)
+                if (managerCallbackUrl is not null && (!resettable || attempts == this._maxAttempts))
                 {
-                    UpdateFailed(jobId, taskId, attempts, reason, resettable);
+                    UpdateFailed(jobId, taskId, attempts, reason, resettable, managerCallbackUrl);
                     return;
                 }
 
@@ -141,7 +142,7 @@ namespace MergerService.Utils
             }
         }
 
-        private void UpdateFailed(string jobId, string taskId, int attempts, string reason, bool resettable)
+        private void UpdateFailed(string jobId, string taskId, int attempts, string reason, bool resettable, string? managerCallbackUrl)
         {
             using (var activity = this._activitySource.StartActivity("fail task"))
             {
@@ -155,8 +156,11 @@ namespace MergerService.Utils
                 }
             }
 
+            if (managerCallbackUrl is not null)
+            {
             // Notify overseer on task failure
-            NotifyOnStatusChange(jobId, taskId);
+            NotifyOnStatusChange(jobId, taskId, managerCallbackUrl);
+            }
         }
     }
 }

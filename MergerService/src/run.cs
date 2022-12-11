@@ -20,6 +20,7 @@ namespace MergerService.Src
         private readonly ILogger _logger;
         private readonly ILogger<MergeTask> _mergeTaskLogger;
         private readonly ILogger<TaskUtils> _taskUtilsLogger;
+        private readonly ILogger<JobUtils> _jobUtilsLogger;
         private readonly ActivitySource _activitySource;
         private readonly ITaskUtils _taskUtils;
         private readonly IHttpRequestUtils _requestUtils;
@@ -31,7 +32,7 @@ namespace MergerService.Src
         private readonly bool _shouldValidate;
 
         public Run(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, IConfigurationManager configurationManager,
-            ILogger<Run> logger, ILogger<MergeTask> mergeTaskLogger, ILogger<TaskUtils> taskUtilsLogger, ActivitySource activitySource,
+            ILogger<Run> logger, ILogger<MergeTask> mergeTaskLogger, ILogger<TaskUtils> taskUtilsLogger, ILogger<JobUtils> jobUtilsLogger, ActivitySource activitySource,
             ITaskUtils taskUtils, IHttpRequestUtils requestUtils, IFileSystem fileSystem, IHeartbeatClient heartbeatClient)
         {
             this._dataFactory = dataFactory;
@@ -42,6 +43,7 @@ namespace MergerService.Src
             this._activitySource = activitySource;
             this._mergeTaskLogger = mergeTaskLogger;
             this._taskUtilsLogger = taskUtilsLogger;
+            this._jobUtilsLogger = jobUtilsLogger;
             this._taskUtils = taskUtils;
             this._requestUtils = requestUtils;
             this._fileSystem = fileSystem;
@@ -129,6 +131,7 @@ namespace MergerService.Src
             }
 
             ITaskUtils taskUtils = new TaskUtils(this._configurationManager, this._requestUtils, this._taskUtilsLogger, this._activitySource, this._heartbeatClient);
+            IJobUtils jobUtils = new JobUtils(this._configurationManager, this._requestUtils, this._jobUtilsLogger, this._activitySource, this._heartbeatClient);
 
             this._logger.LogInformation("starting task polling loop");
             while (true)
@@ -164,10 +167,20 @@ namespace MergerService.Src
                         continue;
                     }
 
+                    string? managerCallbackUrl = jobUtils.GetJob(task.JobId)?.Parameters.ManagerCallbackUrl;
+                    if (managerCallbackUrl == null)
+                    {
+                        this._logger.LogDebug("managerCallbackUrl not provided as job parameter");
+                    }
+                    else
+                    {
+                        this._logger.LogDebug($"managerCallback url: {managerCallbackUrl}");
+                    }
+
                     try
                     {
                         this._heartbeatClient.Start(task.Id);
-                        RunTask(task, taskUtils);
+                        RunTask(task, taskUtils, managerCallbackUrl);
                     }
                     catch (Exception e)
                     {
@@ -175,7 +188,7 @@ namespace MergerService.Src
 
                         try
                         {
-                            taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, e.Message, false);
+                            taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, e.Message, false, managerCallbackUrl);
                         }
                         catch (Exception innerError)
                         {
@@ -190,10 +203,11 @@ namespace MergerService.Src
                     }
 
                     activatedAny = true;
+       
 
                     try
                     {
-                        taskUtils.UpdateCompletion(task.JobId, task.Id);
+                        taskUtils.UpdateCompletion(task.JobId, task.Id, managerCallbackUrl);
                         this._logger.LogInformation($"Completed task: jobId: {task.JobId}, taskId: {task.Id}");
                     }
                     catch (Exception e)
@@ -211,7 +225,7 @@ namespace MergerService.Src
             }
         }
 
-        private void RunTask(MergeTask task, ITaskUtils taskUtils)
+        private void RunTask(MergeTask task, ITaskUtils taskUtils, string? managerCallbackUrl)
         {
             // Guard clause in case there are no batches or sources
             if (task.Parameters is null || task.Parameters.Batches is null || task.Parameters.Sources is null)
@@ -220,7 +234,7 @@ namespace MergerService.Src
 
                 try
                 {
-                    taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, "Task parameters are invalid", false);
+                    taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, "Task parameters are invalid", false, managerCallbackUrl);
                 }
                 catch (Exception e)
                 {
@@ -354,7 +368,7 @@ namespace MergerService.Src
                                     try
                                     {
                                         taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts,
-                                            "Error in validation, target not valid after run", true);
+                                            "Error in validation, target not valid after run", true, managerCallbackUrl);
                                     }
                                     catch (Exception innerError)
                                     {
