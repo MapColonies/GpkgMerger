@@ -1,7 +1,7 @@
 using MergerLogic.Clients;
 using System.Diagnostics;
 using MergerLogic.Utils;
-using MergerService.Controllers;
+using MergerService.Models.Jobs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -37,24 +37,25 @@ namespace MergerService.Utils
 
         public MergeJob? GetJob(string jobId)
         {
-            using (this._activitySource.StartActivity("dequeue task"))
+            using (this._activitySource.StartActivity("dequeue job"))
             {
                 string relativeUri = $"jobs/{jobId}";
                 string url = new Uri(new Uri(_jobManagerUrl), relativeUri).ToString();
                 string? jobData = this._httpClient.GetDataString(url);
                 if (jobData is null)
                 {
-                    this._logger.LogInformation($"Job id:{jobData}, not found");
+                    this._logger.LogWarning($"Job id:{jobData}, not found");
                     return null;
                 }
 
                 try
                 {
+                    this._logger.LogDebug($"Found merge job data: {jobData}");
                     return JsonConvert.DeserializeObject<MergeJob>(jobData, this._jsonSerializerSettings)!;
                 }
                 catch (Exception e)
                 {
-                    this._logger.LogWarning(e.Message);
+                    this._logger.LogError(e.Message);
                     return null;
                 }
             }

@@ -203,7 +203,6 @@ namespace MergerService.Src
                     }
 
                     activatedAny = true;
-       
 
                     try
                     {

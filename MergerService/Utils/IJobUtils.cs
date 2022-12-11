@@ -1,4 +1,4 @@
-using MergerService.Controllers;
+using MergerService.Models.Jobs;
 
 namespace MergerService.Utils
 {

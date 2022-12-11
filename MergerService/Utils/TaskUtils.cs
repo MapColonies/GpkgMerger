@@ -65,10 +65,10 @@ namespace MergerService.Utils
 
         private void NotifyOnStatusChange(string jobId, string taskId, string managerCallbackUrl)
         {
-            using (this._activitySource.StartActivity("notify overseer on task completion"))
+            using (this._activitySource.StartActivity("notify Manager on task completion"))
             {
-                // Notify overseer on task completion
-                this._logger.LogInformation($"Notifying overseer on completion, job: {jobId}, task: {taskId}");
+                // Notify Manager on task completion
+                this._logger.LogInformation($"Notifying Manager on completion, job: {jobId}, task: {taskId}");
                 string relativeUri = $"tasks/{jobId}/{taskId}/completed";
                 string url = new Uri(new Uri(managerCallbackUrl), relativeUri).ToString();
                 _ = this._httpClient.PostData(url, null);
@@ -111,7 +111,7 @@ namespace MergerService.Utils
 
             if (managerCallbackUrl is not null)
             {
-            // Update overseer on task completion
+            // Update Manager on task completion
             NotifyOnStatusChange(jobId, taskId, managerCallbackUrl);
             }
         }
@@ -126,7 +126,7 @@ namespace MergerService.Utils
                 attempts++;
 
                 // Check if the task should actually fail
-                if (managerCallbackUrl is not null && (!resettable || attempts == this._maxAttempts))
+                if ((!resettable || attempts == this._maxAttempts))
                 {
                     UpdateFailed(jobId, taskId, attempts, reason, resettable, managerCallbackUrl);
                     return;
@@ -158,7 +158,7 @@ namespace MergerService.Utils
 
             if (managerCallbackUrl is not null)
             {
-            // Notify overseer on task failure
+            // Notify Manager on task failure
             NotifyOnStatusChange(jobId, taskId, managerCallbackUrl);
             }
         }
