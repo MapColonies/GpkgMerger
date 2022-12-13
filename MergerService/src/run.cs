@@ -168,14 +168,8 @@ namespace MergerService.Src
                     }
 
                     string? managerCallbackUrl = jobUtils.GetJob(task.JobId)?.Parameters.ManagerCallbackUrl;
-                    if (managerCallbackUrl == null)
-                    {
-                        this._logger.LogDebug("managerCallbackUrl not provided as job parameter");
-                    }
-                    else
-                    {
-                        this._logger.LogDebug($"managerCallback url: {managerCallbackUrl}");
-                    }
+                    string log = managerCallbackUrl == null ? "managerCallbackUrl not provided as job parameter" : $"managerCallback url: {managerCallbackUrl}";
+                    this._logger.LogDebug(log);
 
                     try
                     {

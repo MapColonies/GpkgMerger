@@ -15,7 +15,6 @@ namespace MergerService.Models.Jobs
         [JsonInclude] public string Resolution { get; }
         [JsonInclude] public string Description { get; }
         [JsonInclude] public JobMergeMetadata Parameters { get; }
-
         [JsonInclude] public DateTime? CreationTime { get; }
         [JsonInclude] public DateTime? UpdateTime { get; }
         [JsonInclude] public Status Status { get; }
@@ -70,9 +69,7 @@ namespace MergerService.Models.Jobs
             {
                 percentage = 0;
             }
-
             this.Percentage = (int)percentage;
-
             this.Reason = reason;
             this.IsCleaned = isCleaned;
             this.Priority = priority;
@@ -91,9 +88,6 @@ namespace MergerService.Models.Jobs
             this.AdditionalIdentifiers = additionalIdentifiers;
             this.Domain = domain;
             this.Tasks = tasks;
-
-
-
 
             this._jsonSerializerSettings = new JsonSerializerSettings();
             this._jsonSerializerSettings.Converters.Add(new StringEnumConverter());

@@ -24,7 +24,6 @@ namespace MergerService.Models.Jobs
             this.LayerRelativePath = layerRelativePath;
             this.ManagerCallbackUrl = managerCallbackUrl;
 
-
             this._jsonSerializerSettings = new JsonSerializerSettings();
             this._jsonSerializerSettings.Converters.Add(new StringEnumConverter());
         }
@@ -39,5 +38,5 @@ namespace MergerService.Models.Jobs
             return JsonConvert.SerializeObject(this, this._jsonSerializerSettings)!;
         }
     }
-
+    
 }

@@ -13,7 +13,7 @@ namespace MergerService.Utils
     {
         private readonly IHttpRequestUtils _httpClient;
         private readonly IConfigurationManager _configuration;
-        private  readonly ILogger _logger;
+        private readonly ILogger _logger;
         private readonly IHeartbeatClient _heartbeatClient;
         private readonly ActivitySource _activitySource;
         private readonly int _maxAttempts;
@@ -111,8 +111,8 @@ namespace MergerService.Utils
 
             if (managerCallbackUrl is not null)
             {
-            // Update Manager on task completion
-            NotifyOnStatusChange(jobId, taskId, managerCallbackUrl);
+                // Update Manager on task completion
+                NotifyOnStatusChange(jobId, taskId, managerCallbackUrl);
             }
         }
 
@@ -126,7 +126,7 @@ namespace MergerService.Utils
                 attempts++;
 
                 // Check if the task should actually fail
-                if ((!resettable || attempts == this._maxAttempts))
+                if (!resettable || attempts == this._maxAttempts)
                 {
                     UpdateFailed(jobId, taskId, attempts, reason, resettable, managerCallbackUrl);
                     return;
@@ -158,8 +158,8 @@ namespace MergerService.Utils
 
             if (managerCallbackUrl is not null)
             {
-            // Notify Manager on task failure
-            NotifyOnStatusChange(jobId, taskId, managerCallbackUrl);
+                // Notify Manager on task failure
+                NotifyOnStatusChange(jobId, taskId, managerCallbackUrl);
             }
         }
     }
