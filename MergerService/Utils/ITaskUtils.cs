@@ -8,8 +8,8 @@ namespace MergerService.Utils
 
         public void UpdateProgress(string jobId, string taskId, int progress);
 
-        public void UpdateCompletion(string jobId, string taskId);
+        public void UpdateCompletion(string jobId, string taskId, string? managerCallbackUrl);
 
-        public void UpdateReject(string jobId, string taskId, int attempts, string reason, bool resettable);
+        public void UpdateReject(string jobId, string taskId, int attempts, string reason, bool resettable, string? managerCallbackUrl);
     }
 }

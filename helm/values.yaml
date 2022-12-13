@@ -49,7 +49,6 @@ local:
 rasterCommon:
   useNodeAffinity: false
   serviceUrls:
-    discreteOverseer: http://localhost:8080
     jobManager: http://localhost:8084
     heartbeatManager: http://localhost:8082
   storage:

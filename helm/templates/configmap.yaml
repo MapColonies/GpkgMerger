@@ -10,7 +10,6 @@ metadata:
   name: {{ .Release.Name }}-{{ $chartName }}-configmap
 data:
   GENERAL__validate: {{ .Values.env.general.validate | quote }}
-  TASK__overseerUrl: {{ .Values.rasterCommon.serviceUrls.discreteOverseer | quote }} 
   TASK__jobManagerUrl: {{ .Values.rasterCommon.serviceUrls.jobManager | quote }}
   {{- range $i, $e := .Values.env.TASK.types }}
   TASK__types__{{ $i }}__jobType: {{ $e.jobType }}
