@@ -4,6 +4,7 @@ using MergerLogic.DataTypes;
 using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using MergerService.Controllers;
+using MergerService.Models.Tasks;
 using MergerService.Utils;
 using System.Diagnostics;
 using System.IO.Abstractions;
@@ -316,8 +317,14 @@ namespace MergerService.Src
 
                                         try
                                         {
-                                            task.Percentage = 100 * (tileProgressCount / totalTileCount);
-                                            taskUtils.UpdateProgress(task.JobId, task.Id, task.Percentage);
+                                            task.Percentage = (int)(100 * (double)(tileProgressCount / totalTileCount));
+                                            UpdateParams updateParams = new UpdateParams()
+                                            {
+                                                Status = Status.IN_PROGRESS, Percentage = task.Percentage
+                                            };
+
+
+                                                taskUtils.UpdateProgress(task.JobId, task.Id, updateParams);
                                         }
                                         catch (Exception e)
                                         {

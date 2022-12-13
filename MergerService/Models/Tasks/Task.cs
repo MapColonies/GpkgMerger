@@ -1,12 +1,13 @@
 using MergerLogic.Batching;
 using MergerLogic.ImageProcessing;
+using MergerService.Controllers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System.ComponentModel;
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 
-namespace MergerService.Controllers
+namespace MergerService.Models.Tasks
 {
     public enum Status
     {
