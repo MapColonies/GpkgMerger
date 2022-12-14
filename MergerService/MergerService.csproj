@@ -7,13 +7,13 @@
     <RunWorkingDirectory>$(MSBuildProjectDirectory)</RunWorkingDirectory>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0"/>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
-    <PackageReference Include="GeoJSON" Version="2.3.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3"/>
+    <PackageReference Include="GeoJSON" Version="2.3.1"/>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MergerLogic\MergerLogic.csproj" />
+    <ProjectReference Include="..\MergerLogic\MergerLogic.csproj"/>
   </ItemGroup>
   <ItemGroup>
     <Content Update="appsettings.json">
