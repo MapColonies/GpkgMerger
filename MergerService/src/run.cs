@@ -242,7 +242,7 @@ namespace MergerService.Src
             MergeMetadata metadata = task.Parameters;
             Stopwatch stopWatch = new Stopwatch();
             TimeSpan ts;
-            Func<IData, Coord, Tile?> getTileByCoord = metadata.NewTargetSource
+            Func<IData, Coord, Tile?> getTileByCoord = metadata.IsNewTarget
                 ? (_, _) => null
                 : (source, coord) => source.GetCorrespondingTile(coord, true);
             
