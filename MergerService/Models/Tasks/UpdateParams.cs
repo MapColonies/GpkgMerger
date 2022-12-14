@@ -27,23 +27,15 @@ namespace MergerService.Models.Tasks
         [System.Text.Json.Serialization.JsonIgnore]
         private JsonSerializerSettings _jsonSerializerSettings;
         
-        // public UpdateParams(Status status , string? description, MergeMetadata? parameters,
-        //     int? percentage, string? reason, int? attempts,
-        //     bool? resettable)
-        // {
-        //     this.Status = status;
-        //     this.Description = description;
-        //     this.Parameters = parameters;
-        //
-        //     percentage ??= 0;
-        //     this.Percentage = (int)percentage;
-        //
-        //     this.Reason = reason;
-        //     this.Attempts = attempts;
-        //     this.Resettable = resettable;
-        //
-        //     this._jsonSerializerSettings = new JsonSerializerSettings();
-        //     this._jsonSerializerSettings.Converters.Add(new StringEnumConverter());
-        // }
+        public UpdateParams()
+        {
+            this._jsonSerializerSettings = new JsonSerializerSettings();
+            this._jsonSerializerSettings.Converters.Add(new StringEnumConverter());
+        }
+        
+        public override string ToString()
+        {
+            return JsonConvert.SerializeObject(this, this._jsonSerializerSettings)!;
+        }
     }
 }

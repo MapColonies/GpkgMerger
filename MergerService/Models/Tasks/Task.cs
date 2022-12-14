@@ -22,6 +22,9 @@ namespace MergerService.Models.Tasks
     public class MergeMetadata
     {
         [JsonInclude] public TileFormat TargetFormat { get; }
+        
+        [JsonInclude] public bool NewTargetSource { get; }
+        
         [JsonInclude] public TileBounds[]? Batches { get; }
 
         [JsonInclude] public Source[]? Sources { get; }
@@ -29,9 +32,10 @@ namespace MergerService.Models.Tasks
         [System.Text.Json.Serialization.JsonIgnore]
         private JsonSerializerSettings _jsonSerializerSettings;
 
-        public MergeMetadata(TileFormat targetFormat, TileBounds[] batches, Source[] sources)
+        public MergeMetadata(TileFormat targetFormat, bool newTargetSource, TileBounds[] batches, Source[] sources)
         {
             this.TargetFormat = targetFormat;
+            this.NewTargetSource = newTargetSource;
             this.Batches = batches;
             this.Sources = sources;
 

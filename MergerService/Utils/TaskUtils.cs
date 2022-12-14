@@ -6,6 +6,8 @@ using MergerService.Controllers;
 using MergerService.Models.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
+using System.Text.Json;
 
 namespace MergerService.Utils
 {
@@ -34,6 +36,9 @@ namespace MergerService.Utils
             // Construct Json serializer settings
             _jsonSerializerSettings = new JsonSerializerSettings();
             _jsonSerializerSettings.Converters.Add(new StringEnumConverter());
+            this._jsonSerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+            this._jsonSerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+            
 
             _jobManagerUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
             //TODO: add tracing
