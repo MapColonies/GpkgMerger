@@ -3,8 +3,11 @@ using System.Diagnostics;
 using System.Net.Http.Headers;
 using MergerLogic.Utils;
 using MergerService.Controllers;
+using MergerService.Models.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
+using System.Text.Json;
 
 namespace MergerService.Utils
 {
@@ -33,6 +36,9 @@ namespace MergerService.Utils
             // Construct Json serializer settings
             _jsonSerializerSettings = new JsonSerializerSettings();
             _jsonSerializerSettings.Converters.Add(new StringEnumConverter());
+            this._jsonSerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+            this._jsonSerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+            
 
             _jobManagerUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
             //TODO: add tracing
@@ -82,13 +88,13 @@ namespace MergerService.Utils
             _ = this._httpClient.PutData(url, content);
         }
 
-        public void UpdateProgress(string jobId, string taskId, int progress)
+        public void UpdateProgress(string jobId, string taskId, UpdateParams updateParams)
         {
             using (var activity = this._activitySource.StartActivity("update task progress"))
             {
                 // activity.AddTag("progress", progress);
 
-                using (var content = new StringContent(JsonConvert.SerializeObject(new { percentage = progress },
+                using (var content = new StringContent(JsonConvert.SerializeObject(updateParams,
                            this._jsonSerializerSettings)))
                 {
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");

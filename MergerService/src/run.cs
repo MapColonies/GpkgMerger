@@ -4,6 +4,7 @@ using MergerLogic.DataTypes;
 using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using MergerService.Controllers;
+using MergerService.Models.Tasks;
 using MergerService.Utils;
 using System.Diagnostics;
 using System.IO.Abstractions;
@@ -241,7 +242,10 @@ namespace MergerService.Src
             MergeMetadata metadata = task.Parameters;
             Stopwatch stopWatch = new Stopwatch();
             TimeSpan ts;
-
+            Func<IData, Coord, Tile?> getTileByCoord = metadata.IsNewTarget
+                ? (_, _) => null
+                : (source, coord) => source.GetCorrespondingTile(coord, true);
+            
             // Log the task
             this._logger.LogInformation($"starting task: {task.ToString()}");
 
@@ -292,10 +296,13 @@ namespace MergerService.Src
                                     // Create tile builder list for current coord for all sources
                                     List<CorrespondingTileBuilder> correspondingTileBuilders =
                                         new List<CorrespondingTileBuilder>();
-                                    foreach (IData source in sources)
+                                    // Add target tile
+                                    correspondingTileBuilders.Add(() => getTileByCoord(sources[0], coord));
+                                    // Add all sources tiles 
+                                    foreach (IData source in sources.Skip(1))
                                     {
-                                        correspondingTileBuilders.Add(
-                                            () => source.GetCorrespondingTile(coord, true));
+                                        Tile? tile = source.GetCorrespondingTile(coord, true); 
+                                        correspondingTileBuilders.Add(()=> tile);
                                     }
 
                                     byte[]? blob = this._tileMerger.MergeTiles(correspondingTileBuilders, coord,
@@ -316,8 +323,12 @@ namespace MergerService.Src
 
                                         try
                                         {
-                                            task.Percentage = 100 * (tileProgressCount / totalTileCount);
-                                            taskUtils.UpdateProgress(task.JobId, task.Id, task.Percentage);
+                                            task.Percentage = (int)(100 * (double)tileProgressCount / totalTileCount);
+                                            UpdateParams updateParams = new UpdateParams()
+                                            {
+                                                Status = Status.IN_PROGRESS, Percentage = task.Percentage
+                                            };
+                                            taskUtils.UpdateProgress(task.JobId, task.Id, updateParams);
                                         }
                                         catch (Exception e)
                                         {

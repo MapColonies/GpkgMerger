@@ -3,6 +3,7 @@ using Newtonsoft.Json.Converters;
 using System.ComponentModel;
 using System.Text.Json.Serialization;
 using MergerService.Controllers;
+using MergerService.Models.Tasks;
 
 namespace MergerService.Models.Jobs
 {
