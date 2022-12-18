@@ -1,12 +1,13 @@
 using MergerLogic.Batching;
 using MergerLogic.ImageProcessing;
+using MergerService.Controllers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System.ComponentModel;
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 
-namespace MergerService.Controllers
+namespace MergerService.Models.Tasks
 {
     public enum Status
     {
@@ -21,6 +22,9 @@ namespace MergerService.Controllers
     public class MergeMetadata
     {
         [JsonInclude] public TileFormat TargetFormat { get; }
+        
+        [JsonInclude] public bool IsNewTarget { get; }
+        
         [JsonInclude] public TileBounds[]? Batches { get; }
 
         [JsonInclude] public Source[]? Sources { get; }
@@ -28,9 +32,10 @@ namespace MergerService.Controllers
         [System.Text.Json.Serialization.JsonIgnore]
         private JsonSerializerSettings _jsonSerializerSettings;
 
-        public MergeMetadata(TileFormat targetFormat, TileBounds[] batches, Source[] sources)
+        public MergeMetadata(TileFormat targetFormat, bool isNewTarget, TileBounds[] batches, Source[] sources)
         {
             this.TargetFormat = targetFormat;
+            this.IsNewTarget = isNewTarget;
             this.Batches = batches;
             this.Sources = sources;
 

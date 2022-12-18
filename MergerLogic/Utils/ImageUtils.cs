@@ -8,7 +8,7 @@ namespace MergerLogic.Utils
         {
             using var pixels = image.GetPixels();
             // Check pixels to see if all are transparent
-            return pixels.Select(pixel => pixel.ToColor()).All(color => color?.A == 255);
+            return pixels.Select(pixel => pixel.ToColor()).Any(color => color?.A != 255);
         }
         
         // public static bool IsEmpty(MagickImage image)

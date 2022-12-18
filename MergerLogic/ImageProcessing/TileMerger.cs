@@ -146,6 +146,12 @@ namespace MergerLogic.ImageProcessing
 
         private void AddTileToImageList(Coord targetCoords, Tile? tile, List<MagickImage> images, out bool hasAlpha)
         {
+            if (tile is null)
+            {
+                hasAlpha = true;
+                return;
+            }
+            
             if (tile!.Z > targetCoords.Z)
             {
                 throw new NotImplementedException("down scaling tiles is not supported");
