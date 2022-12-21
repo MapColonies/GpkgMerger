@@ -30,7 +30,6 @@ namespace MergerCli
             long tileProgressCount = 0;
             bool resumeMode = false;
             bool pollForBatch = true;
-
             string? resumeBatchIdentifier = batchStatusManager.GetLayerBatchIdentifier(newData.Path);
             if (resumeBatchIdentifier != null)
             {
@@ -109,34 +108,35 @@ namespace MergerCli
             BatchStatusManager batchStatusManager, long tileProgressCount, long totalTileCount, string? resumeBatchIdentifier, bool resumeMode,bool pollForBatch)
         {
             var numOfThreads = this._configManager.GetConfiguration<int>("GENERAL", "parallel", "numOfThreads");
+
+            if (resumeMode)
+            {
+                Parallel.For(0, numOfThreads, new ParallelOptions { MaxDegreeOfParallelism = -1 }, _ =>
+                {
+                    var incompleteBatches = batchStatusManager.GetBatches(newData.Path);
+                    while (incompleteBatches is { IsEmpty: false })
+                    {
+                        var incompleteBatch = batchStatusManager.GetFirstIncompleteBatch(newData.Path);
+                        if (incompleteBatch is not null)
+                        {
+                            DoWork(targetFormat, baseData, newData, batchStatusManager,
+                                ref tileProgressCount,
+                                totalTileCount, resumeMode,ref pollForBatch, incompleteBatch.Value.Key);
+                        }
+                    }
+                
+                    resumeMode = false;
+                    newData.setBatchIdentifier(resumeBatchIdentifier);
+                });
+            }
+            
             // use max of available cpus to the proccess
             Parallel.For(0, numOfThreads, new ParallelOptions { MaxDegreeOfParallelism = -1 }, _ =>
             {
                 while (tileProgressCount != totalTileCount && pollForBatch)
                 {
-                    if (resumeMode)
-                    {
-                        var incompleteBatches = batchStatusManager.GetBatches(newData.Path);
-                        while (incompleteBatches is { IsEmpty: false })
-                        {
-                            var incompleteBatch = batchStatusManager.GetFirstIncompleteBatch(newData.Path);
-                            if (incompleteBatch is not null)
-                            {
-                                DoWork(targetFormat, baseData, newData, batchStatusManager,
-                                    ref tileProgressCount,
-                                    totalTileCount, resumeMode,ref pollForBatch, incompleteBatch.Value.Key);
-                            }
-                        }
-            
-                        resumeMode = false;
-                        newData.setBatchIdentifier(resumeBatchIdentifier);
-                    }
-                    
-                    if (tileProgressCount != totalTileCount)
-                    {
-                        DoWork(targetFormat, baseData, newData, batchStatusManager, ref tileProgressCount,
-                            totalTileCount, resumeMode, ref pollForBatch);
-                    }
+                    DoWork(targetFormat, baseData, newData, batchStatusManager, ref tileProgressCount,
+                        totalTileCount, resumeMode, ref pollForBatch);
                 }
             });
         }
