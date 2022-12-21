@@ -1,9 +1,7 @@
 using MergerLogic.Batching;
-using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
 using System.IO.Abstractions;
 
 namespace MergerLogic.DataTypes
@@ -108,7 +106,7 @@ namespace MergerLogic.DataTypes
             }
         }
 
-        public override List<Tile> GetNextBatch(out string batchIdentifier,out string? nextBatchIdentifier, string? inCompletedBatchIdentifier, long? totalTilesCount)
+        public override List<Tile> GetNextBatch(out string batchIdentifier,out string? nextBatchIdentifier, string? incompleteBatchIdentifier, long? totalTilesCount)
         {
             lock (_locker)
             {
@@ -125,7 +123,6 @@ namespace MergerLogic.DataTypes
                     tiles.Add(tile);
                     this._done = !this._tiles.MoveNext();
                 }
-                
                 Interlocked.Add(ref _completedTiles, tiles.Count);
                 nextBatchIdentifier = this._completedTiles.ToString();
                 return tiles;

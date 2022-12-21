@@ -23,7 +23,7 @@ namespace MergerLogic.DataTypes
             return true;
         }
 
-        public override List<Tile> GetNextBatch(out string batchIdentifier, out string? nextBatchIdentifier, string? inCompletedBatchIdentifier, long? totalTilesCount)
+        public override List<Tile> GetNextBatch(out string batchIdentifier, out string? nextBatchIdentifier, string? incompleteBatchIdentifier, long? totalTilesCount)
         {
             if (this.Batches == null)
             {

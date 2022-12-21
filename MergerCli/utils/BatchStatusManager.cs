@@ -1,8 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Linq;
-
 namespace MergerCli.Utils
 {
     internal class BatchStatusManager
@@ -64,42 +62,35 @@ namespace MergerCli.Utils
         {
             lock (_locker)
             {
-                if (this.States.ContainsKey(layer))
-                {
-                    return this.States[layer].Batches;
-                }
-
-                return null;
+                return this.States.ContainsKey(layer) ? this.States[layer].Batches : null;
             }
         }
-        public void AssignBatch(string layer, string? batchIdentifier)
+        
+        public void AssignBatch(string layer, string? batchIdentifier )
         {
             lock (_locker)
             {
-                if (this.States.ContainsKey(layer) && batchIdentifier != null)
+                if (this.States.ContainsKey(layer) && batchIdentifier is not null)
                 {
-                    this.States[layer].Batches.TryAdd(batchIdentifier, true);
+                    this.States[layer].Batches.TryAdd(batchIdentifier, false);
                 }
             }
         }
 
-        public KeyValuePair<string, bool>? GetFirstInCompletedBatch(string layer)
+        public KeyValuePair<string, bool>? GetFirstIncompleteBatch(string layer)
         {
             lock (_locker)
             {
-                if (this.States.ContainsKey(layer))
+                if (this.States.ContainsKey(layer) && !this.States[layer].Batches.IsEmpty)
                 {
-                        if (!this.States[layer].Batches.IsEmpty)
-                        {
-                            KeyValuePair<string, bool>? inCompletedBatch = null;
-                            inCompletedBatch = this.States[layer].Batches.FirstOrDefault(kvp => kvp.Value == false);
-                            if (inCompletedBatch.Value.Key is not null)
-                            {
-                                this.States[layer].Batches.TryUpdate(inCompletedBatch.Value.Key, true, false);
-                                return inCompletedBatch;
-                            }
-                            return null;
-                        }
+                    KeyValuePair<string, bool>? incompleteBatch = null;
+                    incompleteBatch = this.States[layer].Batches.FirstOrDefault(kvp => kvp.Value == false);
+                    if (incompleteBatch.Value.Key is not null)
+                    {
+                        this.States[layer].Batches[incompleteBatch.Value.Key] = true;
+                        return incompleteBatch;
+                    }
+                    return null;
                 }
                 return null;
             }
@@ -109,7 +100,7 @@ namespace MergerCli.Utils
         {
             lock (_locker)
             {
-                if (this.States.ContainsKey(layer) && batchIdentifier != null)
+                if (this.States.ContainsKey(layer) && batchIdentifier is not null)
                 {
                     this.States[layer].TotalCompletedTiles = totalCompletedTiles;
                     this.States[layer].Batches.Remove(batchIdentifier, out _ );
@@ -162,15 +153,11 @@ namespace MergerCli.Utils
             }
         }
 
-        public long? GetTotalCompletedTiles(string layer)
+        public long GetTotalCompletedTiles(string layer)
         {
             lock (_locker)
             {
-                if (this.States.ContainsKey(layer))
-                {
-                    return this.States[layer].TotalCompletedTiles;
-                }
-                return null;
+                return this.States.ContainsKey(layer) ? this.States[layer].TotalCompletedTiles : 0;
             }
         }
 
@@ -182,7 +169,7 @@ namespace MergerCli.Utils
                 {
                     if (batch is not null)
                     {
-                        this.States[layer].Batches.TryUpdate(batch, false, true);
+                        this.States[layer].Batches[batch] = false;
                     }
                 }
             }

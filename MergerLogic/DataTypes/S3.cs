@@ -73,14 +73,14 @@ namespace MergerLogic.DataTypes
             return zoomLevels;
         }
 
-        public override List<Tile> GetNextBatch(out string currentBatchIdentifier,out string? nextBatchIdentifier, string? inCompletedBatchIdentifier, long? totalTilesCount)
+        public override List<Tile> GetNextBatch(out string currentBatchIdentifier,out string? nextBatchIdentifier, string? incompleteBatchIdentifier, long? totalTilesCount)
         {
             lock (_locker)
             {
-                
                 currentBatchIdentifier = this._continuationToken ?? nullStringValue;
                 List<Tile> tiles = new List<Tile>();
                 int missingTiles = this.BatchSize;
+                
                 while (missingTiles > 0)
                 {
                     if (this._endOfRead && !this._zoomEnumerator.MoveNext())

@@ -9,6 +9,6 @@ namespace MergerCli
         void Start(TileFormat targetFormat, IData baseData, IData newData, int batchSize,
             BatchStatusManager batchStatusManager);
 
-        void Validate(IData baseData, IData newData, string? inCompletedBatchIdentifier = null);
+        void Validate(IData baseData, IData newData, string? incompleteBatchIdentifier = null);
     }
 }

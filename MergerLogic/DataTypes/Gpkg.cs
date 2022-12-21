@@ -74,13 +74,13 @@ namespace MergerLogic.DataTypes
             this._offset = 0;
         }
 
-        public override List<Tile> GetNextBatch(out string currentBatchIdentifier, out string? nextBatchIdentifier, string? inCompletedBatchIdentifier, long? totalTilesCount)
+        public override List<Tile> GetNextBatch(out string currentBatchIdentifier, out string? nextBatchIdentifier, string? incompleteBatchIdentifier, long? totalTilesCount)
         {
             lock (_locker)
             {
-                if (inCompletedBatchIdentifier is not null)
+                if (incompleteBatchIdentifier is not null)
                 {
-                    long.TryParse(inCompletedBatchIdentifier, out long result);
+                    long.TryParse(incompleteBatchIdentifier, out long result);
                     this._offset = result;
                 }
                 currentBatchIdentifier = this._offset.ToString();
@@ -89,7 +89,6 @@ namespace MergerLogic.DataTypes
                 {
                     //TODO: optimize after IOC refactoring
                     int counter = 0;
-
                     tiles = this.Utils.GetBatch(this.BatchSize, this._offset)
                         .Select(t =>
                         {
@@ -98,7 +97,7 @@ namespace MergerLogic.DataTypes
                             counter++;
                             return tile;
                         }).Where(t => t != null).ToList();
-                    if (inCompletedBatchIdentifier is null)
+                    if (incompleteBatchIdentifier is null)
                     {
                         Interlocked.Add(ref this._offset, counter);
                     }

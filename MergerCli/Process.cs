@@ -39,11 +39,8 @@ namespace MergerCli
                 // fix resume progress bug for gpkg, fs and web, fixing it for s3 requires storing additional data.
                 if (newData.Type != DataType.S3)
                 {
-                    long? totalCompletedTiles = batchStatusManager.GetTotalCompletedTiles(newData.Path);
-                    if (totalCompletedTiles.HasValue)
-                    {
-                        tileProgressCount = totalCompletedTiles.Value;
-                    }
+                    long totalCompletedTiles = batchStatusManager.GetTotalCompletedTiles(newData.Path);
+                    tileProgressCount = totalCompletedTiles;
                 }
             }
 
@@ -59,19 +56,20 @@ namespace MergerCli
             
             batchStatusManager.CompleteLayer(newData.Path);
             newData.Reset();
+            // base data wrap up is in program as the same base data object is used in multiple calls 
         }
 
         private void DoWork(TileFormat targetFormat, IData baseData, IData newData,
-            BatchStatusManager batchStatusManager, ref long tileProgressCount, long totalTileCount, bool resumeMode,ref bool pollForBatch, string? inCompletedBatchIdentifier = null)
+            BatchStatusManager batchStatusManager, ref long tileProgressCount, long totalTileCount, bool resumeMode,ref bool pollForBatch, string? incompleteBatchIdentifier = null)
         {
             ConcurrentBag<Tile> tiles = new ConcurrentBag<Tile>();
-            List<Tile> newTiles = newData.GetNextBatch(out string currentBatchIdentifier, out string? nextBatchIdentifier, inCompletedBatchIdentifier, totalTileCount);
+            List<Tile> newTiles = newData.GetNextBatch(out string currentBatchIdentifier, out string? nextBatchIdentifier, incompleteBatchIdentifier, totalTileCount);
             if (!resumeMode && newTiles.Count > 0)
             {
                 batchStatusManager.AssignBatch(newData.Path, currentBatchIdentifier);
                 batchStatusManager.SetCurrentBatch(newData.Path, nextBatchIdentifier);
             }
-            
+
             if (newTiles.Count > 0)
             {
                 for (int i = 0; i < newTiles.Count; i++)
@@ -110,25 +108,23 @@ namespace MergerCli
         private void ParallelRun(TileFormat targetFormat, IData baseData, IData newData,
             BatchStatusManager batchStatusManager, long tileProgressCount, long totalTileCount, string? resumeBatchIdentifier, bool resumeMode,bool pollForBatch)
         {
-            var parallelTasksNumber = this._configManager.GetConfiguration<int>("GENERAL", "parallel", "tasksNumber");
-            var maxDegreeOfParallelism = this._configManager.GetConfiguration<int>("GENERAL", "parallel", "maxDegreeOfParallelism");
-            
-            Parallel.For(0, parallelTasksNumber, new ParallelOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism }, i =>
+            var numOfThreads = this._configManager.GetConfiguration<int>("GENERAL", "parallel", "numOfThreads");
+            // use max of available cpus to the proccess
+            Parallel.For(0, numOfThreads, new ParallelOptions { MaxDegreeOfParallelism = -1 }, _ =>
             {
                 while (tileProgressCount != totalTileCount && pollForBatch)
                 {
                     if (resumeMode)
                     {
-                        var inCompletedBatches = batchStatusManager.GetBatches(newData.Path);
-                        while (!inCompletedBatches.IsEmpty)
+                        var incompleteBatches = batchStatusManager.GetBatches(newData.Path);
+                        while (incompleteBatches is { IsEmpty: false })
                         {
-                            var inCompletedBatch = batchStatusManager.GetFirstInCompletedBatch(newData.Path);
-                            if (inCompletedBatch.HasValue)
+                            var incompleteBatch = batchStatusManager.GetFirstIncompleteBatch(newData.Path);
+                            if (incompleteBatch is not null)
                             {
-                                newData.setBatchIdentifier(inCompletedBatch.Value.Key);
                                 DoWork(targetFormat, baseData, newData, batchStatusManager,
                                     ref tileProgressCount,
-                                    totalTileCount, resumeMode,ref pollForBatch, inCompletedBatch.Value.Key);
+                                    totalTileCount, resumeMode,ref pollForBatch, incompleteBatch.Value.Key);
                             }
                         }
             
@@ -144,7 +140,7 @@ namespace MergerCli
                 }
             });
         }
-        public void Validate(IData baseData, IData newData, string? inCompletedBatchIdentifier)
+        public void Validate(IData baseData, IData newData, string? incompleteBatchIdentifier)
         {
             List<Tile> newTiles;
             bool hasSameTiles = true;
@@ -155,7 +151,7 @@ namespace MergerCli
 
             do
             {
-                newTiles = newData.GetNextBatch(out _, out _, inCompletedBatchIdentifier, totalTileCount);
+                newTiles = newData.GetNextBatch(out _, out _, incompleteBatchIdentifier, totalTileCount);
 
                 int baseMatchCount = 0;
                 int newTileCount = 0;
