@@ -35,7 +35,7 @@ namespace MergerCli
             if (resumeBatchIdentifier != null)
             {
                 resumeMode = true;
-                this._logger.LogInformation($"Resume mode activated");
+                this._logger.LogDebug($"Resume mode activated");
                 // fix resume progress bug for gpkg, fs and web, fixing it for s3 requires storing additional data.
                 if (newData.Type != DataType.S3)
                 {
