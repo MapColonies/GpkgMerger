@@ -103,7 +103,7 @@ namespace MergerCli.Utils
                 if (this.States.ContainsKey(layer) && batchIdentifier is not null)
                 {
                     this.States[layer].TotalCompletedTiles = totalCompletedTiles;
-                    this.States[layer].Batches.Remove(batchIdentifier, out _ );
+                    this.States[layer].Batches.Remove(batchIdentifier, out _);
                 }
             }
         }

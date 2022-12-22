@@ -71,18 +71,16 @@ namespace MergerLogic.DataTypes
 
         public override void Reset()
         {
-            this._offset = 0;
+            lock (_locker)
+            {
+                this._offset = 0;
+            } 
         }
 
         public override List<Tile> GetNextBatch(out string currentBatchIdentifier, out string? nextBatchIdentifier, string? incompleteBatchIdentifier, long? totalTilesCount)
         {
             lock (_locker)
             {
-                if (incompleteBatchIdentifier is not null)
-                {
-                    long.TryParse(incompleteBatchIdentifier, out long result);
-                    this._offset = result;
-                }
                 currentBatchIdentifier = this._offset.ToString();
                 List<Tile> tiles = new List<Tile>();
                 if (this._offset != totalTilesCount)
@@ -97,10 +95,8 @@ namespace MergerLogic.DataTypes
                             counter++;
                             return tile;
                         }).Where(t => t != null).ToList();
-                    if (incompleteBatchIdentifier is null)
-                    {
-                        Interlocked.Add(ref this._offset, counter);
-                    }
+                    
+                    Interlocked.Add(ref this._offset, counter);
                     nextBatchIdentifier = this._offset.ToString();
                     return tiles;
                 }

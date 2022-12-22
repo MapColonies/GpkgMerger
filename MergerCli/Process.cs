@@ -14,6 +14,7 @@ namespace MergerCli
         private readonly IConfigurationManager _configManager;
         private readonly ITileMerger _tileMerger;
         private readonly ILogger _logger;
+        static readonly object _locker = new object();
 
         public Process(IConfigurationManager configuration, ITileMerger tileMerger, ILogger<Process> logger)
         {
@@ -61,14 +62,26 @@ namespace MergerCli
         private void DoWork(TileFormat targetFormat, IData baseData, IData newData,
             BatchStatusManager batchStatusManager, ref long tileProgressCount, long totalTileCount, bool resumeMode,ref bool pollForBatch, string? incompleteBatchIdentifier = null)
         {
+            List<Tile> newTiles;
             ConcurrentBag<Tile> tiles = new ConcurrentBag<Tile>();
-            List<Tile> newTiles = newData.GetNextBatch(out string currentBatchIdentifier, out string? nextBatchIdentifier, incompleteBatchIdentifier, totalTileCount);
+            string? currentBatchIdentifier;
+            string? nextBatchIdentifier;
+            lock (_locker)
+            {
+                if (resumeMode && incompleteBatchIdentifier is not null)
+                {
+                    newData.setBatchIdentifier(incompleteBatchIdentifier);
+                }
+                
+                newTiles = newData.GetNextBatch(out currentBatchIdentifier, out nextBatchIdentifier, incompleteBatchIdentifier, totalTileCount);
+            }
+
             if (!resumeMode && newTiles.Count > 0)
             {
                 batchStatusManager.AssignBatch(newData.Path, currentBatchIdentifier);
                 batchStatusManager.SetCurrentBatch(newData.Path, nextBatchIdentifier);
             }
-
+            
             if (newTiles.Count > 0)
             {
                 for (int i = 0; i < newTiles.Count; i++)
@@ -92,16 +105,16 @@ namespace MergerCli
             }
 
             baseData.UpdateTiles(tiles);
-            if (tiles.Count != 0)
-            {
-                Interlocked.Add(ref tileProgressCount, tiles.Count);
-                this._logger.LogInformation($"Tile Count: {tileProgressCount} / {totalTileCount}");
-                batchStatusManager.CompleteBatch(newData.Path, currentBatchIdentifier, tileProgressCount);
-            }
-            else
+            
+            if (tiles.Count <= 0)
             {
                 pollForBatch = false;
+                return;
             }
+
+            Interlocked.Add(ref tileProgressCount, tiles.Count);
+            this._logger.LogInformation($"Tile Count: {tileProgressCount} / {totalTileCount}");
+            batchStatusManager.CompleteBatch(newData.Path, currentBatchIdentifier, tileProgressCount);
         }
 
         private void ParallelRun(TileFormat targetFormat, IData baseData, IData newData,
