@@ -35,7 +35,7 @@ namespace MergerCli
             if (resumeBatchIdentifier != null)
             {
                 resumeMode = true;
-                this._logger.LogDebug($"Resume mode activated");
+                this._logger.LogDebug($"Resume mode activated, resume batchId: {resumeBatchIdentifier}");
                 // fix resume progress bug for gpkg, fs and web, fixing it for s3 requires storing additional data.
                 if (newData.Type != DataType.S3)
                 {
@@ -73,7 +73,7 @@ namespace MergerCli
                     newData.setBatchIdentifier(incompleteBatchIdentifier);
                 }
                 
-                newTiles = newData.GetNextBatch(out currentBatchIdentifier, out nextBatchIdentifier, incompleteBatchIdentifier, totalTileCount);
+                newTiles = newData.GetNextBatch(out currentBatchIdentifier, out nextBatchIdentifier, totalTileCount);
             }
 
             if (!resumeMode && newTiles.Count > 0)
@@ -81,7 +81,7 @@ namespace MergerCli
                 batchStatusManager.AssignBatch(newData.Path, currentBatchIdentifier);
                 batchStatusManager.SetCurrentBatch(newData.Path, nextBatchIdentifier);
             }
-            
+
             if (newTiles.Count > 0)
             {
                 for (int i = 0; i < newTiles.Count; i++)
@@ -106,7 +106,7 @@ namespace MergerCli
 
             baseData.UpdateTiles(tiles);
             
-            if (tiles.Count <= 0)
+            if (tiles.Count == 0)
             {
                 pollForBatch = false;
                 return;
@@ -153,6 +153,7 @@ namespace MergerCli
                 }
             });
         }
+        
         public void Validate(IData baseData, IData newData, string? incompleteBatchIdentifier)
         {
             List<Tile> newTiles;
@@ -164,7 +165,7 @@ namespace MergerCli
 
             do
             {
-                newTiles = newData.GetNextBatch(out _, out _, incompleteBatchIdentifier, totalTileCount);
+                newTiles = newData.GetNextBatch(out _, out _, totalTileCount);
 
                 int baseMatchCount = 0;
                 int newTileCount = 0;

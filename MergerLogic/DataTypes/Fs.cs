@@ -106,17 +106,19 @@ namespace MergerLogic.DataTypes
             }
         }
 
-        public override List<Tile> GetNextBatch(out string batchIdentifier,out string? nextBatchIdentifier, string? incompleteBatchIdentifier, long? totalTilesCount)
+        public override List<Tile> GetNextBatch(out string batchIdentifier,out string? nextBatchIdentifier, long? totalTilesCount)
         {
             lock (_locker)
             {
                 batchIdentifier = this._completedTiles.ToString();
                 List<Tile> tiles = new List<Tile>(this.BatchSize);
                 nextBatchIdentifier = batchIdentifier;
+                
                 if (this._done)
                 {
                     return tiles;
                 }
+                
                 while (!this._done && tiles.Count < this.BatchSize)
                 {
                     Tile tile = this._tiles.Current;
@@ -131,12 +133,17 @@ namespace MergerLogic.DataTypes
 
         public override void setBatchIdentifier(string batchIdentifier)
         {
-            this._completedTiles = long.Parse(batchIdentifier);
-            // uncomment to make this function work at any point of the run and not only after the source initialization
-            //this.tiles.Reset();
-            for (long i = 0; i < this._completedTiles; i++)
+            lock (_locker)
             {
-                this._tiles.MoveNext();
+                //this._tiles.Dispose();
+                this._tiles = this.GetTiles();
+                _completedTiles = long.Parse(batchIdentifier);
+                // uncomment to make this function work at any point of the run and not only after the source initialization
+                //this._tiles.Reset();
+                for (long i = 0; i < this._completedTiles; i++)
+                {
+                    this._tiles.MoveNext();
+                }
             }
         }
 
