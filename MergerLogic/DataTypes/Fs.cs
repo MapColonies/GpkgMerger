@@ -135,11 +135,10 @@ namespace MergerLogic.DataTypes
         {
             lock (_locker)
             {
-                //this._tiles.Dispose();
                 this._tiles = this.GetTiles();
+                this._tiles.MoveNext();
                 _completedTiles = long.Parse(batchIdentifier);
-                // uncomment to make this function work at any point of the run and not only after the source initialization
-                //this._tiles.Reset();
+                
                 for (long i = 0; i < this._completedTiles; i++)
                 {
                     this._tiles.MoveNext();

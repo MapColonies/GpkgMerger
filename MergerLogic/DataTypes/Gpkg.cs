@@ -87,6 +87,7 @@ namespace MergerLogic.DataTypes
                 {
                     //TODO: optimize after IOC refactoring
                     int counter = 0;
+                    
                     tiles = this.Utils.GetBatch(this.BatchSize, this._offset)
                         .Select(t =>
                         {
@@ -98,6 +99,7 @@ namespace MergerLogic.DataTypes
                     
                     Interlocked.Add(ref this._offset, counter);
                     nextBatchIdentifier = this._offset.ToString();
+                    
                     return tiles;
                 }
                 nextBatchIdentifier = this._offset.ToString();
