@@ -683,7 +683,7 @@ namespace MergerLogicUnitTests.DataTypes
             for (int i = 0; i < tileBatches.Count; i++)
             {
                 var exactedBatch = tileBatches[i];
-                var res = tmsSource.GetNextBatch(out string batchIdentifier, out string? _, null, null);
+                var res = tmsSource.GetNextBatch(out string batchIdentifier, out string? _, null);
 
                 CollectionAssert.AreEqual(exactedBatch.ToArray(), res, comparer);
                 string expectedBatchId = Math.Min(i * batchSize, tiles.Length).ToString();

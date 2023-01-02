@@ -648,7 +648,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             string testIdentifier = offset.ToString();
             s3Source.setBatchIdentifier(testIdentifier);
-            s3Source.GetNextBatch(out string batchIdentifier, out string? _, null, null);
+            s3Source.GetNextBatch(out string batchIdentifier, out string? _, null);
             Assert.AreEqual(testIdentifier, batchIdentifier);
 
             this.VerifyAll();
@@ -705,11 +705,11 @@ namespace MergerLogicUnitTests.DataTypes
             var s3Source = new S3(this._pathUtilsMock.Object, this._serviceProviderMock.Object, 
                 "test", batchSize, grid, origin, false);
         
-            s3Source.GetNextBatch(out string batchIdentifier, out string? _, null, null);
-            s3Source.GetNextBatch(out batchIdentifier,out string? _, null, null);
+            s3Source.GetNextBatch(out string batchIdentifier, out string? _, null);
+            s3Source.GetNextBatch(out batchIdentifier,out string? _, null);
             Assert.AreNotEqual(null, batchIdentifier);
             s3Source.Reset();
-            s3Source.GetNextBatch(out batchIdentifier, out string? _, null, null);
+            s3Source.GetNextBatch(out batchIdentifier, out string? _, null);
             Assert.AreEqual("Null", batchIdentifier);
             this.VerifyAll();
         }

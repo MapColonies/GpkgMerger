@@ -688,13 +688,14 @@ namespace MergerLogicUnitTests.DataTypes
         public void SetBatchIdentifier(bool isOneXOne, bool isBase, GridOrigin origin, int offset)
         {
             this.SetupConstructorRequiredMocks(isBase);
+            this.SetupGetTiles(isBase, isOneXOne, origin);
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
             var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, grid, origin, isBase);
 
             string testIdentifier = offset.ToString();
             fsSource.setBatchIdentifier(testIdentifier);
-            fsSource.GetNextBatch(out string batchIdentifier, out string? _, null, null );
+            fsSource.GetNextBatch(out string batchIdentifier, out string? _, null );
             Assert.AreEqual(testIdentifier, batchIdentifier);
 
             this.VerifyAll();
@@ -719,51 +720,17 @@ namespace MergerLogicUnitTests.DataTypes
         [DynamicData(nameof(GenResetParams), DynamicDataSourceType.Method)]
         public void Reset(bool isOneXOne, bool isBase, GridOrigin origin, int batchSize)
         {
-            var testFormat = TileFormat.Png; //this is needed for mocks but shouldn't effect the tested function.
-
             this.SetupConstructorRequiredMocks(isBase);
-            var fileList = new List<string>();
-            for (int i = 0; i < 10; i++)
-            {
-                //valid files
-                fileList.Add(i % 2 == 0 ? "t.png" : "t.jpg");
-                //invalid files
-                fileList.Add(string.Empty);
-            }
-            
-            this._directoryMock
-                .Setup(directory => directory.GetDirectories("test"))
-                .Returns(new string[] { "1" });
-            this._directoryMock
-                .Setup(d => d.EnumerateFiles(It.IsAny<string>(), "*.*", SearchOption.AllDirectories))
-                .Returns(fileList);
-            this._pathUtilsMock
-                .Setup(utils => utils.FromPath(It.IsAny<string>(), out testFormat, false))
-                .Returns(new Coord(0, 0, 0));
-            this._fsUtilsMock
-                .Setup(utils => utils.GetTile(It.IsAny<Coord>()))
-                .Returns(new Tile(0, 0, 0, Array.Empty<byte>()));
-            if (origin != GridOrigin.LOWER_LEFT)
-            {
-                this._geoUtilsMock
-                    .Setup(utils => utils.FlipY(It.IsAny<Tile>()))
-                    .Returns<Tile>(t => t.Y);
-            }
-            if (isOneXOne)
-            {
-                this._oneXOneConvertorMock
-                    .Setup(converter => converter.TryToTwoXOne(It.IsAny<Tile>()))
-                    .Returns<Tile>(t => t);
-            }
+            this.SetupGetTiles(isBase, isOneXOne, origin);
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
             var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", batchSize, grid, origin, isBase);
 
-            fsSource.GetNextBatch(out string batchIdentifier, out string? _, null, null);
-            fsSource.GetNextBatch(out batchIdentifier, out string? _, null, null);
+            fsSource.GetNextBatch(out string batchIdentifier, out string? _, null);
+            fsSource.GetNextBatch(out batchIdentifier, out string? _, null);
             Assert.AreNotEqual("0", batchIdentifier);
             fsSource.Reset();
-            fsSource.GetNextBatch(out batchIdentifier, out string? _, null, null);
+            fsSource.GetNextBatch(out batchIdentifier, out string? _, null);
             Assert.AreEqual("0", batchIdentifier);
             this.VerifyAll();
         }
@@ -841,7 +808,7 @@ namespace MergerLogicUnitTests.DataTypes
             for (int i = 0; i < tileBatches.Count; i++)
             {
                 var exactedBatch = tileBatches[i];
-                var res = fsSource.GetNextBatch(out string batchIdentifier, out string? _, null, null);
+                var res = fsSource.GetNextBatch(out string batchIdentifier, out string? _, null);
 
                 CollectionAssert.AreEqual(exactedBatch.ToArray(), res, comparer);
                 string expectedBatchId = Math.Min(i * batchSize, tiles.Length).ToString();
@@ -942,6 +909,46 @@ namespace MergerLogicUnitTests.DataTypes
                 .InSequence(seq)
                 .Setup(fs => fs.Directory.EnumerateFiles(It.IsAny<string>(), "*.*", SearchOption.AllDirectories))
                 .Returns(files ?? Array.Empty<string>());
+        }
+
+        private void SetupGetTiles(bool isBase, bool isOneXOne, GridOrigin origin)
+        {
+            var testFormat = TileFormat.Png; //this is needed for mocks but shouldn't effect the tested function.
+            this.SetupConstructorRequiredMocks(isBase);
+            var fileList = new List<string>();
+            
+            for (int i = 0; i < 10; i++)
+            {
+                //valid files
+                fileList.Add(i % 2 == 0 ? "t.png" : "t.jpg");
+                //invalid files
+                fileList.Add(string.Empty);
+            }
+            this._directoryMock
+                .Setup(directory => directory.GetDirectories("test"))
+                .Returns(new string[] { "1" });
+            this._directoryMock
+                .Setup(d => d.EnumerateFiles(It.IsAny<string>(), "*.*", SearchOption.AllDirectories))
+                .Returns(fileList);
+            this._pathUtilsMock
+                .Setup(utils => utils.FromPath(It.IsAny<string>(), out testFormat, false))
+                .Returns(new Coord(0, 0, 0));
+            this._fsUtilsMock
+                .Setup(utils => utils.GetTile(It.IsAny<Coord>()))
+                .Returns(new Tile(0, 0, 0, Array.Empty<byte>()));
+            
+            if (origin != GridOrigin.LOWER_LEFT)
+            {
+                this._geoUtilsMock
+                    .Setup(utils => utils.FlipY(It.IsAny<Tile>()))
+                    .Returns<Tile>(t => t.Y);
+            }
+            if (isOneXOne)
+            {
+                this._oneXOneConvertorMock
+                    .Setup(converter => converter.TryToTwoXOne(It.IsAny<Tile>()))
+                    .Returns<Tile>(t => t);
+            }
         }
 
         private void VerifyAll()
