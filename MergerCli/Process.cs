@@ -95,7 +95,7 @@ namespace MergerCli
             }
         }
         
-        private void DoWork(TileFormat targetFormat, IData baseData, List<Tile> newTiles, ref long tileProgressCount, long totalTileCount,ref bool pollForBatch)
+        private void ProcessBatch(TileFormat targetFormat, IData baseData, List<Tile> newTiles, ref long tileProgressCount, long totalTileCount,ref bool pollForBatch)
         {
             ConcurrentBag<Tile> tiles = new ConcurrentBag<Tile>();
             
@@ -143,7 +143,7 @@ namespace MergerCli
                 while (tileProgressCount != totalTileCount)
                 {
                     var batchResult = ManageBatchIdentifier(batchStatusManager, newData, resumeBatchIdentifier, totalTileCount, ref resumeMode);
-                    DoWork(targetFormat, baseData, batchResult.newTiles, ref tileProgressCount,
+                    ProcessBatch(targetFormat, baseData, batchResult.newTiles, ref tileProgressCount,
                         totalTileCount, ref pollForBatch);
                     batchStatusManager.CompleteBatch(newData.Path, batchResult.currentBatchIdentifier, tileProgressCount);
                 }
