@@ -124,12 +124,7 @@ namespace MergerCli
             }
 
             baseData.UpdateTiles(tiles);
-            if (tiles.Count == 0)
-            {
-                pollForBatch = false;
-                return;
-            }
-            
+
             Interlocked.Add(ref tileProgressCount, tiles.Count);
             this._logger.LogInformation($"Tile Count: {tileProgressCount} / {totalTileCount}");
         }
@@ -140,7 +135,7 @@ namespace MergerCli
             var numOfThreads = this._configManager.GetConfiguration<int>("GENERAL", "parallel", "numOfThreads");
             Parallel.For(0, numOfThreads, new ParallelOptions { MaxDegreeOfParallelism = -1 }, _ =>
             {
-                while (tileProgressCount != totalTileCount)
+                while (tileProgressCount != totalTileCount && pollForBatch)
                 {
                     var batchResult = ManageBatchIdentifier(batchStatusManager, newData, resumeBatchIdentifier, totalTileCount, ref resumeMode);
                     ProcessBatch(targetFormat, baseData, batchResult.newTiles, ref tileProgressCount,
