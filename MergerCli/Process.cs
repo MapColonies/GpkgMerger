@@ -66,10 +66,10 @@ namespace MergerCli
                 if (resumeMode)
                 {
                     var incompleteBatches = batchStatusManager.GetBatches(newData.Path);
-                    if (incompleteBatches != null && incompleteBatches.IsEmpty || incompleteBatches.All(batch => batch.Value == true))
+                    if (incompleteBatches != null && incompleteBatches.All(batch => batch.Value == true))
                     {
                         resumeMode = false;
-                        
+
                         if (resumeBatchIdentifier != null)
                         {
                             newData.setBatchIdentifier(resumeBatchIdentifier);
