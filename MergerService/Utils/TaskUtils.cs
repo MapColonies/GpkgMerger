@@ -75,7 +75,7 @@ namespace MergerService.Utils
             {
                 // Notify Manager on task completion
                 this._logger.LogInformation($"Notifying Manager on completion, job: {jobId}, task: {taskId}");
-                string relativeUri = $"tasks/{jobId}/{taskId}/completed";
+                string relativeUri = $"jobs/{jobId}/{taskId}/completed";
                 string url = new Uri(new Uri(managerCallbackUrl), relativeUri).ToString();
                 _ = this._httpClient.PostData(url, null);
             }
