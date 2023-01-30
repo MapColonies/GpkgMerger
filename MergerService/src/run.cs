@@ -63,6 +63,11 @@ namespace MergerService.Src
             // If the source is not the target
             if (!isTarget)
             {
+                if (type == "S3")
+                {
+                    return path;
+                }
+                
                 return this._fileSystem.Path.Join(this._inputPath, path);
             }
 
@@ -75,7 +80,7 @@ namespace MergerService.Src
             {
                 return this._fileSystem.Path.Join(this._filePath, path);
             }
-
+            
             return path;
         }
 
