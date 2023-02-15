@@ -3,3 +3,5 @@
 TestResults/
 helm/
 *.gpkg
+output/
+*.txt
