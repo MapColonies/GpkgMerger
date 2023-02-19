@@ -1,10 +1,11 @@
 bin/
 obj/
 output/
+snapshots/
 *.gpkg
 .vscode
-*.sh
-.idea
+/*.sh
+*.txt
 
 Cache*
 User/
