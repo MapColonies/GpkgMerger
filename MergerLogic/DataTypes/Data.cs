@@ -300,5 +300,9 @@ namespace MergerLogic.DataTypes
         public void markAsNew() {
             this.IsNew = true;
         }
+
+        public void markAsNotNew() {
+            this.IsNew = false;
+        }
     }
 }

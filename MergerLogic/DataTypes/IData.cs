@@ -14,6 +14,7 @@ namespace MergerLogic.DataTypes
         void Reset();
         void setBatchIdentifier(string batchIdentifier);
         void markAsNew();
+        void markAsNotNew();
         long TileCount();
         bool TileExists(Coord coord);
         bool TileExists(Tile tile);

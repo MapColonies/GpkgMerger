@@ -101,6 +101,7 @@ namespace MergerCli
                     }
 
                     process.Start(format, baseData, sources[i], batchSize, _batchStatusManager);
+                    baseData.markAsNotNew();
                     stopWatch.Stop();
 
                     // Get the elapsed time as a TimeSpan value.
