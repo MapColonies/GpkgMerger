@@ -4,9 +4,11 @@ from abc import abstractmethod
 import sys
 import os.path
 import sqlite3
+import constants
 # Wand: https://docs.wand-py.org/en/0.6.11/
 from wand.image import Image
-import constants
+from skimage.metrics import structural_similarity
+import numpy as np
 
 
 class DataType(str, Enum):
@@ -24,9 +26,10 @@ class Data():
         self.type = type
         self.path = path
         self.num_tiles = self.__get_num_tiles__()
+        self.curr = 0
     
     @abstractmethod
-    def get_all_data(self) -> list:
+    def get_next_batch(self) -> list:
         pass
     
     @abstractmethod
@@ -40,21 +43,30 @@ class Data():
     def compare(self, other: 'Data') -> bool:
         count = 0
         
-        # if self.num_tiles != other.num_tiles:
-        #     return 0
+        if self.num_tiles != other.num_tiles:
+            return 0
         
-        rows = self.get_all_data()
-        for _, z, x, y, data in rows:
-            blob = other.get_blob(z, x, y)
-            if not blob:
-                break
-            
-            similar: bool = are_images_similar(data, blob)
-            if not similar:
-                print(z, x, y)
-                break
-            
-            count += 1
+        rows: list = self.get_next_batch()
+        while len(rows) > 0:
+            # start1 = time.time()
+            for _, z, x, y, data in rows:
+                blob = other.get_blob(z, x, y)
+                if not blob:
+                    break
+                
+                # start = time.time()
+                similar: bool = are_images_similar(data, blob)
+                # end = time.time()
+                # print(f'Run time: {end - start}')
+                if not similar:
+                    print(z, x, y)
+                    # continue
+                    return count / self.num_tiles
+                
+                count += 1
+            # end1 = time.time()
+            # print(f'Run time: {end1 - start1}')
+            rows = self.get_next_batch()
         
         return count / self.num_tiles
 
@@ -72,8 +84,10 @@ class Gpkg(Data):
     def __get_data_table_name__(self) -> str:
         return self.cursor.execute(f'select * from gpkg_contents').fetchone()[0]
     
-    def get_all_data(self) -> list:
-        return self.cursor.execute(f'select * from {self.data_table}').fetchall()
+    def get_next_batch(self) -> list:
+        res = self.cursor.execute(f'select * from {self.data_table} limit {constants.BATCH_SIZE} offset {self.curr}').fetchall()
+        self.curr += constants.BATCH_SIZE
+        return res
     
     def get_blob(self, z, x, y) -> str:
         return self.cursor.execute(f"select coalesce(tile_data, '') from {self.data_table} where zoom_level={z} and tile_column={x} and tile_row={y}").fetchone()
@@ -119,70 +133,86 @@ def get_gpkg_table_name(cursor: sqlite3.Cursor):
 
 
 def are_images_similar(blob1, blob2):
+    # From: https://stackoverflow.com/a/57755495/11915280
     with Image(blob=blob1) as img1, Image(blob=blob2) as img2:
-        # print('format =', img1.format)
-        # img1.format = 'png'
-        # print('format =', img2.format)
-        # img2.format = 'png'
-        # print('format =', img1.format)
-        
-        # print('width =', img1.width)
-        # print('height =', img1.height)
-        # print('width =', img2.width)
-        # print('height =', img2.height)
-        
-        # print(img1.size)
-        
-        # if img1.format != img2.format:
-        #     if img2.format == 'jpeg':
-        #         temp = img1
-        #         img1 = img2
-        #         img2 = temp
-        #     img1.format = 'png'
-        #     img1.compose = 'copy_opacity'
-        #     img1.composite(img2, operator='copy_opacity')
-        
-        # print(False if img1.compare(img2)[1] > 1 else True)
-        
-        # img1.compose = 'copy_opacity'
-        # img1.composite(img2)
-        
-        # print(img1.get_image_distortion(img2))
-        
-        if img1.get_image_distortion(img2) < constants.TILE_DIFF_THRESHOLD:
-            # img1.format = 'png'
-            # img2.format = 'png'
-            # img1.compose = 'copy_opacity'
-            # img2.compose = 'copy_opacity'
-            # img1.composite(img2)
-            # img1.fuzz = img1.quantum_range * 0.2
-            # img2.fuzz = img2.quantum_range * 0.2
-            # img1.transparent_color(Color('rgb(0,0,0)'), 0.0)
-            # img2.transparent_color(Color('rgb(0,0,0)'), 0.0)
-            # img1.composite(img2, operator='copy_opacity')
-            # img1.composite_channel('undefined', img2, 'copy_opacity')
-            # img1.trim(Color('rgb(0,0,0)'))
-            # img2.trim(Color('rgb(0,0,0)'))
-        
-            # print('quantum_range =', img1.quantum_range)
-            # similarity = img1.similarity(img2, metric='measn_squared')[1]
-            # print('similarity =', img1.similarity(img2, threshold=img1.quantum_range, metric='mean_squared')[1])
-            # print('similarity =', similarity)
-            # print('RMSE = ', math.sqrt(similarity))
-            
-            # TODO: remove this
-            # print('distortion =', img1.get_image_distortion(img2, metric='mean_error_per_pixel') / math.prod(img1.size))
-            # print('distortion =', img1.get_image_distortion(img2, metric='mean_error_per_pixel'))
-            # print('distortion =', img1.get_image_distortion(img2))
-            # print('size = ', math.prod(img1.size))
-            # print('compare =', img1.compare(img2)[1])
-            
-            # img1.save(filename='1.png')
-            # img2.save(filename='2.png')
-        
-            # print(img1.compare(img2)[1])
-            return False
-        return True
+        first = np.array(img1)
+        second = np.array(img2)
+    
+    # From: https://stackoverflow.com/questions/58604326/which-ssim-is-correct-skimage-metrics-structural-similarity
+    # Compute SSIM between two images
+    score = structural_similarity(first, second, full=False, multichannel=True, data_range=255)       
+    if score < constants.TILE_DIFF_THRESHOLD:
+        return False
+    return True
+
+
+# def are_images_similar(blob1, blob2):
+#     with Image(blob=blob1) as img1, Image(blob=blob2) as img2:
+#         # print('format =', img1.format)
+#         # img1.format = 'png'
+#         # print('format =', img2.format)
+#         # img2.format = 'png'
+#        
+#         # print('width =', img1.width)
+#         # print('height =', img1.height)
+#         # print('width =', img2.width)
+#        
+#         # print(img1.size)
+#        
+#         # if img1.format != img2.format:
+#         #     if img2.format == 'jpeg':
+#         #         temp = img1
+#         #         img1 = img2
+#         #         img2 = temp
+#         #     img1.format = 'png'
+#         #     img1.compose = 'copy_opacity'
+#         #     img1.composite(img2, operator='copy_opacity')
+#        
+#         # print(False if img1.compare(img2)[1] > 1 else True)
+#        
+#         # img1.compose = 'copy_opacity'
+#         # img1.composite(img2)
+#        
+#         # print(img1.get_image_distortion(img2))
+#        
+#         distortion = img1.get_image_distortion(img2)
+#        
+#         if distortion > 0 and distortion < constants.TILE_DIFF_THRESHOLD:
+#             # img1.format = 'png'
+#             # img2.format = 'png'
+#             # img1.compose = 'copy_opacity'
+#             # img2.compose = 'copy_opacity'
+#             # img1.composite(img2)
+#             # img1.fuzz = img1.quantum_range * 0.2
+#             # img2.fuzz = img2.quantum_range * 0.2
+#             # img1.transparent_color(Color('rgb(0,0,0)'), 0.0)
+#             # img2.transparent_color(Color('rgb(0,0,0)'), 0.0)
+#             # img1.composite(img2, operator='copy_opacity')
+#             # img1.composite_channel('undefined', img2, 'copy_opacity')
+#             # img1.trim(Color('rgb(0,0,0)'))
+#             # img2.trim(Color('rgb(0,0,0)'))
+#        
+#             # print('quantum_range =', img1.quantum_range)
+#             # similarity = img1.similarity(img2, metric='measn_squared')[1]
+#             # print('similarity =', img1.similarity(img2, threshold=img1.quantum_range, metric='mean_squared')[1])
+#             # print('similarity =', similarity)
+#             # print('RMSE = ', math.sqrt(similarity))
+#            
+#             # TODO: remove this
+#             # print('distortion =', img1.get_image_distortion(img2, metric='mean_error_per_pixel') / math.prod(img1.size))
+#             # print('distortion =', img1.get_image_distortion(img2, metric='mean_error_per_pixel'))
+#             # print('distortion =', img1.get_image_distortion(img2))
+#             # print('size = ', math.prod(img1.size))
+#             # print('compare =', img1.compare(img2)[1])
+#            
+#             # img1.save(filename='1.png')
+#             # img2.save(filename='2.png')
+#        
+#             # print(img1.compare(img2)[1])
+#            
+#             print(distortion)
+#             return False
+#         return True
 
 
 def create_data(type: str, path: str):
@@ -225,4 +255,4 @@ if __name__ == "__main__":
     # end = time.time()
     # print(f'Run time: {end - start}')
     # print(f'Gpkgs {"do not " if percentage < 1 else ""}match, match percentage: {percentage}')
-    # print(0 if percentage < 1 else 1)
+    print(0 if percentage < 1 else 1)
