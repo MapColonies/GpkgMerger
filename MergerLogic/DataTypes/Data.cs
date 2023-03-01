@@ -50,7 +50,7 @@ namespace MergerLogic.DataTypes
         public GridOrigin Origin { get; }
         public Extent Extent { get => this.GetExtent(); protected set => this.SetExtent(value); }
         public bool IsBase { get; }
-        public bool IsNew { get; private set; }
+        public bool IsNew { get; set; }
         public bool IsOneXOne => this.Grid == Grid.OneXOne;
         
         protected readonly int BatchSize;
@@ -296,13 +296,5 @@ namespace MergerLogic.DataTypes
         public abstract long TileCount();
 
         public abstract void setBatchIdentifier(string batchIdentifier);
-
-        public void markAsNew() {
-            this.IsNew = true;
-        }
-
-        public void markAsNotNew() {
-            this.IsNew = false;
-        }
     }
 }

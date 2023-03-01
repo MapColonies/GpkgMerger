@@ -72,7 +72,7 @@ namespace MergerCli
             if(_resumed) {
                 bool isNew = _batchStatusManager.IsBaseLayerNew();
                 if (isNew) {
-                    baseData.markAsNew();
+                    baseData.IsNew = true;
                 }
             }
             else {
@@ -101,7 +101,7 @@ namespace MergerCli
                     }
 
                     process.Start(format, baseData, sources[i], batchSize, _batchStatusManager);
-                    baseData.markAsNotNew();
+                    baseData.IsNew = false;
                     stopWatch.Stop();
 
                     // Get the elapsed time as a TimeSpan value.
