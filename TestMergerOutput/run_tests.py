@@ -140,7 +140,7 @@ def are_images_similar(blob1, blob2):
     
     # From: https://stackoverflow.com/questions/58604326/which-ssim-is-correct-skimage-metrics-structural-similarity
     # Compute SSIM between two images
-    score = structural_similarity(first, second, full=False, multichannel=True, data_range=255)       
+    score = structural_similarity(first, second, full=False, multichannel=True, data_range=255)
     if score < constants.TILE_DIFF_THRESHOLD:
         return False
     return True
