@@ -4,6 +4,7 @@ output/
 snapshots/
 *.gpkg
 .vscode
+.idea
 /*.sh
 /*.txt
 
