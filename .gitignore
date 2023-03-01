@@ -5,7 +5,7 @@ snapshots/
 *.gpkg
 .vscode
 /*.sh
-*.txt
+/*.txt
 
 Cache*
 User/
