@@ -36,7 +36,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: build service docker image
-        run: docker build -t test-build-service:latest -f MergerService/Dockerfile .
+        run: docker build --no-cache -t test-build-service:latest -f MergerService/Dockerfile .
 
       - name: build cli docker image
-        run: docker build -t test-build-service:latest -f MergerCli/Dockerfile .
+        run: docker build --no-cache -t test-build-service:latest -f MergerCli/Dockerfile .

@@ -59,7 +59,7 @@ namespace MergerService.Src
         {
             string type = source.Type.ToUpper();
             string path = source.Path;
-            string lol = "xd":
+            string lol = "xd";
 
             // If the source is not the target
             if (!isTarget)
