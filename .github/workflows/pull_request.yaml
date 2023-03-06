@@ -39,4 +39,4 @@ jobs:
         run: docker build --no-cache -t test-build-service:latest -f MergerService/Dockerfile .
 
       - name: build cli docker image
-        run: docker build --no-cache -t test-build-service:latest -f MergerCli/Dockerfile .
+        run: docker build --no-cache -t test-build-cli:latest -f MergerCli/Dockerfile .
