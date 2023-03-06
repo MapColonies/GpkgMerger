@@ -1,5 +1,4 @@
 using MergerLogic.Batching;
-using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -12,11 +11,11 @@ namespace MergerLogic.DataTypes
         private IEnumerator<Tile> _tiles;
         private bool _done;
         private long _completedTiles;
-
         private readonly IPathUtils _pathUtils;
         private IFileSystem _fileSystem;
 
         private readonly string[] _supportedFileExtensions = { ".png", ".jpg", ".jpeg" };
+        static readonly object _locker = new object();
 
         public FS(IPathUtils pathUtils, IServiceProvider container,
             string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false)
@@ -107,37 +106,43 @@ namespace MergerLogic.DataTypes
             }
         }
 
-        public override List<Tile> GetNextBatch(out string batchIdentifier)
+        public override List<Tile> GetNextBatch(out string batchIdentifier,out string? nextBatchIdentifier, long? totalTilesCount)
         {
-            batchIdentifier = this._completedTiles.ToString();
-            List<Tile> tiles = new List<Tile>(this.BatchSize);
-
-            if (this._done)
+            lock (_locker)
             {
-                this.Reset();
+                batchIdentifier = this._completedTiles.ToString();
+                List<Tile> tiles = new List<Tile>(this.BatchSize);
+                nextBatchIdentifier = batchIdentifier;
+                
+                if (this._done)
+                {
+                    return tiles;
+                }
+                
+                while (!this._done && tiles.Count < this.BatchSize)
+                {
+                    Tile tile = this._tiles.Current;
+                    tiles.Add(tile);
+                    this._done = !this._tiles.MoveNext();
+                }
+                Interlocked.Add(ref _completedTiles, tiles.Count);
+                nextBatchIdentifier = this._completedTiles.ToString();
                 return tiles;
             }
-
-            while (!this._done && tiles.Count < this.BatchSize)
-            {
-                Tile tile = this._tiles.Current;
-                tiles.Add(tile);
-                this._done = !this._tiles.MoveNext();
-            }
-
-            this._completedTiles += tiles.Count;
-
-            return tiles;
         }
 
         public override void setBatchIdentifier(string batchIdentifier)
         {
-            this._completedTiles = long.Parse(batchIdentifier);
-            // uncomment to make this function work at any point of the run and not only after the source initialization
-            //this.tiles.Reset();
-            for (long i = 0; i < this._completedTiles; i++)
+            lock (_locker)
             {
+                this._tiles = this.GetTiles();
                 this._tiles.MoveNext();
+                _completedTiles = long.Parse(batchIdentifier);
+                
+                for (long i = 0; i < this._completedTiles; i++)
+                {
+                    this._tiles.MoveNext();
+                }
             }
         }
 

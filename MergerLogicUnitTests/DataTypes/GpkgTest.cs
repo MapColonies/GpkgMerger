@@ -669,7 +669,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             string testIdentifier = offset.ToString();
             gpkg.setBatchIdentifier(testIdentifier);
-            gpkg.GetNextBatch(out string batchIdentifier);
+            gpkg.GetNextBatch(out string batchIdentifier, out string? _, null);
             Assert.AreEqual(testIdentifier, batchIdentifier);
             this._gpkgUtilsMock.Verify(utils => utils.GetBatch(10, offset), Times.Once);
             this.VerifyAll();
@@ -716,11 +716,11 @@ namespace MergerLogicUnitTests.DataTypes
                 this._serviceProviderMock.Object, "test.gpkg", batchSize, grid, origin,
                 isBase, extent);
 
-            gpkg.GetNextBatch(out string batchIdentifier);
-            gpkg.GetNextBatch(out batchIdentifier);
+            gpkg.GetNextBatch(out string batchIdentifier, out string? _, null);
+            gpkg.GetNextBatch(out batchIdentifier, out string? _, null);
             Assert.AreNotEqual("0", batchIdentifier);
             gpkg.Reset();
-            gpkg.GetNextBatch(out batchIdentifier);
+            gpkg.GetNextBatch(out batchIdentifier, out string? _, null);
             Assert.AreEqual("0", batchIdentifier);
             this._gpkgUtilsMock.Verify(utils => utils.GetBatch(batchSize, 0), Times.Exactly(2));
             this._gpkgUtilsMock.Verify(utils => utils.GetBatch(batchSize, It.IsAny<long>()), Times.Exactly(3));
@@ -790,7 +790,7 @@ namespace MergerLogicUnitTests.DataTypes
             for (int i = 0; i < tileBatches.Count; i++)
             {
                 var exactedBatch = tileBatches[i].Where(t => !isOneXOne || t.Z != 0);
-                var res = gpkg.GetNextBatch(out string batchIdentifier);
+                var res = gpkg.GetNextBatch(out string batchIdentifier, out string? _, null);
 
                 Assert.IsTrue(res.SequenceEqual(exactedBatch, EqualityComparerFactory.Create<Tile>(
                     (t1, t2) => t1.Z == t2.Z && t1.X == t2.X && t1.Y == t2.Y)));

@@ -648,7 +648,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             string testIdentifier = offset.ToString();
             s3Source.setBatchIdentifier(testIdentifier);
-            s3Source.GetNextBatch(out string batchIdentifier);
+            s3Source.GetNextBatch(out string batchIdentifier, out string? _, null);
             Assert.AreEqual(testIdentifier, batchIdentifier);
 
             this.VerifyAll();
@@ -657,7 +657,7 @@ namespace MergerLogicUnitTests.DataTypes
         #endregion
 
         #region Reset
-
+        
         public static IEnumerable<object[]> GenResetParams()
         {
             return DynamicDataGenerator.GeneratePrams(
@@ -700,20 +700,20 @@ namespace MergerLogicUnitTests.DataTypes
                     .Setup(converter => converter.TryToTwoXOne(It.IsAny<Tile>()))
                     .Returns<Tile>(t => t);
             }
-
+        
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
             var s3Source = new S3(this._pathUtilsMock.Object, this._serviceProviderMock.Object, 
                 "test", batchSize, grid, origin, false);
-
-            s3Source.GetNextBatch(out string batchIdentifier);
-            s3Source.GetNextBatch(out batchIdentifier);
+        
+            s3Source.GetNextBatch(out string batchIdentifier, out string? _, null);
+            s3Source.GetNextBatch(out batchIdentifier,out string? _, null);
             Assert.AreNotEqual(null, batchIdentifier);
             s3Source.Reset();
-            s3Source.GetNextBatch(out batchIdentifier);
-            Assert.AreEqual(null, batchIdentifier);
+            s3Source.GetNextBatch(out batchIdentifier, out string? _, null);
+            Assert.AreEqual("Null", batchIdentifier);
             this.VerifyAll();
         }
-
+        
         #endregion
 
         #region GetNextBatch

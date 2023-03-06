@@ -16,6 +16,8 @@ namespace MergerLogic.DataTypes
         private IEnumerator<int> _zoomEnumerator;
         private string? _continuationToken;
         private bool _endOfRead;
+        static readonly object _locker = new object();
+        private const string nullStringValue = "Null";
 
         private readonly IPathUtils _pathUtils;
 
@@ -71,57 +73,61 @@ namespace MergerLogic.DataTypes
             return zoomLevels;
         }
 
-        public override List<Tile> GetNextBatch(out string batchIdentifier)
+        public override List<Tile> GetNextBatch(out string currentBatchIdentifier,out string? nextBatchIdentifier, long? totalTilesCount)
         {
-            batchIdentifier = this._continuationToken;
-            List<Tile> tiles = new List<Tile>();
-            int missingTiles = this.BatchSize;
-
-            while (missingTiles > 0)
+            lock (_locker)
             {
-                if (this._endOfRead && !this._zoomEnumerator.MoveNext())
+                currentBatchIdentifier = this._continuationToken ?? nullStringValue;
+                List<Tile> tiles = new List<Tile>();
+                int missingTiles = this.BatchSize;
+                
+                while (missingTiles > 0)
                 {
-                    break;
-                }
-
-                string path = $"{this.Path}/{this._zoomEnumerator.Current}/";
-
-                var listRequests = new ListObjectsV2Request
-                {
-                    BucketName = this._bucket,
-                    Prefix = path,
-                    StartAfter = path,
-                    MaxKeys = missingTiles,
-                    ContinuationToken = this._continuationToken
-                };
-
-                var listObjectsTask = this._client.ListObjectsV2Async(listRequests);
-                var response = listObjectsTask.Result;
-
-                foreach (S3Object item in response.S3Objects)
-                {
-                    Tile? tile = this.Utils.GetTile(item.Key);
-                    if (tile is null)
+                    if (this._endOfRead && !this._zoomEnumerator.MoveNext())
                     {
-                        continue;
+                        break;
                     }
 
-                    tile = this.ToCurrentGrid(tile);
-                    if (tile is null)
+                    string path = $"{this.Path}/{this._zoomEnumerator.Current}/";
+                    var listRequests = new ListObjectsV2Request
                     {
-                        continue;
+                        BucketName = this._bucket,
+                        Prefix = path,
+                        StartAfter = path,
+                        MaxKeys = missingTiles,
+                        ContinuationToken = this._continuationToken
+                    };
+
+                    var listObjectsTask = this._client.ListObjectsV2Async(listRequests);
+                    var response = listObjectsTask.Result;
+
+                    foreach (S3Object item in response.S3Objects)
+                    {
+                        Tile? tile = this.Utils.GetTile(item.Key);
+                        if (tile is null)
+                        {
+                            continue;
+                        }
+
+                        tile = this.ToCurrentGrid(tile);
+                        if (tile is null)
+                        {
+                            continue;
+                        }
+
+                        tile = this.ConvertOriginTile(tile)!;
+                        tiles.Add(tile);
                     }
 
-                    tile = this.ConvertOriginTile(tile)!;
-                    tiles.Add(tile);
+                    missingTiles -= response.KeyCount;
+                    this._continuationToken = response.NextContinuationToken;
+                    this._endOfRead = !response.IsTruncated;
                 }
+                
+                nextBatchIdentifier = this._continuationToken;
 
-                missingTiles -= response.KeyCount;
-                this._continuationToken = response.NextContinuationToken;
-                this._endOfRead = !response.IsTruncated;
+                return tiles;
             }
-
-            return tiles;
         }
 
         public override void setBatchIdentifier(string batchIdentifier)

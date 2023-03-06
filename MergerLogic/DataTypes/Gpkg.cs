@@ -9,6 +9,7 @@ namespace MergerLogic.DataTypes
         private long _offset;
         private Extent _extent;
         private readonly IConfigurationManager _configManager;
+        static readonly object _locker = new object();
 
         public Gpkg(IConfigurationManager configuration, IServiceProvider container,
             string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false, Extent? extent = null)
@@ -70,29 +71,48 @@ namespace MergerLogic.DataTypes
 
         public override void Reset()
         {
-            this._offset = 0;
+            lock (_locker)
+            {
+                this._offset = 0;
+            } 
         }
 
-        public override List<Tile> GetNextBatch(out string batchIdentifier)
+        public override List<Tile> GetNextBatch(out string currentBatchIdentifier, out string? nextBatchIdentifier, long? totalTilesCount)
         {
-            batchIdentifier = this._offset.ToString();
-            //TODO: optimize after IOC refactoring
-            int counter = 0;
-            List<Tile> tiles = this.Utils.GetBatch(this.BatchSize, this._offset)
-                .Select(t =>
+            lock (_locker)
+            {
+                currentBatchIdentifier = this._offset.ToString();
+                List<Tile> tiles = new List<Tile>();
+                if (this._offset != totalTilesCount)
                 {
-                    Tile tile = this.ConvertOriginTile(t);
-                    tile = this.ToCurrentGrid(tile);
-                    counter++;
-                    return tile;
-                }).Where(t => t != null).ToList();
-            this._offset += counter;
-            return tiles;
+                    //TODO: optimize after IOC refactoring
+                    int counter = 0;
+                    
+                    tiles = this.Utils.GetBatch(this.BatchSize, this._offset)
+                        .Select(t =>
+                        {
+                            Tile tile = this.ConvertOriginTile(t);
+                            tile = this.ToCurrentGrid(tile);
+                            counter++;
+                            return tile;
+                        }).Where(t => t != null).ToList();
+                    
+                    Interlocked.Add(ref this._offset, counter);
+                    nextBatchIdentifier = this._offset.ToString();
+                    
+                    return tiles;
+                }
+                nextBatchIdentifier = this._offset.ToString();
+                return tiles;
+            }
         }
 
         public override void setBatchIdentifier(string batchIdentifier)
         {
-            this._offset = long.Parse(batchIdentifier);
+            lock (_locker)
+            {
+                this._offset = long.Parse(batchIdentifier);
+            }
         }
 
         protected override Tile InternalGetLastExistingTile(Coord baseCoords)
