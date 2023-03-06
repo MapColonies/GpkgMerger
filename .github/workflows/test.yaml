@@ -35,5 +35,8 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v2
 
-      - name: build Docker image
-        run: docker build -t test-build:latest .
+      - name: build service docker image
+        run: docker build -t test-build-service:latest -f MergerService/Dockerfile .
+
+      - name: build cli docker image
+        run: docker build -t test-build-service:latest -f MergerCli/Dockerfile .
