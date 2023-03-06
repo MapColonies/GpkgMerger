@@ -1,6 +1,9 @@
-name: tests
+name: "Publish Release on Tag Push"
 
-on: [pull_request]
+on:
+  push:
+    tags:
+      - "v*"
 
 jobs:
   build_and_push:
