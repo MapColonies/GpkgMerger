@@ -1,4 +1,4 @@
-name: tests
+name: "Pull Request"
 
 on: [pull_request]
 
@@ -26,3 +26,17 @@ jobs:
 
       - name: Run tests
         run: dotnet test --no-restore --verbosity normal
+
+  build_image:
+    name: Build Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v2
+
+      - name: build service docker image
+        run: docker build --no-cache -t test-build-service:latest -f MergerService/Dockerfile .
+
+      - name: build cli docker image
+        run: docker build --no-cache -t test-build-cli:latest -f MergerCli/Dockerfile .
