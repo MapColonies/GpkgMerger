@@ -100,7 +100,7 @@ namespace MergerCli
                         continue;
                     }
 
-                    process.Start(format, baseData, sources[i], batchSize, _batchStatusManager);
+                    process.Start(format, baseData, sources[i], _batchStatusManager);
                     baseData.IsNew = false;
                     stopWatch.Stop();
 

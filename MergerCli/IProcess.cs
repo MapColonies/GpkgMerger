@@ -6,8 +6,7 @@ namespace MergerCli
 {
     internal interface IProcess
     {
-        void Start(TileFormat targetFormat, IData baseData, IData newData, int batchSize,
-            BatchStatusManager batchStatusManager);
+        void Start(TileFormat targetFormat, IData baseData, IData newData, BatchStatusManager batchStatusManager);
 
         void Validate(IData baseData, IData newData, string? incompleteBatchIdentifier = null);
     }
