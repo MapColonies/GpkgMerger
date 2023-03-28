@@ -1,0 +1,109 @@
+global:
+  cloudProvider: {}
+  tracing: {}
+  metrics: {}
+  environment: {}
+
+enabled: true
+environment: development
+replicaCount: 1
+initialDelaySeconds: 60
+resetOnConfigChange: true
+isExporter: true
+
+cloudProvider:
+  dockerRegistryUrl: 'acrarolibotnonprod.azurecr.io'
+  imagePullSecretName: 'acr-registry'
+  flavor: minikube
+
+image:
+  repository: tiles-merger
+  tag: 'v1.0.13t'
+
+local:
+  s3:
+    secret:
+      create: true
+      accessKeyId: minioadmin
+      secretAccessKey: minioadmin
+  storage:
+    internalPv:
+      create: false #for local deployment only
+      name: internal-pvc
+      storage: 5Gi
+      hostPath: '/tiles' #tiles hostPatch
+    ingestionPv:
+      create: false #for local deployment only
+      name: local-sources-pv
+      storage: 5Gi
+      hostPath: /layerSources
+    internalPvc:
+      create: false #for local deployment only
+      storage: 4Gi
+    ingestionSourcePvc:
+      create: false #for local deployment only
+      storage: 4Gi
+    accessModes: ReadWriteOnce
+    storageClassName: host-path
+
+rasterCommon:
+  useNodeAffinity: false
+  serviceUrls:
+    jobManager: http://192.168.49.2:30033
+    heartbeatManager: http://192.168.49.2:8084
+  storage:
+    fs:
+      ingestionSourcePvc:
+        name: ingestion-source-pvc
+        subPath: ingestion-source
+      internalPvc:
+        name: internal-pvc
+        tilesSubPath: tiles
+        gpkgSubPath: gpkgs
+    s3:
+      endpointUrl: "10.45.130.11:9000"
+      tilesBucket: "dtm"
+      secretName: "s3-secret"
+      sslEnabled: false
+      request:
+        timeoutSec: 5
+        retries: 3
+      logToConsole: false
+  ca:
+    secretName: ''
+    path: '/usr/local/share/ca-certificates'
+    key: 'ca.crt'
+env:
+  general:
+    validate: false
+  TASK:
+    types:
+      - jobType: 'rasterTilesExporter'
+        taskType: 'rasterTilesExporter'
+    pollingTime: 1000
+    maxAttempts: 3
+  heartbeat:
+    intervalMs: 300
+  HTTP:
+    retries: 2
+  logging:
+    logLevel:
+      default: "Information"
+      aspNetCore: "Warning"
+  tracing:
+    enabled: false
+    url: http://localhost:4317/v1/trace
+    ratio: 0.01
+  metrics:
+    enabled: false
+    url: http://localhost:4317/v1/metrics
+    interval: 5000
+resources:
+  enabled: false
+  value:
+    limits:
+      cpu: "100m"
+      memory: "128Mi"
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
