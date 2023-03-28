@@ -13,7 +13,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $releaseName }}-{{ $chartName }}
+  name: {{ $releaseName }}-deployment
   labels:
     app: {{ $chartName }}
     component: {{ $chartName }}
@@ -71,7 +71,7 @@ spec:
     #   nodeSelector:
     #     knownNode: eastus-1-node-1
       containers:
-        - name: {{ $releaseName }}-{{ $chartName }}-deployment
+        - name: {{ $releaseName }}
           {{- with .Values.image }}
           image: {{ $cloudProviderDockerRegistryUrl }}{{ .repository }}:{{ .tag }}
           {{- end }}
@@ -100,7 +100,7 @@ spec:
                   key: secretAccessKey
           envFrom:
             - configMapRef:
-                name: {{ $releaseName }}-{{ $chartName }}-configmap
+                name: {{ $releaseName }}-configmap
           ports:
             - name: http
               containerPort: 8080
