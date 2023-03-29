@@ -76,6 +76,7 @@ rasterCommon:
 env:
   general:
     validate: true
+    batchSize: 1000
   TASK:
     types:
       - jobType: 'Ingestion_Update'

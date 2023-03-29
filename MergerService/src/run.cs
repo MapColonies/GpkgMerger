@@ -29,6 +29,7 @@ namespace MergerService.Src
         private readonly IHeartbeatClient _heartbeatClient;
         private readonly string _inputPath;
         private readonly string _gpkgPath;
+        private readonly int _batchSize;
         private readonly string _filePath;
         private readonly bool _shouldValidate;
 
@@ -53,6 +54,7 @@ namespace MergerService.Src
             this._gpkgPath = this._configurationManager.GetConfiguration("GENERAL", "gpkgPath");
             this._filePath = this._configurationManager.GetConfiguration("GENERAL", "filePath");
             this._shouldValidate = this._configurationManager.GetConfiguration<bool>("GENERAL", "validate");
+            this._batchSize = this._configurationManager.GetConfiguration<int>("GENERAL", "batchSize");
         }
 
         private string BuildPath(Source source, bool isTarget)
@@ -275,7 +277,7 @@ namespace MergerService.Src
                         stopWatch.Reset();
                         stopWatch.Start();
 
-                        int singleTileBatchCount = (int)bounds.Size();
+                        long singleTileBatchCount = bounds.Size();
                         int tileProgressCount = 0;
 
                         // TODO: remove comment and check that the activity is created (When bug will be fixed)
@@ -287,10 +289,11 @@ namespace MergerService.Src
                             continue;
                         }
 
-                        List<IData> sources = this.BuildDataList(metadata.Sources, singleTileBatchCount);
+                        List<IData> sources = this.BuildDataList(metadata.Sources, this._batchSize);
                         IData target = sources[0];
 
-                        List<Tile> tiles = new List<Tile>(singleTileBatchCount);
+                        // TODO: fix to use inner batch size (add iteration inside loop below)
+                        List<Tile> tiles = new List<Tile>((int)singleTileBatchCount);
 
                         this._logger.LogInformation($"Total amount of tiles to merge for current batch iteration: {singleTileBatchCount}");
 
@@ -326,8 +329,8 @@ namespace MergerService.Src
                                     tileProgressCount++;
                                     overallTileProgressCount++;
 
-                                    // Show progress every 1000 tiles
-                                    if (overallTileProgressCount % 1000 == 0)
+                                    // Show progress every batchSize
+                                    if (overallTileProgressCount % this._batchSize == 0)
                                     {
                                         this._logger.LogDebug(
                                             $"Job: {task.JobId}, Task: {task.Id}, Tile Count: {overallTileProgressCount} / {totalTileCount}");
