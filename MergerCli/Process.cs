@@ -23,8 +23,7 @@ namespace MergerCli
             this._logger = logger;
         }
 
-        public void Start(TileFormat targetFormat, IData baseData, IData newData, int batchSize,
-            BatchStatusManager batchStatusManager)
+        public void Start(TileFormat targetFormat, IData baseData, IData newData, BatchStatusManager batchStatusManager)
         {
             long totalTileCount = newData.TileCount();
             batchStatusManager.InitializeLayer(newData.Path);

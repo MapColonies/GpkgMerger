@@ -29,6 +29,7 @@ namespace MergerService.Src
         private readonly IHeartbeatClient _heartbeatClient;
         private readonly string _inputPath;
         private readonly string _gpkgPath;
+        private readonly int _batchSize;
         private readonly string _filePath;
         private readonly bool _shouldValidate;
 
@@ -53,6 +54,7 @@ namespace MergerService.Src
             this._gpkgPath = this._configurationManager.GetConfiguration("GENERAL", "gpkgPath");
             this._filePath = this._configurationManager.GetConfiguration("GENERAL", "filePath");
             this._shouldValidate = this._configurationManager.GetConfiguration<bool>("GENERAL", "validate");
+            this._batchSize = this._configurationManager.GetConfiguration<int>("GENERAL", "batchSize");
         }
 
         private string BuildPath(Source source, bool isTarget)
@@ -67,7 +69,7 @@ namespace MergerService.Src
                 {
                     return path;
                 }
-                
+
                 return this._fileSystem.Path.Join(this._inputPath, path);
             }
 
@@ -80,7 +82,7 @@ namespace MergerService.Src
             {
                 return this._fileSystem.Path.Join(this._filePath, path);
             }
-            
+
             return path;
         }
 
@@ -198,7 +200,8 @@ namespace MergerService.Src
 
                         continue;
                     }
-                    finally {
+                    finally
+                    {
                         this._heartbeatClient.Stop();
                     }
 
@@ -250,7 +253,7 @@ namespace MergerService.Src
             Func<IData, Coord, Tile?> getTileByCoord = metadata.IsNewTarget
                 ? (_, _) => null
                 : (source, coord) => source.GetCorrespondingTile(coord, true);
-            
+
             // Log the task
             this._logger.LogInformation($"starting task: {task.ToString()}");
 
@@ -259,6 +262,10 @@ namespace MergerService.Src
                 //TODO: add task identifier to activity
                 //taskActivity.AddTag("jobId", task.jodId);
                 //taskActivity.AddTag("taskId", task.id);
+
+                long totalTileCount = metadata.Batches.Sum(batch => batch.Size());
+                long overallTileProgressCount = 0;
+                this._logger.LogInformation($"Total amount of tiles to merge: {totalTileCount}");
 
                 foreach (TileBounds bounds in metadata.Batches)
                 {
@@ -270,24 +277,25 @@ namespace MergerService.Src
                         stopWatch.Reset();
                         stopWatch.Start();
 
-                        int totalTileCount = (int)bounds.Size();
+                        long singleTileBatchCount = bounds.Size();
                         int tileProgressCount = 0;
 
                         // TODO: remove comment and check that the activity is created (When bug will be fixed)
                         // batchActivity.AddTag("size", totalTileCount);
 
                         // Skip if there are no tiles in the given bounds
-                        if (totalTileCount == 0)
+                        if (singleTileBatchCount == 0)
                         {
                             continue;
                         }
 
-                        List<IData> sources = this.BuildDataList(metadata.Sources, totalTileCount);
+                        List<IData> sources = this.BuildDataList(metadata.Sources, this._batchSize);
                         IData target = sources[0];
 
-                        List<Tile> tiles = new List<Tile>(totalTileCount);
+                        // TODO: fix to use inner batch size (add iteration inside loop below)
+                        List<Tile> tiles = new List<Tile>((int)singleTileBatchCount);
 
-                        this._logger.LogInformation($"Total amount of tiles to merge: {totalTileCount}");
+                        this._logger.LogInformation($"Total amount of tiles to merge for current batch: {singleTileBatchCount}");
 
                         // Go over the bounds of the current batch
                         using (this._activitySource.StartActivity("merging tiles"))
@@ -306,8 +314,8 @@ namespace MergerService.Src
                                     // Add all sources tiles 
                                     foreach (IData source in sources.Skip(1))
                                     {
-                                        Tile? tile = source.GetCorrespondingTile(coord, true); 
-                                        correspondingTileBuilders.Add(()=> tile);
+                                        Tile? tile = source.GetCorrespondingTile(coord, true);
+                                        correspondingTileBuilders.Add(() => tile);
                                     }
 
                                     byte[]? blob = this._tileMerger.MergeTiles(correspondingTileBuilders, coord,
@@ -319,27 +327,14 @@ namespace MergerService.Src
                                     }
 
                                     tileProgressCount++;
+                                    overallTileProgressCount++;
 
-                                    // Show progress every 1000 tiles
-                                    if (tileProgressCount % 1000 == 0)
+                                    // Show progress every batchSize
+                                    if (overallTileProgressCount % this._batchSize == 0)
                                     {
                                         this._logger.LogDebug(
-                                            $"Job: {task.JobId}, Task: {task.Id}, Tile Count: {tileProgressCount} / {totalTileCount}");
-
-                                        try
-                                        {
-                                            task.Percentage = (int)(100 * (double)tileProgressCount / totalTileCount);
-                                            UpdateParams updateParams = new UpdateParams()
-                                            {
-                                                Status = Status.IN_PROGRESS, Percentage = task.Percentage
-                                            };
-                                            taskUtils.UpdateProgress(task.JobId, task.Id, updateParams);
-                                        }
-                                        catch (Exception e)
-                                        {
-                                            this._logger.LogError(
-                                                $"Error in MergerService run - update task percentage: {e.Message}");
-                                        }
+                                            $"Job: {task.JobId}, Task: {task.Id}, Tile Count: {overallTileProgressCount} / {totalTileCount}");
+                                            UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);
                                     }
                                 }
                             }
@@ -348,9 +343,10 @@ namespace MergerService.Src
                         using (this._activitySource.StartActivity("saving tiles"))
                         {
                             target.UpdateTiles(tiles);
+                            UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);
                         }
 
-                        this._logger.LogInformation($"Tile Count: {tileProgressCount} / {totalTileCount}");
+                        this._logger.LogInformation($"Tile Count: {overallTileProgressCount} / {totalTileCount}");
                         target.Wrapup();
 
                         stopWatch.Stop();
@@ -438,6 +434,28 @@ namespace MergerService.Src
             this._logger.LogInformation($"Target's valid: {hasSameTiles}");
 
             return hasSameTiles;
+        }
+
+        public void UpdateRelativeProgress(MergeTask task, long currentAmount, long totalAmount, ITaskUtils taskUtils)
+        {
+            using (var activity = this._activitySource.StartActivity("update relative task progress"))
+            {
+                try
+                {
+                    task.Percentage = (int)(100 * (double)currentAmount / totalAmount);
+                    UpdateParams updateParams = new UpdateParams()
+                    {
+                        Status = Status.IN_PROGRESS,
+                        Percentage = task.Percentage
+                    };
+                    taskUtils.UpdateProgress(task.JobId, task.Id, updateParams);
+                }
+                catch (Exception e)
+                {
+                    this._logger.LogError(
+                        $"Error in MergerService run - update task percentage: {e.Message}");
+                }
+            }
         }
     }
 }
