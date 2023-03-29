@@ -148,7 +148,6 @@ namespace MergerService.Utils
             }
         }
 
-
         private void UpdateFailed(string jobId, string taskId, int attempts, string reason, bool resettable, string? managerCallbackUrl)
         {
             using (var activity = this._activitySource.StartActivity("fail task"))
