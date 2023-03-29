@@ -265,7 +265,7 @@ namespace MergerService.Src
 
                 long totalTileCount = metadata.Batches.Sum(batch => batch.Size());
                 long overallTileProgressCount = 0;
-                this._logger.LogInformation($"Total amount of tiles to merge [All external batches]: {totalTileCount}");
+                this._logger.LogInformation($"Total amount of tiles to merge: {totalTileCount}");
 
                 foreach (TileBounds bounds in metadata.Batches)
                 {
@@ -295,7 +295,7 @@ namespace MergerService.Src
                         // TODO: fix to use inner batch size (add iteration inside loop below)
                         List<Tile> tiles = new List<Tile>((int)singleTileBatchCount);
 
-                        this._logger.LogInformation($"Total amount of tiles to merge for current batch iteration: {singleTileBatchCount}");
+                        this._logger.LogInformation($"Total amount of tiles to merge for current batch: {singleTileBatchCount}");
 
                         // Go over the bounds of the current batch
                         using (this._activitySource.StartActivity("merging tiles"))
