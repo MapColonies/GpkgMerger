@@ -80,7 +80,7 @@ namespace MergerLogic.Clients
 
         public void UpdateTile(Tile tile)
         {
-            string key = this._pathUtils.GetTilePath(this.path, tile, true);
+            string key = this._pathUtils.GetTilePath(this._path, tile, true);
 
             var request = new PutObjectRequest()
             {
@@ -98,7 +98,7 @@ namespace MergerLogic.Clients
 
         private string? GetTileKey(int z, int x, int y)
         {
-            string keyPrefix = this._pathUtils.GetTilePathWithoutExtension(this.path, z, x, y, true);
+            string keyPrefix = this._pathUtils.GetTilePathWithoutExtension(this._path, z, x, y, true);
             var listRequests = new ListObjectsV2Request { BucketName = this._bucket, Prefix = keyPrefix, MaxKeys = 1 };
 
             var listObjectsTask = this._client.ListObjectsV2Async(listRequests);

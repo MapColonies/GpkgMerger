@@ -19,21 +19,23 @@ namespace MergerLogic.Utils
             this._logger = logger;
         }
 
-        public IData CreateDataSource(string type, string path, int batchSize, Grid? grid = null, GridOrigin? origin = null, Extent? extent = null, bool isBase = false)
+        public IData CreateDataSource(string type, string path, int batchSize, Grid? grid = null, GridOrigin? origin = null, 
+                                        Extent? extent = null, bool isBase = false, bool shouldBackup = false)
         {
             IData data;
-
+            bool vacuum = this._configurationManager.GetConfiguration<bool>("GPKG", "vacuum");
+            
             switch (type.ToLower())
             {
                 case "gpkg":
-                    data = new Gpkg(this._configurationManager, this._container, path, batchSize, grid, origin, isBase, extent);
+                    data = new Gpkg(this._container, path, batchSize, grid, origin, isBase, shouldBackup, vacuum, extent);
                     break;
                 case "s3":
                     path = this._pathUtils.RemoveTrailingSlash(path);
-                    data = new S3(this._pathUtils, this._container, path, batchSize, grid, origin, isBase);
+                    data = new S3(this._container, path, batchSize, grid, origin, isBase, shouldBackup);
                     break;
                 case "fs":
-                    data = new FS(this._pathUtils, this._container, path, batchSize, grid, origin, isBase);
+                    data = new FS(this._container, path, batchSize, grid, origin, isBase, shouldBackup);
                     break;
                 case "wmts":
                 case "xyz":

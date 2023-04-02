@@ -11,11 +11,13 @@ namespace MergerCli
         private readonly HashSet<string> _sourceTypes =
             new HashSet<string>(new[] { "fs", "s3", "gpkg", "wmts", "tms", "xyz" });
 
+        private readonly IConfigurationManager _configurationManager;
         private readonly IDataFactory _dataFactory;
         private readonly ILogger _logger;
 
-        public SourceParser(IDataFactory dataFactory, ILogger<SourceParser> logger)
+        public SourceParser(IConfigurationManager configuration, IDataFactory dataFactory, ILogger<SourceParser> logger)
         {
+            this._configurationManager = configuration;
             this._dataFactory = dataFactory;
             this._logger = logger;
         }
@@ -37,6 +39,8 @@ namespace MergerCli
 
             int idx = 3;
             bool isBase = true;
+            bool shouldBackup = this._configurationManager.GetConfiguration<bool>("GENERAL", "backup");
+
             while (idx < args.Length)
             {
                 switch (args[idx].ToLower())
@@ -44,7 +48,7 @@ namespace MergerCli
                     case "gpkg":
                         try
                         {
-                            sources.Add(this.ParseGpkgSource(args, ref idx, batchSize, isBase));
+                            sources.Add(this.ParseGpkgSource(args, ref idx, batchSize, isBase, shouldBackup));
                         }
                         catch (Exception e)
                         {
@@ -56,7 +60,7 @@ namespace MergerCli
                     case "s3":
                         try
                         {
-                            sources.Add(this.ParseFileSource(args, ref idx, batchSize, isBase));
+                            sources.Add(this.ParseFileSource(args, ref idx, batchSize, isBase, shouldBackup));
                         }
                         catch (Exception e)
                         {
@@ -81,7 +85,9 @@ namespace MergerCli
                         throw new Exception($"Currently there is no support for the data type '{args[idx]}'");
                 }
 
+                // Only first source is considered as terget and so should be the only base that is backed up
                 isBase = false;
+                shouldBackup = false;
             }
 
             return sources;
@@ -97,7 +103,7 @@ namespace MergerCli
             return null;
         }
 
-        private IData ParseFileSource(string[] args, ref int idx, int batchSize, bool isBase)
+        private IData ParseFileSource(string[] args, ref int idx, int batchSize, bool isBase, bool shouldBackup)
         {
             const int requiredParamCount = 2;
             const int optionalParamCount = 2;
@@ -115,10 +121,10 @@ namespace MergerCli
 
             idx += paramCount;
             Grid? grid = GetGrid(isOneXOne);
-            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, grid, origin, null, isBase);
+            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, grid, origin, null, isBase, shouldBackup);
         }
 
-        private IData ParseGpkgSource(string[] args, ref int idx, int batchSize, bool isBase)
+        private IData ParseGpkgSource(string[] args, ref int idx, int batchSize, bool isBase, bool shouldBackup)
         {
             const int requiredParamCount = 2;
             const int optionalParamCount = 3;
@@ -142,7 +148,7 @@ namespace MergerCli
 
             idx += paramCount;
             Grid? grid = GetGrid(isOneXOne);
-            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, grid, origin, extent, isBase);
+            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, grid, origin, extent, isBase, shouldBackup);
         }
 
         private IData ParseHttpSource(string[] args, ref int idx, int batchSize, bool isBase)

@@ -122,6 +122,7 @@ namespace MergerCli
                 }
             }
 
+            baseData.BackupTiles(tiles);
             baseData.UpdateTiles(tiles);
 
             Interlocked.Add(ref tileProgressCount, tiles.Count);

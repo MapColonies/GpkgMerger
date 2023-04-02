@@ -19,13 +19,10 @@ namespace MergerLogic.DataTypes
         static readonly object _locker = new object();
         private const string nullStringValue = "Null";
 
-        private readonly IPathUtils _pathUtils;
-
-        public S3(IPathUtils pathUtils, IServiceProvider container,
-            string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase)
-            : base(container, DataType.S3, path, batchSize, grid, origin, isBase)
+        public S3(IServiceProvider container, string path, int batchSize, Grid? grid, GridOrigin? origin, 
+                    bool isBase = false, bool backup = false)
+                    : base(container, DataType.S3, path, batchSize, grid, origin, isBase, backup)
         {
-            this._pathUtils = pathUtils;
             this._continuationToken = null;
             this._endOfRead = false;
 
@@ -44,6 +41,15 @@ namespace MergerLogic.DataTypes
             this._bucket = configurationManager.GetConfiguration("S3", "bucket");
         }
 
+        protected override void CreateBackupFile()
+        {
+            string backupPath = this.GenerateBackupPath();
+            // TODO: Change tiles to have GridOrigin so this could be inherited from Data
+            this._backup = new S3(this._container, backupPath, this.BatchSize, 
+                                    this.Grid, GridOrigin.LOWER_LEFT, isBase: true, backup: false);
+            this._backup.IsNew = true;
+        }
+
         protected override GridOrigin DefaultOrigin()
         {
             return GridOrigin.LOWER_LEFT;
@@ -51,6 +57,7 @@ namespace MergerLogic.DataTypes
 
         public override void Reset()
         {
+            base.Reset();
             this._continuationToken = null;
             this._endOfRead = false;
             this._zoomEnumerator = this._zoomLevels.GetEnumerator();

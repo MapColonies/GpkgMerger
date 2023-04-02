@@ -32,12 +32,12 @@ namespace MergerLogic.Clients
         {
             if (!this.Exist())
             {
-                return this._fileSystem.Path.GetFileNameWithoutExtension(this.path);
+                return this._fileSystem.Path.GetFileNameWithoutExtension(this._path);
             }
 
             string tileCache = "";
 
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this._path}"))
             {
                 connection.Open();
 
@@ -60,7 +60,7 @@ namespace MergerLogic.Clients
         {
             Extent extent = new Extent();
 
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this._path}"))
             {
                 connection.Open();
 
@@ -86,7 +86,7 @@ namespace MergerLogic.Clients
         {
             long tileCount = 0;
 
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this._path}"))
             {
                 connection.Open();
 
@@ -107,7 +107,7 @@ namespace MergerLogic.Clients
 
         public void UpdateExtent(Extent extent)
         {
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this._path}"))
             {
                 connection.Open();
 
@@ -129,7 +129,7 @@ namespace MergerLogic.Clients
         {
             Tile tile = null;
 
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this._path}"))
             {
                 connection.Open();
 
@@ -156,7 +156,7 @@ namespace MergerLogic.Clients
 
         public override bool TileExists(int z, int x, int y)
         {
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this._path}"))
             {
                 connection.Open();
 
@@ -184,7 +184,7 @@ namespace MergerLogic.Clients
 
         public void InsertTiles(IEnumerable<Tile> tiles)
         {
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this._path}"))
             {
                 connection.Open();
 
@@ -219,7 +219,7 @@ namespace MergerLogic.Clients
         {
             List<Tile> tiles = new List<Tile>();
 
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this._path}"))
             {
                 connection.Open();
 
@@ -257,7 +257,7 @@ namespace MergerLogic.Clients
             }
 
             Tile? lastTile = null;
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this._path}"))
             {
                 connection.Open();
 
@@ -311,8 +311,8 @@ namespace MergerLogic.Clients
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            this._logger.LogInformation($"Vacuuming GPKG {this.path}");
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            this._logger.LogInformation($"Vacuuming GPKG {this._path}");
+            using (var connection = new SQLiteConnection($"Data Source={this._path}"))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())
@@ -333,16 +333,16 @@ namespace MergerLogic.Clients
 
         public void Create(Extent extent, bool isOneXOne = false)
         {
-            this._logger.LogInformation($"creating new gpkg: {this.path}");
+            this._logger.LogInformation($"creating new gpkg: {this._path}");
             
             // Create hierarchy if needed
-            string dir = this._fileSystem.Path.GetDirectoryName(this.path);
+            string dir = this._fileSystem.Path.GetDirectoryName(this._path);
             if(dir.Length > 0 && !this._fileSystem.Directory.Exists(dir)) {
                 this._fileSystem.Directory.CreateDirectory(dir);
             }
             
-            SQLiteConnection.CreateFile(this.path);
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            SQLiteConnection.CreateFile(this._path);
+            using (var connection = new SQLiteConnection($"Data Source={this._path}"))
             {
                 connection.Open();
                 using (var transaction = connection.BeginTransaction())
@@ -598,7 +598,7 @@ namespace MergerLogic.Clients
 
         public void CreateTileCacheValidationTriggers()
         {
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this._path}"))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())
@@ -643,7 +643,7 @@ namespace MergerLogic.Clients
 
         public void DeleteTileTableTriggers()
         {
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this._path}"))
             {
                 var cmdBuilder = new StringBuilder();
                 connection.Open();
@@ -672,13 +672,13 @@ namespace MergerLogic.Clients
         public bool Exist()
         {
             // Get full path to gpkg file
-            string fullPath = this._fileSystem.Path.GetFullPath(this.path);
+            string fullPath = this._fileSystem.Path.GetFullPath(this._path);
             return this._fileSystem.File.Exists(fullPath);
         }
 
         public void UpdateTileMatrixTable(bool isOneXOne = false)
         {
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this._path}"))
             {
                 int maxZoom;
                 connection.Open();
@@ -702,7 +702,7 @@ namespace MergerLogic.Clients
 
         public override bool IsValidGrid(bool isOneXOne = false)
         {
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            using (var connection = new SQLiteConnection($"Data Source={this._path}"))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())
@@ -716,7 +716,7 @@ namespace MergerLogic.Clients
                     var isValid = count == 1;
                     if (!isValid)
                     {
-                        this._logger.LogWarning($"gpkg {this.path} has failed grid tile matrix set validation");
+                        this._logger.LogWarning($"gpkg {this._path} has failed grid tile matrix set validation");
                         return false;
                     }
                 }
@@ -753,7 +753,7 @@ namespace MergerLogic.Clients
                                 !reader.GetDouble(6).IsApproximatelyEqualTo(res, doublePrecession))
                             {
                                 this._logger.LogWarning(
-                                    $"gpkg {this.path} has failed grid validation for zoom {rowZoom}");
+                                    $"gpkg {this._path} has failed grid validation for zoom {rowZoom}");
                                 return false;
                             }
                         }

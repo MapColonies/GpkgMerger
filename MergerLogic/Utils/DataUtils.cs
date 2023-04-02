@@ -6,13 +6,13 @@ namespace MergerLogic.Utils
 {
     public abstract class DataUtils : IDataUtils
     {
-        protected readonly string path;
+        protected readonly string _path;
         protected readonly IGeoUtils GeoUtils;
         protected readonly IImageFormatter Formatter;
 
         public DataUtils(string path, IGeoUtils geoUtils, IImageFormatter formatter)
         {
-            this.path = path;
+            this._path = path;
             this.GeoUtils = geoUtils;
             this.Formatter = formatter;
         }
@@ -26,6 +26,20 @@ namespace MergerLogic.Utils
         public virtual Tile? GetTile(Coord coord)
         {
             return this.GetTile(coord.Z, coord.X, coord.Y);
+        }
+
+        public List<Tile> GetTiles(IEnumerable<Coord> coords)
+        {
+            List<Tile> tiles = new List<Tile>();
+            foreach (Coord coord in coords)
+            {
+                Tile? tile = this.GetTile(coord.Z, coord.X, coord.Y);
+                if (tile is not null)
+                {
+                    tiles.Add(tile);
+                }
+            }
+            return tiles;
         }
 
         public abstract bool TileExists(int z, int x, int y);

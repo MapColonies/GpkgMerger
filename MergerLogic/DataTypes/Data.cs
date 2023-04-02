@@ -44,6 +44,7 @@ namespace MergerLogic.DataTypes
         protected delegate Tile? NullableTileConvertorFunction(Tile tile);
 
         protected IServiceProvider _container;
+        protected IData _backup;
         public DataType Type { get; }
         public string Path { get; }
         public Grid Grid { get; }
@@ -51,6 +52,7 @@ namespace MergerLogic.DataTypes
         public Extent Extent { get => this.GetExtent(); protected set => this.SetExtent(value); }
         public bool IsBase { get; }
         public bool IsNew { get; set; }
+        public bool ShouldBackup { get; set; }
         public bool IsOneXOne => this.Grid == Grid.OneXOne;
         
         protected readonly int BatchSize;
@@ -58,6 +60,7 @@ namespace MergerLogic.DataTypes
         protected GetTileFromXYZFunction GetTile;
         protected readonly GetTileFromCoordFunction GetLastExistingTile;
         protected readonly IGeoUtils GeoUtils;
+        protected readonly IPathUtils PathUtils;
         protected readonly ILogger _logger;
 
         #region tile grid converters
@@ -72,7 +75,7 @@ namespace MergerLogic.DataTypes
         protected ValFromCoordFunction ConvertOriginCoord;
 
         protected Data(IServiceProvider container, DataType type, string path, int batchSize, Grid? grid, 
-            GridOrigin? origin, bool isBase, Extent? extent = null)
+            GridOrigin? origin, bool isBase, bool backup, Extent? extent = null)
         {
             this._container = container;
             var loggerFactory = container.GetRequiredService<ILoggerFactory>();
@@ -83,9 +86,11 @@ namespace MergerLogic.DataTypes
             var utilsFactory = container.GetRequiredService<IUtilsFactory>();
             this.Utils = utilsFactory.GetDataUtils<TUtilsType>(path);
             this.GeoUtils = container.GetRequiredService<IGeoUtils>();
+            this.PathUtils = container.GetRequiredService<IPathUtils>();
             this.Grid = grid ?? this.DefaultGrid();
             this.Origin = origin ?? this.DefaultOrigin();
             this.IsBase = isBase;
+            this.ShouldBackup = backup;
             this.SetExtent(extent);
 
             // The following delegates are for code performance and to reduce branching while handling tiles
@@ -138,6 +143,10 @@ namespace MergerLogic.DataTypes
                 }
             }
 
+            if(this.ShouldBackup) {
+                this.CreateBackupFile();
+            }
+
             this.Validate();
         }
 
@@ -152,6 +161,14 @@ namespace MergerLogic.DataTypes
 
         protected virtual void Validate() {
             this._logger.LogDebug($"{this.Type} source, skipping validation phase");
+        }
+
+        protected virtual void CreateBackupFile() {
+            this._logger.LogDebug($"{this.Type} source, skipping backup phase");
+        }
+
+        protected string GenerateBackupPath() {
+            return this.PathUtils.AddToFileName(this.Path, "_backup", false);
         }
 
         protected abstract GridOrigin DefaultOrigin();
@@ -169,7 +186,13 @@ namespace MergerLogic.DataTypes
             return this.GeoUtils.DefaultExtent(this.IsOneXOne);
         }
 
-        public abstract void Reset();
+        public virtual void Reset()
+        {
+            if (this.ShouldBackup)
+            {
+                this._backup.Reset();
+            }
+        }
 
         protected virtual Tile? InternalGetLastExistingTile(Coord coords)
         {
@@ -272,15 +295,27 @@ namespace MergerLogic.DataTypes
             return correspondingTile;
         }
 
-        public void UpdateTiles(IEnumerable<Tile> tiles)
-        {
-            var targetTiles = tiles.Select(tile =>
+        private IEnumerable<Tile> ConvertTiles(IEnumerable<Tile> tiles) {
+            return tiles.Select(tile =>
             {
                 Tile convertedTile = this.ConvertOriginTile(tile);
                 Tile? targetTile = this.FromCurrentGridTile(convertedTile);
                 return targetTile;
-            }).Where(tile => tile is not null);
+            }).Where(tile => tile is not null)!;
+        }
+
+        public void UpdateTiles(IEnumerable<Tile> tiles)
+        {
+            var targetTiles = this.ConvertTiles(tiles);
             this.InternalUpdateTiles(targetTiles);
+        }
+
+        public void BackupTiles(IEnumerable<Tile> tiles) {
+            if(this.ShouldBackup) {
+                var targetTiles = this.ConvertTiles(tiles);
+                List<Tile> backupTiles = this.Utils.GetTiles(targetTiles.Select(t => t.GetCoord()));
+                this._backup.UpdateTiles(backupTiles);
+            }
         }
 
         protected abstract void InternalUpdateTiles(IEnumerable<Tile> targetTiles);
@@ -288,7 +323,10 @@ namespace MergerLogic.DataTypes
         public virtual void Wrapup()
         {
             this.Reset();
-            this._logger.LogDebug($"{this.Type} source, skipping wrapup phase");
+            
+            if(this.ShouldBackup) {
+                this._backup.Wrapup();
+            }
         }
 
         public abstract bool Exists();

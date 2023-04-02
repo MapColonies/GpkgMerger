@@ -11,17 +11,15 @@ namespace MergerLogic.DataTypes
         private IEnumerator<Tile> _tiles;
         private bool _done;
         private long _completedTiles;
-        private readonly IPathUtils _pathUtils;
         private IFileSystem _fileSystem;
 
         private readonly string[] _supportedFileExtensions = { ".png", ".jpg", ".jpeg" };
         static readonly object _locker = new object();
 
-        public FS(IPathUtils pathUtils, IServiceProvider container,
-            string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false)
-            : base(container, DataType.FOLDER, path, batchSize, grid, origin, isBase)
+        public FS(IServiceProvider container, string path, int batchSize, Grid? grid, GridOrigin? origin, 
+                    bool isBase = false, bool backup = false)
+                    : base(container, DataType.FOLDER, path, batchSize, grid, origin, isBase, backup)
         {
-            this._pathUtils = pathUtils;
             this.Reset();
         }
 
@@ -34,6 +32,15 @@ namespace MergerLogic.DataTypes
             this._fileSystem.Directory.CreateDirectory(this.Path);
         }
 
+        protected override void CreateBackupFile()
+        {
+            string backupPath = this.GenerateBackupPath();
+            // TODO: Change tiles to have GridOrigin so this could be inherited from Data
+            this._backup = new FS(this._container, backupPath, this.BatchSize, 
+                                    this.Grid, GridOrigin.LOWER_LEFT, isBase: true, backup: false);
+            this._backup.IsNew = true;
+        }
+
         protected override GridOrigin DefaultOrigin()
         {
             return GridOrigin.LOWER_LEFT;
@@ -41,6 +48,7 @@ namespace MergerLogic.DataTypes
 
         public override void Reset()
         {
+            base.Reset();
             this._tiles = this.GetTiles();
             this._tiles.MoveNext();
             this._done = false;
@@ -87,7 +95,7 @@ namespace MergerLogic.DataTypes
                             .EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
                             .Where(file => this._supportedFileExtensions.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
                 {
-                    Coord coord = this._pathUtils.FromPath(filePath, out _);
+                    Coord coord = this.PathUtils.FromPath(filePath, out _);
                     Tile? tile = this.Utils.GetTile(coord);
                     if (tile is null)
                     {
@@ -168,7 +176,7 @@ namespace MergerLogic.DataTypes
         {
             foreach (Tile tile in targetTiles)
             {
-                string tilePath = this._pathUtils.GetTilePath(this.Path, tile);
+                string tilePath = this.PathUtils.GetTilePath(this.Path, tile);
                 byte[] buffer = tile.GetImageBytes();
                 using (var ms = new MemoryStream(buffer))
                 {

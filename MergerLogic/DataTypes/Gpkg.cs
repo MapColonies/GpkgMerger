@@ -8,15 +8,16 @@ namespace MergerLogic.DataTypes
     {
         private long _offset;
         private Extent _extent;
-        private readonly IConfigurationManager _configManager;
+        private readonly bool _vacuum;
         static readonly object _locker = new object();
 
-        public Gpkg(IConfigurationManager configuration, IServiceProvider container,
-            string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false, Extent? extent = null)
-            : base(container, DataType.GPKG, path, batchSize, grid, origin, isBase, extent)
+        public Gpkg(IServiceProvider container,
+            string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false, bool backup = false, 
+            bool vacuum = false, Extent? extent = null)
+            : base(container, DataType.GPKG, path, batchSize, grid, origin, isBase, backup, extent)
         {
             this._offset = 0;
-            this._configManager = configuration;
+            this._vacuum = vacuum;
 
             if (isBase)
             {
@@ -64,6 +65,15 @@ namespace MergerLogic.DataTypes
             }
         }
 
+        protected override void CreateBackupFile()
+        {
+            string backupPath = this.GenerateBackupPath();
+            // TODO: Change tiles to have GridOrigin so this could be inherited from Data
+            this._backup = new Gpkg(this._container, backupPath, this.BatchSize, this.Grid, GridOrigin.LOWER_LEFT, 
+                                    isBase: true, backup: false, this._vacuum, this.Extent);
+            this._backup.IsNew = true;
+        }
+
         protected override GridOrigin DefaultOrigin()
         {
             return GridOrigin.UPPER_LEFT;
@@ -71,10 +81,11 @@ namespace MergerLogic.DataTypes
 
         public override void Reset()
         {
+            base.Reset();
             lock (_locker)
             {
                 this._offset = 0;
-            } 
+            }
         }
 
         public override List<Tile> GetNextBatch(out string currentBatchIdentifier, out string? nextBatchIdentifier, long? totalTilesCount)
@@ -150,13 +161,12 @@ namespace MergerLogic.DataTypes
             this.Utils.UpdateTileMatrixTable(this.IsOneXOne);
             this.Utils.CreateTileCacheValidationTriggers();
 
-            bool vacuum = this._configManager.GetConfiguration<bool>("GPKG", "vacuum");
-            if (vacuum)
+            if (this._vacuum)
             {
                 this.Utils.Vacuum();
             }
 
-            this.Reset();
+            base.Wrapup();
         }
 
         public override bool Exists()

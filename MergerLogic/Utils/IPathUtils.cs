@@ -11,5 +11,6 @@ namespace MergerLogic.Utils
         string GetTilePath(string basePath, Tile tile, bool isS3 = false);
         string RemoveTrailingSlash(string path, bool isS3 = false);
         string GetTilePathWithoutExtension(string basePath, int z, int x, int y, bool isS3 = false);
+        string AddToFileName(string path, string add, bool isS3 = false);
     }
 }

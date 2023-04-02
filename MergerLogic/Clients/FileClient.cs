@@ -42,7 +42,7 @@ public class FileClient : DataUtils, IFileClient
         {
             //this may or may not be faster then checking specific files of every supported type depending on the used file system
             return this._fileSystem.Directory
-                .EnumerateFiles(this.path, $"{tilePath}.*", SearchOption.TopDirectoryOnly).FirstOrDefault();
+                .EnumerateFiles(this._path, $"{tilePath}.*", SearchOption.TopDirectoryOnly).FirstOrDefault();
         }
         catch (DirectoryNotFoundException)
         {

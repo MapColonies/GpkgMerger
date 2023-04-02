@@ -60,6 +60,19 @@ namespace MergerLogic.Utils
             return new Coord(z, x, y);
         }
 
+        public string AddToFileName(string path, string add, bool isS3 = false)
+        {
+            char separator = GetSeparator(isS3);
+            string[] parts = path.Split(separator);
+            int last = parts.Length - 1;
+            
+            string newName = this._fileSystem.Path.GetFileNameWithoutExtension(parts[last]);
+            string extension = this._fileSystem.Path.GetExtension(parts[last]);
+            parts[last] = $"{newName}{add}{extension}";
+
+            return string.Join(separator, parts);
+        }
+
         private char GetSeparator(bool isS3)
         {
             return isS3 ? '/' : this._fileSystem.Path.DirectorySeparatorChar;
