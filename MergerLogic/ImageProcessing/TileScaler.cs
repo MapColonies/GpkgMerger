@@ -19,12 +19,21 @@ namespace MergerLogic.ImageProcessing
             double tilePartX = targetCoords.X % scale;
             double tilePartY = scale - 1 - (targetCoords.Y % scale);
 
-            // Calculate dest tile sizes as seen in src zoom level
-            int subTileSize = TILE_SIZE / scale;
+            /* Calculate dest tile sizes as seen in src zoom level.
+            * The "shift" should be calculated according to the scale.
+            *
+            * Example:
+            * Assume src_zoom = 3, dst_zoom = 13, TILE_SIZE = 256
+            * scale = 2 ^ (13 - 3) = 2 ^ 10 = 1024
+            * subTileShift = 256 / 1024 = 0.25
+            *
+            * The x and y pixles will be according to the calculated shift.
+            */
+            double subTileShift = (double)TILE_SIZE / scale;
 
             // Calculate start pixles in src
-            int pixelX = (int)(tilePartX * subTileSize);
-            int pixelY = (int)(tilePartY * subTileSize);
+            int pixelX = (int)(tilePartX * subTileShift);
+            int pixelY = (int)(tilePartY * subTileShift);
 
             var srcPixels = baseImage.GetPixels();
             MagickImage scaledImage;
@@ -37,20 +46,9 @@ namespace MergerLogic.ImageProcessing
             * If the scale is bigger than the tile size, then that means that the dst image needs to be represented as one pixel in the src.
             * Calculation:
             * scale = 2 ^ (dst_zoom - src_zoom)
-            * subTileSize = TILE_SIZE / scale
+            * subTileShift = TILE_SIZE / scale
             *
             * Note that the scale is always in powers of 2 because of the ratio between zoom levels.
-            *
-            * Proof:
-            * Assume scale > TILE_SIZE, then:
-            * subTileSize = TILE_SIZE / scale > TILE_SIZE => TILE_SIZE > TILE_SIZE * scale => 1 > scale
-            *
-            * Example:
-            * Assume src_zoom = 3, dst_zoom = 13, TILE_SIZE = 256
-            * scale = 2 ^ (13 - 3) = 2 ^ 10 = 1024
-            * subTileSize = 256 / 1024 = 0.25
-            * We can see that for this example, any difference in 8 zoom levels or more will result in a resolution smaller than a pixel (0.25) in the src.
-            * We round up to a pixel and create the dst image as that pixels color.
             */
             if (scale >= TILE_SIZE)
             {
@@ -59,8 +57,8 @@ namespace MergerLogic.ImageProcessing
             }
             else
             {
-                int maxSrcX = pixelX + subTileSize;
-                int maxSrcY = pixelY + subTileSize;
+                int maxSrcX = pixelX + (int)subTileShift;
+                int maxSrcY = pixelY + (int)subTileShift;
 
                 int channels = baseImage.ChannelCount;
                 int byteCount = channels * TILE_SIZE * TILE_SIZE;
