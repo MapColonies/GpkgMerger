@@ -35,62 +35,64 @@ namespace MergerLogic.ImageProcessing
             int pixelX = (int)(tilePartX * subTileShift);
             int pixelY = (int)(tilePartY * subTileShift);
 
-            var srcPixels = baseImage.GetPixels();
             MagickImage scaledImage;
             var colorSpace = baseImage.ColorSpace;
             var colorType = baseImage.ColorType;
             baseImage.ColorType = baseImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor; 
             baseImage.ColorSpace = ColorSpace.sRGB;
 
-            /*
-            * If the scale is bigger than the tile size, then that means that the dst image needs to be represented as one pixel in the src.
-            * Calculation:
-            * scale = 2 ^ (dst_zoom - src_zoom)
-            * subTileShift = TILE_SIZE / scale
-            *
-            * Note that the scale is always in powers of 2 because of the ratio between zoom levels.
-            */
-            if (scale >= TILE_SIZE)
+            using (var srcPixels = baseImage.GetPixels())
             {
-                var color = srcPixels.GetPixel(pixelX, pixelY).ToColor()!;
-                scaledImage = new MagickImage(color,TILE_SIZE,TILE_SIZE);
-            }
-            else
-            {
-                int maxSrcX = pixelX + (int)subTileShift;
-                int maxSrcY = pixelY + (int)subTileShift;
-
-                int channels = baseImage.ChannelCount;
-                int byteCount = channels * TILE_SIZE * TILE_SIZE;
-                var pixels = new byte[byteCount];
-
-                int scaledChannels = scale * channels;
-                int maxRowOffset = TILE_SIZE * scaledChannels;
-                int pixelRowBytes = TILE_SIZE * channels;
-
-                //loop relevant source pixels
-                for (int i = pixelX; i < maxSrcX; i++)
+                /*
+                * If the scale is bigger than the tile size, then that means that the dst image needs to be represented as one pixel in the src.
+                * Calculation:
+                * scale = 2 ^ (dst_zoom - src_zoom)
+                * subTileShift = TILE_SIZE / scale
+                *
+                * Note that the scale is always in powers of 2 because of the ratio between zoom levels.
+                */
+                if (scale >= TILE_SIZE)
                 {
-                    for (int j = pixelY; j < maxSrcY; j++)
+                    var color = srcPixels.GetPixel(pixelX, pixelY).ToColor()!;
+                    scaledImage = new MagickImage(color,TILE_SIZE,TILE_SIZE);
+                }
+                else
+                {
+                    int maxSrcX = pixelX + (int)subTileShift;
+                    int maxSrcY = pixelY + (int)subTileShift;
+
+                    int channels = baseImage.ChannelCount;
+                    int byteCount = channels * TILE_SIZE * TILE_SIZE;
+                    var pixels = new byte[byteCount];
+
+                    int scaledChannels = scale * channels;
+                    int maxRowOffset = TILE_SIZE * scaledChannels;
+                    int pixelRowBytes = TILE_SIZE * channels;
+
+                    //loop relevant source pixels
+                    for (int i = pixelX; i < maxSrcX; i++)
                     {
-                        var srcPixel = srcPixels.GetValue(i, j);
-                        var targetXStart = (i - pixelX) * scale;
-                        var targetYStart = (j - pixelY) * scale;
-                        var targetPixelIdxStart = (targetXStart + (TILE_SIZE * targetYStart)) * channels;
-                        for (int pixelColOffset = 0; pixelColOffset < scaledChannels; pixelColOffset += channels)
+                        for (int j = pixelY; j < maxSrcY; j++)
                         {
-                            for (int pixelRowOffset = 0; pixelRowOffset < maxRowOffset; pixelRowOffset += pixelRowBytes)
+                            var srcPixel = srcPixels.GetValue(i, j);
+                            var targetXStart = (i - pixelX) * scale;
+                            var targetYStart = (j - pixelY) * scale;
+                            var targetPixelIdxStart = (targetXStart + (TILE_SIZE * targetYStart)) * channels;
+                            for (int pixelColOffset = 0; pixelColOffset < scaledChannels; pixelColOffset += channels)
                             {
-                                int pixelIdx = targetPixelIdxStart + pixelColOffset + pixelRowOffset;
-                                srcPixel!.CopyTo(pixels, pixelIdx); //copy all channels 
+                                for (int pixelRowOffset = 0; pixelRowOffset < maxRowOffset; pixelRowOffset += pixelRowBytes)
+                                {
+                                    int pixelIdx = targetPixelIdxStart + pixelColOffset + pixelRowOffset;
+                                    srcPixel!.CopyTo(pixels, pixelIdx); //copy all channels 
+                                }
                             }
                         }
                     }
-                }
 
-                var set = new PixelReadSettings(TILE_SIZE, TILE_SIZE, StorageType.Char,
-                    channels == 4 ? PixelMapping.RGBA : PixelMapping.RGB);
-                scaledImage = new MagickImage(pixels, set);
+                    var set = new PixelReadSettings(TILE_SIZE, TILE_SIZE, StorageType.Char,
+                        channels == 4 ? PixelMapping.RGBA : PixelMapping.RGB);
+                    scaledImage = new MagickImage(pixels, set);
+                }
             }
 
             scaledImage.Format = baseImage.Format;
