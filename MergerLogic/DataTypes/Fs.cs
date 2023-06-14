@@ -80,7 +80,7 @@ namespace MergerLogic.DataTypes
 
             foreach (int zoomLevel in zoomLevels)
             {
-                string path = $"{this.Path}/{zoomLevel}";
+                string path = $"{this.Path}{this._fileSystem.Path.DirectorySeparatorChar}{zoomLevel}";
 
                 // Go over directory and count png and jpg files
                 foreach (string filePath in this._fileSystem.Directory
@@ -154,7 +154,7 @@ namespace MergerLogic.DataTypes
 
             foreach (int zoomLevel in zoomLevels)
             {
-                string path = $"{this.Path}/{zoomLevel}";
+                string path = $"{this.Path}{this._fileSystem.Path.DirectorySeparatorChar}{zoomLevel}";
 
                 // Go over directory and count png and jpg files
                 count += this._fileSystem.Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
