@@ -250,9 +250,11 @@ namespace MergerService.Src
             MergeMetadata metadata = task.Parameters;
             Stopwatch stopWatch = new Stopwatch();
             TimeSpan ts;
+
+            bool shouldUpscale = !metadata.IsNewTarget;
             Func<IData, Coord, Tile?> getTileByCoord = metadata.IsNewTarget
                 ? (_, _) => null
-                : (source, coord) => source.GetCorrespondingTile(coord, true);
+                : (source, coord) => source.GetCorrespondingTile(coord, shouldUpscale);
 
             // Log the task
             this._logger.LogInformation($"starting task: {task.ToString()}");
@@ -314,7 +316,7 @@ namespace MergerService.Src
                                     // Add all sources tiles 
                                     foreach (IData source in sources.Skip(1))
                                     {
-                                        Tile? tile = source.GetCorrespondingTile(coord, true);
+                                        Tile? tile = source.GetCorrespondingTile(coord, shouldUpscale);
                                         correspondingTileBuilders.Add(() => tile);
                                     }
 

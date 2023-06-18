@@ -45,10 +45,12 @@ namespace MergerCli
 
             this._logger.LogInformation($"Total amount of tiles to merge: {totalTileCount - tileProgressCount}");
             var uploadOnly = this._configManager.GetConfiguration<bool>("GENERAL", "uploadOnly");
+            
+            bool shouldUpscale = !(uploadOnly || baseData.IsNew);
             _getTileByCoord = uploadOnly || baseData.IsNew ?
                 (_) => null
                 :
-                (targetCoords) => baseData.GetCorrespondingTile(targetCoords, true);
+                (targetCoords) => baseData.GetCorrespondingTile(targetCoords, shouldUpscale);
             
             ParallelRun(targetFormat, baseData, newData, batchStatusManager,
                 tileProgressCount, totalTileCount, resumeBatchIdentifier, resumeMode, pollForBatch);
