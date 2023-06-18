@@ -293,6 +293,7 @@ namespace MergerService.Src
 
                         List<IData> sources = this.BuildDataList(metadata.Sources, this._batchSize);
                         IData target = sources[0];
+                        target.IsNew = metadata.IsNewTarget;
 
                         // TODO: fix to use inner batch size (add iteration inside loop below)
                         List<Tile> tiles = new List<Tile>((int)singleTileBatchCount);
