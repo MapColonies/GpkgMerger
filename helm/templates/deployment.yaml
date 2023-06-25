@@ -60,6 +60,9 @@ spec:
       - name: ingestion-storage
         persistentVolumeClaim:
           claimName: {{ .Values.rasterCommon.storage.fs.ingestionSourcePvc.name }}
+      - name: output-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.rasterCommon.storage.fs.internalPvc.name }}
       {{- if .Values.rasterCommon.ca.secretName }}
       - name: root-ca
         secret:
@@ -107,7 +110,7 @@ spec:
           volumeMounts:
             - name: ingestion-storage
               mountPath: /layerSources
-            - name: ingestion-storage
+            - name: output-storage
               mountPath: /app/tiles_outputs
             {{- if .Values.rasterCommon.ca.secretName }}
             - name: root-ca
