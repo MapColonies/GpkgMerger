@@ -9,8 +9,6 @@ on:
 jobs:
   build_and_push:
     runs-on: ubuntu-latest
-    env:
-      Docker_Repository: ${{ secrets.ACR_URL }}/${{ github.event.repository.name }}:${{ github.ref_name }}
     steps:
       - uses: actions/checkout@v2
       - uses: azure/docker-login@v1
@@ -18,8 +16,11 @@ jobs:
           login-server: ${{ secrets.ACR_URL }}
           username: ${{ secrets.ACR_PUSH_USER }}
           password: ${{ secrets.ACR_PUSH_TOKEN }}
-      - name: downcase repository
-        run: |
-          echo "Docker_Repository=${Docker_Repository,,}" >>${GITHUB_ENV}
-      - run: docker build . -t ${{ env.Docker_Repository }}
-      - run: docker push ${{ env.Docker_Repository }}
+      - name: Build service docker image
+        run: docker build -t tiles-merger-service:${{ github.ref_name }} -f MergerService/Dockerfile .
+      - name: Push service docker image
+        run: docker push tiles-merger-service:${{ github.ref_name }}
+      - name: Build CLI docker image
+        run: docker build -t tiles-merger-cli:${{ github.ref_name }} -f MergerCli/Dockerfile .
+      - name: Push CLI docker image
+        run: docker push tiles-merger-cli:${{ github.ref_name }}      
