@@ -104,7 +104,9 @@ namespace MergerLogic.DataTypes
                 this.FromCurrentGridCoord = tile => tile;
                 this.ToCurrentGrid = tile => tile;
             }
-            this.GetTile = this.GetTileInitializer;
+
+            GetTileFromXYZFunction fixedGridGetTileFunction = this.IsOneXOne ? this.GetOneXOneTile : this.Utils.GetTile;
+
             if (this.Origin == GridOrigin.UPPER_LEFT)
             {
                 this.ConvertOriginTile = tile =>
@@ -116,11 +118,20 @@ namespace MergerLogic.DataTypes
                 {
                     return this.GeoUtils.FlipY(coord);
                 };
+                this.GetTile = (z, x, y) =>
+                {
+                    int newY = this.GeoUtils.FlipY(z, y);
+                    Tile? tile = fixedGridGetTileFunction(z, x, newY);
+                    //set cords to current origin
+                    tile?.SetCoords(z, x, y);
+                    return tile;
+                };
             }
             else
             {
                 this.ConvertOriginTile = tile => tile;
                 this.ConvertOriginCoord = coord => coord.Y;
+                this.GetTile = fixedGridGetTileFunction;
             }
             
             this.Initialize();
@@ -234,29 +245,6 @@ namespace MergerLogic.DataTypes
             }
             Tile? tile = this.Utils.GetTile(oneXoneBaseCoords);
             return tile != null ? this.OneXOneConvertor.ToTwoXOne(tile) : null;
-        }
-
-
-        // lazy load get tile function on first call for compatibility with null utills in contractor
-        protected Tile? GetTileInitializer(int z, int x, int y)
-        {
-            GetTileFromXYZFunction fixedGridGetTileFunction = this.IsOneXOne ? this.GetOneXOneTile : this.Utils.GetTile;
-            if (this.Origin != GridOrigin.LOWER_LEFT)
-            {
-                this.GetTile = (z, x, y) =>
-                {
-                    int newY = this.GeoUtils.FlipY(z, y);
-                    Tile? tile = fixedGridGetTileFunction(z, x, newY);
-                    //set cords to current origin
-                    tile?.SetCoords(z, x, y);
-                    return tile;
-                };
-            }
-            else
-            {
-                this.GetTile = fixedGridGetTileFunction;
-            }
-            return this.GetTile(z, x, y);
         }
 
         public abstract List<Tile> GetNextBatch(out string batchIdentifier, out string? nextBatchIdentifier, long? totalTilesCount);

@@ -538,6 +538,9 @@ namespace MergerLogicUnitTests.DataTypes
                 .Setup(directory => directory.GetDirectories("test"))
                 .Returns(new string[] { "1" });
             this._fileSystemMock
+                .Setup(fs => fs.Path.DirectorySeparatorChar)
+                .Returns('/');
+            this._fileSystemMock
                 .Setup(fs => fs.Directory.EnumerateFiles(It.IsAny<string>(), "*.*", SearchOption.AllDirectories))
                 .Returns(Array.Empty<string>());
 
@@ -655,6 +658,10 @@ namespace MergerLogicUnitTests.DataTypes
                 .InSequence(seq)
                 .Setup(directory => directory.GetDirectories("test"))
                 .Returns(new string[] { "1" });
+            this._fileSystemMock
+                .InSequence(seq)
+                .Setup(fs => fs.Path.DirectorySeparatorChar)
+                .Returns('/');
             this._directoryMock
                 .InSequence(seq)
                 .Setup(d => d.EnumerateFiles("test/1", "*.*", SearchOption.AllDirectories))
@@ -904,6 +911,11 @@ namespace MergerLogicUnitTests.DataTypes
                 .InSequence(seq)
                 .Setup(directory => directory.GetDirectories("test"))
                 .Returns(directories ?? new string[] {});
+            
+            this._fileSystemMock
+                .InSequence(seq)
+                .Setup(fs => fs.Path.DirectorySeparatorChar)
+                .Returns('/');
 
             this._fileSystemMock
                 .InSequence(seq)
@@ -927,6 +939,9 @@ namespace MergerLogicUnitTests.DataTypes
             this._directoryMock
                 .Setup(directory => directory.GetDirectories("test"))
                 .Returns(new string[] { "1" });
+            this._fileSystemMock
+                .Setup(fs => fs.Path.DirectorySeparatorChar)
+                .Returns('/');
             this._directoryMock
                 .Setup(d => d.EnumerateFiles(It.IsAny<string>(), "*.*", SearchOption.AllDirectories))
                 .Returns(fileList);
