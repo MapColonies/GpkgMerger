@@ -376,7 +376,7 @@ namespace MergerService.Src
                                     try
                                     {
                                         taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts,
-                                            "Error in validation, target not valid after run", false, managerCallbackUrl);
+                                            "Error in validation, target not valid after run", true, managerCallbackUrl);
                                     }
                                     catch (Exception innerError)
                                     {
