@@ -190,7 +190,7 @@ namespace MergerService.Src
 
                         try
                         {
-                            taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, e.Message, false, managerCallbackUrl);
+                            taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, e.Message, true, managerCallbackUrl);
                         }
                         catch (Exception innerError)
                         {
