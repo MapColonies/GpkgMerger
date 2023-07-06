@@ -17,10 +17,10 @@ jobs:
           username: ${{ secrets.ACR_PUSH_USER }}
           password: ${{ secrets.ACR_PUSH_TOKEN }}
       - name: Build service docker image
-        run: docker build -t tiles-merger-service:${{ github.ref_name }} -f MergerService/Dockerfile .
+        run: docker build -t ${{ secrets.ACR_URL }}/tiles-merger-service:${{ github.ref_name }} -f MergerService/Dockerfile .
       - name: Push service docker image
-        run: docker push tiles-merger-service:${{ github.ref_name }}
+        run: docker push ${{ secrets.ACR_URL }}/tiles-merger-service:${{ github.ref_name }}
       - name: Build CLI docker image
-        run: docker build -t tiles-merger-cli:${{ github.ref_name }} -f MergerCli/Dockerfile .
+        run: docker build -t ${{ secrets.ACR_URL }}/tiles-merger-cli:${{ github.ref_name }} -f MergerCli/Dockerfile .
       - name: Push CLI docker image
-        run: docker push tiles-merger-cli:${{ github.ref_name }}      
+        run: docker push ${{ secrets.ACR_URL }}/tiles-merger-cli:${{ github.ref_name }}      
