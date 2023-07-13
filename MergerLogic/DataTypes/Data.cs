@@ -251,12 +251,14 @@ namespace MergerLogic.DataTypes
 
         public Tile? GetCorrespondingTile(Coord coords, bool upscale)
         {
+            this._logger.LogDebug($"GetCorrespondingTile - start for coord: {coords.ToString()}, upscale: {upscale}");
             Tile? correspondingTile = this.GetTile(coords.Z, coords.X, coords.Y);
 
             if (upscale && correspondingTile == null)
             {
                 correspondingTile = this.GetLastExistingTile(coords);
             }
+            this._logger.LogDebug($"GetCorrespondingTile - end for coord: {coords.ToString()}, upscale: {upscale}");
             return correspondingTile;
         }
 

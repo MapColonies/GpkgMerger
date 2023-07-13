@@ -128,6 +128,7 @@ namespace MergerService.Src
 
         public void Start()
         {
+            this._logger.LogDebug("Start App");
             var pollingTime = this._configurationManager.GetConfiguration<int>("TASK", "pollingTime");
 
             var taskTypes = BuildTypeList();
@@ -229,6 +230,7 @@ namespace MergerService.Src
 
         private void RunTask(MergeTask task, ITaskUtils taskUtils, string? managerCallbackUrl)
         {
+            this._logger.LogDebug($"[RunTask] - start {task.ToString()}");
             // Guard clause in case there are no batches or sources
             if (task.Parameters is null || task.Parameters.Batches is null || task.Parameters.Sources is null)
             {
@@ -254,7 +256,11 @@ namespace MergerService.Src
             bool shouldUpscale = !metadata.IsNewTarget;
             Func<IData, Coord, Tile?> getTileByCoord = metadata.IsNewTarget
                 ? (_, _) => null
-                : (source, coord) => source.GetCorrespondingTile(coord, shouldUpscale);
+                : (source, coord) =>
+                {
+                    this._logger.LogDebug($"[RunTask] GetCorrespondingTile for coord {coord.ToString()}, shouldUpscale: {shouldUpscale}");
+                    return source.GetCorrespondingTile(coord, shouldUpscale);
+                };
 
             // Log the task
             this._logger.LogInformation($"starting task: {task.ToString()}");
@@ -265,12 +271,15 @@ namespace MergerService.Src
                 //taskActivity.AddTag("jobId", task.jodId);
                 //taskActivity.AddTag("taskId", task.id);
 
+                this._logger.LogDebug($"[RunTask] Recived {metadata.Batches.Length} Batches");
                 long totalTileCount = metadata.Batches.Sum(batch => batch.Size());
                 long overallTileProgressCount = 0;
+                int batchesCount = 0;
                 this._logger.LogInformation($"Total amount of tiles to merge: {totalTileCount}");
-
                 foreach (TileBounds bounds in metadata.Batches)
                 {
+                    batchesCount++;
+                    this._logger.LogDebug($"[RunTask] Run on {batchesCount} batch: {bounds.ToString()}");
                     using (var batchActivity = this._activitySource.StartActivity("batch processing"))
                     {
                         // TODO: remove comment and check that the activity is created (When bug will be fixed)
@@ -291,6 +300,7 @@ namespace MergerService.Src
                             continue;
                         }
 
+                        this._logger.LogDebug($"[RunTask] BuildDataList");
                         List<IData> sources = this.BuildDataList(metadata.Sources, this._batchSize);
                         IData target = sources[0];
                         target.IsNew = metadata.IsNewTarget;
@@ -307,23 +317,24 @@ namespace MergerService.Src
                             {
                                 for (int y = bounds.MinY; y < bounds.MaxY; y++)
                                 {
+                                    this._logger.LogDebug($"[RunTask] Handle tile z:{bounds.Zoom}, x:{x}, y:{y}");
                                     Coord coord = new Coord(bounds.Zoom, x, y);
 
                                     // Create tile builder list for current coord for all sources
-                                    List<CorrespondingTileBuilder> correspondingTileBuilders =
-                                        new List<CorrespondingTileBuilder>();
+                                    List<CorrespondingTileBuilder> correspondingTileBuilders = new List<CorrespondingTileBuilder>();
                                     // Add target tile
                                     correspondingTileBuilders.Add(() => getTileByCoord(sources[0], coord));
                                     // Add all sources tiles 
+                                    this._logger.LogDebug($"[RunTask] Get tile sources");
                                     foreach (IData source in sources.Skip(1))
                                     {
                                         Tile? tile = source.GetCorrespondingTile(coord, shouldUpscale);
                                         correspondingTileBuilders.Add(() => tile);
                                     }
-
+                                    this._logger.LogDebug($"[RunTask] MergeTiles of {correspondingTileBuilders.Count} tiles");
                                     byte[]? blob = this._tileMerger.MergeTiles(correspondingTileBuilders, coord,
                                         metadata.TargetFormat);
-
+                                    this._logger.LogDebug($"[RunTask] MergeTiles finished");
                                     if (blob != null)
                                     {
                                         tiles.Add(new Tile(coord, blob));
@@ -345,11 +356,13 @@ namespace MergerService.Src
 
                         using (this._activitySource.StartActivity("saving tiles"))
                         {
+                            this._logger.LogDebug($"[RunTask] target UpdateTiles");
                             target.UpdateTiles(tiles);
+                            this._logger.LogDebug($"[RunTask] UpdateRelativeProgress");
                             UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);
                         }
 
-                        this._logger.LogInformation($"Tile Count: {overallTileProgressCount} / {totalTileCount}");
+                        this._logger.LogInformation($"Overall tile Count: {overallTileProgressCount} / {totalTileCount}");
                         target.Wrapup();
 
                         stopWatch.Stop();
@@ -399,6 +412,7 @@ namespace MergerService.Src
                     }
                 }
             }
+            this._logger.LogDebug($"RunTask - end");
         }
 
         private bool Validate(IData target, TileBounds bounds)

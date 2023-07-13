@@ -60,6 +60,7 @@ namespace MergerLogic.DataTypes
 
         private List<int> GetZoomLevels()
         {
+            this._logger.LogDebug($"[GetZoomLevels] - start");
             List<int> zoomLevels = new List<int>();
             
             for (int zoomLevel = 0; zoomLevel < Data<IS3Client>.MaxZoomRead; zoomLevel++)
@@ -69,7 +70,7 @@ namespace MergerLogic.DataTypes
                     zoomLevels.Add(zoomLevel);
                 }
             }
-
+            this._logger.LogDebug($"[GetZoomLevels] - end");
             return zoomLevels;
         }
 
@@ -77,6 +78,7 @@ namespace MergerLogic.DataTypes
         {
             lock (_locker)
             {
+                this._logger.LogDebug($"[GetNextBatch] - start");
                 currentBatchIdentifier = this._continuationToken ?? nullStringValue;
                 List<Tile> tiles = new List<Tile>();
                 int missingTiles = this.BatchSize;
@@ -125,7 +127,7 @@ namespace MergerLogic.DataTypes
                 }
                 
                 nextBatchIdentifier = this._continuationToken;
-
+                this._logger.LogDebug($"[GetNextBatch] - end");
                 return tiles;
             }
         }
@@ -137,6 +139,7 @@ namespace MergerLogic.DataTypes
 
         private bool FolderExists(string directory)
         {
+            this._logger.LogDebug($"[FolderExists] - start call ListObjectsV2Async");
             directory = $"{this.Path}/{directory}";
 
             var listRequests = new ListObjectsV2Request
@@ -146,9 +149,9 @@ namespace MergerLogic.DataTypes
                 StartAfter = directory,
                 MaxKeys = 1
             };
-
             var task = this._client.ListObjectsV2Async(listRequests);
             var response = task.Result;
+            this._logger.LogDebug($"[FolderExists] - end");
             return response.KeyCount > 0;
         }
 
@@ -160,6 +163,7 @@ namespace MergerLogic.DataTypes
 
         public override long TileCount()
         {
+            this._logger.LogDebug($"[TileCount] - start");
             long tileCount = 0;
             string? continuationToken = null;
 
@@ -179,16 +183,18 @@ namespace MergerLogic.DataTypes
                 tileCount += response.KeyCount;
                 continuationToken = response.NextContinuationToken;
             } while (continuationToken != null);
-
+            this._logger.LogDebug($"[TileCount] - end");
             return tileCount;
         }
 
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
         {
+            this._logger.LogDebug($"[InternalUpdateTiles] - start");
             foreach (var tile in targetTiles)
             {
                 this.Utils.UpdateTile(tile);
             }
+            this._logger.LogDebug($"[InternalUpdateTiles] - end");
         }
     }
 }

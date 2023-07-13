@@ -1,6 +1,7 @@
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 using MergerLogic.ImageProcessing;
+using Microsoft.Extensions.Logging;
 
 namespace MergerLogic.Utils
 {

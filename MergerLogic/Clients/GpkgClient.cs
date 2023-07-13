@@ -18,7 +18,7 @@ namespace MergerLogic.Clients
         private readonly ITimeUtils _timeUtils;
         private readonly ILogger _logger;
         private readonly IFileSystem _fileSystem;
-
+        
         public GpkgClient(string path, ITimeUtils timeUtils, ILogger<GpkgClient> logger, IFileSystem fileSystem,
             IGeoUtils geoUtils, IImageFormatter formatter) : base(path, geoUtils, formatter)
         {
