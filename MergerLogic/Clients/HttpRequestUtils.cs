@@ -42,14 +42,14 @@ namespace MergerLogic.Clients
                 }
 
                 string message = $"{url} not found";
-                this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} message: {message}, Response: {httpRes.ToString()}");
+                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] message: {message}, Response: {httpRes.ToString()}");
                 throw new HttpRequestException(message, null, HttpStatusCode.NotFound);
             }
             else if (httpRes.StatusCode != HttpStatusCode.OK)
             {
                 string message = $"Invalid response from {url}, status: {httpRes.StatusCode}";
-                this._logger.LogWarning($"{MethodBase.GetCurrentMethod().Name} message: {message}");
-                this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} Response: {httpRes.ToString()}");
+                this._logger.LogWarning($"[{MethodBase.GetCurrentMethod().Name}] message: {message}");
+                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Response: {httpRes.ToString()}");
                 throw new HttpRequestException(message, null, httpRes.StatusCode);
             }
 
