@@ -1,5 +1,6 @@
 using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
+using System.Reflection;
 using System.Timers;
 
 namespace MergerLogic.Clients
@@ -36,7 +37,7 @@ namespace MergerLogic.Clients
             if (this._timer.Enabled) {
                 this.Stop();
             }
-            this._logger.LogInformation($"Starting heartbeat for task={taskId}");
+            this._logger.LogInformation($"{MethodBase.GetCurrentMethod().Name} Starting heartbeat for task={taskId}");
             this._timer.Enabled = true;
             this._taskId = taskId;
         }
@@ -45,9 +46,9 @@ namespace MergerLogic.Clients
         {
             if (!this._timer.Enabled)
             {
-                throw new Exception("Heartbeat interval must be running in order to stop it.");
+                throw new Exception($"{MethodBase.GetCurrentMethod().Name} Heartbeat interval must be running in order to stop it.");
             }
-            this._logger.LogInformation($"Stops heartbeats for taskId={this._taskId}");
+            this._logger.LogInformation($"{MethodBase.GetCurrentMethod().Name} Stops heartbeats for taskId={this._taskId}");
             this._timer.Stop();
             this._taskId = null;
         }
@@ -62,7 +63,7 @@ namespace MergerLogic.Clients
             }
             catch (Exception e)
             {
-                this._logger.LogError($"Could not send heartbeat for task={this._taskId}, {e.Message}");
+                this._logger.LogError($"{MethodBase.GetCurrentMethod().Name} Could not send heartbeat for task={this._taskId}, {e.Message}");
                 throw;
             }
 

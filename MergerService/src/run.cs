@@ -9,6 +9,7 @@ using MergerService.Utils;
 using System.Diagnostics;
 using System.IO.Abstractions;
 using System.Net;
+using System.Reflection;
 
 namespace MergerService.Src
 {
@@ -128,6 +129,8 @@ namespace MergerService.Src
 
         public void Start()
         {
+            string methodName = MethodBase.GetCurrentMethod().Name;
+            this._logger.LogDebug($"{methodName} Start App");
             var pollingTime = this._configurationManager.GetConfiguration<int>("TASK", "pollingTime");
 
             var taskTypes = BuildTypeList();
@@ -141,7 +144,7 @@ namespace MergerService.Src
             ITaskUtils taskUtils = new TaskUtils(this._configurationManager, this._requestUtils, this._taskUtilsLogger, this._activitySource, this._heartbeatClient);
             IJobUtils jobUtils = new JobUtils(this._configurationManager, this._requestUtils, this._jobUtilsLogger, this._activitySource, this._heartbeatClient);
 
-            this._logger.LogInformation("starting task polling loop");
+            this._logger.LogInformation($"{methodName} starting task polling loop");
             while (true)
             {
                 bool activatedAny = false;
@@ -161,11 +164,11 @@ namespace MergerService.Src
                         if (e is HttpRequestException &&
                             ((HttpRequestException)e).StatusCode == HttpStatusCode.NotFound)
                         {
-                            this._logger.LogDebug("No task was found to work on...");
+                            this._logger.LogDebug($"{methodName} No task was found to work on...");
                             continue;
                         }
 
-                        this._logger.LogError($"Error in MergerService start - get task: {e.Message}");
+                        this._logger.LogError(e, $"{methodName} Error in MergerService start - get task: {e.Message}");
                         continue;
                     }
 
@@ -177,7 +180,7 @@ namespace MergerService.Src
 
                     string? managerCallbackUrl = jobUtils.GetJob(task.JobId)?.Parameters.ManagerCallbackUrl;
                     string log = managerCallbackUrl == null ? "managerCallbackUrl not provided as job parameter" : $"managerCallback url: {managerCallbackUrl}";
-                    this._logger.LogDebug(log);
+                    this._logger.LogDebug($"{methodName}{log}");
 
                     try
                     {
@@ -186,7 +189,7 @@ namespace MergerService.Src
                     }
                     catch (Exception e)
                     {
-                        this._logger.LogError($"Error in MergerService while running task {task.Id}, error: {e.Message}");
+                        this._logger.LogError(e, $"{methodName} Error in MergerService while running task {task.Id}, error: {e.Message}");
 
                         try
                         {
@@ -194,8 +197,7 @@ namespace MergerService.Src
                         }
                         catch (Exception innerError)
                         {
-                            this._logger.LogError(
-                                $"Error in MergerService while updating reject status, RunTask catch block - update task failure: {innerError.Message}");
+                            this._logger.LogError(e, $"{methodName} Error in MergerService while updating reject status, RunTask catch block - update task failure: {innerError.Message}");
                         }
 
                         continue;
@@ -210,11 +212,11 @@ namespace MergerService.Src
                     try
                     {
                         taskUtils.UpdateCompletion(task.JobId, task.Id, managerCallbackUrl);
-                        this._logger.LogInformation($"Completed task: jobId: {task.JobId}, taskId: {task.Id}");
+                        this._logger.LogInformation($"{methodName} Completed task: jobId: {task.JobId}, taskId: {task.Id}");
                     }
                     catch (Exception e)
                     {
-                        this._logger.LogError($"Error in MergerService start - update task completion: {e.Message}");
+                        this._logger.LogError(e, $"{methodName} Error in MergerService start - update task completion: {e.Message}");
                     }
                 }
 
@@ -229,10 +231,12 @@ namespace MergerService.Src
 
         private void RunTask(MergeTask task, ITaskUtils taskUtils, string? managerCallbackUrl)
         {
+            string methodName = MethodBase.GetCurrentMethod().Name;
+            this._logger.LogDebug($"{methodName} start {task.ToString()}");
             // Guard clause in case there are no batches or sources
             if (task.Parameters is null || task.Parameters.Batches is null || task.Parameters.Sources is null)
             {
-                this._logger.LogWarning($"Task parameters are invalid. Task: {task.ToString()}");
+                this._logger.LogWarning($"{methodName} Task parameters are invalid. Task: {task.ToString()}");
 
                 try
                 {
@@ -240,8 +244,7 @@ namespace MergerService.Src
                 }
                 catch (Exception e)
                 {
-                    this._logger.LogError(
-                        $"Error in MergerService run - update task failure on invalid parameters: {e.Message}");
+                    this._logger.LogError(e, $"{methodName} Error in MergerService run - update task failure on invalid parameters: {e.Message}");
                 }
 
                 return;
@@ -254,10 +257,16 @@ namespace MergerService.Src
             bool shouldUpscale = !metadata.IsNewTarget;
             Func<IData, Coord, Tile?> getTileByCoord = metadata.IsNewTarget
                 ? (_, _) => null
-                : (source, coord) => source.GetCorrespondingTile(coord, shouldUpscale);
+                : (source, coord) =>
+                {
+                    this._logger.LogDebug($"{methodName} GetCorrespondingTile start for coord {coord.ToString()}, shouldUpscale: {shouldUpscale}");
+                    Tile? resultTile = source.GetCorrespondingTile(coord, shouldUpscale);
+                    this._logger.LogDebug($"{methodName} GetCorrespondingTile finished resultTile={resultTile}");
+                    return resultTile;
+                };
 
             // Log the task
-            this._logger.LogInformation($"starting task: {task.ToString()}");
+            this._logger.LogInformation($"{methodName} starting task: {task.ToString()}");
 
             using (var taskActivity = this._activitySource.StartActivity("task processing"))
             {
@@ -265,12 +274,15 @@ namespace MergerService.Src
                 //taskActivity.AddTag("jobId", task.jodId);
                 //taskActivity.AddTag("taskId", task.id);
 
+                this._logger.LogDebug($"{methodName} Recived {metadata.Batches.Length} Batches");
                 long totalTileCount = metadata.Batches.Sum(batch => batch.Size());
                 long overallTileProgressCount = 0;
-                this._logger.LogInformation($"Total amount of tiles to merge: {totalTileCount}");
-
+                int batchesCount = 0;
+                this._logger.LogInformation($"{methodName} Total amount of tiles to merge: {totalTileCount}");
                 foreach (TileBounds bounds in metadata.Batches)
                 {
+                    batchesCount++;
+                    this._logger.LogDebug($"{methodName} Run on {batchesCount} batch: {bounds.ToString()}");
                     using (var batchActivity = this._activitySource.StartActivity("batch processing"))
                     {
                         // TODO: remove comment and check that the activity is created (When bug will be fixed)
@@ -291,6 +303,7 @@ namespace MergerService.Src
                             continue;
                         }
 
+                        this._logger.LogDebug($"{methodName} BuildDataList");
                         List<IData> sources = this.BuildDataList(metadata.Sources, this._batchSize);
                         IData target = sources[0];
                         target.IsNew = metadata.IsNewTarget;
@@ -298,32 +311,33 @@ namespace MergerService.Src
                         // TODO: fix to use inner batch size (add iteration inside loop below)
                         List<Tile> tiles = new List<Tile>((int)singleTileBatchCount);
 
-                        this._logger.LogInformation($"Total amount of tiles to merge for current batch: {singleTileBatchCount}");
+                        this._logger.LogInformation($"{methodName} Total amount of tiles to merge for current batch: {singleTileBatchCount}");
 
                         // Go over the bounds of the current batch
-                        using (this._activitySource.StartActivity("merging tiles"))
+                        using (this._activitySource.StartActivity($"{methodName} merging tiles"))
                         {
                             for (int x = bounds.MinX; x < bounds.MaxX; x++)
                             {
                                 for (int y = bounds.MinY; y < bounds.MaxY; y++)
                                 {
+                                    this._logger.LogDebug($"{methodName} Handle tile z:{bounds.Zoom}, x:{x}, y:{y}");
                                     Coord coord = new Coord(bounds.Zoom, x, y);
 
                                     // Create tile builder list for current coord for all sources
-                                    List<CorrespondingTileBuilder> correspondingTileBuilders =
-                                        new List<CorrespondingTileBuilder>();
+                                    List<CorrespondingTileBuilder> correspondingTileBuilders = new List<CorrespondingTileBuilder>();
                                     // Add target tile
                                     correspondingTileBuilders.Add(() => getTileByCoord(sources[0], coord));
                                     // Add all sources tiles 
+                                    this._logger.LogDebug($"{methodName} Get tile sources");
                                     foreach (IData source in sources.Skip(1))
                                     {
                                         Tile? tile = source.GetCorrespondingTile(coord, shouldUpscale);
                                         correspondingTileBuilders.Add(() => tile);
                                     }
-
+                                    this._logger.LogDebug($"{methodName} MergeTiles of {correspondingTileBuilders.Count} tiles");
                                     byte[]? blob = this._tileMerger.MergeTiles(correspondingTileBuilders, coord,
                                         metadata.TargetFormat);
-
+                                    this._logger.LogDebug($"{methodName} MergeTiles finished");
                                     if (blob != null)
                                     {
                                         tiles.Add(new Tile(coord, blob));
@@ -336,7 +350,7 @@ namespace MergerService.Src
                                     if (overallTileProgressCount % this._batchSize == 0)
                                     {
                                         this._logger.LogDebug(
-                                            $"Job: {task.JobId}, Task: {task.Id}, Tile Count: {overallTileProgressCount} / {totalTileCount}");
+                                            $"{methodName} Job: {task.JobId}, Task: {task.Id}, Tile Count: {overallTileProgressCount} / {totalTileCount}");
                                             UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);
                                     }
                                 }
@@ -345,11 +359,13 @@ namespace MergerService.Src
 
                         using (this._activitySource.StartActivity("saving tiles"))
                         {
+                            this._logger.LogDebug($"{methodName} target UpdateTiles");
                             target.UpdateTiles(tiles);
+                            this._logger.LogDebug($"{methodName} UpdateRelativeProgress");
                             UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);
                         }
 
-                        this._logger.LogInformation($"Tile Count: {overallTileProgressCount} / {totalTileCount}");
+                        this._logger.LogInformation($"{methodName} Overall tile Count: {overallTileProgressCount} / {totalTileCount}");
                         target.Wrapup();
 
                         stopWatch.Stop();
@@ -357,7 +373,7 @@ namespace MergerService.Src
                         // Get the elapsed time as a TimeSpan value.
                         ts = stopWatch.Elapsed;
                         string elapsedMessage = this._timeUtils.FormatElapsedTime("Merge runtime: ", ts);
-                        this._logger.LogInformation($"Merged the following bounds: {bounds}. {elapsedMessage}");
+                        this._logger.LogInformation($"{methodName} Merged the following bounds: {bounds}. {elapsedMessage}");
 
                         // After merging, validate if requested
                         if (this._shouldValidate)
@@ -366,7 +382,7 @@ namespace MergerService.Src
                             stopWatch.Reset();
                             stopWatch.Start();
 
-                            this._logger.LogInformation("Validating merged data sources");
+                            this._logger.LogInformation($"{methodName} Validating merged data sources");
                             using (this._activitySource.StartActivity("validating tiles"))
                             {
                                 bool valid = this.Validate(target, bounds);
@@ -375,13 +391,11 @@ namespace MergerService.Src
                                 {
                                     try
                                     {
-                                        taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts,
-                                            "Error in validation, target not valid after run", true, managerCallbackUrl);
+                                        taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, "Error in validation, target not valid after run", true, managerCallbackUrl);
                                     }
-                                    catch (Exception innerError)
+                                    catch (Exception e)
                                     {
-                                        this._logger.LogError(
-                                            $"Error in MergerService run - update task failure after validation failure: {innerError.Message}");
+                                        this._logger.LogError(e, $"{methodName} Error in MergerService run - update task failure after validation failure: {e.Message}");
                                     }
                                 }
                             }
@@ -394,19 +408,21 @@ namespace MergerService.Src
                         }
                         else
                         {
-                            this._logger.LogInformation("Validation not requested, skipping validation...");
+                            this._logger.LogInformation($"{methodName} Validation not requested, skipping validation...");
                         }
                     }
                 }
             }
+            this._logger.LogDebug($"{methodName} end");
         }
 
         private bool Validate(IData target, TileBounds bounds)
         {
+            string methodName = MethodBase.GetCurrentMethod().Name;
             int totalTileCount = (int)bounds.Size();
             int tilesChecked = 0;
 
-            this._logger.LogInformation("If any missing tiles are found, they will be printed.");
+            this._logger.LogInformation($"{methodName} If any missing tiles are found, they will be printed.");
 
             // Go over the bounds and check for missing tiles
             for (int x = bounds.MinX; x < bounds.MaxX; x++)
@@ -420,21 +436,21 @@ namespace MergerService.Src
                     }
                     else
                     {
-                        this._logger.LogError($"z: {bounds.Zoom}, x: {x}, y: {y}");
+                        this._logger.LogError($"{methodName} z: {bounds.Zoom}, x: {x}, y: {y}");
                     }
 
                     if (tilesChecked != 0 && tilesChecked % 1000 == 0)
                     {
                         tilesChecked += 1000;
-                        this._logger.LogInformation($"Total tiles checked: {tilesChecked}/{totalTileCount}");
+                        this._logger.LogInformation($"{methodName} Total tiles checked: {tilesChecked}/{totalTileCount}");
                     }
                 }
             }
 
             bool hasSameTiles = tilesChecked == totalTileCount;
 
-            this._logger.LogInformation($"Total tiles checked: {tilesChecked}/{totalTileCount}");
-            this._logger.LogInformation($"Target's valid: {hasSameTiles}");
+            this._logger.LogInformation($"{methodName} Total tiles checked: {tilesChecked}/{totalTileCount}");
+            this._logger.LogInformation($"{methodName} Target's valid: {hasSameTiles}");
 
             return hasSameTiles;
         }
@@ -455,8 +471,7 @@ namespace MergerService.Src
                 }
                 catch (Exception e)
                 {
-                    this._logger.LogError(
-                        $"Error in MergerService run - update task percentage: {e.Message}");
+                    this._logger.LogError(e, $"{MethodBase.GetCurrentMethod().Name} Error in MergerService run - update task percentage: {e.Message}");
                 }
             }
         }

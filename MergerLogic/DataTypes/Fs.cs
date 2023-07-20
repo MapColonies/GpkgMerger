@@ -3,6 +3,7 @@ using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.IO.Abstractions;
+using System.Reflection;
 
 namespace MergerLogic.DataTypes
 {
@@ -49,13 +50,16 @@ namespace MergerLogic.DataTypes
 
         public override bool Exists()
         {
-            this._logger.LogInformation($"Checking if exists, folder: {this.Path}");
+            this._logger.LogInformation($"{MethodBase.GetCurrentMethod().Name} Checking if exists started, folder: {this.Path}");
             string fullPath = this._fileSystem.Path.GetFullPath(this.Path);
-            return this._fileSystem.Directory.Exists(fullPath);
+            bool isExists = this._fileSystem.Directory.Exists(fullPath);
+            this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} Checking if exists ended, folder: {this.Path}");
+            return isExists;
         }
 
         private IEnumerable<int> GetZoomLevels()
         {
+            this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} start");
             List<int> zoomLevels = new List<int>();
 
             // Get all sub-directories which represent zoom levels
@@ -70,11 +74,13 @@ namespace MergerLogic.DataTypes
 
             // Return zoom levels in ASC order
             zoomLevels.Sort();
+            this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} end");
             return zoomLevels;
         }
 
         private IEnumerator<Tile> GetTiles()
         {
+            this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} start");
             // From: https://stackoverflow.com/a/7430971/11915280 and https://stackoverflow.com/a/19961761/11915280
             IEnumerable<int> zoomLevels = this.GetZoomLevels();
 
@@ -104,12 +110,14 @@ namespace MergerLogic.DataTypes
                     yield return tile;
                 }
             }
+            this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} end");
         }
 
         public override List<Tile> GetNextBatch(out string batchIdentifier,out string? nextBatchIdentifier, long? totalTilesCount)
         {
             lock (_locker)
             {
+                this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} start");
                 batchIdentifier = this._completedTiles.ToString();
                 List<Tile> tiles = new List<Tile>(this.BatchSize);
                 nextBatchIdentifier = batchIdentifier;
@@ -127,6 +135,7 @@ namespace MergerLogic.DataTypes
                 }
                 Interlocked.Add(ref _completedTiles, tiles.Count);
                 nextBatchIdentifier = this._completedTiles.ToString();
+                this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} end");
                 return tiles;
             }
         }
@@ -149,6 +158,7 @@ namespace MergerLogic.DataTypes
         public override long TileCount()
         {
             // From: https://stackoverflow.com/a/7430971/11915280 and https://stackoverflow.com/a/19961761/11915280
+            this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} start");
             IEnumerable<int> zoomLevels = this.GetZoomLevels();
             long count = 0;
 
@@ -160,7 +170,7 @@ namespace MergerLogic.DataTypes
                 count += this._fileSystem.Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
                     .LongCount(file => this._supportedFileExtensions.Any(x => file.EndsWith(x, StringComparison.OrdinalIgnoreCase)));
             }
-
+            this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} end");
             return count;
         }
 

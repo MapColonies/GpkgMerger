@@ -5,6 +5,7 @@ using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using System.Reflection;
 
 namespace MergerCli
 {
@@ -34,7 +35,7 @@ namespace MergerCli
             if (resumeBatchIdentifier != null)
             {
                 resumeMode = true;
-                this._logger.LogDebug($"Resume mode activated, resume batchId: {resumeBatchIdentifier}");
+                this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} Resume mode activated, resume batchId: {resumeBatchIdentifier}");
                 // fix resume progress bug for gpkg, fs and web, fixing it for s3 requires storing additional data.
                 if (newData.Type != DataType.S3)
                 {
@@ -43,7 +44,7 @@ namespace MergerCli
                 }
             }
 
-            this._logger.LogInformation($"Total amount of tiles to merge: {totalTileCount - tileProgressCount}");
+            this._logger.LogInformation($"{MethodBase.GetCurrentMethod().Name} Total amount of tiles to merge: {totalTileCount - tileProgressCount}");
             var uploadOnly = this._configManager.GetConfiguration<bool>("GENERAL", "uploadOnly");
             
             bool shouldUpscale = !(uploadOnly || baseData.IsNew);
@@ -127,7 +128,7 @@ namespace MergerCli
             baseData.UpdateTiles(tiles);
 
             Interlocked.Add(ref tileProgressCount, tiles.Count);
-            this._logger.LogInformation($"Tile Count: {tileProgressCount} / {totalTileCount}");
+            this._logger.LogInformation($"{MethodBase.GetCurrentMethod().Name} Tile Count: {tileProgressCount} / {totalTileCount}");
         }
 
         private void ParallelRun(TileFormat targetFormat, IData baseData, IData newData,
@@ -153,7 +154,7 @@ namespace MergerCli
 
             long totalTileCount = newData.TileCount();
             long tilesChecked = 0;
-            this._logger.LogInformation($"Base tile Count: {baseData.TileCount()}, New tile count: {totalTileCount}");
+            this._logger.LogInformation($"{MethodBase.GetCurrentMethod().Name} Base tile Count: {baseData.TileCount()}, New tile count: {totalTileCount}");
 
             do
             {
@@ -172,19 +173,19 @@ namespace MergerCli
                     }
                     else
                     {
-                        this._logger.LogError($"Missing tile: {newTile}");
+                        this._logger.LogError($"{MethodBase.GetCurrentMethod().Name} Missing tile: {newTile}");
                     }
                 }
 
                 newTileCount += newTiles.Count;
                 tilesChecked += newTiles.Count;
-                this._logger.LogInformation($"Total tiles checked: {tilesChecked}/{totalTileCount}");
+                this._logger.LogInformation($"{MethodBase.GetCurrentMethod().Name} Total tiles checked: {tilesChecked}/{totalTileCount}");
                 hasSameTiles = newTileCount == baseMatchCount;
             } while (hasSameTiles && newTiles.Count > 0);
 
             newData.Reset();
 
-            this._logger.LogInformation($"Target's valid: {hasSameTiles}");
+            this._logger.LogInformation($"{MethodBase.GetCurrentMethod().Name} Target's valid: {hasSameTiles}");
         }
     }
 }
