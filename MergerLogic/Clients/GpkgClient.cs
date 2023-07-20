@@ -1,5 +1,4 @@
 using MergerLogic.Batching;
-using MergerLogic.DataTypes;
 using MergerLogic.Extensions;
 using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
@@ -7,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO.Abstractions;
+using System.Reflection;
 using System.Text;
 
 namespace MergerLogic.Clients
@@ -18,7 +18,7 @@ namespace MergerLogic.Clients
         private readonly ITimeUtils _timeUtils;
         private readonly ILogger _logger;
         private readonly IFileSystem _fileSystem;
-
+        
         public GpkgClient(string path, ITimeUtils timeUtils, ILogger<GpkgClient> logger, IFileSystem fileSystem,
             IGeoUtils geoUtils, IImageFormatter formatter) : base(path, geoUtils, formatter)
         {
@@ -311,7 +311,7 @@ namespace MergerLogic.Clients
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            this._logger.LogInformation($"Vacuuming GPKG {this.path}");
+            this._logger.LogInformation($"{MethodBase.GetCurrentMethod().Name} Vacuuming GPKG {this.path}");
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
                 connection.Open();
@@ -322,18 +322,18 @@ namespace MergerLogic.Clients
                 }
             }
 
-            this._logger.LogInformation("Done vacuuming GPKG");
+            this._logger.LogInformation($"{MethodBase.GetCurrentMethod().Name} Done vacuuming GPKG");
 
             // Get the elapsed time as a TimeSpan value.
             TimeSpan ts = stopWatch.Elapsed;
 
-            string elapsedMessage = this._timeUtils.FormatElapsedTime("Vacuum runtime", ts);
+            string elapsedMessage = this._timeUtils.FormatElapsedTime($"{MethodBase.GetCurrentMethod().Name} Vacuum runtime", ts);
             this._logger.LogInformation(elapsedMessage);
         }
 
         public void Create(Extent extent, bool isOneXOne = false)
         {
-            this._logger.LogInformation($"creating new gpkg: {this.path}");
+            this._logger.LogInformation($"{MethodBase.GetCurrentMethod().Name} creating new gpkg: {this.path}");
             
             // Create hierarchy if needed
             string dir = this._fileSystem.Path.GetDirectoryName(this.path);
@@ -716,7 +716,7 @@ namespace MergerLogic.Clients
                     var isValid = count == 1;
                     if (!isValid)
                     {
-                        this._logger.LogWarning($"gpkg {this.path} has failed grid tile matrix set validation");
+                        this._logger.LogWarning($"{MethodBase.GetCurrentMethod().Name} gpkg {this.path} has failed grid tile matrix set validation");
                         return false;
                     }
                 }
@@ -752,8 +752,7 @@ namespace MergerLogic.Clients
                                 !reader.GetDouble(5).IsApproximatelyEqualTo(res, doublePrecession) ||
                                 !reader.GetDouble(6).IsApproximatelyEqualTo(res, doublePrecession))
                             {
-                                this._logger.LogWarning(
-                                    $"gpkg {this.path} has failed grid validation for zoom {rowZoom}");
+                                this._logger.LogWarning($"{MethodBase.GetCurrentMethod().Name} gpkg {this.path} has failed grid validation for zoom {rowZoom}");
                                 return false;
                             }
                         }

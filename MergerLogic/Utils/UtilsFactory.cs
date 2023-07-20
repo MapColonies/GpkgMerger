@@ -56,8 +56,8 @@ namespace MergerLogic.Utils
             {
                 throw new Exception("S3 Data utils requires s3 client to be configured");
             }
-
-            return new S3Client(client, this._pathUtils, this._geoUtils, this._imageFormatter, bucket, path);
+            var logger = this._container.GetRequiredService<ILogger<S3Client>>();
+            return new S3Client(client, this._pathUtils, this._geoUtils, this._imageFormatter, logger, bucket, path);
         }
 
         public T GetDataUtils<T>(string path) where T : IDataUtils

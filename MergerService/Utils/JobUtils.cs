@@ -4,6 +4,7 @@ using MergerLogic.Utils;
 using MergerService.Models.Jobs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using System.Reflection;
 
 namespace MergerService.Utils
 {
@@ -44,18 +45,18 @@ namespace MergerService.Utils
                 string? jobData = this._httpClient.GetDataString(url);
                 if (jobData is null)
                 {
-                    this._logger.LogWarning($"Job id:{jobData}, not found");
+                    this._logger.LogWarning($"{MethodBase.GetCurrentMethod().Name} Job id:{jobData}, not found");
                     return null;
                 }
 
                 try
                 {
-                    this._logger.LogDebug($"Found merge job data: {jobData}");
+                    this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} Found merge job data: {jobData}");
                     return JsonConvert.DeserializeObject<MergeJob>(jobData, this._jsonSerializerSettings)!;
                 }
                 catch (Exception e)
                 {
-                    this._logger.LogError(e.Message);
+                    this._logger.LogError(e, $"{methodName} Message: {e.Message}");
                     return null;
                 }
             }
