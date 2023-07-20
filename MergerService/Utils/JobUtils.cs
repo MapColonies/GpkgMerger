@@ -56,7 +56,7 @@ namespace MergerService.Utils
                 }
                 catch (Exception e)
                 {
-                    this._logger.LogError(e, $"{methodName} Message: {e.Message}");
+                    this._logger.LogError(e, $"{MethodBase.GetCurrentMethod().Name} Message: {e.Message}");
                     return null;
                 }
             }
