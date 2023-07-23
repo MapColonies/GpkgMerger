@@ -64,7 +64,7 @@ namespace MergerService.Utils
                 }
                 catch (Exception e)
                 {
-                    this._logger.LogWarning(e, $"{MethodBase.GetCurrentMethod().Name} Error deserializing returned task");
+                    this._logger.LogWarning(e, $"[{MethodBase.GetCurrentMethod().Name}] Error deserializing returned task");
                     return null;
                 }
             }
@@ -75,7 +75,7 @@ namespace MergerService.Utils
             using (this._activitySource.StartActivity("notify Manager on task completion"))
             {
                 // Notify Manager on task completion
-                this._logger.LogInformation($"{MethodBase.GetCurrentMethod().Name} Notifying Manager on completion, job: {jobId}, task: {taskId}");
+                this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Notifying Manager on completion, job: {jobId}, task: {taskId}");
                 string relativeUri = $"jobs/{jobId}/{taskId}/completed";
                 string url = new Uri(new Uri(managerCallbackUrl), relativeUri).ToString();
                 _ = this._httpClient.PostData(url, null);

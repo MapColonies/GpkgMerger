@@ -45,18 +45,18 @@ namespace MergerService.Utils
                 string? jobData = this._httpClient.GetDataString(url);
                 if (jobData is null)
                 {
-                    this._logger.LogWarning($"{MethodBase.GetCurrentMethod().Name} Job id:{jobData}, not found");
+                    this._logger.LogWarning($"[{MethodBase.GetCurrentMethod().Name}] Job id:{jobData}, not found");
                     return null;
                 }
 
                 try
                 {
-                    this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} Found merge job data: {jobData}");
+                    this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Found merge job data: {jobData}");
                     return JsonConvert.DeserializeObject<MergeJob>(jobData, this._jsonSerializerSettings)!;
                 }
                 catch (Exception e)
                 {
-                    this._logger.LogError(e, $"{MethodBase.GetCurrentMethod().Name} Message: {e.Message}");
+                    this._logger.LogError(e, $"[{MethodBase.GetCurrentMethod().Name}] Message: {e.Message}");
                     return null;
                 }
             }

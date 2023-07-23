@@ -79,7 +79,7 @@ namespace MergerLogic.DataTypes
             this._container = container;
             var loggerFactory = container.GetRequiredService<ILoggerFactory>();
             this._logger = loggerFactory.CreateLogger(this.GetType());
-            this._logger.LogInformation($"{methodName} Ctor started");
+            this._logger.LogInformation($"[{methodName}] Ctor started");
             this.Type = type;
             this.Path = path;
             this.BatchSize = batchSize;
@@ -137,10 +137,10 @@ namespace MergerLogic.DataTypes
                 this.GetTile = fixedGridGetTileFunction;
             }
 
-            this._logger.LogInformation($"{methodName} Initialize Started");
+            this._logger.LogInformation($"[{methodName}] Initialize Started");
             this.Initialize();
 
-            this._logger.LogInformation($"{methodName} Checking if exists, {this.Type}: {this.Path}");
+            this._logger.LogInformation($"[{methodName}] Checking if exists, {this.Type}: {this.Path}");
             bool exists = this.Exists();
             if (!exists)
             {
@@ -152,22 +152,22 @@ namespace MergerLogic.DataTypes
                     throw new Exception($"{this.Type} source {path} does not exist.");
                 }
             }
-            this._logger.LogInformation($"{methodName} Validate Started");
+            this._logger.LogInformation($"[{methodName}] Validate Started");
             this.Validate();
-            this._logger.LogInformation($"{methodName} Ctor Ended");
+            this._logger.LogInformation($"[{methodName}] Ctor Ended");
         }
 
         protected virtual void Initialize()
         {
-            this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} {this.Type} source, skipping initialization phase");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] {this.Type} source, skipping initialization phase");
         }
 
         protected virtual void Create() {
-            this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} {this.Type} source, skipping creation phase");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] {this.Type} source, skipping creation phase");
         }
 
         protected virtual void Validate() {
-            this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} {this.Type} source, skipping validation phase");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] {this.Type} source, skipping validation phase");
         }
 
         protected abstract GridOrigin DefaultOrigin();
@@ -178,7 +178,7 @@ namespace MergerLogic.DataTypes
         }
 
         protected virtual void SetExtent(Extent? extent) {
-            this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} {this.Type} source, skipping extent set phase");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] {this.Type} source, skipping extent set phase");
         }
 
         protected virtual Extent GetExtent() {
@@ -256,20 +256,20 @@ namespace MergerLogic.DataTypes
 
         public Tile? GetCorrespondingTile(Coord coords, bool upscale)
         {
-            this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} start for coord: {coords.ToString()}, upscale: {upscale}");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start for coord: {coords.ToString()}, upscale: {upscale}");
             Tile? correspondingTile = this.GetTile(coords.Z, coords.X, coords.Y);
 
             if (upscale && correspondingTile == null)
             {
                 correspondingTile = this.GetLastExistingTile(coords);
             }
-            this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} end for coord: {coords.ToString()}, upscale: {upscale}");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end for coord: {coords.ToString()}, upscale: {upscale}");
             return correspondingTile;
         }
 
         public void UpdateTiles(IEnumerable<Tile> tiles)
         {
-            this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} update tiles started");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] update tiles started");
             var targetTiles = tiles.Select(tile =>
             {
                 Tile convertedTile = this.ConvertOriginTile(tile);
@@ -277,7 +277,7 @@ namespace MergerLogic.DataTypes
                 return targetTile;
             }).Where(tile => tile is not null);
             this.InternalUpdateTiles(targetTiles);
-            this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} update tiles ended");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] update tiles ended");
         }
 
         protected abstract void InternalUpdateTiles(IEnumerable<Tile> targetTiles);
@@ -285,7 +285,7 @@ namespace MergerLogic.DataTypes
         public virtual void Wrapup()
         {
             this.Reset();
-            this._logger.LogDebug($"{MethodBase.GetCurrentMethod().Name} {this.Type} source, skipping wrapup phase");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] {this.Type} source, skipping wrapup phase");
         }
 
         public abstract bool Exists();

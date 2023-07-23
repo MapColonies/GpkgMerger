@@ -4,13 +4,14 @@ FROM mcr.microsoft.com/dotnet/runtime:6.0 AS base
 WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+ARG VERSION="9.9.9.9"
 WORKDIR /src
 COPY ["MergerCli/MergerCli.csproj", "MergerCli/"]
 COPY ["MergerLogic/MergerLogic.csproj", "MergerLogic/"]
 RUN dotnet restore "MergerCli/MergerCli.csproj"
 COPY . .
 WORKDIR "/src/MergerCli"
-RUN dotnet build "MergerCli.csproj" -c Release -o /app/build
+RUN dotnet build "MergerCli.csproj" -c Release -o /app/build /p:Version=$VERSION
 
 FROM build AS publish
 RUN dotnet publish "MergerCli.csproj" -c Release -o /app/publish
