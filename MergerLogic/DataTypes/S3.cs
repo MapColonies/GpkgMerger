@@ -198,12 +198,17 @@ namespace MergerLogic.DataTypes
 
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start");
-            foreach (var tile in targetTiles)
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start upload tiles to S3");
+            this.ParallelUpdateTiles(targetTiles);
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end upload tiles to S3");
+        }
+
+        private async void ParallelUpdateTiles(IEnumerable<Tile> targetTiles)
+        {
+            await Parallel.ForEachAsync(targetTiles, new ParallelOptions { MaxDegreeOfParallelism = 50 }, async (tile, cancellationToken) =>
             {
                 this.Utils.UpdateTile(tile);
-            }
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end");
+            });
         }
     }
 }
