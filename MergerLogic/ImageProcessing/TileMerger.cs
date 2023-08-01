@@ -17,20 +17,13 @@ namespace MergerLogic.ImageProcessing
 
         public byte[]? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords,TileFormat format)
         {
-            var images = this.GetImageList(tiles, targetCoords, out Tile? lastProcessedTile, out bool singleImage);
+            var images = this.GetImageList(tiles, targetCoords, out bool singleImage);
             byte[] data;
             switch (images.Count)
             {
                 case 0:
                     // There are no images
-                    if (!singleImage)
-                    {
-                        return null;
-                    }
-
-                    // Otherwise there is one image that wasn't loaded
-                    data = lastProcessedTile!.GetImageBytes();
-                    return this._imageFormatter.CovertToFormat(data, format);
+                    return null;
                 case 1:
                     this._imageFormatter.CovertToFormat(images[0], format);
                     data = images[0].ToByteArray();
@@ -48,19 +41,24 @@ namespace MergerLogic.ImageProcessing
                         {
                             mergedImage.ColorSpace = ColorSpace.sRGB;
                             mergedImage.ColorType = mergedImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor;
-                            this._imageFormatter.CovertToFormat(mergedImage,format);
+                            this._imageFormatter.CovertToFormat(mergedImage, format);
                             var mergedImageBytes = mergedImage.ToByteArray();
+
+                            for (var i = images.Count - 1; i >= 0; i--)
+                            {
+                                images[i].Dispose();
+                            }
+
                             return mergedImageBytes;
                         }
+
                     }
             }
         }
 
-        private List<MagickImage> GetImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords,
-            out Tile? lastProcessedTile, out bool singleImage)
+        private List<MagickImage> GetImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords, out bool singleImage)
         {
             var images = new List<MagickImage>();
-            lastProcessedTile = null;
             int i = tiles.Count - 1;
             Tile? tile = null;
 
@@ -68,30 +66,13 @@ namespace MergerLogic.ImageProcessing
             bool hasAlpha = false;
             try
             {
-                tile = GetFirstTile(tiles, targetCoords, ref lastProcessedTile, ref i);
-                for (; i >= 0; i--)
+                tile = GetFirstTile(tiles, targetCoords, ref i);
+                
+                this.AddTileToImageList(targetCoords, tile, images, out hasAlpha);
+                if (!hasAlpha)
                 {
-                    var tile2 = tiles[i]();
-                    if (tile2 is null)
-                    {
-                        continue;
-                    }
-
-                    this.AddTileToImageList(targetCoords, tile, images, out hasAlpha);
-                    if (!hasAlpha)
-                    {
-                        singleImage = true;
-                        return images;
-                    }
-
-                    lastProcessedTile = tile2;
-                    this.AddTileToImageList(targetCoords, tile2, images, out hasAlpha);
-                    if (!hasAlpha)
-                    {
-                        return images;
-                    }
-                    i--;
-                    break;
+                    singleImage = true;
+                    return images;
                 }
 
                 for (; i >= 0; i--)
@@ -102,7 +83,6 @@ namespace MergerLogic.ImageProcessing
                         continue;
                     }
 
-                    lastProcessedTile = tile;
                     this.AddTileToImageList(targetCoords, tile, images, out hasAlpha);
                     if (!hasAlpha)
                     {
@@ -121,7 +101,7 @@ namespace MergerLogic.ImageProcessing
             return images;
         }
 
-        private Tile? GetFirstTile(List<CorrespondingTileBuilder> tiles, Coord targetCoords, ref Tile? lastProcessedTile, ref int i)
+        private Tile? GetFirstTile(List<CorrespondingTileBuilder> tiles, Coord targetCoords, ref int i)
         {
             for (; i >= 0; i--)
             {
@@ -135,7 +115,6 @@ namespace MergerLogic.ImageProcessing
                         tile = this._tileScaler.Upscale(tile, targetCoords);
                     }
                     
-                    lastProcessedTile = tile;
                     i--;
                     return tile;
                 }
