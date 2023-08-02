@@ -6,7 +6,7 @@ WORKDIR /app
 EXPOSE 80
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
-ARG VERSION
+ARG VERSION="9.9.9.9"
 WORKDIR /src
 COPY ["MergerService/MergerService.csproj", "MergerService/"]
 COPY ["MergerLogic/MergerLogic.csproj", "MergerLogic/"]

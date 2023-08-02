@@ -5,7 +5,7 @@ ARG VERSION="9.9.9.9"
 WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
-ARG VERSION
+ARG VERSION="9.9.9.9"
 WORKDIR /src
 COPY ["MergerCli/MergerCli.csproj", "MergerCli/"]
 COPY ["MergerLogic/MergerLogic.csproj", "MergerLogic/"]
