@@ -13,7 +13,6 @@ COPY ["MergerLogic/MergerLogic.csproj", "MergerLogic/"]
 RUN dotnet restore "MergerService/MergerService.csproj"
 COPY . .
 WORKDIR "/src/MergerService"
-RUN echo version is $VERSION
 RUN dotnet build "MergerService.csproj" -c Release -o /app/build /p:Version=$VERSION
 
 FROM build AS publish

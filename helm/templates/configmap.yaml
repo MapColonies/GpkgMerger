@@ -10,6 +10,7 @@ metadata:
   name: {{ .Release.Name }}-configmap
 data:
   GENERAL__validate: {{ .Values.env.general.validate | quote }}
+  GENERAL__defaultConnectionLimit: {{ .Values.env.general.defaultConnectionLimit | quote }}
   TASK__jobManagerUrl: {{ .Values.rasterCommon.serviceUrls.jobManager | quote }}
   {{- range $i, $e := .Values.env.TASK.types }}
   TASK__types__{{ $i }}__jobType: {{ $e.jobType }}

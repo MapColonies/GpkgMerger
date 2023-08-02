@@ -68,10 +68,12 @@ namespace MergerLogic.DataTypes
         private List<int> GetZoomLevels()
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start");
-            List<int> zoomLevels = new List<int>();
+            List<int> zoomLevels = new List<int>(Data<IS3Client>.MaxZoomRead);
             
             for (int zoomLevel = 0; zoomLevel < Data<IS3Client>.MaxZoomRead; zoomLevel++)
             {
+                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Check if zoom {zoomLevel} exists");
+                // TODO: need to check if can be updated dynamically
                 if (this.FolderExists($"{zoomLevel}/"))
                 {
                     zoomLevels.Add(zoomLevel);
@@ -158,8 +160,9 @@ namespace MergerLogic.DataTypes
             };
             var task = this._client.ListObjectsV2Async(listRequests);
             var response = task.Result;
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end");
-            return response.KeyCount > 0;
+            bool isExists = response.KeyCount > 0;
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] directory: {directory}, isExists={isExists}");
+            return isExists;
         }
 
         public override bool Exists()

@@ -79,7 +79,7 @@ namespace MergerLogic.DataTypes
             this._container = container;
             var loggerFactory = container.GetRequiredService<ILoggerFactory>();
             this._logger = loggerFactory.CreateLogger(this.GetType());
-            this._logger.LogInformation($"[{methodName}] Ctor started");
+            this._logger.LogInformation($"[{methodName}] Data Ctor started");
             this.Type = type;
             this.Path = path;
             this.BatchSize = batchSize;
@@ -139,6 +139,7 @@ namespace MergerLogic.DataTypes
 
             this._logger.LogInformation($"[{methodName}] Initialize Started");
             this.Initialize();
+            this._logger.LogInformation($"[{methodName}] Initialize ended");
 
             this._logger.LogInformation($"[{methodName}] Checking if exists, {this.Type}: {this.Path}");
             bool exists = this.Exists();
@@ -154,7 +155,7 @@ namespace MergerLogic.DataTypes
             }
             this._logger.LogInformation($"[{methodName}] Validate Started");
             this.Validate();
-            this._logger.LogInformation($"[{methodName}] Ctor Ended");
+            this._logger.LogInformation($"[{methodName}] Data Ctor Ended");
         }
 
         protected virtual void Initialize()
@@ -256,14 +257,14 @@ namespace MergerLogic.DataTypes
 
         public Tile? GetCorrespondingTile(Coord coords, bool upscale)
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start for coord: {coords.ToString()}, upscale: {upscale}");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start for coord: z: {coords.Z}, x: {coords.X}, y: {coords.Y}, upscale: {upscale}");
             Tile? correspondingTile = this.GetTile(coords.Z, coords.X, coords.Y);
 
             if (upscale && correspondingTile == null)
             {
                 correspondingTile = this.GetLastExistingTile(coords);
             }
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end for coord: {coords.ToString()}, upscale: {upscale}");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end for coord: z: {coords.Z}, x: {coords.X}, y: {coords.Y}, upscale: {upscale}");
             return correspondingTile;
         }
 

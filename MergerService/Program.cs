@@ -24,6 +24,4 @@ new Thread(() =>
 {
     app.Run();
 });
-
-ServicePointManager.DefaultConnectionLimit = 100;
 app.Services.GetRequiredService<IRun>().Start();
