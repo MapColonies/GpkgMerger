@@ -2,7 +2,6 @@ using MergerLogic.Extensions;
 using MergerLogic.Clients;
 using MergerService.Src;
 using MergerService.Utils;
-using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,4 +23,5 @@ new Thread(() =>
 {
     app.Run();
 });
+
 app.Services.GetRequiredService<IRun>().Start();
