@@ -352,9 +352,8 @@ namespace MergerService.Src
                                     // Show progress every batchSize
                                     if (overallTileProgressCount % this._batchSize == 0)
                                     {
-                                        this._logger.LogDebug(
-                                            $"[{methodName}] Job: {task.JobId}, Task: {task.Id}, Tile Count: {overallTileProgressCount} / {totalTileCount}");
-                                            UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);
+                                        this._logger.LogInformation($"[{methodName}] Job: {task.JobId}, Task: {task.Id}, Tile Count: {overallTileProgressCount} / {totalTileCount}");
+                                        UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);
                                     }
                                 }
                             }
@@ -362,7 +361,7 @@ namespace MergerService.Src
 
                         using (this._activitySource.StartActivity("saving tiles"))
                         {
-                            this._logger.LogDebug($"[{methodName}] target UpdateTiles");
+                            this._logger.LogInformation($"[{methodName}] Total amount of tiles to upload to target source: {tiles.Count}");
                             target.UpdateTiles(tiles);
                             this._logger.LogDebug($"[{methodName}] UpdateRelativeProgress");
                             UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);

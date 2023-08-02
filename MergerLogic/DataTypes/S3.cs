@@ -167,9 +167,9 @@ namespace MergerLogic.DataTypes
 
         public override bool Exists()
         {
-            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] bucket: {this._bucket}, path: {this.Path}");
+            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Checking if exists, bucket: {this._bucket}, path: {this.Path}");
             bool exists = FolderExists("");
-            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] ended");
+            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] exists={exists} ended");
             return exists;
         }
 

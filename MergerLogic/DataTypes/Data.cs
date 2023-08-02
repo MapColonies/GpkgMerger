@@ -153,7 +153,6 @@ namespace MergerLogic.DataTypes
                     throw new Exception($"{this.Type} source {path} does not exist.");
                 }
             }
-            this._logger.LogInformation($"[{methodName}] Validate Started");
             this.Validate();
             this._logger.LogInformation($"[{methodName}] Data Ctor Ended");
         }
