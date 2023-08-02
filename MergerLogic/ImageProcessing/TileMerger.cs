@@ -1,6 +1,7 @@
 using ImageMagick;
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using MergerLogic.Utils;
 
 namespace MergerLogic.ImageProcessing
 {
@@ -141,7 +142,7 @@ namespace MergerLogic.ImageProcessing
 
             if (tileImage is not null)
             {
-                hasAlpha = tileImage.HasAlpha;
+                hasAlpha = ImageUtils.IsTransparent(tileImage);
                 images.Add(tileImage);
             }
             else
