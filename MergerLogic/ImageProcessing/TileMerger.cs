@@ -43,12 +43,6 @@ namespace MergerLogic.ImageProcessing
                             mergedImage.ColorType = mergedImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor;
                             this._imageFormatter.ConvertToFormat(mergedImage, format);
                             var mergedImageBytes = mergedImage.ToByteArray();
-
-                            for (var i = images.Count - 1; i >= 0; i--)
-                            {
-                                images[i].Dispose();
-                            }
-
                             return mergedImageBytes;
                         }
 
