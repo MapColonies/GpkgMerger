@@ -5,9 +5,9 @@ namespace MergerLogic.ImageProcessing
 {
     public interface IImageFormatter
     {
-        public Tile CovertToFormat(Tile tile, TileFormat format);
-        public void CovertToFormat(IMagickImage image, TileFormat format);
-        public byte[] CovertToFormat(byte[] tile, TileFormat format);
+        public Tile ConvertToFormat(Tile tile, TileFormat format);
+        public void ConvertToFormat(IMagickImage image, TileFormat format);
+        public byte[] ConvertToFormat(byte[] tile, TileFormat format);
         public TileFormat? GetTileFormat(byte[] tile);
     }
 }

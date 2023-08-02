@@ -12,7 +12,7 @@ namespace MergerLogic.ImageProcessing
 
     public class ImageFormatter : IImageFormatter
     {
-        public Tile CovertToFormat(Tile tile, TileFormat format)
+        public Tile ConvertToFormat(Tile tile, TileFormat format)
         {
             var tileData = tile.GetImageBytes();
             var currentFormat = this.GetTileFormat(tileData);
@@ -20,7 +20,7 @@ namespace MergerLogic.ImageProcessing
             {
                 using (var image = new MagickImage(tileData))
                 {
-                    this.CovertToFormat(image, format);
+                    this.ConvertToFormat(image, format);
                     return new Tile(tile.Z, tile.X, tile.Y, image.ToByteArray());
                 }
             }
@@ -28,14 +28,14 @@ namespace MergerLogic.ImageProcessing
             return tile;
         }
 
-        public byte[] CovertToFormat(byte[] tile, TileFormat format)
+        public byte[] ConvertToFormat(byte[] tile, TileFormat format)
         {
             var currentFormat = this.GetTileFormat(tile);
             if (currentFormat != format)
             {
                 using (var image = new MagickImage(tile))
                 {
-                    this.CovertToFormat(image, format);
+                    this.ConvertToFormat(image, format);
                     return image.ToByteArray();
                 }
             }
@@ -43,7 +43,7 @@ namespace MergerLogic.ImageProcessing
             return tile;
         }
 
-        public void CovertToFormat(IMagickImage image, TileFormat format)
+        public void ConvertToFormat(IMagickImage image, TileFormat format)
         {
             switch (format)
             {

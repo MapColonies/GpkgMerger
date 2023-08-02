@@ -25,7 +25,7 @@ namespace MergerLogic.ImageProcessing
                     // There are no images
                     return null;
                 case 1:
-                    this._imageFormatter.CovertToFormat(images[0], format);
+                    this._imageFormatter.ConvertToFormat(images[0], format);
                     data = images[0].ToByteArray();
                     images[0].Dispose();
                     return data;
@@ -41,7 +41,7 @@ namespace MergerLogic.ImageProcessing
                         {
                             mergedImage.ColorSpace = ColorSpace.sRGB;
                             mergedImage.ColorType = mergedImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor;
-                            this._imageFormatter.CovertToFormat(mergedImage, format);
+                            this._imageFormatter.ConvertToFormat(mergedImage, format);
                             var mergedImageBytes = mergedImage.ToByteArray();
 
                             for (var i = images.Count - 1; i >= 0; i--)
