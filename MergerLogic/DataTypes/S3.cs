@@ -67,7 +67,6 @@ namespace MergerLogic.DataTypes
 
         private List<int> GetZoomLevels()
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start");
             List<int> zoomLevels = new List<int>(Data<IS3Client>.MaxZoomRead);
             
             for (int zoomLevel = 0; zoomLevel < Data<IS3Client>.MaxZoomRead; zoomLevel++)
@@ -79,7 +78,6 @@ namespace MergerLogic.DataTypes
                     zoomLevels.Add(zoomLevel);
                 }
             }
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended");
             return zoomLevels;
         }
 
@@ -208,7 +206,7 @@ namespace MergerLogic.DataTypes
 
         private async void ParallelUpdateTiles(IEnumerable<Tile> targetTiles)
         {
-            await Parallel.ForEachAsync(targetTiles, new ParallelOptions { MaxDegreeOfParallelism = 50 }, async (tile, cancellationToken) =>
+            await Parallel.ForEachAsync(targetTiles, new ParallelOptions { MaxDegreeOfParallelism = -1 }, async (tile, cancellationToken) =>
             {
                 this.Utils.UpdateTile(tile);
             });

@@ -1,6 +1,7 @@
 ﻿using OpenTelemetry;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
+using System.Net;
 
 namespace MergerLogic.Monitoring
 {
@@ -8,6 +9,7 @@ namespace MergerLogic.Monitoring
     {
         private const string SERVICE_NAME_ATTRIBUTE = "service.name";
         private const string SERVICE_VERSION_ATTRIBUTE = "service.version";
+        private const string SERVICE_HOST_NAME_ATTRIBUTE = "service.host.name";
 
 
         public OpenTelemetryFormattedConsoleExporter(ConsoleExporterOptions options) : base(options)
@@ -29,8 +31,13 @@ namespace MergerLogic.Monitoring
             var resource = this.ParseResource();
             var serviceName = this.GetResourceAttribute(resource, SERVICE_NAME_ATTRIBUTE, "unknown_service");
             var serviceVersion = this.GetResourceAttribute(resource, SERVICE_VERSION_ATTRIBUTE, "unknown_version");
+            if (!resource.ContainsKey(SERVICE_HOST_NAME_ATTRIBUTE))
+            {
+                resource.Add(SERVICE_HOST_NAME_ATTRIBUTE, Dns.GetHostName());
+            }
+            var serviceHostName = this.GetResourceAttribute(resource, SERVICE_HOST_NAME_ATTRIBUTE, "unknown_host_name");
 
-            return $"[{this.FormatTime(record.Timestamp)}] [{record.LogLevel}] [{serviceName}] [{serviceVersion}] [{record.CategoryName}] {record.State}";
+            return $"[{this.FormatTime(record.Timestamp)}] [{record.LogLevel}] [{serviceHostName}] [{serviceName}] [{serviceVersion}] [{Environment.CurrentManagedThreadId}] [{record.CategoryName}] {record.State}";
         }
 
         private string FormatTime(DateTime time)

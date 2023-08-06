@@ -89,10 +89,8 @@ namespace MergerService.Src
 
         private List<IData> BuildDataList(Source[] paths, int batchSize)
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
             using (this._activitySource.StartActivity("sources parsing"))
             {
-                this._logger.LogDebug($"[{methodName}] start");
                 List<IData> sources = new List<IData>(paths.Length);
 
                 if (paths.Length != 0)
@@ -108,7 +106,6 @@ namespace MergerService.Src
                             source.Grid, source.Origin));
                     }
                 }
-                this._logger.LogDebug($"[{methodName}] end");
                 return sources;
             }
         }
@@ -134,7 +131,7 @@ namespace MergerService.Src
             string methodName = MethodBase.GetCurrentMethod().Name;
             this._logger.LogDebug($"[{methodName}] Start App");
             var pollingTime = this._configurationManager.GetConfiguration<int>("TASK", "pollingTime");
-            ServicePointManager.DefaultConnectionLimit = this._configurationManager.GetConfiguration<int>("GENERAL", "defaultConnectionLimit");
+            ServicePointManager.DefaultConnectionLimit = this._configurationManager.GetConfiguration<int>("GENERAL", "servicePointManagerDefaultConnectionLimit");
 
             var taskTypes = BuildTypeList();
             if (taskTypes.Count == 0)
@@ -306,7 +303,7 @@ namespace MergerService.Src
                         {
                             continue;
                         }
-
+                        this._logger.LogDebug($"[{methodName}] BuildDataLists");
                         List<IData> sources = this.BuildDataList(metadata.Sources, this._batchSize);
                         IData target = sources[0];
                         target.IsNew = isNewTarget;
