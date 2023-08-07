@@ -229,7 +229,7 @@ namespace MergerService.Src
             }
         }
 
-        private void RunTask(MergeTask task, ITaskUtils taskUtils, string? managerCallbackUrl)
+        private async void RunTask(MergeTask task, ITaskUtils taskUtils, string? managerCallbackUrl)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             this._logger.LogDebug($"[{methodName}] start {task.ToString()}");
@@ -359,7 +359,7 @@ namespace MergerService.Src
                         using (this._activitySource.StartActivity("saving tiles"))
                         {
                             this._logger.LogInformation($"[{methodName}] Total amount of tiles to upload to target source: {tiles.Count}");
-                            target.UpdateTiles(tiles);
+                            await target.UpdateTiles(tiles);
                             this._logger.LogDebug($"[{methodName}] UpdateRelativeProgress");
                             UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);
                         }

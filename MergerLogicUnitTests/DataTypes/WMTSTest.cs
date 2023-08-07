@@ -426,7 +426,7 @@ namespace MergerLogicUnitTests.DataTypes
                     new Tile(2, 2, 3, new byte[] { 2})
             };
 
-            Assert.ThrowsException<NotImplementedException>(() => wmtsSource.UpdateTiles(testTiles));
+            Assert.ThrowsExceptionAsync<NotImplementedException>(async () => await wmtsSource.UpdateTiles(testTiles));
             this.VerifyAll();
         }
 

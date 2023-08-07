@@ -197,19 +197,14 @@ namespace MergerLogic.DataTypes
             return tileCount;
         }
 
-        protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
+        protected override async Task InternalUpdateTilesAsync(IEnumerable<Tile> targetTiles)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start upload tiles to S3");
-            this.ParallelUpdateTiles(targetTiles);
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end upload tiles to S3");
-        }
-
-        private async void ParallelUpdateTiles(IEnumerable<Tile> targetTiles)
-        {
             await Parallel.ForEachAsync(targetTiles, new ParallelOptions { MaxDegreeOfParallelism = -1 }, async (tile, cancellationToken) =>
             {
-                this.Utils.UpdateTile(tile);
+                await Task.Run(() => this.Utils.UpdateTile(tile), cancellationToken);
             });
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end upload tiles to S3");
         }
     }
 }

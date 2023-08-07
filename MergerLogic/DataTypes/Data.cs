@@ -267,7 +267,7 @@ namespace MergerLogic.DataTypes
             return correspondingTile;
         }
 
-        public void UpdateTiles(IEnumerable<Tile> tiles)
+        public async Task UpdateTiles(IEnumerable<Tile> tiles)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] update tiles started");
             var targetTiles = tiles.Select(tile =>
@@ -276,11 +276,11 @@ namespace MergerLogic.DataTypes
                 Tile? targetTile = this.FromCurrentGridTile(convertedTile);
                 return targetTile;
             }).Where(tile => tile is not null);
-            this.InternalUpdateTiles(targetTiles);
+            await this.InternalUpdateTilesAsync(targetTiles);
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] update tiles ended");
         }
 
-        protected abstract void InternalUpdateTiles(IEnumerable<Tile> targetTiles);
+        protected abstract Task InternalUpdateTilesAsync(IEnumerable<Tile> targetTiles);
 
         public virtual void Wrapup()
         {

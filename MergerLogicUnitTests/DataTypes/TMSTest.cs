@@ -9,6 +9,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace MergerLogicUnitTests.DataTypes
 {
@@ -425,7 +426,7 @@ namespace MergerLogicUnitTests.DataTypes
                     new Tile(2, 2, 3, new byte[] { 2})
             };
 
-            Assert.ThrowsException<NotImplementedException>(() => tmsSource.UpdateTiles(testTiles));
+            Assert.ThrowsExceptionAsync<NotImplementedException>(async () => await tmsSource.UpdateTiles(testTiles));
             this.VerifyAll();
         }
 

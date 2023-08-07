@@ -5,13 +5,13 @@ using MergerLogic.Clients;
 using MergerLogic.DataTypes;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace MergerLogicUnitTests.DataTypes
 {
@@ -438,7 +438,8 @@ namespace MergerLogicUnitTests.DataTypes
         {
             var testTiles = new Tile[]
             {
-                new Tile(1, 2, 3, new byte[] { }), new Tile(7, 7, 7, new byte[] { }),
+                new Tile(1, 2, 3, new byte[] { }), 
+                new Tile(7, 7, 7, new byte[] { }),
                 new Tile(2, 2, 3, new byte[] { })
             };
             var seq = new MockSequence();
@@ -449,7 +450,6 @@ namespace MergerLogicUnitTests.DataTypes
                 if (origin == GridOrigin.UPPER_LEFT)
                 {
                     this._geoUtilsMock
-                        .InSequence(seq)
                         .Setup(utils => utils.FlipY(It.IsAny<Tile>()))
                         .Returns<Tile>(t => t.Y);
                 }
@@ -457,7 +457,6 @@ namespace MergerLogicUnitTests.DataTypes
                 if (isOneXOne)
                 {
                     this._oneXOneConvertorMock
-                        .InSequence(seq)
                         .Setup(converter => converter.TryFromTwoXOne(It.IsAny<Tile>()))
                         .Returns<Tile>(tile => tile.Z != 7 ? tile : null);
                 }
@@ -465,7 +464,6 @@ namespace MergerLogicUnitTests.DataTypes
                 if (!isOneXOne || tile.Z != 7)
                 {
                     this._s3UtilsMock
-                        .InSequence(seq)
                         .Setup(utils => utils.UpdateTile(It.IsAny<Tile>()));
                 }
             }
@@ -473,7 +471,8 @@ namespace MergerLogicUnitTests.DataTypes
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
             var s3Source = new S3(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, grid, origin, false);
 
-            s3Source.UpdateTiles(testTiles);
+            var t = Task.Run(() => s3Source.UpdateTiles(testTiles));
+            t.Wait();
 
             var expectedTiles = isOneXOne ? new Tile[] { testTiles[0], testTiles[2] } : testTiles;
             Func<Tile?, Tile?, bool> tileEqualFunc = (tile1, tile2) => tile1?.Z == tile2?.Z && tile1?.X == tile2?.X && tile1?.Y == tile2?.Y;
