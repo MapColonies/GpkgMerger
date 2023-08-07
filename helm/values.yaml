@@ -98,7 +98,7 @@ env:
     url: http://localhost:4317/v1/trace
     ratio: 0.01
   metrics:
-    enabled: false
+    enabled: true
     url: http://localhost:4317/v1/metrics
     interval: 5000
 resources:
