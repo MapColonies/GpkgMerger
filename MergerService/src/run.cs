@@ -229,7 +229,7 @@ namespace MergerService.Src
             }
         }
 
-        private void RunTask(MergeTask task, ITaskUtils taskUtils, string? managerCallbackUrl)
+        private async void RunTask(MergeTask task, ITaskUtils taskUtils, string? managerCallbackUrl)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             this._logger.LogDebug($"[{methodName}] start {task.ToString()}");
@@ -255,12 +255,12 @@ namespace MergerService.Src
             TimeSpan ts;
 
             bool shouldUpscale = !metadata.IsNewTarget;
-            Func<IData, Coord, Tile?> getTileByCoord = metadata.IsNewTarget
-                ? (_, _) => null
-                : (source, coord) =>
+            Func<IData, Coord, Task<Tile?>> getTileByCoord = metadata.IsNewTarget
+                ? (_, _) => Task.FromResult<Tile?>(null)
+                : async (source, coord) =>
                 {
                     this._logger.LogDebug($"[{methodName}] GetCorrespondingTile start for coord {coord.ToString()}, shouldUpscale: {shouldUpscale}");
-                    Tile? resultTile = source.GetCorrespondingTile(coord, shouldUpscale);
+                    Tile? resultTile = await source.GetCorrespondingTile(coord, shouldUpscale);
                     this._logger.LogDebug($"[{methodName}] GetCorrespondingTile finished resultTile={resultTile}");
                     return resultTile;
                 };
@@ -331,8 +331,8 @@ namespace MergerService.Src
                                     this._logger.LogDebug($"[{methodName}] Get tile sources");
                                     foreach (IData source in sources.Skip(1))
                                     {
-                                        Tile? tile = source.GetCorrespondingTile(coord, shouldUpscale);
-                                        correspondingTileBuilders.Add(() => tile);
+                                        Tile? tile = await source.GetCorrespondingTile(coord, shouldUpscale);
+                                        correspondingTileBuilders.Add(() => Task.FromResult(tile));
                                     }
                                     this._logger.LogDebug($"[{methodName}] MergeTiles of {correspondingTileBuilders.Count} tiles");
                                     byte[]? blob = this._tileMerger.MergeTiles(correspondingTileBuilders, coord,

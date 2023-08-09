@@ -5,7 +5,6 @@ using MergerLogic.Clients;
 using MergerLogic.DataTypes;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -54,7 +53,6 @@ namespace MergerLogicUnitTests.DataTypes
             this._loggerFactoryMock = this._repository.Create<ILoggerFactory>();
             this._loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(this._loggerMock.Object);
             this._loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(this._s3ClientLoggerMock.Object);
-
 
             this._serviceProviderMock = this._repository.Create<IServiceProvider>();
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IOneXOneConvertor)))
@@ -179,7 +177,7 @@ namespace MergerLogicUnitTests.DataTypes
             var s3Source = new S3(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", batchSize, Grid.TwoXOne, GridOrigin.LOWER_LEFT, false);
 
             var cords = new Coord(z, x, y);
-            Assert.AreEqual(expectedNull ? null : existingTile, s3Source.GetCorrespondingTile(cords, false));
+            Assert.AreEqual(expectedNull ? null : existingTile, s3Source.GetCorrespondingTile(cords, false).Result);
             this._s3UtilsMock.Verify(util => util.GetTile(z, x, y), Times.Once);
             this.VerifyAll();
         }
@@ -265,13 +263,14 @@ namespace MergerLogicUnitTests.DataTypes
                 "test", 10, grid, origin, false);
 
             var res = s3Source.GetCorrespondingTile(cords, enableUpscale);
+            Tile? tileResult = res.Result;
             if (expectedNull)
             {
-                Assert.IsNull(res);
+                Assert.IsNull(tileResult);
             }
             else
             {
-                Assert.IsTrue(res.Z == 2 && res.X == 2 && res.Y == 3);
+                Assert.IsTrue(tileResult.Z == 2 && tileResult.X == 2 && tileResult.Y == 3);
             }
 
             if (origin != GridOrigin.LOWER_LEFT)
@@ -324,60 +323,55 @@ namespace MergerLogicUnitTests.DataTypes
         {
             Tile nullTile = null;
             var tile = new Tile(2, 2, 3, new byte[] { });
-            var sequence = new MockSequence();
-            this.SetupConstructorRequiredMocks(true, sequence);
+            this.SetupConstructorRequiredMocks(true);
 
             if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock
-                    .InSequence(sequence)
                     .Setup(utils => utils.FlipY(5, 3))
                     .Returns<int, int>((z, y) => y);
             }
             if (isOneXOne)
             {
                 this._oneXOneConvertorMock
-                    .InSequence(sequence)
                     .Setup(converter => converter.TryFromTwoXOne(5, 2, 3))
                     .Returns<int, int, int>((z, x, y) => isValidConversion ? new Coord(z, x, y) : null);
                 if (isValidConversion)
                 {
                     this._s3UtilsMock
-                        .InSequence(sequence)
                         .Setup(utils => utils.GetTile(It.Is<Coord>(c => c.Z == 5 && c.X == 2 && c.Y == 3)))
                         .Returns(nullTile);
                 }
 
-                this._oneXOneConvertorMock.InSequence(sequence)
+                this._oneXOneConvertorMock
                     .Setup(converter => converter.TryFromTwoXOne(It.Is<Coord>(c => c.Z == 5 && c.X == 2 && c.Y == 3)))
                     .Returns<Coord>(isValidConversion ? cords => cords : null);
             }
             else
             {
                 this._s3UtilsMock
-                    .InSequence(sequence)
                     .Setup(utils => utils.GetTile(5, 2, 3))
                     .Returns(nullTile);
             }
             if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock
-                    .InSequence(sequence)
                     .Setup(utils => utils.FlipY(It.Is<Coord>(c => c.Z == 5 && c.X == 2 && c.Y == 3)))
                     .Returns<Coord>(c => c.Y);
             }
 
-            for (int i = 0; i < 5; i++)
+            for (int i = 1; i < 5; i++)
             {
                 this._s3UtilsMock
-                    .InSequence(sequence)
                     .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
-                    .Returns(i == 4 ? tile : nullTile);
+                    .Returns(nullTile);
             }
+            this._s3UtilsMock
+                    .Setup(utils => utils.GetTile(0, 0, 0))
+                    .Returns(tile);
             if (isOneXOne)
             {
                 this._oneXOneConvertorMock
-                    .InSequence(sequence)
                     .Setup(converter => converter.ToTwoXOne(tile))
                     .Returns<Tile>(tile => tile);
             }
@@ -389,7 +383,9 @@ namespace MergerLogicUnitTests.DataTypes
 
             var expectedTile = isValidConversion ? tile : null;
             var expectedCallsAfterConversion = isValidConversion ? Times.Once() : Times.Never();
-            Assert.AreEqual(expectedTile, fsSource.GetCorrespondingTile(upscaleCords, true));
+            using var task = fsSource.GetCorrespondingTile(upscaleCords, true);
+            task.Wait();
+            Assert.AreEqual(expectedTile, task.Result);
             if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock.Verify(utils => utils.FlipY(5, 3), Times.Once);
@@ -409,7 +405,6 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._oneXOneConvertorMock.Verify(converter => converter.ToTwoXOne(tile), expectedCallsAfterConversion);
             }
-
             this._s3UtilsMock.Verify(utils => utils.GetTile(4, 1, 1), expectedCallsAfterConversion);
             this._s3UtilsMock.Verify(utils => utils.GetTile(3, 0, 0), expectedCallsAfterConversion);
             this._s3UtilsMock.Verify(utils => utils.GetTile(2, 0, 0), expectedCallsAfterConversion);

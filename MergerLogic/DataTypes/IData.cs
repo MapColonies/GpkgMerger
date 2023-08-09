@@ -9,7 +9,7 @@ namespace MergerLogic.DataTypes
         public bool IsNew { get; set; }
 
         bool Exists();
-        Tile? GetCorrespondingTile(Coord coords, bool upscale);
+        Task<Tile?> GetCorrespondingTile(Coord coords, bool upscale);
         List<Tile> GetNextBatch(out string batchIdentifier, out string? nextBatchIdentifier, long? totalTilesCount);
         void Reset();
         void setBatchIdentifier(string batchIdentifier);

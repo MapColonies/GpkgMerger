@@ -61,6 +61,7 @@ namespace MergerLogic.Clients
         public override Tile? GetTile(int z, int x, int y)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
+            Console.WriteLine($"[{methodName}] start z: {z}, x: {x}, y: {y}");
             this._logger.LogDebug($"[{methodName}] start z: {z}, x: {x}, y: {y}");
             var key = this.GetTileKey(z, x, y);
             if (key == null)

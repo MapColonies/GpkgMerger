@@ -125,9 +125,12 @@ namespace MergerLogic.DataTypes
             }
         }
 
-        protected override Tile InternalGetLastExistingTile(Coord baseCoords)
+        protected override Task<Tile> InternalGetLastExistingTile(Coord baseCoords)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] started");
+
+            var tcs = new TaskCompletionSource<Tile>();
+
             int cordsLength = baseCoords.Z << 1;
             int[] coords = new int[cordsLength];
 
@@ -145,8 +148,9 @@ namespace MergerLogic.DataTypes
             }
 
             Tile lastTile = this.Utils.GetLastTile(coords, z);
+            tcs.SetResult(lastTile);
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended");
-            return lastTile;
+            return tcs.Task;
         }
 
         public void PrintBatch(List<Tile> tiles)

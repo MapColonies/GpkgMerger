@@ -1,7 +1,13 @@
+using ImageMagick;
 using MergerLogic.Batching;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Drawing;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -40,7 +46,7 @@ namespace MergerLogic.DataTypes
         protected delegate int ValFromCoordFunction(Coord coord);
         protected delegate Tile? GetTileFromXYZFunction(int z, int x, int y);
         protected delegate Coord? GetCoordFromCoordFunction(Coord coord);
-        protected delegate Tile? GetTileFromCoordFunction(Coord coord);
+        protected delegate Task<Tile?> GetTileFromCoordFunction(Coord coord);
         protected delegate Tile TileConvertorFunction(Tile tile);
         protected delegate Tile? NullableTileConvertorFunction(Tile tile);
 
@@ -187,27 +193,40 @@ namespace MergerLogic.DataTypes
 
         public abstract void Reset();
 
-        protected virtual Tile? InternalGetLastExistingTile(Coord coords)
+        protected virtual async Task<Tile?> InternalGetLastExistingTile(Coord coords)
         {
+            // get tiles coordinates
             int z = coords.Z;
             int baseTileX = coords.X;
             int baseTileY = this.ConvertOriginCoord(coords); //dont forget to use the correct origin when overriding this
 
-            Tile? lastTile = null;
-
-            // Go over zoom levels until a tile is found (may not find tile)
+            List<Coord> coordsList = new List<Coord>(MaxZoomRead - (MaxZoomRead - coords.Z));
             for (int i = z - 1; i >= 0; i--)
             {
                 baseTileX >>= 1; // Divide by 2
                 baseTileY >>= 1; // Divide by 2
 
-                lastTile = this.Utils.GetTile(i, baseTileX, baseTileY);
-                if (lastTile != null)
-                {
-                    break;
-                }
+                coordsList.Add(new Coord(i, baseTileX, baseTileY));
             }
 
+            ConcurrentDictionary<int, Tile?> zOrderToTileDictionary = new ConcurrentDictionary<int, Tile?>();
+            await Parallel.ForEachAsync(coordsList, async (coord, cancellationToken) =>
+            {
+                using Task t = Task.Run(() =>
+                {
+                    Tile? tile = this.Utils.GetTile(coord.Z, coord.X, coord.Y);
+                    zOrderToTileDictionary.TryAdd(coord.Z, tile);
+                }, cancellationToken);
+                t.Wait(cancellationToken);
+            });
+
+            if (zOrderToTileDictionary.IsEmpty)
+            {
+                return null;
+            }
+            List<KeyValuePair<int, Tile?>> list = new List<KeyValuePair<int, Tile?>>(zOrderToTileDictionary.ToArray());
+            var orderedList = list.OrderBy(kvp => kvp.Key);
+            Tile? lastTile = orderedList.Last().Value;
             return lastTile;
         }
 
@@ -230,14 +249,14 @@ namespace MergerLogic.DataTypes
         }
 
         //TODO: move to util after IOC
-        protected Tile? GetLastOneXOneExistingTile(Coord coords)
+        protected async Task<Tile?> GetLastOneXOneExistingTile(Coord coords)
         {
             Coord? newCoords = this.FromCurrentGridCoord(coords);
             if (newCoords is null)
             {
                 return null;
             }
-            Tile? tile = this.InternalGetLastExistingTile(newCoords);
+            Tile? tile = await this.InternalGetLastExistingTile(newCoords);
             return tile != null ? this.OneXOneConvertor.ToTwoXOne(tile) : null;
         }
 
@@ -254,14 +273,14 @@ namespace MergerLogic.DataTypes
 
         public abstract List<Tile> GetNextBatch(out string batchIdentifier, out string? nextBatchIdentifier, long? totalTilesCount);
 
-        public Tile? GetCorrespondingTile(Coord coords, bool upscale)
+        public async Task<Tile?> GetCorrespondingTile(Coord coords, bool upscale)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start for coord: {coords.ToString()}, upscale: {upscale}");
             Tile? correspondingTile = this.GetTile(coords.Z, coords.X, coords.Y);
 
             if (upscale && correspondingTile == null)
             {
-                correspondingTile = this.GetLastExistingTile(coords);
+                correspondingTile = await this.GetLastExistingTile(coords);
             }
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end for coord: {coords.ToString()}, upscale: {upscale}");
             return correspondingTile;

@@ -11,7 +11,7 @@ namespace MergerCli
 {
     internal class Process : IProcess
     {
-        private Func<Coord, Tile?> _getTileByCoord;
+        private Func<Coord, Task<Tile?>> _getTileByCoord;
         private readonly IConfigurationManager _configManager;
         private readonly ITileMerger _tileMerger;
         private readonly ILogger _logger;
@@ -49,7 +49,7 @@ namespace MergerCli
             
             bool shouldUpscale = !(uploadOnly || baseData.IsNew);
             _getTileByCoord = uploadOnly || baseData.IsNew ?
-                (_) => null
+                (_) => Task.FromResult<Tile?>(null)
                 :
                 (targetCoords) => baseData.GetCorrespondingTile(targetCoords, shouldUpscale);
             
@@ -113,7 +113,8 @@ namespace MergerCli
                 var targetCoords = newTile.GetCoord();
                 List<CorrespondingTileBuilder> correspondingTileBuilders = new List<CorrespondingTileBuilder>()
                 {
-                    () => _getTileByCoord(targetCoords), () => newTile
+                    () => this._getTileByCoord(targetCoords), 
+                    () => Task.FromResult(newTile)
                 };
 
                 byte[]? image = this._tileMerger.MergeTiles(correspondingTileBuilders, targetCoords, targetFormat);

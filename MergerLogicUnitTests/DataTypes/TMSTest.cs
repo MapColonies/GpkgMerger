@@ -156,7 +156,7 @@ namespace MergerLogicUnitTests.DataTypes
             var tmsSource = new TMS(this._serviceProviderMock.Object, "test", batchSize, extent, Grid.TwoXOne, GridOrigin.LOWER_LEFT, 21, 0);
 
             var cords = new Coord(z, x, y);
-            Assert.AreEqual(expectedNull ? null : existingTile, tmsSource.GetCorrespondingTile(cords, false));
+            Assert.AreEqual(expectedNull ? null : existingTile, tmsSource.GetCorrespondingTile(cords, false).Result);
             this._httpUtilsMock.Verify(util => util.GetTile(z, x, y), Times.Once);
             this.VerifyAll();
         }
@@ -241,13 +241,14 @@ namespace MergerLogicUnitTests.DataTypes
             var tmsSource = new TMS(this._serviceProviderMock.Object, "test", 10, extent, grid, origin, 21, 0);
 
             var res = tmsSource.GetCorrespondingTile(cords, enableUpscale);
+            Tile? tileResult = res.Result;
             if (expectedNull)
             {
-                Assert.IsNull(res);
+                Assert.IsNull(tileResult);
             }
             else
             {
-                Assert.IsTrue(res.Z == 2 && res.X == 2 && res.Y == 3);
+                Assert.IsTrue(tileResult.Z == 2 && tileResult.X == 2 && tileResult.Y == 3);
             }
 
             if (origin != GridOrigin.LOWER_LEFT)
@@ -366,7 +367,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             var expectedTile = isValidConversion ? tile : null;
             var expectedCallsAfterConversion = isValidConversion ? Times.Once() : Times.Never();
-            Assert.AreEqual(expectedTile, tmsSource.GetCorrespondingTile(upscaleCords, true));
+            Assert.AreEqual(expectedTile, tmsSource.GetCorrespondingTile(upscaleCords, true).Result);
             if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock.Verify(utils => utils.FlipY(5, 3), Times.Once);

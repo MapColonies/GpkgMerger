@@ -254,13 +254,14 @@ namespace MergerLogicUnitTests.DataTypes
                 isBase, extent);
 
             var res = gpkg.GetCorrespondingTile(cords, enableUpscale);
+            Tile? tileResult = res.Result;
             if (expectedNull)
             {
-                Assert.IsNull(res);
+                Assert.IsNull(tileResult);
             }
             else
             {
-                Assert.IsTrue(res.Z == 2 && res.X == 2 && res.Y == 3);
+                Assert.IsTrue(tileResult.Z == 2 && tileResult.X == 2 && tileResult.Y == 3);
             }
 
             if (origin != GridOrigin.LOWER_LEFT)

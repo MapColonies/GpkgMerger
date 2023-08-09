@@ -71,7 +71,9 @@ namespace MergerLogic.ImageProcessing
                 tile = GetFirstTile(tiles, targetCoords, ref lastProcessedTile, ref i);
                 for (; i >= 0; i--)
                 {
-                    var tile2 = tiles[i]();
+                    using Task<Tile?> t = Task.Run(() => tiles[i]());
+                    t.Wait();
+                    var tile2 = t.Result;
                     if (tile2 is null)
                     {
                         continue;
@@ -96,7 +98,9 @@ namespace MergerLogic.ImageProcessing
 
                 for (; i >= 0; i--)
                 {
-                    tile = tiles[i]();
+                    using Task<Tile?> t = Task.Run(() => tiles[i]());
+                    t.Wait();
+                    tile = t.Result;
                     if (tile is null)
                     {
                         continue;
@@ -125,7 +129,10 @@ namespace MergerLogic.ImageProcessing
         {
             for (; i >= 0; i--)
             {
-                Tile? tile = tiles[i]();
+                /*using Task<Tile?> t = Task.Run(() => tiles[i]());
+                t.Wait();*/
+                // Tile? tile = t.Result;
+                Tile? tile = tiles[i]().Result;
                 if (tile != null)
                 {
                     // Check if should upscale tile (first tile does not upscale if there are no other tiles)
