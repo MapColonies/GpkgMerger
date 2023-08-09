@@ -29,8 +29,9 @@ namespace MergerLogic.Monitoring
             var resource = this.ParseResource();
             var serviceName = this.GetResourceAttribute(resource, SERVICE_NAME_ATTRIBUTE, "unknown_service");
             var serviceVersion = this.GetResourceAttribute(resource, SERVICE_VERSION_ATTRIBUTE, "unknown_version");
-
-            return $"[{this.FormatTime(record.Timestamp)}] [{record.LogLevel}] [{serviceName}] [{serviceVersion}] [{record.CategoryName}] {record.State}";
+            var exception = record.Exception != null ? $" [{record.Exception}]" : string.Empty;
+            
+            return $"[{this.FormatTime(record.Timestamp)}] [{record.LogLevel}] [{serviceName}] [{serviceVersion}] [{record.CategoryName}] {record.State}{exception}";
         }
 
         private string FormatTime(DateTime time)
