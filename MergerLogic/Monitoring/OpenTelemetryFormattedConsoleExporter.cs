@@ -1,6 +1,7 @@
 ﻿using OpenTelemetry;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
+using System;
 using System.Net;
 
 namespace MergerLogic.Monitoring
@@ -36,8 +37,8 @@ namespace MergerLogic.Monitoring
                 resource.Add(SERVICE_HOST_NAME_ATTRIBUTE, Dns.GetHostName());
             }
             var serviceHostName = this.GetResourceAttribute(resource, SERVICE_HOST_NAME_ATTRIBUTE, "unknown_host_name");
-
-            return $"[{this.FormatTime(record.Timestamp)}] [{record.LogLevel}] [{serviceHostName}] [{serviceName}] [{serviceVersion}] [{Environment.CurrentManagedThreadId}] [{record.CategoryName}] {record.State}";
+            var exception = record.Exception != null ? $" [{record.Exception}]" : string.Empty;
+            return $"[{this.FormatTime(record.Timestamp)}] [{record.LogLevel}] [{serviceName}] [{serviceHostName}] [{serviceVersion}] [{Environment.CurrentManagedThreadId}] [{record.CategoryName}] {record.State}{exception}";
         }
 
         private string FormatTime(DateTime time)
