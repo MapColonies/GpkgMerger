@@ -40,7 +40,7 @@ namespace MergerService.Utils
         {
             using (this._activitySource.StartActivity("dequeue job"))
             {
-                string relativeUri = $"jobs/{jobId}";
+                string relativeUri = $"jobs/{jobId}?shouldReturnTasks=false";
                 string url = new Uri(new Uri(_jobManagerUrl), relativeUri).ToString();
                 string? jobData = this._httpClient.GetDataString(url);
                 if (jobData is null)
