@@ -9,6 +9,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace MergerLogicUnitTests.DataTypes
 {
@@ -455,7 +456,8 @@ namespace MergerLogicUnitTests.DataTypes
                 new Tile(1, 2, 3, new byte[] { }), new Tile(7, 7, 7, new byte[] { }),
                 new Tile(2, 2, 3, new byte[] { })
             };
-            gpkg.UpdateTiles(testTiles);
+            var t = Task.Run(() => gpkg.UpdateTiles(testTiles));
+            t.Wait();
 
             var expectedTiles = isOneXOne ? new Tile[] { testTiles[0], testTiles[2] } : testTiles;
             var tileComparer = EqualityComparerFactory.Create<Tile>((tile1, tile2) =>

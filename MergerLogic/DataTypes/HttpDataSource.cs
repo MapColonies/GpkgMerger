@@ -84,7 +84,7 @@ namespace MergerLogic.DataTypes
             }
         }
 
-        protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
+        protected override Task InternalUpdateTilesAsync(IEnumerable<Tile> targetTiles)
         {
             throw new NotImplementedException();
         }

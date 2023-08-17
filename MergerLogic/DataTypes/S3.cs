@@ -67,17 +67,17 @@ namespace MergerLogic.DataTypes
 
         private List<int> GetZoomLevels()
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start");
-            List<int> zoomLevels = new List<int>();
+            List<int> zoomLevels = new List<int>(Data<IS3Client>.MaxZoomRead);
             
             for (int zoomLevel = 0; zoomLevel < Data<IS3Client>.MaxZoomRead; zoomLevel++)
             {
+                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Check if zoom {zoomLevel} exists");
+                // TODO: need to check if can be updated dynamically
                 if (this.FolderExists($"{zoomLevel}/"))
                 {
                     zoomLevels.Add(zoomLevel);
                 }
             }
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended");
             return zoomLevels;
         }
 
@@ -158,15 +158,16 @@ namespace MergerLogic.DataTypes
             };
             var task = this._client.ListObjectsV2Async(listRequests);
             var response = task.Result;
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end");
-            return response.KeyCount > 0;
+            bool isExists = response.KeyCount > 0;
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] directory: {directory}, isExists={isExists}");
+            return isExists;
         }
 
         public override bool Exists()
         {
-            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] bucket: {this._bucket}, path: {this.Path}");
+            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Checking if exists, bucket: {this._bucket}, path: {this.Path}");
             bool exists = FolderExists("");
-            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] ended");
+            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] exists={exists} ended");
             return exists;
         }
 
@@ -196,14 +197,14 @@ namespace MergerLogic.DataTypes
             return tileCount;
         }
 
-        protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
+        protected override async Task InternalUpdateTilesAsync(IEnumerable<Tile> targetTiles)
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start");
-            foreach (var tile in targetTiles)
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start upload tiles to S3");
+            await Parallel.ForEachAsync(targetTiles, new ParallelOptions { MaxDegreeOfParallelism = -1 }, async (tile, cancellationToken) =>
             {
-                this.Utils.UpdateTile(tile);
-            }
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end");
+                await Task.Run(() => this.Utils.UpdateTile(tile), cancellationToken);
+            });
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end upload tiles to S3");
         }
     }
 }

@@ -125,7 +125,8 @@ namespace MergerCli
                 }
             }
 
-            baseData.UpdateTiles(tiles);
+            var t = Task.Run(() => baseData.UpdateTiles(tiles));
+            t.Wait();
 
             Interlocked.Add(ref tileProgressCount, tiles.Count);
             this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Tile Count: {tileProgressCount} / {totalTileCount}");

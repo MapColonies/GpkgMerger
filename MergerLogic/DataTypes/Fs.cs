@@ -174,7 +174,7 @@ namespace MergerLogic.DataTypes
             return count;
         }
 
-        protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
+        protected override Task InternalUpdateTilesAsync(IEnumerable<Tile> targetTiles)
         {
             foreach (Tile tile in targetTiles)
             {
@@ -190,6 +190,7 @@ namespace MergerLogic.DataTypes
                     }
                 }
             }
+            return Task.CompletedTask;
         }
     }
 }

@@ -189,11 +189,12 @@ namespace MergerLogic.DataTypes
             return result;
         }
 
-        protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
+        protected override Task InternalUpdateTilesAsync(IEnumerable<Tile> targetTiles)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] started");
             this.Utils.InsertTiles(targetTiles);
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended");
+            return Task.CompletedTask;
         }
     }
 }

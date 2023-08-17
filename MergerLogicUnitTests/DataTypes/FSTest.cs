@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace MergerLogicUnitTests.DataTypes
 {
@@ -481,7 +482,8 @@ namespace MergerLogicUnitTests.DataTypes
                     fileMock.InSequence(seq).Setup(f => f.OpenWrite()).Returns(fileStream);
                 }
 
-                fsSource.UpdateTiles(testTiles);
+                var t = Task.Run(() => fsSource.UpdateTiles(testTiles));
+                t.Wait();
 
                 CollectionAssert.AreEqual(new byte[] { 0 }, fileStreams[0].ToArray());
                 if (isOneXOne)

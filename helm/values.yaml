@@ -76,6 +76,7 @@ rasterCommon:
 env:
   general:
     validate: true
+    servicePointManagerDefaultConnectionLimit: 100
     batchSize: 1000
   TASK:
     types:
@@ -98,7 +99,7 @@ env:
     url: http://localhost:4317/v1/trace
     ratio: 0.01
   metrics:
-    enabled: true
+    enabled: false
     url: http://localhost:4317/v1/metrics
     interval: 5000
 resources:
