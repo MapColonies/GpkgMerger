@@ -1,6 +1,7 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 using MergerLogic.ImageProcessing;
+using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
 using Microsoft.Extensions.Logging;
@@ -35,6 +36,7 @@ namespace MergerLogicUnitTests.DataTypes
         private Mock<IDirectory> _directoryMock;
         private Mock<IFileInfoFactory> _fileInfoFactoryMock;
         private Mock<IPath> _pathMock;
+        private Mock<IMetricsProvider> _metricsProviderMock;
 
         #endregion
 
@@ -57,6 +59,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._utilsFactoryMock.Setup(factory => factory.GetDataUtils<IFileClient>(It.IsAny<string>()))
                 .Returns(this._fsUtilsMock.Object);
             this._loggerMock = this._repository.Create<ILogger<FS>>(MockBehavior.Loose);
+            this._metricsProviderMock = this._repository.Create<IMetricsProvider>();
             this._loggerFactoryMock = this._repository.Create<ILoggerFactory>();
             this._loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(this._loggerMock.Object);
             this._serviceProviderMock = this._repository.Create<IServiceProvider>();
@@ -120,7 +123,7 @@ namespace MergerLogicUnitTests.DataTypes
             }
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, grid, origin, isBase);
+            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", 10, grid, origin, isBase);
 
             var expected = cords.Z == 2;
             if (useCoords)
@@ -168,7 +171,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._fsUtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
                 .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
 
-            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", batchSize, Grid.TwoXOne, GridOrigin.LOWER_LEFT, isBase);
+            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", batchSize, Grid.TwoXOne, GridOrigin.LOWER_LEFT, isBase);
 
             var cords = new Coord(z, x, y);
             Assert.AreEqual(expectedNull ? null : existingTile, fsSource.GetCorrespondingTile(cords, false));
@@ -255,7 +258,7 @@ namespace MergerLogicUnitTests.DataTypes
             }
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, grid, origin, isBase);
+            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", 10, grid, origin, isBase);
 
             var res = fsSource.GetCorrespondingTile(cords, enableUpscale);
             if (expectedNull)
@@ -378,7 +381,7 @@ namespace MergerLogicUnitTests.DataTypes
             }
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, grid, origin, isBase);
+            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", 10, grid, origin, isBase);
             var upscaleCords = new Coord(5, 2, 3);
 
             var expectedTile = isValidConversion ? tile : null;
@@ -455,7 +458,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._pathUtilsMock.Setup(utils => utils.GetTilePath("test", It.IsAny<Tile>(),false)).Returns("testPath");
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, grid, origin, isBase);
+            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", 10, grid, origin, isBase);
 
             var testTiles = new Tile[]
             {
@@ -545,7 +548,7 @@ namespace MergerLogicUnitTests.DataTypes
                 .Returns(Array.Empty<string>());
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, grid, origin, isBase);
+            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", 10, grid, origin, isBase);
 
             fsSource.Wrapup();
 
@@ -579,7 +582,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
             var action = () => new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, 
-                    "test", 10, grid, origin, isBase);
+                this._metricsProviderMock.Object,"test", 10, grid, origin, isBase);
 
             if (!exist && !isBase)
             {
@@ -618,7 +621,7 @@ namespace MergerLogicUnitTests.DataTypes
             this.SetupConstructorRequiredMocks(false, true, seq);
             this._geoUtilsMock.Setup(geoUtils => geoUtils.DefaultExtent(It.IsAny<bool>())).Returns(extent);
 
-            var fs = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, 
+            var fs = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, this._metricsProviderMock.Object,
                 "test", 10, grid, origin);
             Assert.AreEqual(fs.Extent, extent);
             this.VerifyAll();
@@ -668,7 +671,7 @@ namespace MergerLogicUnitTests.DataTypes
                 .Returns(fileList);
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, grid, origin, isBase);
+            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", 10, grid, origin, isBase);
 
             Assert.AreEqual(tileCount, fsSource.TileCount());
             this._directoryMock.Verify(d => d.EnumerateFiles("test/1", "*.*", SearchOption.AllDirectories), Times.Exactly(2));
@@ -698,7 +701,7 @@ namespace MergerLogicUnitTests.DataTypes
             this.SetupGetTiles(isBase, isOneXOne, origin);
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, grid, origin, isBase);
+            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", 10, grid, origin, isBase);
 
             string testIdentifier = offset.ToString();
             fsSource.setBatchIdentifier(testIdentifier);
@@ -731,7 +734,7 @@ namespace MergerLogicUnitTests.DataTypes
             this.SetupGetTiles(isBase, isOneXOne, origin);
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", batchSize, grid, origin, isBase);
+            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", batchSize, grid, origin, isBase);
 
             fsSource.GetNextBatch(out string batchIdentifier, out string? _, null);
             fsSource.GetNextBatch(out batchIdentifier, out string? _, null);
@@ -809,7 +812,7 @@ namespace MergerLogicUnitTests.DataTypes
             }
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", batchSize, grid, origin, isBase);
+            var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", batchSize, grid, origin, isBase);
 
             var comparer = ComparerFactory.Create<Tile>((t1, t2) => t1?.Z == t2?.Z && t1?.X == t2?.X && t1?.Y == t2?.Y ? 0 : -1);
             for (int i = 0; i < tileBatches.Count; i++)
@@ -863,7 +866,7 @@ namespace MergerLogicUnitTests.DataTypes
             IDirectoryInfo nullInfo = null;
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
             
-            var action = () => new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 
+            var action = () => new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", 
                 10, grid, origin, isBase);
 
             if (!exists && !isBase)

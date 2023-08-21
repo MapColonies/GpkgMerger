@@ -1,4 +1,5 @@
 using MergerLogic.Clients;
+using MergerLogic.Monitoring.Metrics;
 using System.Diagnostics;
 using System.Net.Http.Headers;
 using MergerLogic.Utils;
@@ -23,15 +24,17 @@ namespace MergerService.Utils
         private readonly int _maxAttempts;
         private readonly JsonSerializerSettings _jsonSerializerSettings;
         private readonly string _jobManagerUrl;
+        private readonly IMetricsProvider _metricsProvider;
 
         public TaskUtils(IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<TaskUtils> logger,
-            ActivitySource activitySource, IHeartbeatClient heartbeatClient)
+            ActivitySource activitySource, IHeartbeatClient heartbeatClient, IMetricsProvider metricsProvider)
         {
             this._httpClient = httpClient;
             this._configuration = configuration;
             this._logger = logger;
             this._heartbeatClient = heartbeatClient;
             this._activitySource = activitySource;
+            this._metricsProvider = metricsProvider;
             this._maxAttempts = this._configuration.GetConfiguration<int>("TASK", "maxAttempts");
 
             // Construct Json serializer settings
@@ -49,23 +52,32 @@ namespace MergerService.Utils
         {
             using (this._activitySource.StartActivity("dequeue task"))
             {
+                Stopwatch taskInitializationStopwatch = new Stopwatch();
+                taskInitializationStopwatch.Start();
+
+                
                 string relativeUri = $"tasks/{jobType}/{taskType}/startPending";
                 string url = new Uri(new Uri(_jobManagerUrl), relativeUri).ToString();
                 string? taskData = this._httpClient.PostData(url, null);
 
-                if (taskData is null)
-                {
-                    return null;
-                }
+
 
                 try
                 {
-                    return JsonConvert.DeserializeObject<MergeTask>(taskData, this._jsonSerializerSettings)!;
+                    return taskData is null
+                        ? null
+                        : JsonConvert.DeserializeObject<MergeTask>(taskData, this._jsonSerializerSettings)!;
                 }
                 catch (Exception e)
                 {
-                    this._logger.LogWarning(e, $"[{MethodBase.GetCurrentMethod().Name}] Error deserializing returned task");
+                    this._logger.LogWarning(e,
+                        $"[{MethodBase.GetCurrentMethod().Name}] Error deserializing returned task");
                     return null;
+                }
+                finally
+                {
+                    taskInitializationStopwatch.Stop();
+                    this._metricsProvider.TaskInitializationTimeHistogram().Observe(taskInitializationStopwatch.Elapsed.TotalSeconds);
                 }
             }
         }

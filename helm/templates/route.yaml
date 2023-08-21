@@ -1,0 +1,17 @@
+{{- $releaseName := .Release.Name -}}
+  {{- $chartName := include "gpkg-merger.name" . -}}
+  {{- $serviceName := include "service.fullname" . -}}
+  {{- $cloudProviderFlavor := include "gpkg-merger.cloudProviderFlavor" . -}}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ $releaseName }}-{{ $chartName }}-route
+  annotations:
+    haproxy.router.openshift.io/rewrite-target: /
+spec:
+  path:  "/"
+  to:
+    kind: Service
+    name: {{ $serviceName }}
+  tls:
+    termination: edge

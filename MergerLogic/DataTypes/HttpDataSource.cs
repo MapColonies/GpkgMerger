@@ -1,5 +1,6 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.Clients;
+using MergerLogic.Monitoring.Metrics;
 
 namespace MergerLogic.DataTypes
 {
@@ -9,9 +10,9 @@ namespace MergerLogic.DataTypes
         protected IEnumerator<Tile[]> Batches;
         protected int BatchIndex = 0;
 
-        protected HttpDataSource(IServiceProvider container,
+        protected HttpDataSource(IServiceProvider container, IMetricsProvider metricsProvider,
             DataType type, string path, int batchSize, Extent extent, GridOrigin? origin, Grid? grid, int maxZoom, int minZoom = 0)
-            : base(container, type, path, batchSize, grid, origin, false)
+            : base(container, metricsProvider, type, path, batchSize, grid, origin, false)
         {
             this.GenTileRanges(extent, this.Origin, minZoom, maxZoom);
         }

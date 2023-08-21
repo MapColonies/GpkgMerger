@@ -1,4 +1,5 @@
 using MergerLogic.Batching;
+using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -18,9 +19,9 @@ namespace MergerLogic.DataTypes
         private readonly string[] _supportedFileExtensions = { ".png", ".jpg", ".jpeg" };
         static readonly object _locker = new object();
 
-        public FS(IPathUtils pathUtils, IServiceProvider container,
+        public FS(IPathUtils pathUtils, IServiceProvider container, IMetricsProvider metricsProvider,
             string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false)
-            : base(container, DataType.FOLDER, path, batchSize, grid, origin, isBase)
+            : base(container, metricsProvider, DataType.FOLDER, path, batchSize, grid, origin, isBase)
         {
             this._pathUtils = pathUtils;
             this.Reset();

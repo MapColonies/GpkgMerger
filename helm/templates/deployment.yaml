@@ -38,6 +38,10 @@ spec:
       {{- if .Values.resetOnConfigChange }}
       annotations:
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if .Values.env.metrics.enabled }}
+        prometheus.io/port: {{ .Values.env.metrics.port | quote }}
+        prometheus.io/scrape: {{ .Values.env.metrics.scrape | quote }}
+        {{- end }}
       {{- end }}
     spec:
       {{- if .Values.rasterCommon.useNodeAffinity }}
@@ -103,6 +107,7 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ $releaseName }}-configmap
+          imagePullPolicy: "Always"
           ports:
             - name: http
               containerPort: 8080

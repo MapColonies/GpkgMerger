@@ -4,6 +4,7 @@ using Amazon.S3;
 using MergerLogic.Clients;
 using MergerLogic.ImageProcessing;
 using MergerLogic.Monitoring;
+using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -14,6 +15,7 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Polly;
 using Polly.Extensions.Http;
+using Prometheus;
 using System.Diagnostics;
 using System.IO.Abstractions;
 using System.Reflection;
@@ -35,7 +37,8 @@ namespace MergerLogic.Extensions
                 .RegisterS3()
                 .RegisterHttp() //registering http override logs configuration so it must be registered before the telemetry 
                 .RegisterOpenTelemetry()
-                .RegisterFileSystem();
+                .RegisterFileSystem()
+                .RegisterPrometheusMetrics();
         }
 
         public static IServiceCollection RegisterImageProcessors(this IServiceCollection collection)
@@ -145,9 +148,9 @@ namespace MergerLogic.Extensions
                         //console exporter has hardcoded multiline log format so it cant be used
                         //options.AddConsoleExporter();
                         //disable lgtm not disposed alert as it is global singleton that is used for the entire app life
-                        options.AddProcessor(
-                            new SimpleLogRecordExportProcessor(new OpenTelemetryFormattedConsoleExporter(new ConsoleExporterOptions()))); //lgtm [cs/local-not-disposed]
                         options.SetResourceBuilder(resourceBuilder);
+                        options.AddProcessor(
+                            new SimpleLogRecordExportProcessor(new OpenTelemetryFormattedConsoleExporter(new ConsoleExporterOptions( )))); //lgtm [cs/local-not-disposed]
                     });
             });
             #endregion Logger
@@ -156,7 +159,7 @@ namespace MergerLogic.Extensions
             bool tracingEnabled = _config.GetConfiguration<bool>("TRACING", "enabled");
             if (tracingEnabled)
             {
-                collection.AddOpenTelemetryTracing(tracerProviderBuilder =>
+                collection.AddOpenTelemetry().WithTracing(tracerProviderBuilder =>
                 {
                     double traceRatio = _config.GetConfiguration<double>("TRACING", "ratio");
                     string traceCollectorUrl = _config.GetConfiguration("TRACING", "url");
@@ -175,29 +178,26 @@ namespace MergerLogic.Extensions
             //disable lgtm not disposed alert as it is global singleton that is used for the entire app life
             collection.AddSingleton(new ActivitySource(serviceName)); //lgtm [cs/local-not-disposed]
             #endregion Tracing
-
-            #region Metrics
-            bool metricsEnabled = _config.GetConfiguration<bool>("METRICS", "enabled");
-            if (metricsEnabled)
-            {
-                collection.AddOpenTelemetryMetrics(meterProviderBuilder =>
-                {
-                    string meterCollectorUrl = _config.GetConfiguration("METRICS", "url");
-                    int interval = _config.GetConfiguration<int>("METRICS", "interval");
-                    meterProviderBuilder.SetResourceBuilder(resourceBuilder);
-                    var exporter = new OtlpMetricExporter(new OtlpExporterOptions()
-                    {
-                        Endpoint = new Uri(meterCollectorUrl)
-                    });
-                    //disable lgtm not disposed alert as it is global singleton that is used for the entire app life
-                    meterProviderBuilder.AddReader(new PeriodicExportingMetricReader(exporter, interval)); //lgtm [cs/local-not-disposed]
-                    //TODO: support console config for debug
-                });
-            }
-            #endregion Metrics
-
+            
             return collection;
         }
+
+        public static IServiceCollection RegisterPrometheusMetrics(this IServiceCollection collection)
+        {
+            ConfigurationManager _config = new ConfigurationManager(null);
+            bool metricsEnabled = _config.GetConfiguration<bool>("METRICS", "enabled");
+            int metricsPort = _config.GetConfiguration<int>("METRICS", "port");
+
+            if (metricsEnabled)
+            {
+                MetricServer metricsServer = new MetricServer(port: metricsPort);
+                metricsServer.Start();
+                collection.AddSingleton<IMetricsProvider, MetricsProvider>();
+            }
+            
+            return collection;
+        }
+        
 
     }
 }

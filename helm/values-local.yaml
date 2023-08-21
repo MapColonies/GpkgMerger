@@ -4,21 +4,23 @@ global:
   metrics: {}
   environment: {}
 
+shtok: false
 enabled: true
 environment: development
+nodePort: 30030 #for minikube deployment only
 replicaCount: 1
 initialDelaySeconds: 60
 resetOnConfigChange: true
 isExporter: false
 
 cloudProvider:
-  dockerRegistryUrl: 'my-registry'
-  imagePullSecretName: 'my-registry-secret'
+  dockerRegistryUrl: 'acrarolibotnonprod.azurecr.io'
+  imagePullSecretName: 'acr-registry'
   flavor: openshift
 
 image:
-  repository: gpkg-merge
-  tag: 'latest'
+  repository: tiles-merger-service
+  tag: 'metrics'
 
 local:
   s3:
@@ -49,21 +51,22 @@ local:
 rasterCommon:
   useNodeAffinity: false
   serviceUrls:
-    jobManager: http://localhost:8084
-    heartbeatManager: http://localhost:8082
+    jobManager: "http://job-manager-raster-dev-job-manager"
+    heartbeatManager: "http://heartbeat-manager-raster-dev-heartbeat-manager"
   storage:
     fs:
       ingestionSourcePvc:
-        name: ingestion-source-pvc
+        enabled: true
+        name: local-sources-pvc
         subPath: ingestion-source
       internalPvc:
-        name: "internal-pvc"
+        name: internal-pvc-nfs
         tilesSubPath: tiles
-        gpkgSubPath: gpkgs
+        gpkgSubPath: config
     s3:
-      endpointUrl: "localhost:9000"
-      tilesBucket: ""
-      secretName: "s3-secret"
+      endpointUrl: "10.8.0.9:9000"
+      tilesBucket: raster-dev
+      secretName: "raster-dev-s3-secret"
       sslEnabled: false
       request:
         timeoutSec: 5
@@ -74,8 +77,11 @@ rasterCommon:
     path: '/usr/local/share/ca-certificates'
     key: 'ca.crt'
 env:
+  port: 80
+  targetPort: 8080
+  protocol: TCP
   general:
-    validate: true
+    validate: false
     batchSize: 1000
   TASK:
     types:
@@ -101,14 +107,13 @@ env:
     enabled: true
     scrape: true
     port: 9185
-    measurementBuckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 15, 50,
-      250, 500]
+    measurementBuckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 15, 50, 250, 500]
 resources:
-  enabled: true
+  enabled: false
   value:
     limits:
-      cpu: "100m"
-      memory: "128Mi"
+      cpu: "3"
+      memory: "3Gi"
     requests:
-      cpu: "100m"
-      memory: "128Mi"
+      cpu: "1000m"
+      memory: "1280Mi"

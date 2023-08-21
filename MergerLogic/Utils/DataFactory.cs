@@ -1,5 +1,6 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using MergerLogic.Monitoring.Metrics;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 
@@ -11,13 +12,15 @@ namespace MergerLogic.Utils
         private readonly IPathUtils _pathUtils;
         private readonly IServiceProvider _container;
         private readonly ILogger _logger;
+        private readonly IMetricsProvider _metricsProvider;
 
-        public DataFactory(IConfigurationManager configuration, IPathUtils pathUtils, IServiceProvider container, ILogger<DataFactory> logger)
+        public DataFactory(IConfigurationManager configuration, IPathUtils pathUtils, IServiceProvider container, ILogger<DataFactory> logger, IMetricsProvider metricsProvider)
         {
             this._configurationManager = configuration;
             this._pathUtils = pathUtils;
             this._container = container;
             this._logger = logger;
+            this._metricsProvider = metricsProvider;
         }
 
         public IData CreateDataSource(string type, string path, int batchSize, Grid? grid = null, GridOrigin? origin = null, Extent? extent = null, bool isBase = false)
@@ -27,14 +30,14 @@ namespace MergerLogic.Utils
             switch (type.ToLower())
             {
                 case "gpkg":
-                    data = new Gpkg(this._configurationManager, this._container, path, batchSize, grid, origin, isBase, extent);
+                    data = new Gpkg(this._configurationManager, this._container, this._metricsProvider, path, batchSize, grid, origin, isBase, extent);
                     break;
                 case "s3":
                     path = this._pathUtils.RemoveTrailingSlash(path);
-                    data = new S3(this._pathUtils, this._container, path, batchSize, grid, origin, isBase);
+                    data = new S3(this._pathUtils, this._container, this._metricsProvider, path, batchSize, grid, origin, isBase);
                     break;
                 case "fs":
-                    data = new FS(this._pathUtils, this._container, path, batchSize, grid, origin, isBase);
+                    data = new FS(this._pathUtils, this._container, this._metricsProvider, path, batchSize, grid, origin, isBase);
                     break;
                 case "wmts":
                 case "xyz":
@@ -74,13 +77,13 @@ namespace MergerLogic.Utils
             switch (type)
             {
                 case "wmts":
-                    data = new WMTS(this._container, path, batchSize, extent, grid, origin, maxZoom, minZoom);
+                    data = new WMTS(this._container, this._metricsProvider, path, batchSize, extent, grid, origin, maxZoom, minZoom);
                     break;
                 case "xyz":
-                    data = new XYZ(this._container, path, batchSize, extent, grid, origin, maxZoom, minZoom);
+                    data = new XYZ(this._container,this._metricsProvider, path, batchSize, extent, grid, origin, maxZoom, minZoom);
                     break;
                 case "tms":
-                    data = new TMS(this._container, path, batchSize, extent, grid, origin, maxZoom, minZoom);
+                    data = new TMS(this._container, this._metricsProvider, path, batchSize, extent, grid, origin, maxZoom, minZoom);
                     break;
                 default:
                     throw new Exception($"Currently there is no support for the data type '{type}'");
