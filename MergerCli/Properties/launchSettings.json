@@ -1,13 +1,13 @@
 {
   "profiles": {
     "GPKG to S3": {
-      "workingDirectory": "",
+      "workingDirectory": "/home/almogk/Documents/raster-team/Tests/input/gpkgs",
       "commandName": "Project",
       "commandLineArgs": "Program.cs 1000 jpeg s3 area2-copy gpkg area2.gpkg",
       "environmentVariables": {
-        "AWS_ACCESS_KEY_ID": "minioadmin",
-        "AWS_SECRET_ACCESS_KEY": "minioadmin",
-        "S3__bucket": "dtm"
+        "AWS_ACCESS_KEY_ID": "admin",
+        "AWS_SECRET_ACCESS_KEY": "adminminio",
+        "S3__bucket": "raster"
       }
     },
     "s3 to gpkg": {

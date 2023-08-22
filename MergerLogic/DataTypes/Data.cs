@@ -75,11 +75,12 @@ namespace MergerLogic.DataTypes
         protected TileConvertorFunction ConvertOriginTile;
         protected ValFromCoordFunction ConvertOriginCoord;
 
-        protected Data(IServiceProvider container, IMetricsProvider metricsProvider, DataType type, string path, int batchSize, Grid? grid, 
+        protected Data(IServiceProvider container, DataType type, string path, int batchSize, Grid? grid, 
             GridOrigin? origin, bool isBase, Extent? extent = null)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             this._container = container;
+            var metricsProvider = this._container.GetRequiredService<IMetricsProvider>();
             this._metricsProvider = metricsProvider;
             var loggerFactory = container.GetRequiredService<ILoggerFactory>();
             this._logger = loggerFactory.CreateLogger(this.GetType());
@@ -286,7 +287,7 @@ namespace MergerLogic.DataTypes
             
             updateTilesStopWatch.Stop();
             this._metricsProvider
-                .TileUploadTimeHistogram()
+                .TileUploadTimeHistogram()?
                 .WithLabels( new string[] { this.Type.ToString()})
                 .Observe(updateTilesStopWatch.Elapsed.TotalSeconds);
             

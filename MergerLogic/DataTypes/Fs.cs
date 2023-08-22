@@ -19,9 +19,8 @@ namespace MergerLogic.DataTypes
         private readonly string[] _supportedFileExtensions = { ".png", ".jpg", ".jpeg" };
         static readonly object _locker = new object();
 
-        public FS(IPathUtils pathUtils, IServiceProvider container, IMetricsProvider metricsProvider,
-            string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false)
-            : base(container, metricsProvider, DataType.FOLDER, path, batchSize, grid, origin, isBase)
+        public FS(IPathUtils pathUtils, IServiceProvider container, string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false)
+            : base(container, DataType.FOLDER, path, batchSize, grid, origin, isBase)
         {
             this._pathUtils = pathUtils;
             this.Reset();
@@ -32,7 +31,8 @@ namespace MergerLogic.DataTypes
             this._fileSystem = this._container.GetRequiredService<IFileSystem>();
         }
 
-        protected override void Create() {
+        protected override void Create()
+        {
             this._fileSystem.Directory.CreateDirectory(this.Path);
         }
 
@@ -114,7 +114,7 @@ namespace MergerLogic.DataTypes
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end");
         }
 
-        public override List<Tile> GetNextBatch(out string batchIdentifier,out string? nextBatchIdentifier, long? totalTilesCount)
+        public override List<Tile> GetNextBatch(out string batchIdentifier, out string? nextBatchIdentifier, long? totalTilesCount)
         {
             lock (_locker)
             {
@@ -122,12 +122,10 @@ namespace MergerLogic.DataTypes
                 batchIdentifier = this._completedTiles.ToString();
                 List<Tile> tiles = new List<Tile>(this.BatchSize);
                 nextBatchIdentifier = batchIdentifier;
-                
                 if (this._done)
                 {
                     return tiles;
                 }
-                
                 while (!this._done && tiles.Count < this.BatchSize)
                 {
                     Tile tile = this._tiles.Current;
@@ -148,7 +146,6 @@ namespace MergerLogic.DataTypes
                 this._tiles = this.GetTiles();
                 this._tiles.MoveNext();
                 _completedTiles = long.Parse(batchIdentifier);
-                
                 for (long i = 0; i < this._completedTiles; i++)
                 {
                     this._tiles.MoveNext();

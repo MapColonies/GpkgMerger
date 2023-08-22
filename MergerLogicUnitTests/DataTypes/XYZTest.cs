@@ -7,6 +7,7 @@ using MergerLogicUnitTests.testUtils;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using Prometheus;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,7 +33,7 @@ namespace MergerLogicUnitTests.DataTypes
         private Mock<ILoggerFactory> _loggerFactoryMock;
         private Mock<ILogger<FS>> _loggerMock;
         private Mock<IMetricsProvider> _metricsProviderMock;
-
+        
         #endregion
 
         [TestInitialize]
@@ -43,7 +44,8 @@ namespace MergerLogicUnitTests.DataTypes
             this._httpUtilsMock = this._repository.Create<IHttpSourceClient>();
             this._geoUtilsMock = this._repository.Create<IGeoUtils>();
             this._utilsFactoryMock = this._repository.Create<IUtilsFactory>();
-            this._metricsProviderMock = this._repository.Create<IMetricsProvider>();
+            this._metricsProviderMock = this._repository.Create<IMetricsProvider>(MockBehavior.Loose);
+  
             this._utilsFactoryMock.Setup(factory => factory.GetDataUtils<IHttpSourceClient>(It.IsAny<string>()))
                 .Returns(this._httpUtilsMock.Object);
             this._loggerMock = this._repository.Create<ILogger<FS>>(MockBehavior.Loose);
@@ -58,6 +60,8 @@ namespace MergerLogicUnitTests.DataTypes
                 .Returns(this._geoUtilsMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(ILoggerFactory)))
                 .Returns(this._loggerFactoryMock.Object);
+            this._serviceProviderMock.Setup(container => container.GetService(typeof(IMetricsProvider)))
+                .Returns(this._metricsProviderMock.Object);
         }
 
         #region TileExists
@@ -108,7 +112,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var xyzSource = new XYZ(this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", 10, extent, grid, origin, 21, 0);
+            var xyzSource = new XYZ(this._serviceProviderMock.Object, "test", 10, extent, grid, origin, 21, 0);
 
             var expected = cords.Z == 2;
             if (useCoords)
@@ -156,7 +160,7 @@ namespace MergerLogicUnitTests.DataTypes
                 .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
-            var xyzSource = new XYZ(this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", batchSize, extent, Grid.TwoXOne, GridOrigin.LOWER_LEFT, 21, 0);
+            var xyzSource = new XYZ(this._serviceProviderMock.Object, "test", batchSize, extent, Grid.TwoXOne, GridOrigin.LOWER_LEFT, 21, 0);
 
             var cords = new Coord(z, x, y);
             Assert.AreEqual(expectedNull ? null : existingTile, xyzSource.GetCorrespondingTile(cords, false));
@@ -242,7 +246,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var xyzSource = new XYZ(this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", 10, extent, grid, origin, 21, 0);
+            var xyzSource = new XYZ(this._serviceProviderMock.Object, "test", 10, extent, grid, origin, 21, 0);
 
             var res = xyzSource.GetCorrespondingTile(cords, enableUpscale);
             if (expectedNull)
@@ -365,7 +369,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var xyzSource = new XYZ(this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", 10, extent, grid, origin, 21, 0);
+            var xyzSource = new XYZ(this._serviceProviderMock.Object, "test", 10, extent, grid, origin, 21, 0);
             var upscaleCords = new Coord(5, 2, 3);
 
             var expectedTile = isValidConversion ? tile : null;
@@ -421,7 +425,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var xyzSource = new XYZ(this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", 10, extent, grid, origin, 21, 0);
+            var xyzSource = new XYZ(this._serviceProviderMock.Object, "test", 10, extent, grid, origin, 21, 0);
 
             var testTiles = new Tile[]
             {
@@ -457,7 +461,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var xyzSource = new XYZ(this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", 10, extent, grid, origin, 21, 0);
+            var xyzSource = new XYZ(this._serviceProviderMock.Object, "test", 10, extent, grid, origin, 21, 0);
 
             Assert.AreEqual(exist, xyzSource.Exists());
 
@@ -501,7 +505,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var xyzSource = new XYZ(this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", 10, extent, grid, origin, 3, 0);
+            var xyzSource = new XYZ(this._serviceProviderMock.Object, "test", 10, extent, grid, origin, 3, 0);
 
             Assert.AreEqual(10, xyzSource.TileCount());
             this._geoUtilsMock.Verify(utils => utils.ExtentToTileRange(It.IsAny<Extent>(), It.IsAny<int>(), It.IsAny<GridOrigin>()), Times.Exactly(4));
@@ -530,7 +534,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var xyzSource = new XYZ(this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", 10, extent, grid, origin, 21, 0);
+            var xyzSource = new XYZ(this._serviceProviderMock.Object, "test", 10, extent, grid, origin, 21, 0);
 
             string testIdentifier = offset.ToString();
             xyzSource.setBatchIdentifier(testIdentifier);
@@ -589,7 +593,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var xyzSource = new XYZ(this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", batchSize, extent, grid, origin, 21, 0);
+            var xyzSource = new XYZ(this._serviceProviderMock.Object, "test", batchSize, extent, grid, origin, 21, 0);
 
             xyzSource.GetNextBatch(out string batchIdentifier, out string? _, null);
             xyzSource.GetNextBatch(out batchIdentifier, out string? _, null);
@@ -681,7 +685,7 @@ namespace MergerLogicUnitTests.DataTypes
             }
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var xyzSource = new XYZ(this._serviceProviderMock.Object, this._metricsProviderMock.Object,"test", batchSize, extent, grid, origin, maxZoom, minZoom);
+            var xyzSource = new XYZ(this._serviceProviderMock.Object, "test", batchSize, extent, grid, origin, maxZoom, minZoom);
 
             var comparer = ComparerFactory.Create<Tile>((t1, t2) => t1?.Z == t2?.Z && t1?.X == t2?.X && t1?.Y == t2?.Y ? 0 : -1);
             for (int i = 0; i < tileBatches.Count; i++)

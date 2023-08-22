@@ -77,7 +77,7 @@ namespace MergerService.Utils
                 finally
                 {
                     taskInitializationStopwatch.Stop();
-                    this._metricsProvider.TaskInitializationTimeHistogram().Observe(taskInitializationStopwatch.Elapsed.TotalSeconds);
+                    this._metricsProvider.TaskInitializationTimeHistogram()?.Observe(taskInitializationStopwatch.Elapsed.TotalSeconds);
                 }
             }
         }

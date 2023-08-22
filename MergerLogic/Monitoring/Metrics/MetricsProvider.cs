@@ -9,6 +9,7 @@ namespace MergerLogic.Monitoring.Metrics
     {
         private readonly CollectorRegistry _registry;
         private readonly double[] _buckets;
+        private readonly bool _enabled;
         
         public MetricsProvider(IConfigurationManager configuration)
         {
@@ -17,6 +18,7 @@ namespace MergerLogic.Monitoring.Metrics
             this._registry = Prometheus.Metrics.DefaultRegistry;
             this._registry.SetStaticLabels(new Dictionary<string, string>(){{"app", appName}});
             this._buckets = new double[]{0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 15, 50, 250, 500};
+            this._enabled = configuration.GetConfiguration<bool>("METRICS", "enabled");
         }
 
         public Histogram TaskExecutionTimeHistogram()
@@ -59,7 +61,6 @@ namespace MergerLogic.Monitoring.Metrics
                 "Histogram of Tile Target Upload Time",
                 new string[] { "target_type" },
                 this._buckets
-                // this._tilesUplaodMesermuntBuckets
             );
         }
         
@@ -134,6 +135,11 @@ namespace MergerLogic.Monitoring.Metrics
         
         private Histogram GetOrCreateHistogram(string metricName, string help, string[] labels = null ,double[] buckets = null)
         {
+            if (!this._enabled)
+            {
+                return null;
+            }
+            
             return Prometheus.Metrics.WithCustomRegistry(_registry).CreateHistogram(metricName, help, 
                 new HistogramConfiguration
                 {
@@ -144,6 +150,10 @@ namespace MergerLogic.Monitoring.Metrics
         
         private Gauge GetOrCreateGauge(string metricName,string help, string[] labels = null)
         {
+            if (!this._enabled)
+            {
+                return null;
+            }
             return Prometheus.Metrics.WithCustomRegistry(_registry).CreateGauge(metricName, help,
                 new GaugeConfiguration
                 {

@@ -187,12 +187,11 @@ namespace MergerLogic.Extensions
             ConfigurationManager _config = new ConfigurationManager(null);
             bool metricsEnabled = _config.GetConfiguration<bool>("METRICS", "enabled");
             int metricsPort = _config.GetConfiguration<int>("METRICS", "port");
-
+            collection.AddSingleton<IMetricsProvider, MetricsProvider>();
             if (metricsEnabled)
             {
                 MetricServer metricsServer = new MetricServer(port: metricsPort);
                 metricsServer.Start();
-                collection.AddSingleton<IMetricsProvider, MetricsProvider>();
             }
             
             return collection;

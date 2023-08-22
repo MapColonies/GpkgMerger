@@ -23,9 +23,8 @@ namespace MergerLogic.DataTypes
 
         private readonly IPathUtils _pathUtils;
 
-        public S3(IPathUtils pathUtils, IServiceProvider container, IMetricsProvider metricsProvider,
-            string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase)
-            : base(container, metricsProvider, DataType.S3, path, batchSize, grid, origin, isBase)
+        public S3(IPathUtils pathUtils, IServiceProvider container, string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase)
+            : base(container, DataType.S3, path, batchSize, grid, origin, isBase)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Ctor started");
             this._pathUtils = pathUtils;

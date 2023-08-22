@@ -30,14 +30,14 @@ namespace MergerLogic.Utils
             switch (type.ToLower())
             {
                 case "gpkg":
-                    data = new Gpkg(this._configurationManager, this._container, this._metricsProvider, path, batchSize, grid, origin, isBase, extent);
+                    data = new Gpkg(this._configurationManager, this._container, path, batchSize, grid, origin, isBase, extent);
                     break;
                 case "s3":
                     path = this._pathUtils.RemoveTrailingSlash(path);
-                    data = new S3(this._pathUtils, this._container, this._metricsProvider, path, batchSize, grid, origin, isBase);
+                    data = new S3(this._pathUtils, this._container, path, batchSize, grid, origin, isBase);
                     break;
                 case "fs":
-                    data = new FS(this._pathUtils, this._container, this._metricsProvider, path, batchSize, grid, origin, isBase);
+                    data = new FS(this._pathUtils, this._container, path, batchSize, grid, origin, isBase);
                     break;
                 case "wmts":
                 case "xyz":
@@ -77,13 +77,13 @@ namespace MergerLogic.Utils
             switch (type)
             {
                 case "wmts":
-                    data = new WMTS(this._container, this._metricsProvider, path, batchSize, extent, grid, origin, maxZoom, minZoom);
+                    data = new WMTS(this._container, path, batchSize, extent, grid, origin, maxZoom, minZoom);
                     break;
                 case "xyz":
-                    data = new XYZ(this._container,this._metricsProvider, path, batchSize, extent, grid, origin, maxZoom, minZoom);
+                    data = new XYZ(this._container, path, batchSize, extent, grid, origin, maxZoom, minZoom);
                     break;
                 case "tms":
-                    data = new TMS(this._container, this._metricsProvider, path, batchSize, extent, grid, origin, maxZoom, minZoom);
+                    data = new TMS(this._container, path, batchSize, extent, grid, origin, maxZoom, minZoom);
                     break;
                 default:
                     throw new Exception($"Currently there is no support for the data type '{type}'");

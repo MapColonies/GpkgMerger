@@ -114,13 +114,13 @@ namespace MergerService.Src
                             source.Grid, source.Origin));
                         
                         sourceTypeDownloadStopwatch.Stop();
-                        this._metricsProvider.SourceTileDownloadTimeHistogram()
+                        this._metricsProvider.SourceTileDownloadTimeHistogram()?
                             .WithLabels(source.Type)
                             .Observe(sourceTypeDownloadStopwatch.Elapsed.TotalSeconds);
                     }
                 }
                 getSourcesStopWatch.Stop();
-                this._metricsProvider.TotalGetTilesSourcesTimeHistogram().Observe(getSourcesStopWatch.Elapsed.TotalSeconds);
+                this._metricsProvider.TotalGetTilesSourcesTimeHistogram()?.Observe(getSourcesStopWatch.Elapsed.TotalSeconds);
                 return sources;
             }
         }
@@ -221,10 +221,9 @@ namespace MergerService.Src
                     finally
                     {
                         totalTaskStopWatch.Stop();
-                        this._metricsProvider.TaskExecutionTimeHistogram()
+                        this._metricsProvider.TaskExecutionTimeHistogram()?
                             .WithLabels(new string[]{taskType, success.ToString()})
                             .Observe(totalTaskStopWatch.Elapsed.TotalSeconds);
-                        
                         this._heartbeatClient.Stop();
                     }
 
@@ -313,7 +312,7 @@ namespace MergerService.Src
                         stopWatch.Start();
 
                         long singleTileBatchCount = bounds.Size();
-                        this._metricsProvider.TilesInBatchGauge().Set(singleTileBatchCount);
+                        this._metricsProvider.TilesInBatchGauge()?.Set(singleTileBatchCount);
                         int tileProgressCount = 0;
 
                         // TODO: remove comment and check that the activity is created (When bug will be fixed)
@@ -367,7 +366,7 @@ namespace MergerService.Src
                                         metadata.TargetFormat);
                                     
                                     tileMergeStopWatch.Stop();
-                                    this._metricsProvider.TotalTileMergeTimeHistogram()
+                                    this._metricsProvider.TotalTileMergeTimeHistogram()?
                                         .WithLabels(new string[]{metadata.TargetFormat.ToString()})
                                         .Observe(tileMergeStopWatch.Elapsed.TotalSeconds);
                                     
@@ -391,7 +390,7 @@ namespace MergerService.Src
                             }
                             totalWorkStopwatch.Stop();
                             var seconds = totalWorkStopwatch.Elapsed.TotalSeconds;
-                            this._metricsProvider.TotalBatchWorkTimeHistogram().Observe(totalWorkStopwatch.Elapsed.TotalSeconds);
+                            this._metricsProvider.TotalBatchWorkTimeHistogram()?.Observe(totalWorkStopwatch.Elapsed.TotalSeconds);
                         }
 
                         using (this._activitySource.StartActivity("saving tiles"))
@@ -438,7 +437,7 @@ namespace MergerService.Src
                                 }
                             }
                             stopWatch.Stop();
-                            this._metricsProvider.TotalValidationTimeHistogram().Observe(stopWatch.Elapsed.TotalSeconds);
+                            this._metricsProvider.TotalValidationTimeHistogram()?.Observe(stopWatch.Elapsed.TotalSeconds);
                             // Get the elapsed time as a TimeSpan value.
                             ts = stopWatch.Elapsed;
                             string elapsedTime = this._timeUtils.FormatElapsedTime($"Validation time", ts);

@@ -14,9 +14,9 @@ namespace MergerLogic.DataTypes
         private readonly IConfigurationManager _configManager;
         static readonly object _locker = new object();
 
-        public Gpkg(IConfigurationManager configuration, IServiceProvider container, IMetricsProvider metricsProvider,
+        public Gpkg(IConfigurationManager configuration, IServiceProvider container,
             string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false, Extent? extent = null)
-            : base(container, metricsProvider, DataType.GPKG, path, batchSize, grid, origin, isBase, extent)
+            : base(container,  DataType.GPKG, path, batchSize, grid, origin, isBase, extent)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Ctor started");
             this._offset = 0;
