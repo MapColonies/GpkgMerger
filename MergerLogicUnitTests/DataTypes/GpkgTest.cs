@@ -7,7 +7,6 @@ using MergerLogicUnitTests.testUtils;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Prometheus;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,7 +31,6 @@ namespace MergerLogicUnitTests.DataTypes
         private Mock<ILoggerFactory> _loggerFactoryMock;
         private Mock<ILogger<Gpkg>> _loggerMock;
         private Mock<IMetricsProvider> _metricsProviderMock;
-
 
         #endregion
 
@@ -89,7 +87,7 @@ namespace MergerLogicUnitTests.DataTypes
         {
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            
+
             this.SetupRequiredBaseMocks(isBase, isOneXOne, extent);
             var seq = new MockSequence();
             if (origin == GridOrigin.UPPER_LEFT)
@@ -113,7 +111,7 @@ namespace MergerLogicUnitTests.DataTypes
                     .Setup(utils => utils.TileExists(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
                     .Returns<int, int, int>((z, x, y) => z == 2);
             }
-            
+
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
                 this._serviceProviderMock.Object, "test.gpkg", 10, grid, origin,
                 isBase, extent);
@@ -164,7 +162,7 @@ namespace MergerLogicUnitTests.DataTypes
             var existingTile = new Tile(2, 2, 3, new byte[] { });
             this._gpkgUtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
                 .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
-            
+
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
                 this._serviceProviderMock.Object, "test.gpkg", batchSize, Grid.TwoXOne,
                 GridOrigin.LOWER_LEFT, isBase, extent);
@@ -214,7 +212,7 @@ namespace MergerLogicUnitTests.DataTypes
             bool expectedNull = cords.Z != 2;
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            
+
             this.SetupRequiredBaseMocks(isBase, isOneXOne, extent);
             Tile nullTile = null;
             var existingTile = new Tile(2, 2, 3, new byte[] { });
@@ -255,7 +253,7 @@ namespace MergerLogicUnitTests.DataTypes
                     .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
                     .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
             }
-            
+
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
                 this._serviceProviderMock.Object, "test.gpkg", 10, grid, origin,
                 isBase, extent);
@@ -325,7 +323,7 @@ namespace MergerLogicUnitTests.DataTypes
             Tile nullTile = null;
             var tile = new Tile(2, 2, 3, new byte[] { });
             var sequence = new MockSequence();
-            
+
             this.SetupRequiredBaseMocks(isBase, isOneXOne, extent);
 
             if (origin != GridOrigin.LOWER_LEFT)
@@ -379,7 +377,7 @@ namespace MergerLogicUnitTests.DataTypes
                     .Setup(converter => converter.ToTwoXOne(tile))
                     .Returns<Tile>(tile => tile);
             }
-            
+
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
                 this._serviceProviderMock.Object, "test.gpkg", 10, grid, origin,
                 isBase, extent);
@@ -431,7 +429,7 @@ namespace MergerLogicUnitTests.DataTypes
         {
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            
+
             this.SetupRequiredBaseMocks(isBase, isOneXOne, extent);
 
             if (origin == GridOrigin.UPPER_LEFT)
@@ -452,7 +450,7 @@ namespace MergerLogicUnitTests.DataTypes
                 {
                     tiles.ToArray();
                 }); // force enumerate 
-            
+
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
                 this._serviceProviderMock.Object, "test.gpkg", 10, grid, origin,
                 isBase, extent);
@@ -508,7 +506,7 @@ namespace MergerLogicUnitTests.DataTypes
         {
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            
+
             this.SetupRequiredBaseMocks(isBase, isOneXOne, extent);
             var seq = new MockSequence();
             this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.UpdateTileMatrixTable(isOneXOne));
@@ -520,7 +518,7 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.Vacuum());
             }
-            
+
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
                 this._serviceProviderMock.Object, "test.gpkg", 10, grid, origin,
                 isBase, extent);
@@ -566,14 +564,14 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._geoUtilsMock.InSequence(seq).Setup(utils => utils.DefaultExtent(isOneXOne)).Returns(extent);
             }
-            
+
             this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.Exist()).Returns(exist);
-            
+
             if (!exist && isBase)
             {
                 this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.Create(It.IsAny<Extent>(), isOneXOne));
             }
-            
+
             this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.IsValidGrid(It.IsAny<bool>())).Returns(true);
 
             if (isBase)
@@ -585,7 +583,7 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.GetExtent()).Returns(extent);
             }
-            
+
             this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.Exist()).Returns(true);
 
             var action = () =>
@@ -593,7 +591,7 @@ namespace MergerLogicUnitTests.DataTypes
                 var gpkg = new Gpkg(this._configurationManagerMock.Object,
                     this._serviceProviderMock.Object, "test.gpkg", 10, grid, origin,
                     isBase, extent);
-                
+
                 Assert.AreEqual(true, gpkg.Exists());
             };
 
@@ -633,7 +631,7 @@ namespace MergerLogicUnitTests.DataTypes
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             this.SetupRequiredBaseMocks(isBase, isOneXOne, extent);
             this._gpkgUtilsMock.Setup(utils => utils.GetTileCount()).Returns(tileCount);
-            
+
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
                 this._serviceProviderMock.Object, "test.gpkg", 10, grid, origin,
@@ -665,11 +663,11 @@ namespace MergerLogicUnitTests.DataTypes
         {
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            
+
             this.SetupRequiredBaseMocks(isBase, isOneXOne, extent);
             this._gpkgUtilsMock.Setup(utils => utils.GetBatch(10, It.IsAny<long>()))
                 .Returns(new List<Tile>());
-            
+
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
                 this._serviceProviderMock.Object, "test.gpkg", 10, grid, origin,
                 isBase, extent);
@@ -703,7 +701,7 @@ namespace MergerLogicUnitTests.DataTypes
         {
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            
+
             this.SetupRequiredBaseMocks(isBase, isOneXOne, extent);
             this._gpkgUtilsMock.Setup(utils => utils.GetBatch(batchSize, It.IsAny<long>()))
                 .Returns(new List<Tile> { new Tile(0, 0, 0, new byte[] { }) });
@@ -718,7 +716,7 @@ namespace MergerLogicUnitTests.DataTypes
                         converter.TryToTwoXOne(It.IsAny<Tile>()))
                     .Returns<Tile>(tile => tile);
             }
-            
+
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
                 this._serviceProviderMock.Object, "test.gpkg", batchSize, grid, origin,
                 isBase, extent);
@@ -762,7 +760,7 @@ namespace MergerLogicUnitTests.DataTypes
             };
             var tileBatches = tiles.Chunk(batchSize).ToList();
             var batchIdx = 0;
-            
+
             this.SetupRequiredBaseMocks(isBase, isOneXOne, extent);
             var seq = new MockSequence();
             for (var i = 0; i < tileBatches.Count; i++)
@@ -789,7 +787,7 @@ namespace MergerLogicUnitTests.DataTypes
                     }
                 }
             }
-            
+
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
                 this._serviceProviderMock.Object, "test.gpkg", batchSize, grid, origin,
                 isBase, extent);
@@ -881,7 +879,7 @@ namespace MergerLogicUnitTests.DataTypes
                 new object[] { GridOrigin.LOWER_LEFT, GridOrigin.UPPER_LEFT } //origin
             );
         }
-        
+
         [TestMethod]
         [TestCategory("gridValidation")]
         [DynamicData(nameof(GenGridValidationParams), DynamicDataSourceType.Method)]
@@ -896,7 +894,7 @@ namespace MergerLogicUnitTests.DataTypes
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
             Assert.ThrowsException<Exception>(() =>
                 new Gpkg(this._configurationManagerMock.Object,
-                    this._serviceProviderMock.Object,  "test.gpkg", 10, grid,
+                    this._serviceProviderMock.Object, "test.gpkg", 10, grid,
                     origin, true, extent));
             this.VerifyAll();
         }
@@ -907,12 +905,12 @@ namespace MergerLogicUnitTests.DataTypes
         private void SetupRequiredBaseMocks(bool isBase, bool isOneXOne, Extent extent)
         {
             var seq = new MockSequence();
-            
+
             if (!isBase)
             {
                 this._geoUtilsMock.InSequence(seq).Setup(utils => utils.DefaultExtent(isOneXOne)).Returns(extent);
             }
-            
+
             this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.Exist()).Returns(true);
             this._gpkgUtilsMock.InSequence(seq).Setup(utils => utils.IsValidGrid(It.IsAny<bool>())).Returns(true);
 
