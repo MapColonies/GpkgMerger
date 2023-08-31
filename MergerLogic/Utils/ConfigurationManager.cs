@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System.ComponentModel;
 
 namespace MergerLogic.Utils
@@ -49,6 +50,10 @@ namespace MergerLogic.Utils
 
             try
             {
+                if (typeof(T).IsArray)
+                {
+                    return JsonConvert.DeserializeObject<T>(value);
+                }
                 return (T)TypeDescriptor.GetConverter(typeof(T)).ConvertFromString(value);
             }
             catch (Exception e)

@@ -419,4 +419,4 @@ FodyWeavers.xsd
 *.sln.iml
 
 # Local value yaml
-*.values-local.yaml
+helm/values-local.yaml
