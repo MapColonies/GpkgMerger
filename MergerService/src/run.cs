@@ -155,7 +155,7 @@ namespace MergerService.Src
                 throw new Exception(message);
             }
 
-            ITaskUtils taskUtils = new TaskUtils(this._configurationManager, this._requestUtils, this._taskUtilsLogger, this._activitySource, this._heartbeatClient, this._metricsProvider);
+            ITaskUtils taskUtils = new TaskUtils(this._configurationManager, this._requestUtils, this._taskUtilsLogger, this._activitySource, this._heartbeatClient);
             IJobUtils jobUtils = new JobUtils(this._configurationManager, this._requestUtils, this._jobUtilsLogger, this._activitySource, this._heartbeatClient);
 
             this._logger.LogInformation($"[{methodName}] starting task polling loop");

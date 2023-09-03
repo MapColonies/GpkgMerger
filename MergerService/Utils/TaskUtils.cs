@@ -1,9 +1,7 @@
 using MergerLogic.Clients;
-using MergerLogic.Monitoring.Metrics;
 using System.Diagnostics;
 using System.Net.Http.Headers;
 using MergerLogic.Utils;
-using MergerService.Controllers;
 using MergerService.Models.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
