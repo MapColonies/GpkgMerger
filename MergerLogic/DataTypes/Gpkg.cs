@@ -1,6 +1,5 @@
 using MergerLogic.Batching;
 using MergerLogic.Clients;
-using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
@@ -16,7 +15,7 @@ namespace MergerLogic.DataTypes
 
         public Gpkg(IConfigurationManager configuration, IServiceProvider container,
             string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false, Extent? extent = null)
-            : base(container,  DataType.GPKG, path, batchSize, grid, origin, isBase, extent)
+            : base(container, DataType.GPKG, path, batchSize, grid, origin, isBase, extent)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Ctor started");
             this._offset = 0;
@@ -63,7 +62,8 @@ namespace MergerLogic.DataTypes
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended");
         }
 
-        protected override void Validate() {
+        protected override void Validate()
+        {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] started");
             if (!this.Utils.IsValidGrid(this.IsOneXOne))
             {
@@ -83,7 +83,7 @@ namespace MergerLogic.DataTypes
             lock (_locker)
             {
                 this._offset = 0;
-            } 
+            }
         }
 
         public override List<Tile> GetNextBatch(out string currentBatchIdentifier, out string? nextBatchIdentifier, long? totalTilesCount)
@@ -97,7 +97,7 @@ namespace MergerLogic.DataTypes
                 {
                     //TODO: optimize after IOC refactoring
                     int counter = 0;
-                    
+
                     tiles = this.Utils.GetBatch(this.BatchSize, this._offset)
                         .Select(t =>
                         {
@@ -106,10 +106,10 @@ namespace MergerLogic.DataTypes
                             counter++;
                             return tile;
                         }).Where(t => t != null).ToList();
-                    
+
                     Interlocked.Add(ref this._offset, counter);
                     nextBatchIdentifier = this._offset.ToString();
-                    
+
                     return tiles;
                 }
                 nextBatchIdentifier = this._offset.ToString();

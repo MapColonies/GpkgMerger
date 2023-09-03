@@ -1,5 +1,4 @@
 using MergerLogic.Batching;
-using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

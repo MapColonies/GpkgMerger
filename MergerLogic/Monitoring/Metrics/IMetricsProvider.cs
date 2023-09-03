@@ -5,7 +5,7 @@ namespace MergerLogic.Monitoring.Metrics
     public interface IMetricsProvider
     {
         Histogram TaskExecutionTimeHistogram();
-        Histogram TaskInitializationTimeHistogram();
+        Histogram BatchInitializationTimeHistogram();
         Histogram TileUploadTimeHistogram();
         Histogram TotalBatchWorkTimeHistogram();
         Histogram TotalGetTilesSourcesTimeHistogram();

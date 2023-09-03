@@ -32,12 +32,12 @@ namespace MergerLogic.Monitoring.Metrics
             );
         }
 
-        public Histogram TaskInitializationTimeHistogram()
+        public Histogram BatchInitializationTimeHistogram()
         {
             return GetOrCreateHistogram
             (
-                "task_initialization_time",
-                "Histogram of Task Initialization time",
+                "batch_initialization_time",
+                "Histogram of Batch Initialization time",
                 null,
                 this._buckets
             );

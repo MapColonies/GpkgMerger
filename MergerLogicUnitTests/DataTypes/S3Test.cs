@@ -6,7 +6,6 @@ using MergerLogic.DataTypes;
 using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;

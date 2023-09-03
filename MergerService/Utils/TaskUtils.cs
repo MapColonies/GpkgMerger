@@ -42,7 +42,7 @@ namespace MergerService.Utils
             _jsonSerializerSettings.Converters.Add(new StringEnumConverter());
             this._jsonSerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
             this._jsonSerializerSettings.NullValueHandling = NullValueHandling.Ignore;
-            
+
 
             _jobManagerUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
             //TODO: add tracing
@@ -52,15 +52,9 @@ namespace MergerService.Utils
         {
             using (this._activitySource.StartActivity("dequeue task"))
             {
-                Stopwatch taskInitializationStopwatch = new Stopwatch();
-                taskInitializationStopwatch.Start();
-
-                
                 string relativeUri = $"tasks/{jobType}/{taskType}/startPending";
                 string url = new Uri(new Uri(_jobManagerUrl), relativeUri).ToString();
                 string? taskData = this._httpClient.PostData(url, null);
-
-
 
                 try
                 {
@@ -73,11 +67,6 @@ namespace MergerService.Utils
                     this._logger.LogWarning(e,
                         $"[{MethodBase.GetCurrentMethod().Name}] Error deserializing returned task");
                     return null;
-                }
-                finally
-                {
-                    taskInitializationStopwatch.Stop();
-                    this._metricsProvider.TaskInitializationTimeHistogram()?.Observe(taskInitializationStopwatch.Elapsed.TotalSeconds);
                 }
             }
         }

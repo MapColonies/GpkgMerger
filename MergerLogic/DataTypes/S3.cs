@@ -2,7 +2,6 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using MergerLogic.Batching;
 using MergerLogic.Clients;
-using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -69,7 +68,7 @@ namespace MergerLogic.DataTypes
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start");
             List<int> zoomLevels = new List<int>();
-            
+
             for (int zoomLevel = 0; zoomLevel < Data<IS3Client>.MaxZoomRead; zoomLevel++)
             {
                 if (this.FolderExists($"{zoomLevel}/"))
@@ -81,7 +80,7 @@ namespace MergerLogic.DataTypes
             return zoomLevels;
         }
 
-        public override List<Tile> GetNextBatch(out string currentBatchIdentifier,out string? nextBatchIdentifier, long? totalTilesCount)
+        public override List<Tile> GetNextBatch(out string currentBatchIdentifier, out string? nextBatchIdentifier, long? totalTilesCount)
         {
             lock (_locker)
             {
@@ -89,7 +88,7 @@ namespace MergerLogic.DataTypes
                 currentBatchIdentifier = this._continuationToken ?? nullStringValue;
                 List<Tile> tiles = new List<Tile>();
                 int missingTiles = this.BatchSize;
-                
+
                 while (missingTiles > 0)
                 {
                     if (this._endOfRead && !this._zoomEnumerator.MoveNext())
@@ -132,7 +131,7 @@ namespace MergerLogic.DataTypes
                     this._continuationToken = response.NextContinuationToken;
                     this._endOfRead = !response.IsTruncated;
                 }
-                
+
                 nextBatchIdentifier = this._continuationToken;
                 this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end");
                 return tiles;

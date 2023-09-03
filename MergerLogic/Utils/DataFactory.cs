@@ -12,15 +12,14 @@ namespace MergerLogic.Utils
         private readonly IPathUtils _pathUtils;
         private readonly IServiceProvider _container;
         private readonly ILogger _logger;
-        private readonly IMetricsProvider _metricsProvider;
 
-        public DataFactory(IConfigurationManager configuration, IPathUtils pathUtils, IServiceProvider container, ILogger<DataFactory> logger, IMetricsProvider metricsProvider)
+
+        public DataFactory(IConfigurationManager configuration, IPathUtils pathUtils, IServiceProvider container, ILogger<DataFactory> logger)
         {
             this._configurationManager = configuration;
             this._pathUtils = pathUtils;
             this._container = container;
             this._logger = logger;
-            this._metricsProvider = metricsProvider;
         }
 
         public IData CreateDataSource(string type, string path, int batchSize, Grid? grid = null, GridOrigin? origin = null, Extent? extent = null, bool isBase = false)

@@ -7,7 +7,6 @@ using MergerLogicUnitTests.testUtils;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Prometheus;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,7 +32,7 @@ namespace MergerLogicUnitTests.DataTypes
         private Mock<ILoggerFactory> _loggerFactoryMock;
         private Mock<ILogger<FS>> _loggerMock;
         private Mock<IMetricsProvider> _metricsProviderMock;
-        
+
         #endregion
 
         [TestInitialize]
@@ -45,7 +44,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._geoUtilsMock = this._repository.Create<IGeoUtils>();
             this._utilsFactoryMock = this._repository.Create<IUtilsFactory>();
             this._metricsProviderMock = this._repository.Create<IMetricsProvider>(MockBehavior.Loose);
-  
+
             this._utilsFactoryMock.Setup(factory => factory.GetDataUtils<IHttpSourceClient>(It.IsAny<string>()))
                 .Returns(this._httpUtilsMock.Object);
             this._loggerMock = this._repository.Create<ILogger<FS>>(MockBehavior.Loose);

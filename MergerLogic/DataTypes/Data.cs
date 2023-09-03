@@ -3,7 +3,6 @@ using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -80,7 +79,6 @@ namespace MergerLogic.DataTypes
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             this._container = container;
-            this._metricsProvider = this._container.GetRequiredService<IMetricsProvider>();
             var loggerFactory = container.GetRequiredService<ILoggerFactory>();
             this._logger = loggerFactory.CreateLogger(this.GetType());
             this._logger.LogInformation($"[{methodName}] Ctor started");
@@ -280,8 +278,6 @@ namespace MergerLogic.DataTypes
         public void UpdateTiles(IEnumerable<Tile> tiles)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] update tiles started");
-            var updateTilesStopWatch = new Stopwatch();
-            updateTilesStopWatch.Start();
             var targetTiles = tiles.Select(tile =>
             {
                 Tile convertedTile = this.ConvertOriginTile(tile);
@@ -289,13 +285,6 @@ namespace MergerLogic.DataTypes
                 return targetTile;
             }).Where(tile => tile is not null);
             this.InternalUpdateTiles(targetTiles);
-
-            updateTilesStopWatch.Stop();
-            this._metricsProvider
-                .TileUploadTimeHistogram()?
-                .WithLabels(new string[] { this.Type.ToString() })
-                .Observe(updateTilesStopWatch.Elapsed.TotalSeconds);
-
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] update tiles ended");
         }
 

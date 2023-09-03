@@ -7,7 +7,6 @@ using MergerLogicUnitTests.testUtils;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Prometheus;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
@@ -113,7 +112,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var tmsSource = new TMS(this._serviceProviderMock.Object,  "test", 10, extent, grid, origin, 21, 0);
+            var tmsSource = new TMS(this._serviceProviderMock.Object, "test", 10, extent, grid, origin, 21, 0);
 
             var expected = cords.Z == 2;
             if (useCoords)
@@ -538,7 +537,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             string testIdentifier = offset.ToString();
             tmsSource.setBatchIdentifier(testIdentifier);
-            tmsSource.GetNextBatch(out string batchIdentifier, out string? _,  null);
+            tmsSource.GetNextBatch(out string batchIdentifier, out string? _, null);
             Assert.AreEqual(testIdentifier, batchIdentifier);
 
             this.VerifyAll();

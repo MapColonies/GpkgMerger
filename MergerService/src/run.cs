@@ -107,12 +107,12 @@ namespace MergerService.Src
                     {
                         var sourceTypeDownloadStopwatch = new Stopwatch();
                         sourceTypeDownloadStopwatch.Start();
-                        
+
                         // TODO: add support for HTTP
                         path = BuildPath(source, false);
                         sources.Add(this._dataFactory.CreateDataSource(source.Type, path, batchSize,
                             source.Grid, source.Origin));
-                        
+
                         sourceTypeDownloadStopwatch.Stop();
                         this._metricsProvider.SourceTileDownloadTimeHistogram()?
                             .WithLabels(source.Type)
@@ -156,7 +156,7 @@ namespace MergerService.Src
             }
 
             ITaskUtils taskUtils = new TaskUtils(this._configurationManager, this._requestUtils, this._taskUtilsLogger, this._activitySource, this._heartbeatClient, this._metricsProvider);
-            IJobUtils jobUtils = new JobUtils(this._configurationManager, this._requestUtils, this._jobUtilsLogger, this._activitySource, this._heartbeatClient );
+            IJobUtils jobUtils = new JobUtils(this._configurationManager, this._requestUtils, this._jobUtilsLogger, this._activitySource, this._heartbeatClient);
 
             this._logger.LogInformation($"[{methodName}] starting task polling loop");
             while (true)
@@ -181,7 +181,7 @@ namespace MergerService.Src
                             continue;
                         }
 
-                        this._logger.LogError(e,$"[{methodName}] Error in MergerService start - get task: {e.Message}");
+                        this._logger.LogError(e, $"[{methodName}] Error in MergerService start - get task: {e.Message}");
                         continue;
                     }
                     // Guard clause in case there are no batches or sources
@@ -195,7 +195,7 @@ namespace MergerService.Src
                     this._logger.LogDebug($"[{methodName}]{log}");
                     var totalTaskStopWatch = Stopwatch.StartNew();
                     bool success = false;
-        
+
                     try
                     {
                         totalTaskStopWatch.Start();
@@ -221,8 +221,9 @@ namespace MergerService.Src
                     finally
                     {
                         totalTaskStopWatch.Stop();
-                        this._metricsProvider.TaskExecutionTimeHistogram()?
-                            .WithLabels(new string[]{taskType, success.ToString()})
+                        this._metricsProvider
+                            .TaskExecutionTimeHistogram()?
+                            .WithLabels(new string[] { taskType, success.ToString() })
                             .Observe(totalTaskStopWatch.Elapsed.TotalSeconds);
                         this._heartbeatClient.Stop();
                     }
@@ -307,7 +308,8 @@ namespace MergerService.Src
                     {
                         // TODO: remove comment and check that the activity is created (When bug will be fixed)
                         // batchActivity.AddTag("bbox", bounds.ToString());
-
+                        Stopwatch batchInitializationStopwatch = new Stopwatch();
+                        batchInitializationStopwatch.Start();
                         stopWatch.Reset();
                         stopWatch.Start();
 
@@ -326,6 +328,10 @@ namespace MergerService.Src
 
                         this._logger.LogDebug($"[{methodName}] BuildDataList");
                         List<IData> sources = this.BuildDataList(metadata.Sources, this._batchSize);
+                        batchInitializationStopwatch.Stop();
+                        this._metricsProvider
+                            .BatchInitializationTimeHistogram()?
+                            .Observe(batchInitializationStopwatch.Elapsed.TotalSeconds);
                         IData target = sources[0];
                         target.IsNew = metadata.IsNewTarget;
 
@@ -337,8 +343,8 @@ namespace MergerService.Src
                         // Go over the bounds of the current batch
                         using (this._activitySource.StartActivity($"[{methodName}] merging tiles"))
                         {
-                            var totalWorkStopwatch = new Stopwatch();
-                            totalWorkStopwatch.Start();
+                            var batchTilesMergeTime = new Stopwatch();
+                            batchTilesMergeTime.Start();
                             for (int x = bounds.MinX; x < bounds.MaxX; x++)
                             {
                                 for (int y = bounds.MinY; y < bounds.MaxY; y++)
@@ -358,18 +364,18 @@ namespace MergerService.Src
                                         correspondingTileBuilders.Add(() => tile);
                                     }
                                     this._logger.LogDebug($"[{methodName}] MergeTiles of {correspondingTileBuilders.Count} tiles");
-                                    
+
                                     var tileMergeStopWatch = new Stopwatch();
                                     tileMergeStopWatch.Start();
-                                    
+
                                     byte[]? blob = this._tileMerger.MergeTiles(correspondingTileBuilders, coord,
                                         metadata.TargetFormat);
-                                    
+
                                     tileMergeStopWatch.Stop();
                                     this._metricsProvider.TotalTileMergeTimeHistogram()?
-                                        .WithLabels(new string[]{metadata.TargetFormat.ToString()})
+                                        .WithLabels(new string[] { metadata.TargetFormat.ToString() })
                                         .Observe(tileMergeStopWatch.Elapsed.TotalSeconds);
-                                    
+
                                     this._logger.LogDebug($"[{methodName}] MergeTiles finished");
                                     if (blob != null)
                                     {
@@ -384,20 +390,27 @@ namespace MergerService.Src
                                     {
                                         this._logger.LogDebug(
                                             $"[{methodName}] Job: {task.JobId}, Task: {task.Id}, Tile Count: {overallTileProgressCount} / {totalTileCount}");
-                                            UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);
+                                        UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);
                                     }
                                 }
                             }
-                            totalWorkStopwatch.Stop();
-                            var seconds = totalWorkStopwatch.Elapsed.TotalSeconds;
-                            this._metricsProvider.TotalBatchWorkTimeHistogram()?.Observe(totalWorkStopwatch.Elapsed.TotalSeconds);
+                            batchTilesMergeTime.Stop();
+                            this._metricsProvider
+                                .TotalBatchWorkTimeHistogram()?
+                                .Observe(batchTilesMergeTime.Elapsed.TotalSeconds);
                         }
 
                         using (this._activitySource.StartActivity("saving tiles"))
                         {
                             var updateTilesStopWatch = new Stopwatch();
                             this._logger.LogDebug($"[{methodName}] target UpdateTiles");
+                            updateTilesStopWatch.Start();
                             target.UpdateTiles(tiles);
+                            updateTilesStopWatch.Stop();
+                            this._metricsProvider
+                                .TileUploadTimeHistogram()?
+                                .WithLabels(new string[] { target.Type.ToString() })
+                                .Observe(updateTilesStopWatch.Elapsed.TotalSeconds);
                             this._logger.LogDebug($"[{methodName}] UpdateRelativeProgress");
                             UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);
                         }
