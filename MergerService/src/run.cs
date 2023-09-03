@@ -376,7 +376,7 @@ namespace MergerService.Src
                                         .WithLabels(new string[] { metadata.TargetFormat.ToString() })
                                         .Observe(tileMergeStopWatch.Elapsed.TotalSeconds);
 
-                                    this._logger.LogDebug($"[{methodName}] MergeTiles finished");
+                                    this._logger.LogInformation($"[{methodName}] MergeTiles finished");
                                     if (blob != null)
                                     {
                                         tiles.Add(new Tile(coord, blob));
@@ -403,7 +403,7 @@ namespace MergerService.Src
                         using (this._activitySource.StartActivity("saving tiles"))
                         {
                             var updateTilesStopWatch = new Stopwatch();
-                            this._logger.LogDebug($"[{methodName}] target UpdateTiles");
+                            this._logger.LogInformation($"[{methodName}] target UpdateTiles");
                             updateTilesStopWatch.Start();
                             target.UpdateTiles(tiles);
                             updateTilesStopWatch.Stop();
