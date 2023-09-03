@@ -1,6 +1,5 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.DataTypes;
-using MergerLogic.Monitoring.Metrics;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 
@@ -54,7 +53,6 @@ namespace MergerLogic.Utils
                 else
                     throw new Exception($"path '{path}' to data does not exist.");
             }
-
             return data;
         }
 
