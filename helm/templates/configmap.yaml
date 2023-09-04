@@ -31,8 +31,8 @@ data:
   {{ end }}
   METRICS__enabled: {{ .Values.env.metrics.enabled | quote }} 
   {{ if .Values.env.metrics.enabled }}
-  METRICS__scrape: {{ .Values.env.metrics.scrape | quote}}
-  METRICS__port: {{ .Values.env.metrics.port | quote}}
+  METRICS__scrape: {{ .Values.env.metrics.scrape | quote }}
+  METRICS__port: {{ .Values.env.metrics.port | quote }}
   METRICS__measurementBuckets: {{ .Values.env.metrics.measurementBuckets | quote }}
   {{ end }}
   HTTP__retries: {{ .Values.env.HTTP.retries | quote }}

@@ -46,7 +46,6 @@ namespace MergerLogic.DataTypes
         protected delegate Tile? NullableTileConvertorFunction(Tile tile);
 
         protected IServiceProvider _container;
-        protected IMetricsProvider _metricsProvider;
         public DataType Type { get; }
         public string Path { get; }
         public Grid Grid { get; }

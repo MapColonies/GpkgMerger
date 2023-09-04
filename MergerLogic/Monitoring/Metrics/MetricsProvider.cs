@@ -8,7 +8,7 @@ namespace MergerLogic.Monitoring.Metrics
     public class MetricsProvider : IMetricsProvider
     {
         private readonly CollectorRegistry _registry;
-        private readonly double[] _buckets;
+        private readonly double[]? _buckets;
         private readonly bool _enabled;
 
         public MetricsProvider(IConfigurationManager configurationManager)
@@ -21,7 +21,7 @@ namespace MergerLogic.Monitoring.Metrics
             this._enabled = configurationManager.GetConfiguration<bool>("METRICS", "enabled");
         }
 
-        public Histogram TaskExecutionTimeHistogram()
+        public Histogram? TaskExecutionTimeHistogram()
         {
             return GetOrCreateHistogram
             (
@@ -32,7 +32,7 @@ namespace MergerLogic.Monitoring.Metrics
             );
         }
 
-        public Histogram BatchInitializationTimeHistogram()
+        public Histogram? BatchInitializationTimeHistogram()
         {
             return GetOrCreateHistogram
             (
@@ -43,7 +43,7 @@ namespace MergerLogic.Monitoring.Metrics
             );
         }
 
-        public Gauge TilesInBatchGauge()
+        public Gauge? TilesInBatchGauge()
         {
             return GetOrCreateGauge
             (
@@ -53,7 +53,7 @@ namespace MergerLogic.Monitoring.Metrics
             );
         }
 
-        public Histogram TileUploadTimeHistogram()
+        public Histogram? TileUploadTimeHistogram()
         {
             return GetOrCreateHistogram
             (
@@ -64,7 +64,7 @@ namespace MergerLogic.Monitoring.Metrics
             );
         }
 
-        public Histogram TotalGetTilesSourcesTimeHistogram()
+        public Histogram? TotalGetTilesSourcesTimeHistogram()
         {
             return GetOrCreateHistogram
             (
@@ -75,7 +75,7 @@ namespace MergerLogic.Monitoring.Metrics
             );
         }
 
-        public Histogram SourceTileDownloadTimeHistogram()
+        public Histogram? SourceTileDownloadTimeHistogram()
         {
             return GetOrCreateHistogram
             (
@@ -87,7 +87,7 @@ namespace MergerLogic.Monitoring.Metrics
         }
 
 
-        public Histogram TotalBatchWorkTimeHistogram()
+        public Histogram? TotalBatchWorkTimeHistogram()
         {
             return GetOrCreateHistogram
             (
@@ -98,7 +98,7 @@ namespace MergerLogic.Monitoring.Metrics
             );
         }
 
-        public Histogram TotalTileMergeTimeHistogram()
+        public Histogram? TotalTileMergeTimeHistogram()
         {
             return GetOrCreateHistogram
             (
@@ -109,7 +109,7 @@ namespace MergerLogic.Monitoring.Metrics
             );
         }
 
-        public Histogram TotalTileUpscaleTimeHistogram()
+        public Histogram? TotalTileUpscaleTimeHistogram()
         {
             return GetOrCreateHistogram
             (
@@ -121,7 +121,7 @@ namespace MergerLogic.Monitoring.Metrics
             );
         }
 
-        public Histogram TotalValidationTimeHistogram()
+        public Histogram? TotalValidationTimeHistogram()
         {
             return GetOrCreateHistogram
             (
@@ -133,7 +133,7 @@ namespace MergerLogic.Monitoring.Metrics
             );
         }
 
-        private Histogram GetOrCreateHistogram(string metricName, string help, string[] labels = null, double[] buckets = null)
+        private Histogram? GetOrCreateHistogram(string metricName, string help, string[]? labels = null, double[]? buckets = null)
         {
             if (!this._enabled)
             {
@@ -148,7 +148,7 @@ namespace MergerLogic.Monitoring.Metrics
                 });
         }
 
-        private Gauge GetOrCreateGauge(string metricName, string help, string[] labels = null)
+        private Gauge? GetOrCreateGauge(string metricName, string help, string[]? labels = null)
         {
             if (!this._enabled)
             {
