@@ -112,7 +112,7 @@ namespace MergerLogic.ImageProcessing
             scaledImage.ColorSpace = colorSpace;
 
             upscaleStopWatch.Stop();
-            this._metricsProvider.TotalTileUpscaleTimeHistogram()?.Observe(upscaleStopWatch.Elapsed.TotalSeconds);
+            this._metricsProvider.UpscaleTimePerTileHistogram()?.Observe(upscaleStopWatch.Elapsed.TotalSeconds);
             return ImageUtils.IsTransparent(scaledImage) ? null : scaledImage;
 
         }

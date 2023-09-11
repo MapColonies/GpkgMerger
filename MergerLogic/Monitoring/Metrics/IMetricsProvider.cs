@@ -6,13 +6,13 @@ namespace MergerLogic.Monitoring.Metrics
     {
         Histogram? TaskExecutionTimeHistogram();
         Histogram? BatchInitializationTimeHistogram();
-        Histogram? TileUploadTimeHistogram();
-        Histogram? TotalBatchWorkTimeHistogram();
-        Histogram? TotalGetTilesSourcesTimeHistogram();
-        Histogram? SourceTileDownloadTimeHistogram();
-        Histogram? TotalTileMergeTimeHistogram();
-        Histogram? TotalTileUpscaleTimeHistogram();
+        Histogram? BatchUploadTimeHistogram();
+        Histogram? BatchWorkTimeHistogram();
+        Histogram? BuildSourcesListTime();
+        Histogram? MergeTimePerTileHistogram();
+        Histogram? UpscaleTimePerTileHistogram();
         Histogram? TotalValidationTimeHistogram();
+        Histogram? TotalFetchTimePerTileHistogram();
         Gauge? TilesInBatchGauge();
     }
 }

@@ -94,8 +94,8 @@ namespace MergerService.Src
         {
             using (this._activitySource.StartActivity("sources parsing"))
             {
-                var getSourcesStopWatch = new Stopwatch();
-                getSourcesStopWatch.Start();
+                var buildSourcesListStopWatch = new Stopwatch();
+                buildSourcesListStopWatch.Start();
                 List<IData> sources = new List<IData>();
 
                 if (paths.Length != 0)
@@ -105,22 +105,14 @@ namespace MergerService.Src
                         paths[0].Origin, paths[0].Extent, true));
                     foreach (Source source in paths.Skip(1))
                     {
-                        var sourceTypeDownloadStopwatch = new Stopwatch();
-                        sourceTypeDownloadStopwatch.Start();
-
                         // TODO: add support for HTTP
                         path = BuildPath(source, false);
                         sources.Add(this._dataFactory.CreateDataSource(source.Type, path, batchSize,
                             source.Grid, source.Origin));
-
-                        sourceTypeDownloadStopwatch.Stop();
-                        this._metricsProvider.SourceTileDownloadTimeHistogram()?
-                            .WithLabels(source.Type)
-                            .Observe(sourceTypeDownloadStopwatch.Elapsed.TotalSeconds);
                     }
                 }
-                getSourcesStopWatch.Stop();
-                this._metricsProvider.TotalGetTilesSourcesTimeHistogram()?.Observe(getSourcesStopWatch.Elapsed.TotalSeconds);
+                buildSourcesListStopWatch.Stop();
+                this._metricsProvider.BuildSourcesListTime()?.Observe(buildSourcesListStopWatch.Elapsed.TotalSeconds);
                 return sources;
             }
         }
@@ -343,8 +335,8 @@ namespace MergerService.Src
                         // Go over the bounds of the current batch
                         using (this._activitySource.StartActivity($"[{methodName}] merging tiles"))
                         {
-                            var batchTilesMergeTime = new Stopwatch();
-                            batchTilesMergeTime.Start();
+                            var batchWorkTimeStopWatch = new Stopwatch();
+                            batchWorkTimeStopWatch.Start();
                             for (int x = bounds.MinX; x < bounds.MaxX; x++)
                             {
                                 for (int y = bounds.MinY; y < bounds.MaxY; y++)
@@ -372,7 +364,7 @@ namespace MergerService.Src
                                         metadata.TargetFormat);
 
                                     tileMergeStopWatch.Stop();
-                                    this._metricsProvider.TotalTileMergeTimeHistogram()?
+                                    this._metricsProvider.MergeTimePerTileHistogram()?
                                         .WithLabels(new string[] { metadata.TargetFormat.ToString() })
                                         .Observe(tileMergeStopWatch.Elapsed.TotalSeconds);
 
@@ -394,23 +386,17 @@ namespace MergerService.Src
                                     }
                                 }
                             }
-                            batchTilesMergeTime.Stop();
+                            batchWorkTimeStopWatch.Stop();
                             this._metricsProvider
-                                .TotalBatchWorkTimeHistogram()?
-                                .Observe(batchTilesMergeTime.Elapsed.TotalSeconds);
+                                .BatchWorkTimeHistogram()?
+                                .Observe(batchWorkTimeStopWatch.Elapsed.TotalSeconds);
                         }
 
                         using (this._activitySource.StartActivity("saving tiles"))
                         {
-                            var updateTilesStopWatch = new Stopwatch();
+                          
                             this._logger.LogInformation($"[{methodName}] target UpdateTiles");
-                            updateTilesStopWatch.Start();
-                            target.UpdateTiles(tiles);
-                            updateTilesStopWatch.Stop();
-                            this._metricsProvider
-                                .TileUploadTimeHistogram()?
-                                .WithLabels(new string[] { target.Type.ToString() })
-                                .Observe(updateTilesStopWatch.Elapsed.TotalSeconds);
+                            target.UpdateTiles(tiles);                   
                             this._logger.LogDebug($"[{methodName}] UpdateRelativeProgress");
                             UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);
                         }
@@ -461,7 +447,7 @@ namespace MergerService.Src
                             this._logger.LogInformation($"[{methodName}] Validation not requested, skipping validation...");
                         }
                     }
-                    this._metricsProvider.TilesInBatchGauge().Set(0);
+                    this._metricsProvider.TilesInBatchGauge()?.Set(0);
                 }
             }
             this._logger.LogDebug($"[{methodName}] end");

@@ -53,68 +53,68 @@ namespace MergerLogic.Monitoring.Metrics
             );
         }
 
-        public Histogram? TileUploadTimeHistogram()
+        public Histogram? BatchUploadTimeHistogram()
         {
             return GetOrCreateHistogram
             (
-                "tile_upload_time",
-                "Histogram of Tile Target Upload Time",
+                "batch_upload_time",
+                "Histogram of Batch Target Upload Time",
                 new string[] { "target_type" },
                 this._buckets
             );
         }
 
-        public Histogram? TotalGetTilesSourcesTimeHistogram()
+        public Histogram? BuildSourcesListTime()
         {
             return GetOrCreateHistogram
             (
-                "get_tiles_sources_time",
-                "Histogram of Get Tiles Sources time",
+                "build_sources_list_time",
+                "Histogram of Build Sources List time",
                 null,
                 this._buckets
             );
         }
 
-        public Histogram? SourceTileDownloadTimeHistogram()
+        public Histogram? BatchWorkTimeHistogram()
         {
             return GetOrCreateHistogram
             (
-                "source_tile_download_time",
-                "Histogram of Source Tile Download time",
-                new string[] { "source_type" },
-                this._buckets
-            );
-        }
-
-
-        public Histogram? TotalBatchWorkTimeHistogram()
-        {
-            return GetOrCreateHistogram
-            (
-                "total_batch_work_time",
-                "Histogram of Total Batch Work time",
+                "batch_work_time",
+                "Histogram of Batch Work time",
                 null,
                 this._buckets
             );
         }
 
-        public Histogram? TotalTileMergeTimeHistogram()
+        public Histogram? MergeTimePerTileHistogram()
         {
             return GetOrCreateHistogram
             (
-                "total_tile_merge_time",
-                "Histogram of Total Tile Merge time",
+                "merge_time_per_tile",
+                "Histogram of Merge Time per Tile",
                 new string[] { "tile_format" },
                 this._buckets
             );
         }
 
-        public Histogram? TotalTileUpscaleTimeHistogram()
+        public Histogram? UpscaleTimePerTileHistogram()
         {
             return GetOrCreateHistogram
             (
-                "total_tile_upscale_time",
-                "Histogram of Total Tile Upscale time",
+                "upscale_time_per_tile",
+                "Histogram of Upscale Time per Tile",
+               null,
+                this._buckets
+
+            );
+        }
+
+        public Histogram? TotalFetchTimePerTileHistogram()
+        {
+            return GetOrCreateHistogram
+            (
+                "total_fetch_time_per_tile",
+                "Histogram of Total Fetch Time per Tile",
                null,
                 this._buckets
 
