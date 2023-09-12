@@ -25,11 +25,11 @@ namespace MergerLogic.Batching
             internal set;
         }
 
-        public TileFormat? Format { get; internal set; }
+        public TileFormat Format { get; internal set; }
 
         private byte[] _data;
 
-        public Tile(int z, int x, int y, byte[] data, TileFormat? format = null)
+        public Tile(int z, int x, int y, byte[] data, TileFormat format)
         {
             this.Z = z;
             this.X = x;
@@ -38,7 +38,7 @@ namespace MergerLogic.Batching
             this.Format = format;
         }
 
-        public Tile(Coord cords, byte[] data, TileFormat? format = null)
+        public Tile(Coord cords, byte[] data, TileFormat format)
         {
             this.Z = cords.Z;
             this.X = cords.X;

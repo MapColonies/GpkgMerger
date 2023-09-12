@@ -25,7 +25,8 @@ namespace MergerLogic.Clients
                 return null;
             }
 
-            return new Tile(z, x, y, data);
+            var format = base.Formatter.GetTileFormat(data);
+            return new Tile(z, x, y, data, format);
         }
 
         public override bool TileExists(int z, int x, int y)

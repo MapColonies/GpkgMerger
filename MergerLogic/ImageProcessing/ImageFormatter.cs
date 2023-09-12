@@ -8,6 +8,7 @@ namespace MergerLogic.ImageProcessing
     {
         [EnumMember(Value = "png")] Png,
         [EnumMember(Value = "jpeg")] Jpeg,
+        [EnumMember(Value = "unsupported")] Unsupported,
     }
 
     public class ImageFormatter : IImageFormatter
@@ -21,7 +22,7 @@ namespace MergerLogic.ImageProcessing
                 using (var image = new MagickImage(tileData))
                 {
                     this.ConvertToFormat(image, format);
-                    return new Tile(tile.Z, tile.X, tile.Y, image.ToByteArray());
+                    return new Tile(tile.Z, tile.X, tile.Y, image.ToByteArray(), format);
                 }
             }
 
@@ -56,7 +57,7 @@ namespace MergerLogic.ImageProcessing
             }
         }
 
-        public TileFormat? GetTileFormat(byte[] tile)
+        public TileFormat GetTileFormat(byte[] tile)
         {
             //files magic values: https://en.wikipedia.org/wiki/List_of_file_signatures
 
@@ -87,7 +88,7 @@ namespace MergerLogic.ImageProcessing
             }
 
 
-            return null;
+            return TileFormat.Unsupported;
         }
     }
 }

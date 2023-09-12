@@ -147,7 +147,8 @@ namespace MergerLogic.Clients
                         return null;
                     }
 
-                    tile = new Tile(z, x, y, blob);
+                    var format = base.Formatter.GetTileFormat(blob);
+                    tile = new Tile(z, x, y, blob, format);
                 }
             }
 
@@ -238,8 +239,9 @@ namespace MergerLogic.Clients
                             var x = reader.GetInt32(1);
                             var y = reader.GetInt32(2);
                             var blob = (byte[])reader["tile_data"];
+                            var format = base.Formatter.GetTileFormat(blob);
 
-                            Tile tile = new Tile(z, x, y, blob);
+                            Tile tile = new Tile(z, x, y, blob, format);
                             tiles.Add(tile);
                         }
                     }
@@ -297,8 +299,9 @@ namespace MergerLogic.Clients
                         var x = reader.GetInt32(1);
                         var y = reader.GetInt32(2);
                         var blob = (byte[])reader["tile_data"];
+                        var format = base.Formatter.GetTileFormat(blob);
 
-                        lastTile = new Tile(z, x, y, blob);
+                        lastTile = new Tile(z, x, y, blob, format);
                     }
                 }
             }

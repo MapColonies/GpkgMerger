@@ -8,6 +8,6 @@ namespace MergerLogic.ImageProcessing
         public Tile ConvertToFormat(Tile tile, TileFormat format);
         public void ConvertToFormat(IMagickImage image, TileFormat format);
         public byte[] ConvertToFormat(byte[] tile, TileFormat format);
-        public TileFormat? GetTileFormat(byte[] tile);
+        public TileFormat GetTileFormat(byte[] tile);
     }
 }

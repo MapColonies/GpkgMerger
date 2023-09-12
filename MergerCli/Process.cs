@@ -15,13 +15,15 @@ namespace MergerCli
         private readonly IConfigurationManager _configManager;
         private readonly ITileMerger _tileMerger;
         private readonly ILogger _logger;
+        protected readonly IImageFormatter _formatter;
         static readonly object _locker = new object();
 
-        public Process(IConfigurationManager configuration, ITileMerger tileMerger, ILogger<Process> logger)
+        public Process(IConfigurationManager configuration, ITileMerger tileMerger, ILogger<Process> logger, IImageFormatter formatter)
         {
             this._configManager = configuration;
             this._tileMerger = tileMerger;
             this._logger = logger;
+            this._formatter = formatter;
         }
 
         public void Start(TileFormat targetFormat, IData baseData, IData newData, BatchStatusManager batchStatusManager)
@@ -120,7 +122,8 @@ namespace MergerCli
 
                 if (image != null)
                 {
-                    newTile = new Tile(newTile.Z, newTile.X, newTile.Y, image);
+                    var format = this._formatter.GetTileFormat(image);
+                    newTile = new Tile(newTile.Z, newTile.X, newTile.Y, image, format);
                     tiles.Add(newTile);
                 }
             }

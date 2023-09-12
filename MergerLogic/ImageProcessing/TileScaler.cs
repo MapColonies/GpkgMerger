@@ -111,7 +111,7 @@ namespace MergerLogic.ImageProcessing
                 upscale = this.Upscale(tileImage, tile, targetCoords);
             }
 
-            return upscale is null ? null : new Tile(targetCoords, upscale.ToByteArray());
+            return upscale is null ? null : new Tile(targetCoords, upscale.ToByteArray(), tile.Format);
         }
     }
 }

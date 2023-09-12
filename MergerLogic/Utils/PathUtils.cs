@@ -29,8 +29,7 @@ namespace MergerLogic.Utils
 
         public string GetTilePath(string basePath, Tile tile, bool isS3 = false)
         {
-            var format = tile.Format ?? this._imageFormatter.GetTileFormat(tile.GetImageBytes());
-            return this.GetTilePath(basePath, tile.Z, tile.X, tile.Y, format!.Value, isS3);
+            return this.GetTilePath(basePath, tile.Z, tile.X, tile.Y, tile.Format, isS3);
         }
 
         public string GetTilePath(string basePath, int z, int x, int y, TileFormat format, bool isS3 = false)
