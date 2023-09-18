@@ -1,10 +1,28 @@
 
+using Amazon.Runtime;
 using MergerLogic.Utils;
 using Prometheus;
 using System.Reflection;
+using System.Runtime.Serialization;
 
 namespace MergerLogic.Monitoring.Metrics
 {
+    public enum MetricName
+    {
+        [EnumMember(Value = "task_execution_time")] TaskExecutionTimeHistogram,
+        [EnumMember(Value = "batch_initialization_time")] BatchInitializationTimeHistogram,
+        [EnumMember(Value = "batch_upload_time")] BatchUploadTimeHistogram,
+        [EnumMember(Value = "batch_work_time")] BatchWorkTimeHistogram,
+        [EnumMember(Value = "build_sources_list_time")] BuildSourcesListTimeHistogram,
+        [EnumMember(Value = "merge_time_per_tile")] MergeTimePerTileHistogram,
+        [EnumMember(Value = "upscale_time_per_tile")] UpscaleTimePerTileHistogram,
+        [EnumMember(Value = "total_validation_time")] TotalValidationTimeHistogram,
+        [EnumMember(Value = "total_fetch_time_per_tile")] TotalFetchTimePerTileHistogram,
+        [EnumMember(Value = "tiles_in_batch")] TilesInBatchGauge,
+    }
+
+
+
     public class MetricsProvider : IMetricsProvider
     {
         private readonly CollectorRegistry _registry;
@@ -21,146 +39,168 @@ namespace MergerLogic.Monitoring.Metrics
             this._enabled = configurationManager.GetConfiguration<bool>("METRICS", "enabled");
         }
 
-        public Histogram? TaskExecutionTimeHistogram()
+        public void TaskExecutionTimeHistogram(double value, string[]? labelValues = null)
         {
-            return GetOrCreateHistogram
+            this.ObserveHistogram
             (
-                "task_execution_time",
+                MetricName.TaskExecutionTimeHistogram,
                 "Histogram of task execution times in seconds",
+                value,
                 new string[] { "task_type", "success" },
-                this._buckets
-            );
+                labelValues
+           );
         }
 
-        public Histogram? BatchInitializationTimeHistogram()
+        public void BatchInitializationTimeHistogram(double value, string[]? labelValues = null)
         {
-            return GetOrCreateHistogram
-            (
-                "batch_initialization_time",
+            this.ObserveHistogram
+           (
+                MetricName.BatchInitializationTimeHistogram,
                 "Histogram of Batch Initialization time",
+                value,
                 null,
-                this._buckets
-            );
+                labelValues
+           );
         }
 
-        public Gauge? TilesInBatchGauge()
+        public void TilesInBatchGauge(double value, string[]? labelValues = null)
         {
-            return GetOrCreateGauge
-            (
-                "tiles_in_batch",
-                "Number of tiles in a batch",
-                new string[] { "target_format" }
-            );
+            this.GetOrCreateGauge
+           (
+               MetricName.TilesInBatchGauge,
+               "Number of tiles in a batch",
+               value,
+               new string[] { "target_format" },
+               labelValues
+           );
         }
 
-        public Histogram? BatchUploadTimeHistogram()
+        public void BatchUploadTimeHistogram(double value, string[]? labelValues = null)
         {
-            return GetOrCreateHistogram
-            (
-                "batch_upload_time",
-                "Histogram of Batch Target Upload Time",
-                new string[] { "target_type" },
-                this._buckets
-            );
+            this.ObserveHistogram
+           (
+               MetricName.BatchUploadTimeHistogram,
+               "Histogram of Batch Target Upload Time",
+               value,
+               new string[] { "target_type" },
+               labelValues
+           );
         }
 
-        public Histogram? BuildSourcesListTime()
+        public void BuildSourcesListTime(double value, string[]? labelValues = null)
         {
-            return GetOrCreateHistogram
-            (
-                "build_sources_list_time",
-                "Histogram of Build Sources List time",
-                null,
-                this._buckets
-            );
-        }
-
-        public Histogram? BatchWorkTimeHistogram()
-        {
-            return GetOrCreateHistogram
-            (
-                "batch_work_time",
-                "Histogram of Batch Work time",
-                null,
-                this._buckets
-            );
-        }
-
-        public Histogram? MergeTimePerTileHistogram()
-        {
-            return GetOrCreateHistogram
-            (
-                "merge_time_per_tile",
-                "Histogram of Merge Time per Tile",
-                new string[] { "tile_format" },
-                this._buckets
-            );
-        }
-
-        public Histogram? UpscaleTimePerTileHistogram()
-        {
-            return GetOrCreateHistogram
-            (
-                "upscale_time_per_tile",
-                "Histogram of Upscale Time per Tile",
+            this.ObserveHistogram
+           (
+               MetricName.BuildSourcesListTimeHistogram,
+               "Histogram of Build Sources List time",
+               value,
                null,
-                this._buckets
-
-            );
+               labelValues
+           );
         }
 
-        public Histogram? TotalFetchTimePerTileHistogram()
+        public void BatchWorkTimeHistogram(double value, string[]? labelValues = null)
         {
-            return GetOrCreateHistogram
-            (
-                "total_fetch_time_per_tile",
-                "Histogram of Total Fetch Time per Tile",
+            this.ObserveHistogram
+           (
+               MetricName.BatchWorkTimeHistogram,
+               "Histogram of Batch Work time",
+               value,
                null,
-                this._buckets
-
-            );
+               labelValues
+           );
         }
 
-        public Histogram? TotalValidationTimeHistogram()
+        public void MergeTimePerTileHistogram(double value, string[]? labelValues = null)
         {
-            return GetOrCreateHistogram
+            this.ObserveHistogram
+           (
+               MetricName.MergeTimePerTileHistogram,
+               "Histogram of Merge Time per Tile",
+               value,
+               new string[] { "tile_format" },
+               labelValues
+           );
+        }
+
+        public void UpscaleTimePerTileHistogram(double value, string[]? labelValues = null)
+        {
+            this.ObserveHistogram
+           (
+              MetricName.UpscaleTimePerTileHistogram,
+               "Histogram of Upscale Time per Tile",
+               value,
+               null,
+               labelValues
+
+           );
+        }
+
+        public void TotalFetchTimePerTileHistogram(double value, string[]? labelValues = null)
+        {
+            this.ObserveHistogram
+           (
+               MetricName.TotalFetchTimePerTileHistogram,
+               "Histogram of Total Fetch Time per Tile",
+               value,
+               null,
+               labelValues
+           );
+        }
+
+        public void TotalValidationTimeHistogram(double value, string[]? labelValues = null)
+        {
+            this.ObserveHistogram
             (
-                "total_validation_time",
+                MetricName.TotalValidationTimeHistogram,
                 "Histogram of Total Validation time",
+                value,
                 null,
-                this._buckets
-
+                labelValues
             );
         }
 
-        private Histogram? GetOrCreateHistogram(string metricName, string help, string[]? labels = null, double[]? buckets = null)
+        private void ObserveHistogram(MetricName metricName, string help, double value, string[]? labels = null, string[]? labelsValues = null)
         {
             if (!this._enabled)
             {
-                return null;
+                return;
             }
 
-            return Prometheus.Metrics.WithCustomRegistry(_registry).CreateHistogram(metricName, help,
-                new HistogramConfiguration
-                {
-                    Buckets = buckets,
-                    LabelNames = labels,
-                });
+            Histogram histogram = Prometheus.Metrics.WithCustomRegistry(_registry).CreateHistogram(metricName.ToString(), help,
+            new HistogramConfiguration
+            {
+                Buckets = this._buckets,
+                LabelNames = labels,
+            });
+
+            if (labelsValues != null)
+            {
+                histogram.WithLabels(labelsValues);
+            }
+            histogram.Observe(value);
         }
 
-        private Gauge? GetOrCreateGauge(string metricName, string help, string[]? labels = null)
+
+        private void GetOrCreateGauge(MetricName metricName, string help, double value, string[]? labels = null, string[]? labelsValues = null)
         {
             if (!this._enabled)
             {
-                return null;
+                return;
+
             }
-            return Prometheus.Metrics.WithCustomRegistry(_registry).CreateGauge(metricName, help,
+
+            Gauge gauge = Prometheus.Metrics.WithCustomRegistry(_registry).CreateGauge(metricName.ToString(), help,
                 new GaugeConfiguration
                 {
                     LabelNames = labels
                 });
+
+            if (labelsValues != null)
+            {
+                gauge.WithLabels(labelsValues);
+            }
+            gauge.Set(value);
         }
-
-
     }
 }

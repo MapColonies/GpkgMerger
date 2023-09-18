@@ -52,11 +52,14 @@ namespace MergerService.Utils
                 string url = new Uri(new Uri(_jobManagerUrl), relativeUri).ToString();
                 string? taskData = this._httpClient.PostData(url, null);
 
+                if (taskData is null)
+                {
+                    return null;
+                }
+
                 try
                 {
-                    return taskData is null
-                        ? null
-                        : JsonConvert.DeserializeObject<MergeTask>(taskData, this._jsonSerializerSettings)!;
+                    return JsonConvert.DeserializeObject<MergeTask>(taskData, this._jsonSerializerSettings)!;
                 }
                 catch (Exception e)
                 {

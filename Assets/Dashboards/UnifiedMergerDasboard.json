@@ -19,7 +19,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 6,
+  "id": 12,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -68,7 +68,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -107,7 +108,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(rate(batch_initialization_time_sum{app=\"MergerService\", pod=\"$pod\"}[$interval])) / sum(rate(batch_initialization_time_count{app=\"MergerService\", pod=\"$pod\"}[$interval]))",
+          "expr": "sum(rate(batch_initialization_time_sum{app=\"MergerService\"}[$interval])) / sum(rate(batch_initialization_time_count{app=\"MergerService\"}[$interval]))",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -121,7 +122,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by (le) (rate(batch_initialization_time_bucket{app=\"MergerService\",pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(batch_initialization_time_bucket{app=\"MergerService\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p50",
@@ -134,7 +135,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by (le) (rate(batch_initialization_time_bucket{app=\"MergerService\",pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.9, sum by (le) (rate(batch_initialization_time_bucket{app=\"MergerService\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p90",
@@ -160,11 +161,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "purple"
-              },
-              {
-                "color": "red",
-                "value": 10000
+                "color": "dark-green",
+                "value": null
               }
             ]
           }
@@ -196,7 +194,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "sum(tiles_in_batch{app=\"MergerService\", pod=~\"$pod\"})",
+          "expr": "sum(tiles_in_batch{app=\"MergerService\"})",
           "instant": false,
           "range": true,
           "refId": "A"
@@ -250,7 +248,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -288,7 +287,7 @@
             "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
           },
           "editorMode": "code",
-          "expr": "sum(rate(build_sources_list_time_sum{app=\"MergerService\", pod=\"$pod\"}[$interval])) / sum(rate(build_sources_list_time_count{app=\"MergerService\", pod=\"$pod\"}[$interval]))",
+          "expr": "sum(rate(build_sources_list_time_sum{app=\"MergerService\"}[$interval])) / sum(rate(build_sources_list_time_count{app=\"MergerService\"}[$interval]))",
           "instant": false,
           "legendFormat": "avg",
           "range": true,
@@ -300,7 +299,7 @@
             "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(build_sources_list_time_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.5, sum by(le) (rate(build_sources_list_time_bucket{app=\"MergerService\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p50",
@@ -313,7 +312,7 @@
             "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by(le) (rate(build_sources_list_time_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.9, sum by(le) (rate(build_sources_list_time_bucket{app=\"MergerService\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p90",
@@ -369,7 +368,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -407,7 +407,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "sum(rate(batch_work_time_sum{app=\"MergerService\", pod=\"$pod\"}[$interval])) / sum(rate(batch_work_time_count{app=\"MergerService\", pod=\"$pod\"}[$interval]))",
+          "expr": "sum(rate(batch_work_time_sum{app=\"MergerService\"}[$interval])) / sum(rate(batch_work_time_count{app=\"MergerService\"}[$interval]))",
           "instant": false,
           "legendFormat": "avg",
           "range": true,
@@ -419,7 +419,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(batch_work_time_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.5, sum by(le) (rate(batch_work_time_bucket{app=\"MergerService\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p50",
@@ -432,7 +432,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by(le) (rate(batch_work_time_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.9, sum by(le) (rate(batch_work_time_bucket{app=\"MergerService\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p90",
@@ -488,7 +488,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -526,7 +527,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "sum(rate(task_execution_time_sum{app=\"MergerService\", pod=\"$pod\"}[$interval])) / sum(rate(task_execution_time_count{app=\"MergerService\", pod=\"$pod\"}[$interval]))",
+          "expr": "sum(rate(task_execution_time_sum{app=\"MergerService\"}[$interval])) / sum(rate(task_execution_time_count{app=\"MergerService\"}[$interval]))",
           "instant": false,
           "legendFormat": "avg",
           "range": true,
@@ -538,7 +539,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(task_execution_time_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.5, sum by(le) (rate(task_execution_time_bucket{app=\"MergerService\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p50",
@@ -551,7 +552,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by(le) (rate(task_execution_time_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.9, sum by(le) (rate(task_execution_time_bucket{app=\"MergerService\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p90",
@@ -607,7 +608,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -645,7 +647,7 @@
             "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
           },
           "editorMode": "code",
-          "expr": "sum(rate(merge_time_per_tile_sum{app=\"MergerService\", pod=\"$pod\"}[$interval])) / \nsum(rate(merge_time_per_tile_count{app=\"MergerService\", pod=\"$pod\"}[$interval]))\n",
+          "expr": "sum(rate(merge_time_per_tile_sum{app=\"MergerService\"}[$interval])) / \nsum(rate(merge_time_per_tile_count{app=\"MergerService\"}[$interval]))\n",
           "instant": false,
           "legendFormat": "avg",
           "range": true,
@@ -657,7 +659,7 @@
             "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(merge_time_per_tile_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.5, sum by(le) (rate(merge_time_per_tile_bucket{app=\"MergerService\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p50",
@@ -670,7 +672,7 @@
             "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by(le) (rate(merge_time_per_tile_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.9, sum by(le) (rate(merge_time_per_tile_bucket{app=\"MergerService\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p90",
@@ -726,7 +728,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -764,7 +767,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "sum(rate(upscale_time_per_tile_sum{app=\"MergerService\", pod=\"$pod\"}[$interval])) / sum(rate(upscale_time_per_tile_count{app=\"MergerService\", pod=\"$pod\"}[$interval]))",
+          "expr": "sum(rate(upscale_time_per_tile_sum{app=\"MergerService\"}[$interval])) / sum(rate(upscale_time_per_tile_count{app=\"MergerService\"}[$interval]))",
           "instant": false,
           "legendFormat": "avg",
           "range": true,
@@ -776,7 +779,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(upscale_time_per_tile_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.5, sum by(le) (rate(upscale_time_per_tile_bucket{app=\"MergerService\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p50",
@@ -789,7 +792,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by(le) (rate(upscale_time_per_tile_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.9, sum by(le) (rate(upscale_time_per_tile_bucket{app=\"MergerService\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p90",
@@ -845,7 +848,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -883,7 +887,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "sum(rate(total_fetch_time_per_tile_sum{app=\"MergerService\", pod=\"$pod\"}[$interval])) / sum(rate(total_fetch_time_per_tile_count{app=\"MergerService\", pod=\"$pod\"}[$interval]))",
+          "expr": "sum(rate(total_fetch_time_per_tile_sum{app=\"MergerService\"}[$interval])) / sum(rate(total_fetch_time_per_tile_count{app=\"MergerService\"}[$interval]))",
           "instant": false,
           "legendFormat": "avg",
           "range": true,
@@ -895,7 +899,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(total_fetch_time_per_tile_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.5, sum by(le) (rate(total_fetch_time_per_tile_bucket{app=\"MergerService\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p50",
@@ -908,7 +912,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by(le) (rate(total_fetch_time_per_tile_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.9, sum by(le) (rate(total_fetch_time_per_tile_bucket{app=\"MergerService\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p90",
@@ -964,7 +968,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1002,7 +1007,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "sum(rate(batch_upload_time_sum{app=\"MergerService\", pod=\"$pod\"}[$interval])) / sum(rate(batch_upload_time_count{app=\"MergerService\", pod=\"$pod\"}[$interval]))",
+          "expr": "sum(rate(batch_upload_time_sum{app=\"MergerService\"}[$interval])) / sum(rate(batch_upload_time_count{app=\"MergerService\"}[$interval]))",
           "instant": false,
           "legendFormat": "avg",
           "range": true,
@@ -1014,7 +1019,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(batch_upload_time_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.5, sum by(le) (rate(batch_upload_time_bucket{app=\"MergerService\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p50",
@@ -1027,7 +1032,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by(le) (rate(batch_upload_time_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.9, sum by(le) (rate(batch_upload_time_bucket{app=\"MergerService\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p90",
@@ -1115,33 +1120,6 @@
         "type": "interval"
       },
       {
-        "allValue": ".*",
-        "current": {
-          "selected": false,
-          "text": "gpkg-merger-metrics-deployment-54799699d4-rhxcs",
-          "value": "gpkg-merger-metrics-deployment-54799699d4-rhxcs"
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
-        },
-        "definition": "label_values({namespace=\"$namespace\", app=\"MergerService\"},pod)",
-        "hide": 0,
-        "includeAll": false,
-        "multi": false,
-        "name": "pod",
-        "options": [],
-        "query": {
-          "query": "label_values({namespace=\"$namespace\", app=\"MergerService\"},pod)",
-          "refId": "PrometheusVariableQueryEditor-VariableQuery"
-        },
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "type": "query"
-      },
-      {
         "current": {
           "selected": false,
           "text": "raster-qa",
@@ -1188,8 +1166,8 @@
     ]
   },
   "timezone": "",
-  "title": "GPKG-Merger",
-  "uid": "f58fb6f6-a07c-47a1-826a-b7836b932434",
-  "version": 44,
+  "title": "Unified-Gpkg-Merger",
+  "uid": "8e00874f-4d2b-40cd-ad85-520e30fe2e1e",
+  "version": 4,
   "weekStart": ""
 }

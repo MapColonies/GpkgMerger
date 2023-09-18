@@ -45,7 +45,6 @@ namespace MergerLogic.DataTypes
         protected delegate Tile? GetTileFromCoordFunction(Coord coord);
         protected delegate Tile TileConvertorFunction(Tile tile);
         protected delegate Tile? NullableTileConvertorFunction(Tile tile);
-
         protected IServiceProvider _container;
         public DataType Type { get; }
         public string Path { get; }
@@ -55,7 +54,6 @@ namespace MergerLogic.DataTypes
         public bool IsBase { get; }
         public bool IsNew { get; set; }
         public bool IsOneXOne => this.Grid == Grid.OneXOne;
-
         protected readonly int BatchSize;
         protected TUtilsType Utils;
         protected GetTileFromXYZFunction GetTile;
@@ -267,8 +265,7 @@ namespace MergerLogic.DataTypes
 
         public Tile? GetCorrespondingTile(Coord coords, bool upscale)
         {
-            Stopwatch fetchTileStopWatch = new Stopwatch();
-            fetchTileStopWatch.Start();
+            Stopwatch fetchTileStopWatch = Stopwatch.StartNew();
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start for coord: {coords.ToString()}, upscale: {upscale}");
             Tile? correspondingTile = this.GetTile(coords.Z, coords.X, coords.Y);
 
@@ -278,14 +275,13 @@ namespace MergerLogic.DataTypes
             }
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end for coord: {coords.ToString()}, upscale: {upscale}");
             fetchTileStopWatch.Stop();
-            this._metricsProvider.TotalFetchTimePerTileHistogram()?.Observe(fetchTileStopWatch.Elapsed.TotalMilliseconds);
+            this._metricsProvider.TotalFetchTimePerTileHistogram(fetchTileStopWatch.Elapsed.TotalMilliseconds);
             return correspondingTile;
         }
 
         public void UpdateTiles(IEnumerable<Tile> tiles)
         {
-            var batchUploadStopWatch = new Stopwatch();
-            batchUploadStopWatch.Start();
+            var batchUploadStopWatch = Stopwatch.StartNew();
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] update tiles started");
             var targetTiles = tiles.Select(tile =>
             {
@@ -296,10 +292,7 @@ namespace MergerLogic.DataTypes
             this.InternalUpdateTiles(targetTiles);
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] update tiles ended");
             batchUploadStopWatch.Stop();
-            this._metricsProvider
-                .BatchUploadTimeHistogram()?
-                .WithLabels(new string[] { this.Type.ToString() })
-                .Observe(batchUploadStopWatch.Elapsed.TotalSeconds);
+            this._metricsProvider.BatchUploadTimeHistogram(batchUploadStopWatch.Elapsed.TotalSeconds, new string[] { this.Type.ToString() });
         }
 
         protected abstract void InternalUpdateTiles(IEnumerable<Tile> targetTiles);

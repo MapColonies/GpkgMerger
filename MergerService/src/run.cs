@@ -94,8 +94,8 @@ namespace MergerService.Src
         {
             using (this._activitySource.StartActivity("sources parsing"))
             {
-                var buildSourcesListStopWatch = new Stopwatch();
-                buildSourcesListStopWatch.Start();
+                var buildSourcesListStopWatch = Stopwatch.StartNew();
+
                 List<IData> sources = new List<IData>();
 
                 if (paths.Length != 0)
@@ -112,7 +112,7 @@ namespace MergerService.Src
                     }
                 }
                 buildSourcesListStopWatch.Stop();
-                this._metricsProvider.BuildSourcesListTime()?.Observe(buildSourcesListStopWatch.Elapsed.TotalSeconds);
+                this._metricsProvider.BuildSourcesListTime(buildSourcesListStopWatch.Elapsed.TotalSeconds);
                 return sources;
             }
         }
@@ -186,14 +186,13 @@ namespace MergerService.Src
                     string log = managerCallbackUrl == null ? "managerCallbackUrl not provided as job parameter" : $"managerCallback url: {managerCallbackUrl}";
                     this._logger.LogDebug($"[{methodName}]{log}");
                     var totalTaskStopWatch = Stopwatch.StartNew();
-                    bool success = false;
+                    bool taskSucceed = false;
 
                     try
                     {
-                        totalTaskStopWatch.Start();
                         this._heartbeatClient.Start(task.Id);
                         RunTask(task, taskUtils, managerCallbackUrl);
-                        success = true;
+                        taskSucceed = true;
                     }
                     catch (Exception e)
                     {
@@ -207,17 +206,17 @@ namespace MergerService.Src
                         {
                             this._logger.LogError(e, $"[{methodName}] Error in MergerService while updating reject status, RunTask catch block - update task failure: {innerError.Message}");
                         }
-
-                        continue;
                     }
                     finally
                     {
                         totalTaskStopWatch.Stop();
-                        this._metricsProvider
-                            .TaskExecutionTimeHistogram()?
-                            .WithLabels(new string[] { taskType, success.ToString() })
-                            .Observe(totalTaskStopWatch.Elapsed.TotalSeconds);
+                        this._metricsProvider.TaskExecutionTimeHistogram(totalTaskStopWatch.Elapsed.TotalSeconds, new string[] { taskType, taskSucceed.ToString() });
                         this._heartbeatClient.Stop();
+                    }
+
+                    if (!taskSucceed)
+                    {
+                        continue;
                     }
 
                     activatedAny = true;
@@ -300,13 +299,12 @@ namespace MergerService.Src
                     {
                         // TODO: remove comment and check that the activity is created (When bug will be fixed)
                         // batchActivity.AddTag("bbox", bounds.ToString());
-                        Stopwatch batchInitializationStopwatch = new Stopwatch();
-                        batchInitializationStopwatch.Start();
+                        Stopwatch batchInitializationStopwatch = Stopwatch.StartNew();
                         stopWatch.Reset();
                         stopWatch.Start();
 
                         long singleTileBatchCount = bounds.Size();
-                        this._metricsProvider.TilesInBatchGauge()?.Set(singleTileBatchCount);
+                        this._metricsProvider.TilesInBatchGauge(singleTileBatchCount);
                         int tileProgressCount = 0;
 
                         // TODO: remove comment and check that the activity is created (When bug will be fixed)
@@ -321,9 +319,7 @@ namespace MergerService.Src
                         this._logger.LogDebug($"[{methodName}] BuildDataList");
                         List<IData> sources = this.BuildDataList(metadata.Sources, this._batchSize);
                         batchInitializationStopwatch.Stop();
-                        this._metricsProvider
-                            .BatchInitializationTimeHistogram()?
-                            .Observe(batchInitializationStopwatch.Elapsed.TotalSeconds);
+                        this._metricsProvider.BatchInitializationTimeHistogram(batchInitializationStopwatch.Elapsed.TotalSeconds);
                         IData target = sources[0];
                         target.IsNew = metadata.IsNewTarget;
 
@@ -335,8 +331,8 @@ namespace MergerService.Src
                         // Go over the bounds of the current batch
                         using (this._activitySource.StartActivity($"[{methodName}] merging tiles"))
                         {
-                            var batchWorkTimeStopWatch = new Stopwatch();
-                            batchWorkTimeStopWatch.Start();
+                            var batchWorkTimeStopWatch = Stopwatch.StartNew();
+
                             for (int x = bounds.MinX; x < bounds.MaxX; x++)
                             {
                                 for (int y = bounds.MinY; y < bounds.MaxY; y++)
@@ -357,18 +353,17 @@ namespace MergerService.Src
                                     }
                                     this._logger.LogDebug($"[{methodName}] MergeTiles of {correspondingTileBuilders.Count} tiles");
 
-                                    var tileMergeStopWatch = new Stopwatch();
-                                    tileMergeStopWatch.Start();
+                                    var tileMergeStopWatch = Stopwatch.StartNew();
 
                                     byte[]? blob = this._tileMerger.MergeTiles(correspondingTileBuilders, coord,
                                         metadata.TargetFormat);
 
                                     tileMergeStopWatch.Stop();
-                                    this._metricsProvider.MergeTimePerTileHistogram()?
-                                        .WithLabels(new string[] { metadata.TargetFormat.ToString() })
-                                        .Observe(tileMergeStopWatch.Elapsed.TotalSeconds);
+                                    this._metricsProvider.MergeTimePerTileHistogram(
+                                        tileMergeStopWatch.Elapsed.TotalSeconds,
+                                        new string[] { metadata.TargetFormat.ToString() });
 
-                                    this._logger.LogInformation($"[{methodName}] MergeTiles finished");
+                            this._logger.LogInformation($"[{methodName}] MergeTiles finished");
                                     if (blob != null)
                                     {
                                         tiles.Add(new Tile(coord, blob));
@@ -387,16 +382,14 @@ namespace MergerService.Src
                                 }
                             }
                             batchWorkTimeStopWatch.Stop();
-                            this._metricsProvider
-                                .BatchWorkTimeHistogram()?
-                                .Observe(batchWorkTimeStopWatch.Elapsed.TotalSeconds);
+                            this._metricsProvider.BatchWorkTimeHistogram(batchWorkTimeStopWatch.Elapsed.TotalSeconds); ;
                         }
 
                         using (this._activitySource.StartActivity("saving tiles"))
                         {
-                          
+
                             this._logger.LogInformation($"[{methodName}] target UpdateTiles");
-                            target.UpdateTiles(tiles);                   
+                            target.UpdateTiles(tiles);
                             this._logger.LogDebug($"[{methodName}] UpdateRelativeProgress");
                             UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);
                         }
@@ -436,7 +429,7 @@ namespace MergerService.Src
                                 }
                             }
                             stopWatch.Stop();
-                            this._metricsProvider.TotalValidationTimeHistogram()?.Observe(stopWatch.Elapsed.TotalSeconds);
+                            this._metricsProvider.TotalValidationTimeHistogram(stopWatch.Elapsed.TotalSeconds);
                             // Get the elapsed time as a TimeSpan value.
                             ts = stopWatch.Elapsed;
                             string elapsedTime = this._timeUtils.FormatElapsedTime($"Validation time", ts);
@@ -447,7 +440,7 @@ namespace MergerService.Src
                             this._logger.LogInformation($"[{methodName}] Validation not requested, skipping validation...");
                         }
                     }
-                    this._metricsProvider.TilesInBatchGauge()?.Set(0);
+                    this._metricsProvider.TilesInBatchGauge(0);
                 }
             }
             this._logger.LogDebug($"[{methodName}] end");

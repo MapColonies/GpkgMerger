@@ -19,8 +19,7 @@ namespace MergerLogic.ImageProcessing
 
         public MagickImage? Upscale(MagickImage baseImage, Tile baseTile, Coord targetCoords)
         {
-            var upscaleStopWatch = new Stopwatch();
-            upscaleStopWatch.Start();
+            var upscaleStopWatch = Stopwatch.StartNew();
 
             // Calculate scale diff
             int zoomLevelDiff = targetCoords.Z - baseTile.Z;
@@ -112,7 +111,7 @@ namespace MergerLogic.ImageProcessing
             scaledImage.ColorSpace = colorSpace;
 
             upscaleStopWatch.Stop();
-            this._metricsProvider.UpscaleTimePerTileHistogram()?.Observe(upscaleStopWatch.Elapsed.TotalSeconds);
+            this._metricsProvider.UpscaleTimePerTileHistogram(upscaleStopWatch.Elapsed.TotalSeconds);
             return ImageUtils.IsTransparent(scaledImage) ? null : scaledImage;
 
         }

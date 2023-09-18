@@ -23,8 +23,7 @@ namespace MergerCli
             ServiceProvider container = CreateContainer();
             _logger = container.GetRequiredService<ILogger<Program>>();
 
-            Stopwatch totalTimeStopWatch = new Stopwatch();
-            totalTimeStopWatch.Start();
+            Stopwatch totalTimeStopWatch = Stopwatch.StartNew();
             TimeSpan ts;
             string programName = args[0];
 
@@ -69,13 +68,16 @@ namespace MergerCli
             }
 
             IData baseData = sources[0];
-            if(_resumed) {
+            if (_resumed)
+            {
                 bool isNew = _batchStatusManager.IsBaseLayerNew();
-                if (isNew) {
+                if (isNew)
+                {
                     baseData.IsNew = true;
                 }
             }
-            else {
+            else
+            {
                 _batchStatusManager.BaseLayer.IsNew = baseData.IsNew;
             }
 
@@ -93,8 +95,7 @@ namespace MergerCli
                 bool validate = config.GetConfiguration<bool>("GENERAL", "validate");
                 for (int i = 1; i < sources.Count; i++)
                 {
-                    Stopwatch stopWatch = new Stopwatch();
-                    stopWatch.Start();
+                    Stopwatch stopWatch = Stopwatch.StartNew();
                     if (_batchStatusManager.IsLayerCompleted(sources[i].Path))
                     {
                         continue;
@@ -181,7 +182,8 @@ namespace MergerCli
                 Minimal requirement is supplying at least one source.");
         }
 
-        private static void LoadStatusManager(ref string[] args) {
+        private static void LoadStatusManager(ref string[] args)
+        {
             if (!File.Exists(_resumeFilePath))
             {
                 _logger.LogError($"invalid status file {_resumeFilePath}");

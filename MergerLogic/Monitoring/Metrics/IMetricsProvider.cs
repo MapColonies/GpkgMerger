@@ -4,15 +4,15 @@ namespace MergerLogic.Monitoring.Metrics
 {
     public interface IMetricsProvider
     {
-        Histogram? TaskExecutionTimeHistogram();
-        Histogram? BatchInitializationTimeHistogram();
-        Histogram? BatchUploadTimeHistogram();
-        Histogram? BatchWorkTimeHistogram();
-        Histogram? BuildSourcesListTime();
-        Histogram? MergeTimePerTileHistogram();
-        Histogram? UpscaleTimePerTileHistogram();
-        Histogram? TotalValidationTimeHistogram();
-        Histogram? TotalFetchTimePerTileHistogram();
-        Gauge? TilesInBatchGauge();
+        void TaskExecutionTimeHistogram(double value, string[]? labelValues = null);
+        void BatchInitializationTimeHistogram(double value, string[]? labelValues = null);
+        void BatchUploadTimeHistogram(double value, string[]? labelValues = null);
+        void BatchWorkTimeHistogram(double value, string[]? labelValues = null);
+        void BuildSourcesListTime(double value, string[]? labelValues = null);
+        void MergeTimePerTileHistogram(double value, string[]? labelValues = null);
+        void UpscaleTimePerTileHistogram(double value, string[]? labelValues = null);
+        void TotalValidationTimeHistogram(double value, string[]? labelValues = null);
+        void TotalFetchTimePerTileHistogram(double value, string[]? labelValues = null);
+        void TilesInBatchGauge(double value, string[]? labelValues = null);
     }
 }

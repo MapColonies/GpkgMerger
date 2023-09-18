@@ -18,7 +18,7 @@ namespace MergerLogic.Clients
         private readonly ITimeUtils _timeUtils;
         private readonly ILogger _logger;
         private readonly IFileSystem _fileSystem;
-        
+
         public GpkgClient(string path, ITimeUtils timeUtils, ILogger<GpkgClient> logger, IFileSystem fileSystem,
             IGeoUtils geoUtils, IImageFormatter formatter) : base(path, geoUtils, formatter)
         {
@@ -225,7 +225,7 @@ namespace MergerLogic.Clients
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = 
+                    command.CommandText =
                         $"SELECT zoom_level, tile_column, tile_row, tile_data FROM \"{this._tileCache}\" ORDER BY zoom_level ASC limit $limit offset $offset";
                     command.Parameters.AddWithValue("$limit", batchSize);
                     command.Parameters.AddWithValue("$offset", offset);
@@ -308,8 +308,7 @@ namespace MergerLogic.Clients
 
         public void Vacuum()
         {
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
+            Stopwatch stopWatch = Stopwatch.StartNew();
 
             this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Vacuuming GPKG {this.path}");
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
@@ -334,13 +333,14 @@ namespace MergerLogic.Clients
         public void Create(Extent extent, bool isOneXOne = false)
         {
             this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] creating new gpkg: {this.path}");
-            
+
             // Create hierarchy if needed
             string dir = this._fileSystem.Path.GetDirectoryName(this.path);
-            if(dir.Length > 0 && !this._fileSystem.Directory.Exists(dir)) {
+            if (dir.Length > 0 && !this._fileSystem.Directory.Exists(dir))
+            {
                 this._fileSystem.Directory.CreateDirectory(dir);
             }
-            
+
             SQLiteConnection.CreateFile(this.path);
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
@@ -363,7 +363,7 @@ namespace MergerLogic.Clients
                     {
                         this.Add2X1MatrixSet(connection);
                     }
-                    
+
                     this.CreateGpkgContentsTable(connection, extent);
                     this.CreateTileMatrixValidationTriggers(connection);
                     transaction.Commit();
@@ -496,7 +496,7 @@ namespace MergerLogic.Clients
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = "PRAGMA application_id = 1196444487; " // gpkg v1.2 +
-                                      //command.CommandText = "PRAGMA application_id = 1196437808; " // gpkg v1.0 or 1.1
+                                                                             //command.CommandText = "PRAGMA application_id = 1196437808; " // gpkg v1.0 or 1.1
                                       + "PRAGMA user_version = 10201; "; // gpkg version number in the form MMmmPP (MM = major version, mm = minor version, PP = patch). aka 10000 is 1.0.0
                 // + "PRAGMA page_size = 1024; "; //set sqlite page size, must be power of 2. current default is 4096 - changing the default requires vacuum
                 command.ExecuteNonQuery();

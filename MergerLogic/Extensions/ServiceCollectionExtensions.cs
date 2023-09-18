@@ -80,7 +80,8 @@ namespace MergerLogic.Extensions
 
                 // Get configuration if should log S3 SDK operations to console
                 bool logToConsole = config.GetConfiguration<bool>("S3", "logToConsole");
-                if (logToConsole) {
+                if (logToConsole)
+                {
                     AWSConfigs.LoggingConfig.LogTo = LoggingOptions.Console;
                 }
 
@@ -94,7 +95,8 @@ namespace MergerLogic.Extensions
                 {
                     throw new Exception("s3 configuration is required");
                 }
-                if (retries < 1) {
+                if (retries < 1)
+                {
                     throw new Exception("s3 request retries should have a value of at least 1");
                 }
 
@@ -150,7 +152,7 @@ namespace MergerLogic.Extensions
                         //disable lgtm not disposed alert as it is global singleton that is used for the entire app life
                         options.SetResourceBuilder(resourceBuilder);
                         options.AddProcessor(
-                            new SimpleLogRecordExportProcessor(new OpenTelemetryFormattedConsoleExporter(new ConsoleExporterOptions( )))); //lgtm [cs/local-not-disposed]
+                            new SimpleLogRecordExportProcessor(new OpenTelemetryFormattedConsoleExporter(new ConsoleExporterOptions()))); //lgtm [cs/local-not-disposed]
                     });
             });
             #endregion Logger
@@ -178,7 +180,7 @@ namespace MergerLogic.Extensions
             //disable lgtm not disposed alert as it is global singleton that is used for the entire app life
             collection.AddSingleton(new ActivitySource(serviceName)); //lgtm [cs/local-not-disposed]
             #endregion Tracing
-            
+
             return collection;
         }
 
@@ -186,17 +188,17 @@ namespace MergerLogic.Extensions
         {
             ConfigurationManager _config = new ConfigurationManager(null);
             bool metricsEnabled = _config.GetConfiguration<bool>("METRICS", "enabled");
-            int metricsPort = _config.GetConfiguration<int>("METRICS", "port");
             collection.AddSingleton<IMetricsProvider, MetricsProvider>();
             if (metricsEnabled)
             {
+                int metricsPort = _config.GetConfiguration<int>("METRICS", "port");
                 MetricServer metricsServer = new MetricServer(port: metricsPort);
                 metricsServer.Start();
             }
-            
+
             return collection;
         }
-        
+
 
     }
 }

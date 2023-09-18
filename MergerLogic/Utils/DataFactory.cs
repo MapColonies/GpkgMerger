@@ -12,7 +12,6 @@ namespace MergerLogic.Utils
         private readonly IServiceProvider _container;
         private readonly ILogger _logger;
 
-
         public DataFactory(IConfigurationManager configuration, IPathUtils pathUtils, IServiceProvider container, ILogger<DataFactory> logger)
         {
             this._configurationManager = configuration;
