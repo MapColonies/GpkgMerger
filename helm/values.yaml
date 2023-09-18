@@ -100,7 +100,7 @@ env:
   metrics:
     enabled: true
     scrape: true
-    port: 9185
+    port: 9500
     measurementBuckets: "[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 15, 50,250, 500]"
 
 resources:
@@ -119,3 +119,4 @@ route:
   timeout:
     enabled: false # defaults to 30s by openshift
     duration: 60s # supported units (us, ms, s, m, h, d)
+    
