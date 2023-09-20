@@ -39,7 +39,7 @@ namespace MergerLogic.Monitoring.Metrics
             this._enabled = configurationManager.GetConfiguration<bool>("METRICS", "enabled");
         }
 
-        public void TaskExecutionTimeHistogram(double value, string[]? labelValues = null)
+        public void TaskExecutionTimeHistogram(double value, string[] labelValues)
         {
             this.ObserveHistogram
             (
@@ -63,7 +63,7 @@ namespace MergerLogic.Monitoring.Metrics
            );
         }
 
-        public void TilesInBatchGauge(double value, string[]? labelValues = null)
+        public void TilesInBatchGauge(double value, string[] labelValues)
         {
             this.GetOrCreateGauge
            (
@@ -75,7 +75,7 @@ namespace MergerLogic.Monitoring.Metrics
            );
         }
 
-        public void BatchUploadTimeHistogram(double value, string[]? labelValues = null)
+        public void BatchUploadTimeHistogram(double value, string[] labelValues)
         {
             this.ObserveHistogram
            (
@@ -111,7 +111,7 @@ namespace MergerLogic.Monitoring.Metrics
            );
         }
 
-        public void MergeTimePerTileHistogram(double value, string[]? labelValues = null)
+        public void MergeTimePerTileHistogram(double value, string[] labelValues)
         {
             this.ObserveHistogram
            (
@@ -160,7 +160,7 @@ namespace MergerLogic.Monitoring.Metrics
             );
         }
 
-        private void ObserveHistogram(MetricName metricName, string help, double value, string[]? labels = null, string[]? labelsValues = null)
+        private void ObserveHistogram(MetricName metricName, string help, double value, string[]? labels = null, string[]? labelValues = null)
         {
             if (!this._enabled)
             {
@@ -174,15 +174,15 @@ namespace MergerLogic.Monitoring.Metrics
                 LabelNames = labels,
             });
 
-            if (labelsValues != null)
+            if (labelValues != null)
             {
-                histogram.WithLabels(labelsValues);
+                histogram.WithLabels(labelValues);
             }
             histogram.Observe(value);
         }
 
 
-        private void GetOrCreateGauge(MetricName metricName, string help, double value, string[]? labels = null, string[]? labelsValues = null)
+        private void GetOrCreateGauge(MetricName metricName, string help, double value, string[]? labels = null, string[]? labelValues = null)
         {
             if (!this._enabled)
             {
@@ -196,9 +196,9 @@ namespace MergerLogic.Monitoring.Metrics
                     LabelNames = labels
                 });
 
-            if (labelsValues != null)
+            if (labelValues != null)
             {
-                gauge.WithLabels(labelsValues);
+                gauge.WithLabels(labelValues);
             }
             gauge.Set(value);
         }

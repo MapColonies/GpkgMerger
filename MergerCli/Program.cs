@@ -23,7 +23,7 @@ namespace MergerCli
             ServiceProvider container = CreateContainer();
             _logger = container.GetRequiredService<ILogger<Program>>();
 
-            Stopwatch totalTimeStopWatch = Stopwatch.StartNew();
+            Stopwatch totalTimeStopwatch = Stopwatch.StartNew();
             TimeSpan ts;
             string programName = args[0];
 
@@ -134,9 +134,9 @@ namespace MergerCli
                 return;
             }
 
-            totalTimeStopWatch.Stop();
+            totalTimeStopwatch.Stop();
             // Get the elapsed time as a TimeSpan value.
-            ts = totalTimeStopWatch.Elapsed;
+            ts = totalTimeStopwatch.Elapsed;
             _logger.LogInformation(timeUtils.FormatElapsedTime("Total runtime", ts));
             _done = true;
         }

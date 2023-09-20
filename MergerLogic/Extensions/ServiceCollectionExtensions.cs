@@ -150,9 +150,9 @@ namespace MergerLogic.Extensions
                         //console exporter has hardcoded multiline log format so it cant be used
                         //options.AddConsoleExporter();
                         //disable lgtm not disposed alert as it is global singleton that is used for the entire app life
-                        options.SetResourceBuilder(resourceBuilder);
                         options.AddProcessor(
                             new SimpleLogRecordExportProcessor(new OpenTelemetryFormattedConsoleExporter(new ConsoleExporterOptions()))); //lgtm [cs/local-not-disposed]
+                        options.SetResourceBuilder(resourceBuilder);
                     });
             });
             #endregion Logger
@@ -198,7 +198,5 @@ namespace MergerLogic.Extensions
 
             return collection;
         }
-
-
     }
 }

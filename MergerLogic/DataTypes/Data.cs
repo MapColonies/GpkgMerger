@@ -265,7 +265,7 @@ namespace MergerLogic.DataTypes
 
         public Tile? GetCorrespondingTile(Coord coords, bool upscale)
         {
-            Stopwatch fetchTileStopWatch = Stopwatch.StartNew();
+            Stopwatch stopwatch = Stopwatch.StartNew();
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start for coord: {coords.ToString()}, upscale: {upscale}");
             Tile? correspondingTile = this.GetTile(coords.Z, coords.X, coords.Y);
 
@@ -274,14 +274,14 @@ namespace MergerLogic.DataTypes
                 correspondingTile = this.GetLastExistingTile(coords);
             }
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end for coord: {coords.ToString()}, upscale: {upscale}");
-            fetchTileStopWatch.Stop();
-            this._metricsProvider.TotalFetchTimePerTileHistogram(fetchTileStopWatch.Elapsed.TotalMilliseconds);
+            stopwatch.Stop();
+            this._metricsProvider.TotalFetchTimePerTileHistogram(stopwatch.Elapsed.TotalMilliseconds);
             return correspondingTile;
         }
 
         public void UpdateTiles(IEnumerable<Tile> tiles)
         {
-            var batchUploadStopWatch = Stopwatch.StartNew();
+            var stopwatch = Stopwatch.StartNew();
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] update tiles started");
             var targetTiles = tiles.Select(tile =>
             {
@@ -291,8 +291,8 @@ namespace MergerLogic.DataTypes
             }).Where(tile => tile is not null);
             this.InternalUpdateTiles(targetTiles);
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] update tiles ended");
-            batchUploadStopWatch.Stop();
-            this._metricsProvider.BatchUploadTimeHistogram(batchUploadStopWatch.Elapsed.TotalSeconds, new string[] { this.Type.ToString() });
+            stopwatch.Stop();
+            this._metricsProvider.BatchUploadTimeHistogram(stopwatch.Elapsed.TotalSeconds, new string[] { this.Type.ToString() });
         }
 
         protected abstract void InternalUpdateTiles(IEnumerable<Tile> targetTiles);
