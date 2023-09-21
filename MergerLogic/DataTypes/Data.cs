@@ -1,7 +1,9 @@
 using MergerLogic.Batching;
+using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -43,7 +45,6 @@ namespace MergerLogic.DataTypes
         protected delegate Tile? GetTileFromCoordFunction(Coord coord);
         protected delegate Tile TileConvertorFunction(Tile tile);
         protected delegate Tile? NullableTileConvertorFunction(Tile tile);
-
         protected IServiceProvider _container;
         public DataType Type { get; }
         public string Path { get; }
@@ -53,13 +54,14 @@ namespace MergerLogic.DataTypes
         public bool IsBase { get; }
         public bool IsNew { get; set; }
         public bool IsOneXOne => this.Grid == Grid.OneXOne;
-        
         protected readonly int BatchSize;
         protected TUtilsType Utils;
         protected GetTileFromXYZFunction GetTile;
         protected readonly GetTileFromCoordFunction GetLastExistingTile;
         protected readonly IGeoUtils GeoUtils;
         protected readonly ILogger _logger;
+
+        protected readonly IMetricsProvider _metricsProvider;
 
         #region tile grid converters
         protected IOneXOneConvertor OneXOneConvertor = null;
@@ -72,7 +74,7 @@ namespace MergerLogic.DataTypes
         protected TileConvertorFunction ConvertOriginTile;
         protected ValFromCoordFunction ConvertOriginCoord;
 
-        protected Data(IServiceProvider container, DataType type, string path, int batchSize, Grid? grid, 
+        protected Data(IServiceProvider container, DataType type, string path, int batchSize, Grid? grid,
             GridOrigin? origin, bool isBase, Extent? extent = null)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
@@ -80,6 +82,7 @@ namespace MergerLogic.DataTypes
             var loggerFactory = container.GetRequiredService<ILoggerFactory>();
             this._logger = loggerFactory.CreateLogger(this.GetType());
             this._logger.LogInformation($"[{methodName}] Ctor started");
+            this._metricsProvider = container.GetRequiredService<IMetricsProvider>();
             this.Type = type;
             this.Path = path;
             this.BatchSize = batchSize;
@@ -144,11 +147,13 @@ namespace MergerLogic.DataTypes
             bool exists = this.Exists();
             if (!exists)
             {
-                if (this.IsBase) {
+                if (this.IsBase)
+                {
                     this.IsNew = true;
                     this.Create();
                 }
-                else {
+                else
+                {
                     throw new Exception($"{this.Type} source {path} does not exist.");
                 }
             }
@@ -162,11 +167,13 @@ namespace MergerLogic.DataTypes
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] {this.Type} source, skipping initialization phase");
         }
 
-        protected virtual void Create() {
+        protected virtual void Create()
+        {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] {this.Type} source, skipping creation phase");
         }
 
-        protected virtual void Validate() {
+        protected virtual void Validate()
+        {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] {this.Type} source, skipping validation phase");
         }
 
@@ -177,11 +184,13 @@ namespace MergerLogic.DataTypes
             return Grid.TwoXOne;
         }
 
-        protected virtual void SetExtent(Extent? extent) {
+        protected virtual void SetExtent(Extent? extent)
+        {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] {this.Type} source, skipping extent set phase");
         }
 
-        protected virtual Extent GetExtent() {
+        protected virtual Extent GetExtent()
+        {
             return this.GeoUtils.DefaultExtent(this.IsOneXOne);
         }
 
@@ -256,6 +265,7 @@ namespace MergerLogic.DataTypes
 
         public Tile? GetCorrespondingTile(Coord coords, bool upscale)
         {
+            Stopwatch stopwatch = Stopwatch.StartNew();
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start for coord: {coords.ToString()}, upscale: {upscale}");
             Tile? correspondingTile = this.GetTile(coords.Z, coords.X, coords.Y);
 
@@ -264,11 +274,14 @@ namespace MergerLogic.DataTypes
                 correspondingTile = this.GetLastExistingTile(coords);
             }
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end for coord: {coords.ToString()}, upscale: {upscale}");
+            stopwatch.Stop();
+            this._metricsProvider.TotalFetchTimePerTileHistogram(stopwatch.Elapsed.TotalMilliseconds);
             return correspondingTile;
         }
 
         public void UpdateTiles(IEnumerable<Tile> tiles)
         {
+            var stopwatch = Stopwatch.StartNew();
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] update tiles started");
             var targetTiles = tiles.Select(tile =>
             {
@@ -278,6 +291,8 @@ namespace MergerLogic.DataTypes
             }).Where(tile => tile is not null);
             this.InternalUpdateTiles(targetTiles);
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] update tiles ended");
+            stopwatch.Stop();
+            this._metricsProvider.BatchUploadTimeHistogram(stopwatch.Elapsed.TotalSeconds, this.Type);
         }
 
         protected abstract void InternalUpdateTiles(IEnumerable<Tile> targetTiles);

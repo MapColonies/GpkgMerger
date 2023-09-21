@@ -2,7 +2,6 @@ using MergerLogic.Clients;
 using System.Diagnostics;
 using System.Net.Http.Headers;
 using MergerLogic.Utils;
-using MergerService.Controllers;
 using MergerService.Models.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -39,7 +38,7 @@ namespace MergerService.Utils
             _jsonSerializerSettings.Converters.Add(new StringEnumConverter());
             this._jsonSerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
             this._jsonSerializerSettings.NullValueHandling = NullValueHandling.Ignore;
-            
+
 
             _jobManagerUrl = this._configuration.GetConfiguration("TASK", "jobManagerUrl");
             //TODO: add tracing
@@ -64,7 +63,8 @@ namespace MergerService.Utils
                 }
                 catch (Exception e)
                 {
-                    this._logger.LogWarning(e, $"[{MethodBase.GetCurrentMethod().Name}] Error deserializing returned task");
+                    this._logger.LogWarning(e,
+                        $"[{MethodBase.GetCurrentMethod().Name}] Error deserializing returned task");
                     return null;
                 }
             }

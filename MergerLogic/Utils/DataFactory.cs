@@ -52,7 +52,6 @@ namespace MergerLogic.Utils
                 else
                     throw new Exception($"path '{path}' to data does not exist.");
             }
-
             return data;
         }
 

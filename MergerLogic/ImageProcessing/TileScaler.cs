@@ -1,16 +1,26 @@
 using ImageMagick;
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
+using System.Diagnostics;
 
 namespace MergerLogic.ImageProcessing
 {
     public class TileScaler : ITileScaler
     {
         private const int TILE_SIZE = 256;
+        private readonly IMetricsProvider _metricsProvider;
+
+        public TileScaler(IMetricsProvider metricsProvider)
+        {
+            this._metricsProvider = metricsProvider;
+        }
 
         public MagickImage? Upscale(MagickImage baseImage, Tile baseTile, Coord targetCoords)
         {
+            var upscaleStopwatch = Stopwatch.StartNew();
+
             // Calculate scale diff
             int zoomLevelDiff = targetCoords.Z - baseTile.Z;
             int scale = 1 << zoomLevelDiff;
@@ -38,7 +48,7 @@ namespace MergerLogic.ImageProcessing
             MagickImage scaledImage;
             var colorSpace = baseImage.ColorSpace;
             var colorType = baseImage.ColorType;
-            baseImage.ColorType = baseImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor; 
+            baseImage.ColorType = baseImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor;
             baseImage.ColorSpace = ColorSpace.sRGB;
 
             using (var srcPixels = baseImage.GetPixels())
@@ -54,7 +64,7 @@ namespace MergerLogic.ImageProcessing
                 if (scale >= TILE_SIZE)
                 {
                     var color = srcPixels.GetPixel(pixelX, pixelY).ToColor()!;
-                    scaledImage = new MagickImage(color,TILE_SIZE,TILE_SIZE);
+                    scaledImage = new MagickImage(color, TILE_SIZE, TILE_SIZE);
                 }
                 else
                 {
@@ -99,15 +109,20 @@ namespace MergerLogic.ImageProcessing
             scaledImage.HasAlpha = baseImage.HasAlpha;
             scaledImage.ColorType = colorType;
             scaledImage.ColorSpace = colorSpace;
+
+            upscaleStopwatch.Stop();
+            this._metricsProvider.UpscaleTimePerTileHistogram(upscaleStopwatch.Elapsed.TotalSeconds);
             return ImageUtils.IsTransparent(scaledImage) ? null : scaledImage;
+
         }
 
         public Tile? Upscale(Tile tile, Coord targetCoords)
         {
             MagickImage? upscale;
             var tileBytes = tile.GetImageBytes();
-            
-            using(MagickImage tileImage = new MagickImage(tileBytes)) {
+
+            using (MagickImage tileImage = new MagickImage(tileBytes))
+            {
                 upscale = this.Upscale(tileImage, tile, targetCoords);
             }
 

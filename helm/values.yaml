@@ -99,14 +99,24 @@ env:
     ratio: 0.01
   metrics:
     enabled: true
-    url: http://localhost:4317/v1/metrics
-    interval: 5000
+    scrape: true
+    port: 9500
+    measurementBuckets: "[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 15, 50,250, 500]"
+
 resources:
   enabled: true
   value:
     limits:
-      cpu: "100m"
-      memory: "128Mi"
+      cpu: "1"
+      memory: 4Gi
     requests:
-      cpu: "100m"
-      memory: "128Mi"
+      cpu: "1"
+      memory: 4Gi
+
+route:
+  enabled: false
+  path: /
+  timeout:
+    enabled: false # defaults to 30s by openshift
+    duration: 60s # supported units (us, ms, s, m, h, d)
+    

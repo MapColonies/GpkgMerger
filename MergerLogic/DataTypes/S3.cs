@@ -22,8 +22,7 @@ namespace MergerLogic.DataTypes
 
         private readonly IPathUtils _pathUtils;
 
-        public S3(IPathUtils pathUtils, IServiceProvider container,
-            string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase)
+        public S3(IPathUtils pathUtils, IServiceProvider container, string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase)
             : base(container, DataType.S3, path, batchSize, grid, origin, isBase)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Ctor started");
@@ -69,7 +68,7 @@ namespace MergerLogic.DataTypes
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start");
             List<int> zoomLevels = new List<int>();
-            
+
             for (int zoomLevel = 0; zoomLevel < Data<IS3Client>.MaxZoomRead; zoomLevel++)
             {
                 if (this.FolderExists($"{zoomLevel}/"))
@@ -81,7 +80,7 @@ namespace MergerLogic.DataTypes
             return zoomLevels;
         }
 
-        public override List<Tile> GetNextBatch(out string currentBatchIdentifier,out string? nextBatchIdentifier, long? totalTilesCount)
+        public override List<Tile> GetNextBatch(out string currentBatchIdentifier, out string? nextBatchIdentifier, long? totalTilesCount)
         {
             lock (_locker)
             {
@@ -89,7 +88,7 @@ namespace MergerLogic.DataTypes
                 currentBatchIdentifier = this._continuationToken ?? nullStringValue;
                 List<Tile> tiles = new List<Tile>();
                 int missingTiles = this.BatchSize;
-                
+
                 while (missingTiles > 0)
                 {
                     if (this._endOfRead && !this._zoomEnumerator.MoveNext())
@@ -132,7 +131,7 @@ namespace MergerLogic.DataTypes
                     this._continuationToken = response.NextContinuationToken;
                     this._endOfRead = !response.IsTruncated;
                 }
-                
+
                 nextBatchIdentifier = this._continuationToken;
                 this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end");
                 return tiles;

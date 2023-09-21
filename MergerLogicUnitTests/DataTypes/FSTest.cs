@@ -1,6 +1,7 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 using MergerLogic.ImageProcessing;
+using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
 using Microsoft.Extensions.Logging;
@@ -35,6 +36,7 @@ namespace MergerLogicUnitTests.DataTypes
         private Mock<IDirectory> _directoryMock;
         private Mock<IFileInfoFactory> _fileInfoFactoryMock;
         private Mock<IPath> _pathMock;
+        private Mock<IMetricsProvider> _metricsProviderMock;
 
         #endregion
 
@@ -57,6 +59,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._utilsFactoryMock.Setup(factory => factory.GetDataUtils<IFileClient>(It.IsAny<string>()))
                 .Returns(this._fsUtilsMock.Object);
             this._loggerMock = this._repository.Create<ILogger<FS>>(MockBehavior.Loose);
+            this._metricsProviderMock = this._repository.Create<IMetricsProvider>(MockBehavior.Loose);
             this._loggerFactoryMock = this._repository.Create<ILoggerFactory>();
             this._loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(this._loggerMock.Object);
             this._serviceProviderMock = this._repository.Create<IServiceProvider>();
@@ -70,6 +73,8 @@ namespace MergerLogicUnitTests.DataTypes
                 .Returns(this._fileSystemMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(ILoggerFactory)))
                 .Returns(this._loggerFactoryMock.Object);
+            this._serviceProviderMock.Setup(container => container.GetService(typeof(IMetricsProvider)))
+                .Returns(this._metricsProviderMock.Object);
         }
 
         #region TileExists
@@ -452,7 +457,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._fileInfoFactoryMock
                 .Setup(fac => fac.FromFileName(It.IsAny<string>()))
                 .Returns(fileMock.Object);
-            this._pathUtilsMock.Setup(utils => utils.GetTilePath("test", It.IsAny<Tile>(),false)).Returns("testPath");
+            this._pathUtilsMock.Setup(utils => utils.GetTilePath("test", It.IsAny<Tile>(), false)).Returns("testPath");
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
             var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, grid, origin, isBase);
@@ -578,8 +583,7 @@ namespace MergerLogicUnitTests.DataTypes
             this.SetupConstructorRequiredMocks(isBase, exist, seq);
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            var action = () => new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, 
-                    "test", 10, grid, origin, isBase);
+            var action = () => new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 10, grid, origin, isBase);
 
             if (!exist && !isBase)
             {
@@ -594,7 +598,6 @@ namespace MergerLogicUnitTests.DataTypes
             this._directoryMock.Verify(directory => directory.Exists("/test/test"), Times.Once);
             this.VerifyAll();
         }
-        
         public static IEnumerable<object[]> GenDefaultExtentParams()
         {
             return DynamicDataGenerator.GeneratePrams(
@@ -602,7 +605,6 @@ namespace MergerLogicUnitTests.DataTypes
                 new object[] { GridOrigin.LOWER_LEFT, GridOrigin.UPPER_LEFT } //origin
             );
         }
-        
         [TestMethod]
         [TestCategory("Exists")]
         [DynamicData(nameof(GenDefaultExtentParams), DynamicDataSourceType.Method)]
@@ -613,12 +615,11 @@ namespace MergerLogicUnitTests.DataTypes
                 :
                 new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            
             var seq = new MockSequence();
             this.SetupConstructorRequiredMocks(false, true, seq);
             this._geoUtilsMock.Setup(geoUtils => geoUtils.DefaultExtent(It.IsAny<bool>())).Returns(extent);
 
-            var fs = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, 
+            var fs = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object,
                 "test", 10, grid, origin);
             Assert.AreEqual(fs.Extent, extent);
             this.VerifyAll();
@@ -702,7 +703,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             string testIdentifier = offset.ToString();
             fsSource.setBatchIdentifier(testIdentifier);
-            fsSource.GetNextBatch(out string batchIdentifier, out string? _, null );
+            fsSource.GetNextBatch(out string batchIdentifier, out string? _, null);
             Assert.AreEqual(testIdentifier, batchIdentifier);
 
             this.VerifyAll();
@@ -771,15 +772,15 @@ namespace MergerLogicUnitTests.DataTypes
             var tileBatches = tiles.Where(t => t is not null && (!isOneXOne || t.Z != 0)).Chunk(batchSize).ToList();
             var batchIdx = 0;
             var seq = new MockSequence();
-            this.SetupConstructorRequiredMocks(isBase, true, seq, new[] { "1" }, 
+            this.SetupConstructorRequiredMocks(isBase, true, seq, new[] { "1" },
                 new string[] { "0.png", "1.jpg", "2.png", "invalid", "3.png", "4.png" });
 
             foreach (var tile in tiles)
             {
                 this._pathUtilsMock
                     .InSequence(seq)
-                    .Setup(utils => utils.FromPath(It.IsAny<string>(),out testFormat, false))
-                    .Returns<string,TileFormat, bool>((path, _, _) =>
+                    .Setup(utils => utils.FromPath(It.IsAny<string>(), out testFormat, false))
+                    .Returns<string, TileFormat, bool>((path, _, _) =>
                     {
                         int coord = int.Parse(path[..1]);
                         return new Coord(coord, coord, coord);
@@ -862,8 +863,8 @@ namespace MergerLogicUnitTests.DataTypes
 
             IDirectoryInfo nullInfo = null;
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
-            
-            var action = () => new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", 
+
+            var action = () => new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test",
                 10, grid, origin, isBase);
 
             if (!exists && !isBase)
@@ -885,11 +886,10 @@ namespace MergerLogicUnitTests.DataTypes
 
         #region helper
 
-        private void SetupConstructorRequiredMocks(bool isBase, bool exists = true, MockSequence? sequence = null, 
+        private void SetupConstructorRequiredMocks(bool isBase, bool exists = true, MockSequence? sequence = null,
             string[]? directories = null, string[]? files = null)
         {
             var seq = sequence ?? new MockSequence();
-            
             this._pathMock
                 .InSequence(seq)
                 .Setup(path => path.GetFullPath("test"))
@@ -898,7 +898,6 @@ namespace MergerLogicUnitTests.DataTypes
                 .InSequence(seq)
                 .Setup(directory => directory.Exists("/test/test"))
                 .Returns(exists);
-            
             if (!exists && isBase)
             {
                 IDirectoryInfo nullInfo = null;
@@ -910,8 +909,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._directoryMock
                 .InSequence(seq)
                 .Setup(directory => directory.GetDirectories("test"))
-                .Returns(directories ?? new string[] {});
-            
+                .Returns(directories ?? new string[] { });
             this._fileSystemMock
                 .InSequence(seq)
                 .Setup(fs => fs.Path.DirectorySeparatorChar)
@@ -928,7 +926,6 @@ namespace MergerLogicUnitTests.DataTypes
             var testFormat = TileFormat.Png; //this is needed for mocks but shouldn't effect the tested function.
             this.SetupConstructorRequiredMocks(isBase);
             var fileList = new List<string>();
-            
             for (int i = 0; i < 10; i++)
             {
                 //valid files
@@ -951,7 +948,6 @@ namespace MergerLogicUnitTests.DataTypes
             this._fsUtilsMock
                 .Setup(utils => utils.GetTile(It.IsAny<Coord>()))
                 .Returns(new Tile(0, 0, 0, Array.Empty<byte>()));
-            
             if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock

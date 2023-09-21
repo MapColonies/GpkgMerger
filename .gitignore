@@ -417,3 +417,6 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Local value yaml
+helm/values-local.yaml

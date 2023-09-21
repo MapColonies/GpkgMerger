@@ -1,0 +1,22 @@
+{{- $releaseName := .Release.Name -}}
+{{- $chartName := include "gpkg-merger.name" . -}}
+{{- $serviceName := include "service.fullname" . -}}
+{{- $cloudProviderFlavor := include "gpkg-merger.cloudProviderFlavor" . -}}
+{{- if and (and (.Values.enabled) (eq $cloudProviderFlavor "openshift")) (.Values.route.enabled) -}}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ $releaseName }}-{{ $chartName }}-route
+  annotations:
+    haproxy.router.openshift.io/rewrite-target: /
+    {{- if .Values.route.timeout.enabled }}
+    haproxy.router.openshift.io/timeout: {{ .Values.route.timeout.duration }}
+    {{- end }}
+spec:
+  path:  {{ .Values.route.path | default "/" }}
+  to:
+    kind: Service
+    name: {{ $serviceName }}
+  tls:
+    termination: edge
+{{- end -}}    

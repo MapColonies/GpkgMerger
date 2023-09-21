@@ -1,6 +1,7 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.Clients;
 using MergerLogic.DataTypes;
+using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
 using Microsoft.Extensions.Logging;
@@ -8,6 +9,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.Linq;
 
 namespace MergerLogicUnitTests.DataTypes
@@ -30,6 +32,7 @@ namespace MergerLogicUnitTests.DataTypes
         private Mock<IGeoUtils> _geoUtilsMock;
         private Mock<ILoggerFactory> _loggerFactoryMock;
         private Mock<ILogger<FS>> _loggerMock;
+        private Mock<IMetricsProvider> _metricsProviderMock;
 
         #endregion
 
@@ -41,6 +44,8 @@ namespace MergerLogicUnitTests.DataTypes
             this._httpUtilsMock = this._repository.Create<IHttpSourceClient>();
             this._geoUtilsMock = this._repository.Create<IGeoUtils>();
             this._utilsFactoryMock = this._repository.Create<IUtilsFactory>();
+            this._metricsProviderMock = this._repository.Create<IMetricsProvider>(MockBehavior.Loose);
+
             this._utilsFactoryMock.Setup(factory => factory.GetDataUtils<IHttpSourceClient>(It.IsAny<string>()))
                 .Returns(this._httpUtilsMock.Object);
             this._loggerMock = this._repository.Create<ILogger<FS>>(MockBehavior.Loose);
@@ -55,6 +60,8 @@ namespace MergerLogicUnitTests.DataTypes
                 .Returns(this._geoUtilsMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(ILoggerFactory)))
                 .Returns(this._loggerFactoryMock.Object);
+            this._serviceProviderMock.Setup(container => container.GetService(typeof(IMetricsProvider)))
+                .Returns(this._metricsProviderMock.Object);
         }
 
         #region TileExists
@@ -530,7 +537,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             string testIdentifier = offset.ToString();
             tmsSource.setBatchIdentifier(testIdentifier);
-            tmsSource.GetNextBatch(out string batchIdentifier, out string? _,  null);
+            tmsSource.GetNextBatch(out string batchIdentifier, out string? _, null);
             Assert.AreEqual(testIdentifier, batchIdentifier);
 
             this.VerifyAll();
