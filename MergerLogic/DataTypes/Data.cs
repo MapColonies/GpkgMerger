@@ -292,7 +292,7 @@ namespace MergerLogic.DataTypes
             this.InternalUpdateTiles(targetTiles);
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] update tiles ended");
             stopwatch.Stop();
-            this._metricsProvider.BatchUploadTimeHistogram(stopwatch.Elapsed.TotalSeconds, new string[] { this.Type.ToString() });
+            this._metricsProvider.BatchUploadTimeHistogram(stopwatch.Elapsed.TotalSeconds, this.Type.ToString());
         }
 
         protected abstract void InternalUpdateTiles(IEnumerable<Tile> targetTiles);

@@ -210,7 +210,7 @@ namespace MergerService.Src
                     finally
                     {
                         totalTaskStopwatch.Stop();
-                        this._metricsProvider.TaskExecutionTimeHistogram(totalTaskStopwatch.Elapsed.TotalSeconds, new string[] { taskType, taskSucceed.ToString() });
+                        this._metricsProvider.TaskExecutionTimeHistogram(totalTaskStopwatch.Elapsed.TotalSeconds, taskType);
                         this._heartbeatClient.Stop();
                     }
 
@@ -359,9 +359,7 @@ namespace MergerService.Src
                                         metadata.TargetFormat);
 
                                     tileMergeStopwatch.Stop();
-                                    this._metricsProvider.MergeTimePerTileHistogram(
-                                        tileMergeStopwatch.Elapsed.TotalSeconds,
-                                        new string[] { metadata.TargetFormat.ToString() });
+                                    this._metricsProvider.MergeTimePerTileHistogram(tileMergeStopwatch.Elapsed.TotalSeconds, metadata.TargetFormat.ToString());
 
                                     this._logger.LogInformation($"[{methodName}] MergeTiles finished");
                                     if (blob != null)
