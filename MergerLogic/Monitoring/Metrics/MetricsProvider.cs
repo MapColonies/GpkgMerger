@@ -1,3 +1,5 @@
+using MergerLogic.DataTypes;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using Prometheus;
 using System.Reflection;
@@ -61,9 +63,9 @@ namespace MergerLogic.Monitoring.Metrics
            );
         }
 
-        public void BatchUploadTimeHistogram(double measuredTime, string targetType)
+        public void BatchUploadTimeHistogram(double measuredTime, DataType targetType)
         {
-            string[] labelValues = new string[] { targetType };
+            string[] labelValues = new string[] { targetType.ToString() };
 
             this.ObserveHistogram
            (
@@ -99,9 +101,9 @@ namespace MergerLogic.Monitoring.Metrics
            );
         }
 
-        public void MergeTimePerTileHistogram(double measuredTime, string tileFormat)
+        public void MergeTimePerTileHistogram(double measuredTime, TileFormat tileFormat)
         {
-            string[] labelValues = new string[] { tileFormat };
+            string[] labelValues = new string[] { tileFormat.ToString() };
 
             this.ObserveHistogram
            (

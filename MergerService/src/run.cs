@@ -359,7 +359,7 @@ namespace MergerService.Src
                                         metadata.TargetFormat);
 
                                     tileMergeStopwatch.Stop();
-                                    this._metricsProvider.MergeTimePerTileHistogram(tileMergeStopwatch.Elapsed.TotalSeconds, metadata.TargetFormat.ToString());
+                                    this._metricsProvider.MergeTimePerTileHistogram(tileMergeStopwatch.Elapsed.TotalSeconds, metadata.TargetFormat);
 
                                     this._logger.LogInformation($"[{methodName}] MergeTiles finished");
                                     if (blob != null)
