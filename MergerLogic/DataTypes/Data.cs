@@ -90,7 +90,6 @@ namespace MergerLogic.DataTypes
             this.Grid = grid ?? this.DefaultGrid();
             this.Origin = origin ?? this.DefaultOrigin();
             this.IsBase = isBase;
-            this.ShouldBackup = backup;
             this.SetExtent(extent);
 
             // The following delegates are for code performance and to reduce branching while handling tiles
@@ -143,6 +142,8 @@ namespace MergerLogic.DataTypes
                 }
             }
 
+            // Backup only if it is not new (on update)
+            this.ShouldBackup = !this.IsNew && backup;
             if(this.ShouldBackup) {
                 this.CreateBackupFile();
             }
