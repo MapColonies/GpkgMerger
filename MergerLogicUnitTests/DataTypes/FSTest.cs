@@ -348,7 +348,8 @@ namespace MergerLogicUnitTests.DataTypes
                         .Returns(nullTile);
                 }
 
-                this._oneXOneConvertorMock.InSequence(sequence)
+                this._oneXOneConvertorMock
+                    .InSequence(sequence)
                     .Setup(converter => converter.TryFromTwoXOne(It.Is<Coord>(c => c.Z == 5 && c.X == 2 && c.Y == 3)))
                     .Returns<Coord>(isValidConversion ? cords => cords : null);
             }

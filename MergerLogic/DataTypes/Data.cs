@@ -3,6 +3,7 @@ using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -198,25 +199,57 @@ namespace MergerLogic.DataTypes
 
         protected virtual Tile? InternalGetLastExistingTile(Coord coords)
         {
-            int z = coords.Z;
-            int baseTileX = coords.X;
-            int baseTileY = this.ConvertOriginCoord(coords); //dont forget to use the correct origin when overriding this
-
-            Tile? lastTile = null;
-
-            // Go over zoom levels until a tile is found (may not find tile)
-            for (int i = z - 1; i >= 0; i--)
+            return Task.Run<Tile?>(() =>
             {
-                baseTileX >>= 1; // Divide by 2
-                baseTileY >>= 1; // Divide by 2
+                // get tiles coordinates
+                int z = coords.Z;
+                int baseTileX = coords.X;
+                int baseTileY = this.ConvertOriginCoord(coords); //dont forget to use the correct origin when overriding this
 
-                lastTile = this.Utils.GetTile(i, baseTileX, baseTileY);
-                if (lastTile != null)
+                // Define all tiles coordinates that needs to be requested for upscale
+                List<Coord> coordsList = new List<Coord>(MaxZoomRead - (MaxZoomRead - coords.Z));
+                for (int i = z - 1; i >= 0; i--)
                 {
-                    break;
-                }
-            }
+                    baseTileX >>= 1; // Divide by 2
+                    baseTileY >>= 1; // Divide by 2
 
+                    coordsList.Add(new Coord(i, baseTileX, baseTileY));
+                }
+                var response = this.InternalGetExistingTile(coordsList.ToArray());
+                return response.Result;
+
+            }).Result;
+        }
+
+        /// <summary>
+        /// This method requests all tiles that can possibly be used for upscale in parallel
+        /// </summary>
+        /// <param name="coordsArray"></param>
+        /// <returns>Tile that will be used for upscale</returns>
+        private async Task<Tile?> InternalGetExistingTile(Coord[] coordsArray)
+        {
+            ConcurrentDictionary<int, Tile?> zOrderToTileDictionary = new ConcurrentDictionary<int, Tile?>();
+            // get all tiles concurrently
+            await Parallel.ForEachAsync(coordsArray, async (coord, cancellationToken) =>
+            {
+                await Task.Run(() =>
+                {
+                    Tile? tile = this.Utils.GetTile(coord.Z, coord.X, coord.Y);
+                    if (tile != null)
+                    {
+                        zOrderToTileDictionary.TryAdd(coord.Z, tile);
+                    }
+                }, cancellationToken);
+            });
+
+            if (zOrderToTileDictionary.IsEmpty)
+            {
+                return null;
+            }
+            // Get first valid tile that can be upscaled
+            List<KeyValuePair<int, Tile?>> list = new List<KeyValuePair<int, Tile?>>(zOrderToTileDictionary.ToArray());
+            var orderedList = list.OrderBy(kvp => kvp.Key);
+            Tile? lastTile = orderedList.Last().Value;
             return lastTile;
         }
 
@@ -266,14 +299,14 @@ namespace MergerLogic.DataTypes
         public Tile? GetCorrespondingTile(Coord coords, bool upscale)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start for coord: {coords.ToString()}, upscale: {upscale}");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}, upscale: {upscale}");
             Tile? correspondingTile = this.GetTile(coords.Z, coords.X, coords.Y);
 
             if (upscale && correspondingTile == null)
             {
                 correspondingTile = this.GetLastExistingTile(coords);
             }
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end for coord: {coords.ToString()}, upscale: {upscale}");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}, upscale: {upscale}");
             stopwatch.Stop();
             this._metricsProvider.TotalFetchTimePerTileHistogram(stopwatch.Elapsed.TotalMilliseconds);
             return correspondingTile;
