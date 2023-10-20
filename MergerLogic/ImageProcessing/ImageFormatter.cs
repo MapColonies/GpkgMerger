@@ -51,7 +51,7 @@ namespace MergerLogic.ImageProcessing
                     image.Format = MagickFormat.Jpeg;
                     break;
                 case TileFormat.Png:
-                    image.Format = MagickFormat.Png;
+                    image.Format = MagickFormat.Png32;
                     break;
             }
         }
