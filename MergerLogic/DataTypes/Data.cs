@@ -198,6 +198,7 @@ namespace MergerLogic.DataTypes
 
         protected virtual Tile? InternalGetLastExistingTile(Coord coords)
         {
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] started for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}");
             int z = coords.Z;
             int baseTileX = coords.X;
             int baseTileY = this.ConvertOriginCoord(coords); //dont forget to use the correct origin when overriding this
@@ -216,7 +217,8 @@ namespace MergerLogic.DataTypes
                     break;
                 }
             }
-
+            string message = lastTile == null ? "null" : $"z:{lastTile.Z}, x:{lastTile.X}, y:{lastTile.Y}";
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended, lastTile: {message}");
             return lastTile;
         }
 
