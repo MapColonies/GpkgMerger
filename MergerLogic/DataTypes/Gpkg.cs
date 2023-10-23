@@ -126,9 +126,9 @@ namespace MergerLogic.DataTypes
             }
         }
 
-        protected override Tile InternalGetLastExistingTile(Coord baseCoords)
+        protected override Tile? InternalGetLastExistingTile(Coord baseCoords)
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] started");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] started for coord: z:{baseCoords.Z}, x:{baseCoords.X}, y:{baseCoords.Y}");
             int cordsLength = baseCoords.Z << 1;
             int[] coords = new int[cordsLength];
 
@@ -145,8 +145,9 @@ namespace MergerLogic.DataTypes
                 coords[arrayIterator + 1] = baseTileY;
             }
 
-            Tile lastTile = this.Utils.GetLastTile(coords, z);
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended");
+            Tile? lastTile = this.Utils.GetLastTile(coords, z);
+            string message = lastTile == null ? "null" : $"z:{lastTile.Z}, x:{lastTile.X}, y:{lastTile.Y}";
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended, lastTile {message}");
             return lastTile;
         }
 

@@ -198,6 +198,7 @@ namespace MergerLogic.DataTypes
 
         protected virtual Tile? InternalGetLastExistingTile(Coord coords)
         {
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] started for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}");
             int z = coords.Z;
             int baseTileX = coords.X;
             int baseTileY = this.ConvertOriginCoord(coords); //dont forget to use the correct origin when overriding this
@@ -216,7 +217,8 @@ namespace MergerLogic.DataTypes
                     break;
                 }
             }
-
+            string message = lastTile == null ? "null" : $"z:{lastTile.Z}, x:{lastTile.X}, y:{lastTile.Y}";
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended, lastTile: {message}");
             return lastTile;
         }
 
@@ -265,17 +267,18 @@ namespace MergerLogic.DataTypes
 
         public Tile? GetCorrespondingTile(Coord coords, bool upscale)
         {
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}, upscale: {upscale}");
             Stopwatch stopwatch = Stopwatch.StartNew();
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start for coord: {coords.ToString()}, upscale: {upscale}");
             Tile? correspondingTile = this.GetTile(coords.Z, coords.X, coords.Y);
 
             if (upscale && correspondingTile == null)
             {
                 correspondingTile = this.GetLastExistingTile(coords);
             }
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end for coord: {coords.ToString()}, upscale: {upscale}");
             stopwatch.Stop();
             this._metricsProvider.TotalFetchTimePerTileHistogram(stopwatch.Elapsed.TotalMilliseconds);
+            string correspondingTileMessage = correspondingTile == null ? "null" : $"z:{correspondingTile.Z}, x:{correspondingTile.X}, y:{correspondingTile.Y}";
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] finished for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}, correspondingTile: {correspondingTileMessage}, upscale: {upscale}");
             return correspondingTile;
         }
 
