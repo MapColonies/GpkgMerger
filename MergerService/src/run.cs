@@ -349,11 +349,10 @@ namespace MergerService.Src
                                         Tile? tile = source.GetCorrespondingTile(coord, shouldUpscale);
                                         correspondingTileBuilders.Add(() => tile);
                                     }
-                                    
+                                    // Get tile BLOB to be later uploaded
                                     var tileMergeStopwatch = Stopwatch.StartNew();
                                     byte[]? blob = this._tileMerger.MergeTiles(correspondingTileBuilders, coord,
                                         metadata.TargetFormat);
-
                                     tileMergeStopwatch.Stop();
                                     this._metricsProvider.MergeTimePerTileHistogram(tileMergeStopwatch.Elapsed.TotalSeconds, metadata.TargetFormat);
 

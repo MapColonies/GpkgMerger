@@ -275,7 +275,8 @@ namespace MergerLogic.DataTypes
             }
             stopwatch.Stop();
             this._metricsProvider.TotalFetchTimePerTileHistogram(stopwatch.Elapsed.TotalMilliseconds);
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] finished for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}, upscale: {upscale}");
+            string correspondingTileMessage = correspondingTile == null ? "null" : $"z:{correspondingTile.Z}, x:{correspondingTile.X}, y:{correspondingTile.Y}";
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] finished for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}, correspondingTile: {correspondingTileMessage}, upscale: {upscale}");
             return correspondingTile;
         }
 
