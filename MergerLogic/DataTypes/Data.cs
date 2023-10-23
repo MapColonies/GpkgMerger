@@ -201,6 +201,7 @@ namespace MergerLogic.DataTypes
         {
             return Task.Run<Tile?>(() =>
             {
+                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] started for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}");
                 // get tiles coordinates
                 int z = coords.Z;
                 int baseTileX = coords.X;
@@ -250,6 +251,8 @@ namespace MergerLogic.DataTypes
             List<KeyValuePair<int, Tile?>> list = new List<KeyValuePair<int, Tile?>>(zOrderToTileDictionary.ToArray());
             var orderedList = list.OrderBy(kvp => kvp.Key);
             Tile? lastTile = orderedList.Last().Value;
+            string message = lastTile == null ? "null" : $"z:{lastTile.Z}, x:{lastTile.X}, y:{lastTile.Y}";
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended, lastTile: {message}");
             return lastTile;
         }
 
@@ -298,17 +301,18 @@ namespace MergerLogic.DataTypes
 
         public Tile? GetCorrespondingTile(Coord coords, bool upscale)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}, upscale: {upscale}");
+            Stopwatch stopwatch = Stopwatch.StartNew();
             Tile? correspondingTile = this.GetTile(coords.Z, coords.X, coords.Y);
 
             if (upscale && correspondingTile == null)
             {
                 correspondingTile = this.GetLastExistingTile(coords);
             }
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}, upscale: {upscale}");
             stopwatch.Stop();
             this._metricsProvider.TotalFetchTimePerTileHistogram(stopwatch.Elapsed.TotalMilliseconds);
+            string correspondingTileMessage = correspondingTile == null ? "null" : $"z:{correspondingTile.Z}, x:{correspondingTile.X}, y:{correspondingTile.Y}";
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] finished for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}, correspondingTile: {correspondingTileMessage}, upscale: {upscale}");
             return correspondingTile;
         }
 

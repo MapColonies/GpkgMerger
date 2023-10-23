@@ -8,7 +8,7 @@ namespace MergerLogic.Clients
     {
         List<Tile> GetBatch(int batchSize, long offset);
         Extent GetExtent();
-        Tile GetLastTile(int[] coords, int currentTileZoom);
+        Tile? GetLastTile(int[] coords, int currentTileZoom);
         long GetTileCount();
         void InsertTiles(IEnumerable<Tile> tiles);
         void UpdateExtent(Extent extent);
