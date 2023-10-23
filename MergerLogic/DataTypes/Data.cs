@@ -265,17 +265,17 @@ namespace MergerLogic.DataTypes
 
         public Tile? GetCorrespondingTile(Coord coords, bool upscale)
         {
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}, upscale: {upscale}");
             Stopwatch stopwatch = Stopwatch.StartNew();
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start for coord: {coords.ToString()}, upscale: {upscale}");
             Tile? correspondingTile = this.GetTile(coords.Z, coords.X, coords.Y);
 
             if (upscale && correspondingTile == null)
             {
                 correspondingTile = this.GetLastExistingTile(coords);
             }
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end for coord: {coords.ToString()}, upscale: {upscale}");
             stopwatch.Stop();
             this._metricsProvider.TotalFetchTimePerTileHistogram(stopwatch.Elapsed.TotalMilliseconds);
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] finished for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}, upscale: {upscale}");
             return correspondingTile;
         }
 

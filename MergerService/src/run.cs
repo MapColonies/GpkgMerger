@@ -271,9 +271,7 @@ namespace MergerService.Src
                 ? (_, _) => null
                 : (source, coord) =>
                 {
-                    this._logger.LogDebug($"[{methodName}] GetCorrespondingTile start for coord {coord.ToString()}, shouldUpscale: {shouldUpscale}");
                     Tile? resultTile = source.GetCorrespondingTile(coord, shouldUpscale);
-                    this._logger.LogDebug($"[{methodName}] GetCorrespondingTile finished resultTile={resultTile}");
                     return resultTile;
                 };
 
@@ -351,17 +349,14 @@ namespace MergerService.Src
                                         Tile? tile = source.GetCorrespondingTile(coord, shouldUpscale);
                                         correspondingTileBuilders.Add(() => tile);
                                     }
-                                    this._logger.LogDebug($"[{methodName}] MergeTiles of {correspondingTileBuilders.Count} tiles");
-
+                                    
                                     var tileMergeStopwatch = Stopwatch.StartNew();
-
                                     byte[]? blob = this._tileMerger.MergeTiles(correspondingTileBuilders, coord,
                                         metadata.TargetFormat);
 
                                     tileMergeStopwatch.Stop();
                                     this._metricsProvider.MergeTimePerTileHistogram(tileMergeStopwatch.Elapsed.TotalSeconds, metadata.TargetFormat);
 
-                                    this._logger.LogInformation($"[{methodName}] MergeTiles finished");
                                     if (blob != null)
                                     {
                                         tiles.Add(new Tile(coord, blob));
@@ -373,7 +368,7 @@ namespace MergerService.Src
                                     // Show progress every batchSize
                                     if (overallTileProgressCount % this._batchSize == 0)
                                     {
-                                        this._logger.LogDebug(
+                                        this._logger.LogInformation(
                                             $"[{methodName}] Job: {task.JobId}, Task: {task.Id}, Tile Count: {overallTileProgressCount} / {totalTileCount}");
                                         UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);
                                     }
