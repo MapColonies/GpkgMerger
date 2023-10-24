@@ -248,40 +248,6 @@ namespace MergerLogic.DataTypes
             return response.Result;
         }
 
-        /// <summary>
-        /// This method requests all tiles that can possibly be used for upscale in parallel
-        /// </summary>
-        /// <param name="coordsArray"></param>
-        /// <returns>Tile that will be used for upscale</returns>
-        private async Task<Tile?> InternalGetExistingTile(Coord[] coordsArray)
-        {
-            ConcurrentDictionary<int, Tile?> zOrderToTileDictionary = new ConcurrentDictionary<int, Tile?>();
-            // get all tiles concurrently
-            await Parallel.ForEachAsync(coordsArray, async (coord, cancellationToken) =>
-            {
-                await Task.Run(() =>
-                {
-                    Tile? tile = this.Utils.GetTile(coord.Z, coord.X, coord.Y);
-                    if (tile != null)
-                    {
-                        zOrderToTileDictionary.TryAdd(coord.Z, tile);
-                    }
-                }, cancellationToken);
-            });
-
-            if (zOrderToTileDictionary.IsEmpty)
-            {
-                return null;
-            }
-            // Get first valid tile that can be upscaled
-            List<KeyValuePair<int, Tile?>> list = new List<KeyValuePair<int, Tile?>>(zOrderToTileDictionary.ToArray());
-            var orderedList = list.OrderBy(kvp => kvp.Key);
-            Tile? lastTile = orderedList.Last().Value;
-            string message = lastTile == null ? "null" : $"z:{lastTile.Z}, x:{lastTile.X}, y:{lastTile.Y}";
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended, lastTile: {message}");
-            return lastTile;
-        }
-
         public bool TileExists(Tile tile)
         {
             return this.TileExists(tile.GetCoord());
