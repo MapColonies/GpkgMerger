@@ -215,6 +215,7 @@ namespace MergerLogic.DataTypes
                 coordsList.Add(new Coord(i, baseTileX, baseTileY));
             }
 
+            // Async method to request all tiles that can be used for "upscale" concurrently
             var responseOfGetlastTileAsync = async delegate (Coord[] coordsArray)
             {
                 ConcurrentDictionary<int, Tile?> zOrderToTileDictionary = new ConcurrentDictionary<int, Tile?>();
