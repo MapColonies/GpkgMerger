@@ -216,7 +216,7 @@ namespace MergerLogic.DataTypes
             }
 
             // Async method to request all tiles that can be used for "upscale" concurrently
-            var responseOfGetlastTileAsync = async delegate (Coord[] coordsArray)
+            var getUpscaleTiles = async delegate (Coord[] coordsArray)
             {
                 ConcurrentDictionary<int, Tile?> zOrderToTileDictionary = new ConcurrentDictionary<int, Tile?>();
                 // get all tiles concurrently
@@ -231,21 +231,20 @@ namespace MergerLogic.DataTypes
                         }
                     }, cancellationToken);
                 });
-
-                if (zOrderToTileDictionary.IsEmpty)
-                {
-                    return null;
-                }
-                // Get first valid tile that can be upscaled
-                List<KeyValuePair<int, Tile?>> list = new List<KeyValuePair<int, Tile?>>(zOrderToTileDictionary.ToArray());
-                var orderedList = list.OrderBy(kvp => kvp.Key);
-                Tile? lastTile = orderedList.Last().Value;
-                string message = lastTile == null ? "null" : $"z:{lastTile.Z}, x:{lastTile.X}, y:{lastTile.Y}";
-                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended, lastTile: {message}");
-                return lastTile;
+                return zOrderToTileDictionary.ToArray();
             };
-            var response = responseOfGetlastTileAsync(coordsList.ToArray());
-            return response.Result;
+            var response = getUpscaleTiles(coordsList.ToArray());
+            var tilesResponseArray = response.Result;
+            if (tilesResponseArray.Length == 0)
+            {
+                return null;
+            }
+            // Get first valid tile that can be upscaled
+            var orderedTilesArray = tilesResponseArray.OrderBy(kvp => kvp.Key);
+            Tile? lastTile = orderedTilesArray.Last().Value;
+            string message = lastTile == null ? "null" : $"z:{lastTile.Z}, x:{lastTile.X}, y:{lastTile.Y}";
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended, lastTile: {message}");
+            return lastTile;
         }
 
         public bool TileExists(Tile tile)
