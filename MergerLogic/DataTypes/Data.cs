@@ -199,27 +199,52 @@ namespace MergerLogic.DataTypes
 
         protected virtual Tile? InternalGetLastExistingTile(Coord coords)
         {
-            return Task.Run<Tile?>(() =>
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] started for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}");
+            // get tiles coordinates
+            int z = coords.Z;
+            int baseTileX = coords.X;
+            int baseTileY = this.ConvertOriginCoord(coords); //dont forget to use the correct origin when overriding this
+
+            // Define all tiles coordinates that needs to be requested for upscale
+            List<Coord> coordsList = new List<Coord>(MaxZoomRead - (MaxZoomRead - coords.Z));
+            for (int i = z - 1; i >= 0; i--)
             {
-                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] started for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}");
-                // get tiles coordinates
-                int z = coords.Z;
-                int baseTileX = coords.X;
-                int baseTileY = this.ConvertOriginCoord(coords); //dont forget to use the correct origin when overriding this
+                baseTileX >>= 1; // Divide by 2
+                baseTileY >>= 1; // Divide by 2
 
-                // Define all tiles coordinates that needs to be requested for upscale
-                List<Coord> coordsList = new List<Coord>(MaxZoomRead - (MaxZoomRead - coords.Z));
-                for (int i = z - 1; i >= 0; i--)
+                coordsList.Add(new Coord(i, baseTileX, baseTileY));
+            }
+
+            var responseOfGetlastTileAsync = async delegate (Coord[] coordsArray)
+            {
+                ConcurrentDictionary<int, Tile?> zOrderToTileDictionary = new ConcurrentDictionary<int, Tile?>();
+                // get all tiles concurrently
+                await Parallel.ForEachAsync(coordsArray, async (coord, cancellationToken) =>
                 {
-                    baseTileX >>= 1; // Divide by 2
-                    baseTileY >>= 1; // Divide by 2
+                    await Task.Run(() =>
+                    {
+                        Tile? tile = this.Utils.GetTile(coord.Z, coord.X, coord.Y);
+                        if (tile != null)
+                        {
+                            zOrderToTileDictionary.TryAdd(coord.Z, tile);
+                        }
+                    }, cancellationToken);
+                });
 
-                    coordsList.Add(new Coord(i, baseTileX, baseTileY));
+                if (zOrderToTileDictionary.IsEmpty)
+                {
+                    return null;
                 }
-                var response = this.InternalGetExistingTile(coordsList.ToArray());
-                return response.Result;
-
-            }).Result;
+                // Get first valid tile that can be upscaled
+                List<KeyValuePair<int, Tile?>> list = new List<KeyValuePair<int, Tile?>>(zOrderToTileDictionary.ToArray());
+                var orderedList = list.OrderBy(kvp => kvp.Key);
+                Tile? lastTile = orderedList.Last().Value;
+                string message = lastTile == null ? "null" : $"z:{lastTile.Z}, x:{lastTile.X}, y:{lastTile.Y}";
+                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended, lastTile: {message}");
+                return lastTile;
+            };
+            var response = responseOfGetlastTileAsync(coordsList.ToArray());
+            return response.Result;
         }
 
         /// <summary>
