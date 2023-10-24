@@ -206,7 +206,7 @@ namespace MergerLogic.DataTypes
             int baseTileY = this.ConvertOriginCoord(coords); //dont forget to use the correct origin when overriding this
 
             // Define all tiles coordinates that needs to be requested for upscale
-            List<Coord> coordsList = new List<Coord>(MaxZoomRead - (MaxZoomRead - coords.Z));
+            List<Coord> coordsList = new List<Coord>(coords.Z);
             for (int i = z - 1; i >= 0; i--)
             {
                 baseTileX >>= 1; // Divide by 2
