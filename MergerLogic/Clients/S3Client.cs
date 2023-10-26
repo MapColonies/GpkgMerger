@@ -33,10 +33,8 @@ namespace MergerLogic.Clients
             {
                 this._logger.LogDebug($"[{methodName}] start, key {key}");
                 var request = new GetObjectRequest() { BucketName = this._bucket, Key = key };
-                this._logger.LogDebug($"[{methodName}] start GetObjectAsync, BucketName: {request.BucketName}, Key: {request.Key}");
                 var getObjectTask = this._client.GetObjectAsync(request);
                 GetObjectResponse res = getObjectTask.Result;
-                this._logger.LogDebug($"[{methodName}] requested key {key} recieved");
 
                 byte[] image;
                 using (MemoryStream ms = new MemoryStream())
@@ -65,6 +63,7 @@ namespace MergerLogic.Clients
             var key = this.GetTileKey(z, x, y);
             if (key == null)
             {
+                this._logger.LogDebug($"[{methodName}] tileKey is null for z: {z}, x: {x}, y: {y}");
                 return null;
             }
 
@@ -120,14 +119,10 @@ namespace MergerLogic.Clients
 
         private string? GetTileKey(int z, int x, int y)
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
-            this._logger.LogDebug($"[{methodName}] start z: {z}, x: {x}, y: {y}");
             string keyPrefix = this._pathUtils.GetTilePathWithoutExtension(this.path, z, x, y, true);
             var listRequests = new ListObjectsV2Request { BucketName = this._bucket, Prefix = keyPrefix, MaxKeys = 1 };
-            this._logger.LogDebug($"[{methodName}] start ListObjectsV2Async BucketName: {listRequests.BucketName}, Prefix: {listRequests.Prefix}");
             var listObjectsTask = this._client.ListObjectsV2Async(listRequests);
             string? result = listObjectsTask.Result.S3Objects.FirstOrDefault()?.Key;
-            this._logger.LogDebug($"[{methodName}] end z: {z}, x: {x}, y: {y}");
             return result;
         }
     }

@@ -69,7 +69,8 @@ namespace MergerLogic.ImageProcessing
             try
             {
                 tile = GetFirstTile(tiles, targetCoords, ref i);
-                
+                string message = tile == null ? "null" : $"z:{tile.Z}, x:{tile.X}, y:{tile.Y}";
+                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] first tile is {message}");
                 this.AddTileToImageList(targetCoords, tile, images, out hasAlpha);
                 if (!hasAlpha)
                 {
@@ -82,6 +83,7 @@ namespace MergerLogic.ImageProcessing
                     // protect in case all "sources" tiles are null
                     if (images.Count == 0 && i == 0)
                     {
+                        this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] All sources are empty - return");
                         return images;
                     }
 
