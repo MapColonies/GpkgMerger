@@ -119,7 +119,7 @@ namespace MergerLogicUnitTests.Utils
                 }
 
                 var s3Utils = new S3Client(this._s3ClientMock.Object, this._pathUtilsMock.Object,
-                    this._geoUtilsMock.Object, this._imageFormatterMock.Object, this._loggerMock.Object, "bucket", "test");
+                    this._geoUtilsMock.Object, this._imageFormatterMock.Object, this._loggerMock.Object, "test");
 
                 Tile tile = null;
                 switch (paramType)
@@ -193,7 +193,7 @@ namespace MergerLogicUnitTests.Utils
                 });
 
             var s3Utils = new S3Client(this._s3ClientMock.Object, this._pathUtilsMock.Object,
-                this._geoUtilsMock.Object, this._imageFormatterMock.Object, this._loggerMock.Object, "bucket", "test");
+                this._geoUtilsMock.Object, this._imageFormatterMock.Object, this._loggerMock.Object, "test");
 
             Assert.AreEqual(exist, s3Utils.TileExists(0, 0, 0));
 
@@ -230,7 +230,7 @@ namespace MergerLogicUnitTests.Utils
                 });
 
             var s3Utils = new S3Client(this._s3ClientMock.Object, this._pathUtilsMock.Object,
-                this._geoUtilsMock.Object, this._imageFormatterMock.Object, this._loggerMock.Object, "bucket", "test");
+                this._geoUtilsMock.Object, this._imageFormatterMock.Object, this._loggerMock.Object, "test");
             s3Utils.UpdateTile(testTile);
 
             this._pathUtilsMock.Verify(utils => utils.GetTilePath(It.IsAny<string>(),It.IsAny<Tile>(), It.IsAny<bool>()), Times.Once);

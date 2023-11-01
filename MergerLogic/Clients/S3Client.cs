@@ -11,19 +11,26 @@ namespace MergerLogic.Clients
 {
     public class S3Client : DataUtils, IS3Client
     {
-        private readonly string _bucket;
-
+        private string _bucket;
         private readonly IAmazonS3 _client;
         private readonly ILogger _logger;
         private readonly IPathUtils _pathUtils;
 
-        public S3Client(IAmazonS3 client, IPathUtils pathUtils, IGeoUtils geoUtils, IImageFormatter formatter, ILogger<S3Client> logger,
-            string bucket, string path) : base(path, geoUtils, formatter)
+        public S3Client(IAmazonS3 client, IPathUtils pathUtils, IGeoUtils geoUtils, IImageFormatter formatter, ILogger<S3Client> logger, string path) : base(path, geoUtils, formatter)
         {
             this._client = client;
-            this._bucket = bucket;
             this._pathUtils = pathUtils;
             this._logger = logger;
+        }
+
+        public string Bucket
+        {
+            get { return this._bucket; }
+            set
+            {
+                this._logger.LogInformation($"Set bucket to {value}");
+                this._bucket = value;
+            }
         }
 
         private byte[]? GetImageBytes(string key)
@@ -104,7 +111,9 @@ namespace MergerLogic.Clients
 
             var request = new PutObjectRequest()
             {
-                BucketName = this._bucket, CannedACL = S3CannedACL.PublicRead, Key = String.Format(key)
+                BucketName = this._bucket,
+                CannedACL = S3CannedACL.PublicRead,
+                Key = String.Format(key)
             };
 
             byte[] buffer = tile.GetImageBytes();
@@ -129,6 +138,34 @@ namespace MergerLogic.Clients
             string? result = listObjectsTask.Result.S3Objects.FirstOrDefault()?.Key;
             this._logger.LogDebug($"[{methodName}] end z: {z}, x: {x}, y: {y}");
             return result;
+        }
+
+        public ListObjectsV2Response ListObject(ref string? continuationToken, string prefix, string startAfter, int? maxKeys = null)
+        {
+            ListObjectsV2Request listRequests = null;
+            if (maxKeys == null)
+            {
+                listRequests = new ListObjectsV2Request
+                {
+                    BucketName = this._bucket,
+                    Prefix = prefix,
+                    StartAfter = startAfter,
+                    ContinuationToken = continuationToken
+                };
+            } else {
+                listRequests = new ListObjectsV2Request
+                {
+                    BucketName = this._bucket,
+                    Prefix = prefix,
+                    StartAfter = startAfter,
+                    ContinuationToken = continuationToken,
+                    MaxKeys = maxKeys.Value
+                };
+            }
+
+            var task = this._client.ListObjectsV2Async(listRequests);
+            var response = task.Result;
+            return response;
         }
     }
 }

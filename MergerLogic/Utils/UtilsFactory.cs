@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using System.IO.Abstractions;
 using MergerLogic.Clients;
 using MergerLogic.ImageProcessing;
+using Microsoft.Extensions.Configuration;
 
 namespace MergerLogic.Utils
 {
@@ -50,14 +51,14 @@ namespace MergerLogic.Utils
 
         public IS3Client GetS3Utils(string path)
         {
-            string bucket = this._container.GetRequiredService<IConfigurationManager>().GetConfiguration("S3", "bucket");
+            string[] possibleBuckets = this._container.GetRequiredService<IConfigurationManager>().GetConfiguration<string[]>("S3", "buckets");
             IAmazonS3? client = this._container.GetService<IAmazonS3>();
-            if (client is null || bucket == string.Empty)
+            if (client is null || possibleBuckets is null)
             {
-                throw new Exception("S3 Data utils requires s3 client to be configured");
+                throw new Exception("S3 Data utils requires s3 client and bucket to be configured");
             }
             var logger = this._container.GetRequiredService<ILogger<S3Client>>();
-            return new S3Client(client, this._pathUtils, this._geoUtils, this._imageFormatter, logger, bucket, path);
+            return new S3Client(client, this._pathUtils, this._geoUtils, this._imageFormatter, logger, path);
         }
 
         public T GetDataUtils<T>(string path) where T : IDataUtils

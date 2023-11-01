@@ -17,7 +17,7 @@
         "AWS_ACCESS_KEY_ID": "minio123",
         "AWS_SECRET_ACCESS_KEY": "minio123",
         "S3__url": "http://localhost:9000",
-        "S3__bucket": "tiles"
+        "S3__buckets": [ "tiles1", "tiles2" ]
       },
       "applicationUrl": "http://localhost:5074",
       "dotnetRunMessages": true
