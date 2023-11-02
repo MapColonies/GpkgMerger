@@ -76,7 +76,7 @@ namespace MergerLogic.DataTypes
         protected ValFromCoordFunction ConvertOriginCoord;
 
         protected Data(IServiceProvider container, DataType type, string path, int batchSize, Grid? grid,
-            GridOrigin? origin, bool isBase, Extent? extent = null)
+            GridOrigin? origin, bool isBase, Extent? extent = null, string? bucket = null)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             this._container = container;
@@ -88,7 +88,7 @@ namespace MergerLogic.DataTypes
             this.Path = path;
             this.BatchSize = batchSize;
             var utilsFactory = container.GetRequiredService<IUtilsFactory>();
-            this.Utils = utilsFactory.GetDataUtils<TUtilsType>(path);
+            this.Utils = utilsFactory.GetDataUtils<TUtilsType>(path, bucket);
             this.GeoUtils = container.GetRequiredService<IGeoUtils>();
             this.Grid = grid ?? this.DefaultGrid();
             this.Origin = origin ?? this.DefaultOrigin();

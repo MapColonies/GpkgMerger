@@ -8,7 +8,7 @@ namespace MergerLogic.Clients
     {
         void UpdateTile(Tile tile);
         Tile? GetTile(string key);
-        string Bucket { get; set; }
+        string Bucket { get; }
         ListObjectsV2Response ListObject(ref string? continuationToken, string prefix, string startAfter, int? maxKeys = null);
     }
 }

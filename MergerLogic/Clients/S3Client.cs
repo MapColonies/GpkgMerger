@@ -16,21 +16,17 @@ namespace MergerLogic.Clients
         private readonly ILogger _logger;
         private readonly IPathUtils _pathUtils;
 
-        public S3Client(IAmazonS3 client, IPathUtils pathUtils, IGeoUtils geoUtils, IImageFormatter formatter, ILogger<S3Client> logger, string path) : base(path, geoUtils, formatter)
+        public S3Client(IAmazonS3 client, IPathUtils pathUtils, IGeoUtils geoUtils, IImageFormatter formatter, ILogger<S3Client> logger, string bucket, string path) : base(path, geoUtils, formatter)
         {
-            this._client = client;
+            this._client = client ?? throw new Exception("s3 configuration is required");
             this._pathUtils = pathUtils;
             this._logger = logger;
+            this._bucket = bucket;
         }
 
         public string Bucket
         {
             get { return this._bucket; }
-            set
-            {
-                this._logger.LogInformation($"Set bucket to {value}");
-                this._bucket = value;
-            }
         }
 
         private byte[]? GetImageBytes(string key)
@@ -152,7 +148,9 @@ namespace MergerLogic.Clients
                     StartAfter = startAfter,
                     ContinuationToken = continuationToken
                 };
-            } else {
+            }
+            else
+            {
                 listRequests = new ListObjectsV2Request
                 {
                     BucketName = this._bucket,

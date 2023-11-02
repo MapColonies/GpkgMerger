@@ -3,7 +3,7 @@
     "GPKG to S3": {
       "workingDirectory": "",
       "commandName": "Project",
-      "commandLineArgs": "Program.cs 1000 jpeg s3 area2-copy gpkg area2.gpkg",
+      "commandLineArgs": "Program.cs 1000 jpeg s3 bucket area2-copy gpkg area2.gpkg",
       "environmentVariables": {
         "AWS_ACCESS_KEY_ID": "minioadmin",
         "AWS_SECRET_ACCESS_KEY": "minioadmin"

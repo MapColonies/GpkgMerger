@@ -1,9 +1,7 @@
-using Amazon.S3;
 using Amazon.S3.Model;
 using MergerLogic.Batching;
 using MergerLogic.Clients;
 using MergerLogic.Utils;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 
@@ -11,7 +9,6 @@ namespace MergerLogic.DataTypes
 {
     public class S3 : Data<IS3Client>
     {
-        private IAmazonS3 _client;
         private readonly List<int> _zoomLevels;
         private IEnumerator<int> _zoomEnumerator;
         private string? _continuationToken;
@@ -21,8 +18,8 @@ namespace MergerLogic.DataTypes
 
         private readonly IPathUtils _pathUtils;
 
-        public S3(IPathUtils pathUtils, IServiceProvider container, string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase)
-            : base(container, DataType.S3, path, batchSize, grid, origin, isBase)
+        public S3(IPathUtils pathUtils, IServiceProvider container, string bucket, string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase)
+            : base(container, DataType.S3, path, batchSize, grid, origin, isBase, null, bucket)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Ctor started");
             this._pathUtils = pathUtils;
@@ -39,21 +36,6 @@ namespace MergerLogic.DataTypes
 
         protected override void Initialize()
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start");
-            var configurationManager = this._container.GetRequiredService<IConfigurationManager>();
-            var client = this._container.GetService<IAmazonS3>();
-            this._client = client ?? throw new Exception("s3 configuration is required");
-            // Determine S3 bucket (by finding if exists in configured buckets - if it doesn't exist peek first bucket)
-            string[] possibleBuckets = configurationManager.GetConfiguration<string[]>("S3", "buckets");
-            this.Utils.Bucket = this.GetDataBucket(possibleBuckets);
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended");
-        }
-
-        private string GetDataBucket(string[] possibleBuckets)
-        {
-            // TODO: add get bucket logic here
-            string bucket = possibleBuckets[0];
-            return bucket;
         }
 
         protected override GridOrigin DefaultOrigin()
