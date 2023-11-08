@@ -53,8 +53,9 @@ namespace MergerLogic.Clients
             }
             catch (AggregateException e)
             {
-                this._logger.LogDebug($"[{methodName}] exception, Message: {e.Message}");
-                return null;
+                string message = $"exception while getting key {key}, Message: {e.Message}";
+                this._logger.LogError($"[{methodName}] {message}");
+                throw new Exception(message, e);
             }
         }
 
