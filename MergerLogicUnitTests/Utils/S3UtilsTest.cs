@@ -131,7 +131,15 @@ namespace MergerLogicUnitTests.Utils
                         tile = s3Utils.GetTile(cords.Z, cords.X, cords.Y);
                         break;
                     case GetTileParamType.String:
-                        tile = s3Utils.GetTile("key");
+                        if(exist)
+                        {
+                            tile = s3Utils.GetTile("key");
+                        } 
+                        else
+                        {
+                            Assert.ThrowsException<Exception>(() => s3Utils.GetTile("key"));
+                            tile = null;
+                        }
                         break;
                 }
 
