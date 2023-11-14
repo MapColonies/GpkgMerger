@@ -346,7 +346,8 @@ namespace MergerService.Src
                                     this._logger.LogDebug($"[{methodName}] Get tile sources");
                                     foreach (IData source in sources.Skip(1))
                                     {
-                                        Tile? tile = source.GetCorrespondingTile(coord, shouldUpscale);
+                                        // TODO: this is a temporary fix till we decide how sources should be upscaled
+                                        Tile? tile = source.GetCorrespondingTile(coord, false);
                                         correspondingTileBuilders.Add(() => tile);
                                     }
                                     var tileMergeStopwatch = Stopwatch.StartNew();
