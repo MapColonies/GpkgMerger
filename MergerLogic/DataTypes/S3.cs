@@ -1,9 +1,7 @@
-using Amazon.S3;
 using Amazon.S3.Model;
 using MergerLogic.Batching;
 using MergerLogic.Clients;
 using MergerLogic.Utils;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 
@@ -11,8 +9,6 @@ namespace MergerLogic.DataTypes
 {
     public class S3 : Data<IS3Client>
     {
-        private IAmazonS3 _client;
-        private string _bucket;
         private readonly List<int> _zoomLevels;
         private IEnumerator<int> _zoomEnumerator;
         private string? _continuationToken;
@@ -22,8 +18,8 @@ namespace MergerLogic.DataTypes
 
         private readonly IPathUtils _pathUtils;
 
-        public S3(IPathUtils pathUtils, IServiceProvider container, string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase)
-            : base(container, DataType.S3, path, batchSize, grid, origin, isBase)
+        public S3(IPathUtils pathUtils, IServiceProvider container, string bucket, string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase)
+            : base(container, DataType.S3, path, batchSize, grid, origin, isBase, null, bucket)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Ctor started");
             this._pathUtils = pathUtils;
@@ -40,12 +36,6 @@ namespace MergerLogic.DataTypes
 
         protected override void Initialize()
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start");
-            var configurationManager = this._container.GetRequiredService<IConfigurationManager>();
-            var client = this._container.GetService<IAmazonS3>();
-            this._client = client ?? throw new Exception("s3 configuration is required");
-            this._bucket = configurationManager.GetConfiguration("S3", "bucket");
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended");
         }
 
         protected override GridOrigin DefaultOrigin()
@@ -97,18 +87,7 @@ namespace MergerLogic.DataTypes
                     }
 
                     string path = $"{this.Path}/{this._zoomEnumerator.Current}/";
-                    var listRequests = new ListObjectsV2Request
-                    {
-                        BucketName = this._bucket,
-                        Prefix = path,
-                        StartAfter = path,
-                        MaxKeys = missingTiles,
-                        ContinuationToken = this._continuationToken
-                    };
-
-                    var listObjectsTask = this._client.ListObjectsV2Async(listRequests);
-                    var response = listObjectsTask.Result;
-
+                    ListObjectsV2Response response = this.Utils.ListObject(ref this._continuationToken, path, path, missingTiles);
                     foreach (S3Object item in response.S3Objects)
                     {
                         Tile? tile = this.Utils.GetTile(item.Key);
@@ -145,27 +124,19 @@ namespace MergerLogic.DataTypes
 
         private bool FolderExists(string directory)
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start, bucket: {this.Utils.Bucket}, directory: {directory}");
             directory = $"{this.Path}/{directory}";
 
-            var listRequests = new ListObjectsV2Request
-            {
-                BucketName = this._bucket,
-                Prefix = directory,
-                StartAfter = directory,
-                MaxKeys = 1
-            };
-            var task = this._client.ListObjectsV2Async(listRequests);
-            var response = task.Result;
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end");
-            return response.KeyCount > 0;
+            string? continuationToken = null;
+            ListObjectsV2Response response = this.Utils.ListObject(ref continuationToken, directory, directory, 1);
+            bool exists = response.KeyCount > 0;
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end, bucket: {this.Utils.Bucket}, directory: {directory}, exists: {exists}");
+            return exists;
         }
 
         public override bool Exists()
         {
-            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] bucket: {this._bucket}, path: {this.Path}");
             bool exists = FolderExists("");
-            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] ended");
             return exists;
         }
 
@@ -174,20 +145,9 @@ namespace MergerLogic.DataTypes
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start");
             long tileCount = 0;
             string? continuationToken = null;
-
             do
             {
-                var listRequests = new ListObjectsV2Request
-                {
-                    BucketName = this._bucket,
-                    Prefix = this.Path,
-                    StartAfter = this.Path,
-                    ContinuationToken = continuationToken
-                };
-
-                var task = this._client.ListObjectsV2Async(listRequests);
-                var response = task.Result;
-
+                ListObjectsV2Response response = this.Utils.ListObject(ref continuationToken, this.Path, this.Path);
                 tileCount += response.KeyCount;
                 continuationToken = response.NextContinuationToken;
             } while (continuationToken != null);

@@ -17,16 +17,19 @@ namespace MergerService.Controllers
 
         public Grid? Grid { get; }
 
+        public string? Bucket { get; }
+
         [System.Text.Json.Serialization.JsonIgnore]
         private JsonSerializerSettings _jsonSerializerSettings;
 
-        public Source(string path, string type, Extent? extent = null, GridOrigin? origin = null, Grid? grid = null)
+        public Source(string path, string type, Extent? extent = null, GridOrigin? origin = null, Grid? grid = null, string? bucket = null)
         {
             this.Path = path;
             this.Type = type;
             this.Extent = extent;
             this.Origin = origin;
             this.Grid = grid;
+            this.Bucket = bucket;
 
             this._jsonSerializerSettings = new JsonSerializerSettings();
             this._jsonSerializerSettings.Converters.Add(new StringEnumConverter());

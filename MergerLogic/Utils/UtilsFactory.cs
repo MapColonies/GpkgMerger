@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using System.IO.Abstractions;
 using MergerLogic.Clients;
 using MergerLogic.ImageProcessing;
+using Microsoft.Extensions.Configuration;
 
 namespace MergerLogic.Utils
 {
@@ -48,19 +49,18 @@ namespace MergerLogic.Utils
             return new HttpSourceClient(path, this._httpRequestUtils, pathPatternUtils, this._geoUtils, this._imageFormatter);
         }
 
-        public IS3Client GetS3Utils(string path)
+        public IS3Client GetS3Utils(string? bucket, string path)
         {
-            string bucket = this._container.GetRequiredService<IConfigurationManager>().GetConfiguration("S3", "bucket");
             IAmazonS3? client = this._container.GetService<IAmazonS3>();
-            if (client is null || bucket == string.Empty)
+            if (client is null || bucket is null)
             {
-                throw new Exception("S3 Data utils requires s3 client to be configured");
+                throw new Exception("S3 Data utils requires s3 client and bucket to be configured");
             }
             var logger = this._container.GetRequiredService<ILogger<S3Client>>();
             return new S3Client(client, this._pathUtils, this._geoUtils, this._imageFormatter, logger, bucket, path);
         }
 
-        public T GetDataUtils<T>(string path) where T : IDataUtils
+        public T GetDataUtils<T>(string path, string? bucket) where T : IDataUtils
         {
             if (typeof(IFileClient).IsAssignableFrom(typeof(T)))
             {
@@ -76,7 +76,7 @@ namespace MergerLogic.Utils
             }
             if (typeof(IS3Client).IsAssignableFrom(typeof(T)))
             {
-                return (T)(Object)this.GetS3Utils(path);
+                return (T)(Object)this.GetS3Utils(bucket, path);
             }
             throw new NotImplementedException("Invalid Utils type");
         }

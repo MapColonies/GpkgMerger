@@ -3,11 +3,10 @@
     "GPKG to S3": {
       "workingDirectory": "",
       "commandName": "Project",
-      "commandLineArgs": "Program.cs 1000 jpeg s3 area2-copy gpkg area2.gpkg",
+      "commandLineArgs": "Program.cs 1000 jpeg s3 bucket area2-copy gpkg area2.gpkg",
       "environmentVariables": {
         "AWS_ACCESS_KEY_ID": "minioadmin",
-        "AWS_SECRET_ACCESS_KEY": "minioadmin",
-        "S3__bucket": "dtm"
+        "AWS_SECRET_ACCESS_KEY": "minioadmin"
       }
     },
     "s3 to gpkg": {
@@ -16,8 +15,7 @@
       "commandLineArgs": "Program.cs 1000 jpeg gpkg area2-copy.gpkg -180,-90,180,90 s3 area3Cli",
       "environmentVariables": {
         "AWS_ACCESS_KEY_ID": "minio123",
-        "AWS_SECRET_ACCESS_KEY": "minio123",
-        "S3__bucket": "tiles"
+        "AWS_SECRET_ACCESS_KEY": "minio123"
       }
     },
     "resume": {
@@ -27,8 +25,7 @@
       "environmentVariables": {
         "AWS_ACCESS_KEY_ID": "minio123",
         "AWS_SECRET_ACCESS_KEY": "minio123",
-        "S3__url": "http://custom.localhost:9000",
-        "S3__bucket": "tiles"
+        "S3__url": "http://custom.localhost:9000"
       }
     },
     "Test SSL": {
@@ -39,8 +36,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "AWS_ACCESS_KEY_ID": "Q3AM3UQ867SPQQA43P2F",
         "AWS_SECRET_ACCESS_KEY": "zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG",
-        "S3__url": "https://play.min.io:9000",
-        "S3__bucket": "tiles"
+        "S3__url": "https://play.min.io:9000"
       }
     },
     "Docker": {

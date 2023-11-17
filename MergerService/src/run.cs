@@ -5,6 +5,7 @@ using MergerLogic.ImageProcessing;
 using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using MergerService.Controllers;
+using MergerService.Models.Jobs;
 using MergerService.Models.Tasks;
 using MergerService.Utils;
 using System.Diagnostics;
@@ -101,14 +102,12 @@ namespace MergerService.Src
                 if (paths.Length != 0)
                 {
                     string path = BuildPath(paths[0], true);
-                    sources.Add(this._dataFactory.CreateDataSource(paths[0].Type, path, batchSize, paths[0].Grid,
-                        paths[0].Origin, paths[0].Extent, true));
+                    sources.Add(this._dataFactory.CreateDataSource(paths[0].Type, path, paths[0].Bucket, batchSize, paths[0].Grid, paths[0].Origin, paths[0].Extent, true));
                     foreach (Source source in paths.Skip(1))
                     {
                         // TODO: add support for HTTP
                         path = BuildPath(source, false);
-                        sources.Add(this._dataFactory.CreateDataSource(source.Type, path, batchSize,
-                            source.Grid, source.Origin));
+                        sources.Add(this._dataFactory.CreateDataSource(source.Type, path, source.Bucket, batchSize, source.Grid, source.Origin));
                     }
                 }
                 stopwatch.Stop();
@@ -182,7 +181,27 @@ namespace MergerService.Src
                         continue;
                     }
 
-                    string? managerCallbackUrl = jobUtils.GetJob(task.JobId)?.Parameters.ManagerCallbackUrl;
+                    MergeJob? jobData = jobUtils.GetJob(task.JobId);
+                    if (jobData == null)
+                    {
+                        this._logger.LogWarning($"[{methodName}] no job data found for task!");
+                        // TODO: should we fail the task?
+                    }
+                    if (!(jobData.Status == Status.PENDING || jobData.Status == Status.IN_PROGRESS))
+                    {
+                        this._logger.LogWarning($"[{methodName}] job status is {jobData.Status}, stop the task and set it's status accordingly");
+
+                        // TODO: should we deal differenttly with completed or failed?
+
+                        UpdateParams updateParams = new UpdateParams()
+                        {
+                            Status = jobData.Status
+                        };
+                        taskUtils.UpdateProgress(task.JobId, task.Id, updateParams);
+                        continue;
+                    }
+
+                    string? managerCallbackUrl = jobData?.Parameters?.ManagerCallbackUrl;
                     string log = managerCallbackUrl == null ? "managerCallbackUrl not provided as job parameter" : $"managerCallback url: {managerCallbackUrl}";
                     this._logger.LogDebug($"[{methodName}]{log}");
                     var totalTaskStopwatch = Stopwatch.StartNew();

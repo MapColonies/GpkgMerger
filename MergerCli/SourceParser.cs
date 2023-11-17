@@ -20,7 +20,8 @@ namespace MergerCli
             this._logger = logger;
         }
 
-        private void LogDataErrorAndExit(bool isBase, Exception e) {
+        private void LogDataErrorAndExit(bool isBase, Exception e)
+        {
             string source = isBase ? "base" : "new";
             this._logger.LogError($"{source} data does not exist, error: {e.Message}");
             Environment.Exit(1);
@@ -53,7 +54,6 @@ namespace MergerCli
 
                         break;
                     case "fs":
-                    case "s3":
                         try
                         {
                             sources.Add(this.ParseFileSource(args, ref idx, batchSize, isBase));
@@ -62,7 +62,16 @@ namespace MergerCli
                         {
                             this.LogDataErrorAndExit(isBase, e);
                         }
-
+                        break;
+                    case "s3":
+                        try
+                        {
+                            sources.Add(this.ParseS3Source(args, ref idx, batchSize, isBase));
+                        }
+                        catch (Exception e)
+                        {
+                            this.LogDataErrorAndExit(isBase, e);
+                        }
                         break;
                     case "wmts":
                     case "xyz":
@@ -115,7 +124,29 @@ namespace MergerCli
 
             idx += paramCount;
             Grid? grid = GetGrid(isOneXOne);
-            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, grid, origin, null, isBase);
+            return this._dataFactory.CreateDataSource(sourceType, sourcePath, string.Empty, batchSize, grid, origin, null, isBase);
+        }
+
+        private IData ParseS3Source(string[] args, ref int idx, int batchSize, bool isBase)
+        {
+            const int requiredParamCount = 3;
+            const int optionalParamCount = 2;
+            int paramCount = this.ValidateAndGetSourceLength(args, idx, requiredParamCount, optionalParamCount);
+            string sourceType = args[idx];
+            string bucket = args[idx + 1];
+            string sourcePath = args[idx + 2];
+            bool? isOneXOne = null;
+            GridOrigin? origin = null;
+            if (paramCount > requiredParamCount)
+            {
+                // not using set as it allows optional prams with dynamic values aka. --minZoom 3 
+                var optionalParams = args.Skip(idx + requiredParamCount).Take(optionalParamCount).ToArray();
+                this.ParseOptionalParameters(sourceType, sourcePath, ref isOneXOne, ref origin, optionalParams);
+            }
+
+            idx += paramCount;
+            Grid? grid = GetGrid(isOneXOne);
+            return this._dataFactory.CreateDataSource(sourceType, sourcePath, bucket, batchSize, grid, origin, null, isBase);
         }
 
         private IData ParseGpkgSource(string[] args, ref int idx, int batchSize, bool isBase)
@@ -142,7 +173,7 @@ namespace MergerCli
 
             idx += paramCount;
             Grid? grid = GetGrid(isOneXOne);
-            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, grid, origin, extent, isBase);
+            return this._dataFactory.CreateDataSource(sourceType, sourcePath, string.Empty, batchSize, grid, origin, extent, isBase);
         }
 
         private IData ParseHttpSource(string[] args, ref int idx, int batchSize, bool isBase)
@@ -166,7 +197,7 @@ namespace MergerCli
 
             idx += paramCount;
             Grid? grid = GetGrid(isOneXOne);
-            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, isBase, extent, maxZoom,
+            return this._dataFactory.CreateDataSource(sourceType, sourcePath, string.Empty, batchSize, isBase, extent, maxZoom,
                 minZoom, grid, origin);
         }
 
@@ -183,7 +214,7 @@ namespace MergerCli
             return extent;
         }
 
-        private int ParseOptionalParameters(string sourceType, string sourcePath, ref bool? isOneXOne, 
+        private int ParseOptionalParameters(string sourceType, string sourcePath, ref bool? isOneXOne,
             ref GridOrigin? origin, string[] optionalParams)
         {
             int parsed = 0;
@@ -210,11 +241,21 @@ namespace MergerCli
                 parsed++;
             }
 
+            /*if (optionalParams.Contains("--Bucket"))
+            {
+                if (bucket != null)
+                {
+                    throw new Exception($"layer {sourceType} {sourcePath} can't have 2 buckets");
+                }
+
+                bucket = GridOrigin.LOWER_LEFT;
+                parsed++;
+            }*/
+
             return parsed;
         }
 
-        private int ValidateAndGetSourceLength(string[] args, int startIdx, int minExpectedParamCount,
-            int optionalParamCount)
+        private int ValidateAndGetSourceLength(string[] args, int startIdx, int minExpectedParamCount, int optionalParamCount)
         {
             int i = startIdx + 1;
             // check required parameters
