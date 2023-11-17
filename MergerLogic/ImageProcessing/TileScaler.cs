@@ -3,7 +3,9 @@ using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
+using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace MergerLogic.ImageProcessing
 {
@@ -11,14 +13,18 @@ namespace MergerLogic.ImageProcessing
     {
         private const int TILE_SIZE = 256;
         private readonly IMetricsProvider _metricsProvider;
+        private readonly ILogger<TileScaler> _logger;
 
-        public TileScaler(IMetricsProvider metricsProvider)
+        public TileScaler(IMetricsProvider metricsProvider, ILogger<TileScaler> logger)
         {
             this._metricsProvider = metricsProvider;
+            this._logger = logger;
         }
 
         public MagickImage? Upscale(MagickImage baseImage, Tile baseTile, Coord targetCoords)
         {
+            string fromTileToCoordMessage = $"from tile z:{baseTile.Z}, x:{baseTile.X}, y:{baseTile.Y} to coords z:{targetCoords.Z}, x:{targetCoords.X}, y:{targetCoords.Y}";
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] MagickImage Upscale Begin {fromTileToCoordMessage}");
             var upscaleStopwatch = Stopwatch.StartNew();
 
             // Calculate scale diff
@@ -112,8 +118,10 @@ namespace MergerLogic.ImageProcessing
 
             upscaleStopwatch.Stop();
             this._metricsProvider.UpscaleTimePerTileHistogram(upscaleStopwatch.Elapsed.TotalSeconds);
-            return ImageUtils.IsTransparent(scaledImage) ? null : scaledImage;
-
+            bool isTransparent = ImageUtils.IsTransparent(scaledImage);
+            string message = isTransparent ? "transparent - return Empty tile" : "return valid upscaled tile";
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] MagickImage Upscale Ended {fromTileToCoordMessage}, ${message}");
+            return isTransparent ? null : scaledImage; ;
         }
 
         public Tile? Upscale(Tile tile, Coord targetCoords)

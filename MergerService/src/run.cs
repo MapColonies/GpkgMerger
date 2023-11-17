@@ -346,9 +346,8 @@ namespace MergerService.Src
                                     this._logger.LogDebug($"[{methodName}] Get tile sources");
                                     foreach (IData source in sources.Skip(1))
                                     {
-                                        // TODO: this is a temporary fix till we decide how sources should be upscaled
-                                        Tile? tile = source.GetCorrespondingTile(coord, false);
-                                        correspondingTileBuilders.Add(() => tile);
+                                        // TODO: upscale = false - this is a temporary fix till we decide how sources should be upscaled
+                                        correspondingTileBuilders.Add(() => source.GetCorrespondingTile(coord, false));
                                     }
                                     var tileMergeStopwatch = Stopwatch.StartNew();
                                     byte[]? blob = this._tileMerger.MergeTiles(correspondingTileBuilders, coord,
@@ -374,7 +373,7 @@ namespace MergerService.Src
                                 }
                             }
                             batchWorkTimeStopwatch.Stop();
-                            this._metricsProvider.BatchWorkTimeHistogram(batchWorkTimeStopwatch.Elapsed.TotalSeconds); ;
+                            this._metricsProvider.BatchWorkTimeHistogram(batchWorkTimeStopwatch.Elapsed.TotalSeconds);
                         }
 
                         using (this._activitySource.StartActivity("saving tiles"))
