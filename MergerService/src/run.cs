@@ -373,7 +373,7 @@ namespace MergerService.Src
                                 }
                             }
                             batchWorkTimeStopwatch.Stop();
-                            this._metricsProvider.BatchWorkTimeHistogram(batchWorkTimeStopwatch.Elapsed.TotalSeconds); ;
+                            this._metricsProvider.BatchWorkTimeHistogram(batchWorkTimeStopwatch.Elapsed.TotalSeconds);
                         }
 
                         using (this._activitySource.StartActivity("saving tiles"))

@@ -113,6 +113,7 @@ namespace MergerLogic.ImageProcessing
 
         private Tile? GetFirstTile(List<CorrespondingTileBuilder> tiles, Coord targetCoords, ref int i)
         {
+            // We only need to go over sources, target should be excluded (e.g. i > 0 and not i >= 0)
             for (; i > 0; i--)
             {
                 Tile? tile = tiles[i]();
