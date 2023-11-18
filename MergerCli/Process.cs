@@ -122,8 +122,8 @@ namespace MergerCli
                 }
             }
 
-            baseData.BackupTiles(tiles);
             baseData.UpdateTiles(tiles);
+            baseData.BackupTiles(tiles);
 
             Interlocked.Add(ref tileProgressCount, tiles.Count);
             this._logger.LogInformation($"Tile Count: {tileProgressCount} / {totalTileCount}");

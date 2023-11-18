@@ -313,7 +313,7 @@ namespace MergerLogic.DataTypes
 
         public void BackupTiles(IEnumerable<Tile> tiles) {
             if(this.ShouldBackup) {
-                var targetTiles = this.ConvertTiles(tiles);
+                // var targetTiles = this.ConvertTiles(Enumerable.ToArray(tiles));
                 List<Tile> backupTiles = this.Utils.GetTiles(targetTiles.Select(t => t.GetCoord()));
                 this._backup.UpdateTiles(backupTiles);
             }
