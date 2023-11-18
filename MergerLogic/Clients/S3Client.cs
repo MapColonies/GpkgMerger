@@ -12,18 +12,20 @@ namespace MergerLogic.Clients
     public class S3Client : DataUtils, IS3Client
     {
         private readonly string _bucket;
-
         private readonly IAmazonS3 _client;
         private readonly ILogger _logger;
         private readonly IPathUtils _pathUtils;
+        private readonly S3StorageClass _storageClass;
 
         public S3Client(IAmazonS3 client, IPathUtils pathUtils, IGeoUtils geoUtils, IImageFormatter formatter, ILogger<S3Client> logger,
-            string bucket, string path) : base(path, geoUtils, formatter)
+            string storageClass, string bucket, string path) : base(path, geoUtils, formatter)
         {
             this._client = client;
             this._bucket = bucket;
             this._pathUtils = pathUtils;
             this._logger = logger;
+            // There is no validation on the storage class, only on PUT object we can know if the given class is supported
+            this._storageClass = new S3StorageClass(storageClass ?? S3StorageClass.Standard);
         }
 
         private byte[]? GetImageBytes(string key)
@@ -104,7 +106,10 @@ namespace MergerLogic.Clients
 
             var request = new PutObjectRequest()
             {
-                BucketName = this._bucket, CannedACL = S3CannedACL.PublicRead, Key = String.Format(key)
+                BucketName = this._bucket, 
+                CannedACL = S3CannedACL.PublicRead, 
+                Key = String.Format(key), 
+                StorageClass=this._storageClass
             };
 
             byte[] buffer = tile.GetImageBytes();
