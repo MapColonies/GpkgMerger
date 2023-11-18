@@ -96,7 +96,8 @@ namespace MergerService.Src
                 {
                     string path = BuildPath(paths[0], true);
                     sources.Add(this._dataFactory.CreateDataSource(paths[0].Type, path, batchSize, paths[0].Grid,
-                        paths[0].Origin, paths[0].Extent, true));
+                        paths[0].Origin, paths[0].BackupPath, paths[0].Extent, true));
+                    
                     foreach (Source source in paths.Skip(1))
                     {
                         // TODO: add support for HTTP

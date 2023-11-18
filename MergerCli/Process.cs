@@ -56,7 +56,9 @@ namespace MergerCli
                 tileProgressCount, totalTileCount, resumeBatchIdentifier, resumeMode, pollForBatch);
             
             batchStatusManager.CompleteLayer(newData.Path);
+            this._logger.LogInformation("resetting...");
             newData.Reset();
+            this._logger.LogInformation("after...");
             // base data wrap up is in program as the same base data object is used in multiple calls 
         }
 

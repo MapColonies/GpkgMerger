@@ -19,21 +19,26 @@ namespace MergerLogic.Utils
             this._logger = logger;
         }
 
-        public IData CreateDataSource(string type, string path, int batchSize, Grid? grid = null, GridOrigin? origin = null, Extent? extent = null, bool isBase = false)
+        public IData CreateDataSource(string type, string path, int batchSize, Grid? grid = null, GridOrigin? origin = null, string? backupPath = null, Extent? extent = null, bool isBase = false)
         {
             IData data;
+            bool shouldBackup = this._configurationManager.GetConfiguration<bool>("GENERAL", "backup");
+            bool vacuum = this._configurationManager.GetConfiguration<bool>("GPKG", "vacuum");
+            string bucket = this._configurationManager.GetConfiguration<string>("S3", "bucket");
+
+            this._logger.LogInformation($"bucket yay {bucket}");
 
             switch (type.ToLower())
             {
                 case "gpkg":
-                    data = new Gpkg(this._configurationManager, this._container, path, batchSize, grid, origin, isBase, extent);
+                    data = new Gpkg(this._container, path, batchSize, grid, origin, shouldBackup, isBase, vacuum, backupPath, extent);
                     break;
                 case "s3":
                     path = this._pathUtils.RemoveTrailingSlash(path);
-                    data = new S3(this._pathUtils, this._container, path, batchSize, grid, origin, isBase);
+                    data = new S3(this._pathUtils, this._container, path, batchSize, grid, origin, shouldBackup, isBase, backupPath);
                     break;
                 case "fs":
-                    data = new FS(this._pathUtils, this._container, path, batchSize, grid, origin, isBase);
+                    data = new FS(this._pathUtils, this._container, path, batchSize, grid, origin, shouldBackup, isBase, backupPath);
                     break;
                 case "wmts":
                 case "xyz":
@@ -55,7 +60,8 @@ namespace MergerLogic.Utils
             return data;
         }
 
-        public IData CreateDataSource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0, Grid? grid = null, GridOrigin? origin = null)
+        public IData CreateDataSource(string type, string path, int batchSize, bool isBase, Extent extent, int maxZoom, int minZoom = 0,
+                                        Grid? grid = null, GridOrigin? origin = null, string? backupPath = null)
         {
             IData data;
             type = type.ToLower();
@@ -64,7 +70,7 @@ namespace MergerLogic.Utils
                 case "gpkg":
                 case "s3":
                 case "fs":
-                    return this.CreateDataSource(type, path, batchSize, grid, origin, extent, isBase);
+                    return this.CreateDataSource(type, path, batchSize, grid, origin, backupPath, extent, isBase);
             };
             if (isBase)
             {

@@ -22,8 +22,8 @@ namespace MergerLogic.DataTypes
         private readonly IPathUtils _pathUtils;
 
         public S3(IPathUtils pathUtils, IServiceProvider container,
-            string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase)
-            : base(container, DataType.S3, path, batchSize, grid, origin, isBase)
+            string path, int batchSize, Grid? grid, GridOrigin? origin, bool shouldBackup, bool isBase, string? backupPath = null)
+            : base(container, DataType.S3, path, batchSize, grid, origin, isBase, shouldBackup, backupPath)
         {
             this._pathUtils = pathUtils;
             this._continuationToken = null;
@@ -51,11 +51,22 @@ namespace MergerLogic.DataTypes
 
         public override void Reset()
         {
+            base.Reset();
             this._continuationToken = null;
             this._endOfRead = false;
             this._zoomEnumerator = this._zoomLevels.GetEnumerator();
             // In order to get a correct first value we must do an initial MoveNext call
             this._zoomEnumerator.MoveNext();
+        }
+
+        protected override void CreateBackupFile()
+        {
+            if(this.ShouldBackup) {
+                // TODO: Change tiles to have GridOrigin so this could be inherited from Data
+                this._backup = new S3(this._pathUtils, this._container, base._backupPath, this.BatchSize,
+                                        this.Grid, GridOrigin.LOWER_LEFT, shouldBackup: false, isBase: true);
+                // this._backup.IsNew = true;
+            }
         }
 
         private List<int> GetZoomLevels()

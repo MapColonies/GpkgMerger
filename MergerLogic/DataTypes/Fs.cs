@@ -18,8 +18,8 @@ namespace MergerLogic.DataTypes
         static readonly object _locker = new object();
 
         public FS(IPathUtils pathUtils, IServiceProvider container,
-            string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false)
-            : base(container, DataType.FOLDER, path, batchSize, grid, origin, isBase)
+            string path, int batchSize, Grid? grid, GridOrigin? origin, bool shouldBackup, bool isBase = false, string? backupPath = null)
+            : base(container, DataType.FOLDER, path, batchSize, grid, origin, isBase, shouldBackup, backupPath)
         {
             this._pathUtils = pathUtils;
             this.Reset();
@@ -28,6 +28,16 @@ namespace MergerLogic.DataTypes
         protected override void Initialize()
         {
             this._fileSystem = this._container.GetRequiredService<IFileSystem>();
+        }
+
+        protected override void CreateBackupFile()
+        {
+            if(this.ShouldBackup) {
+                // TODO: Change tiles to have GridOrigin so this could be inherited from Data
+                this._backup = new FS(this._pathUtils, this._container, base._backupPath, this.BatchSize, 
+                                        this.Grid, GridOrigin.LOWER_LEFT, isBase: true, shouldBackup: false);
+                // this._backup.IsNew = true;
+            }
         }
 
         protected override void Create() {
@@ -41,6 +51,7 @@ namespace MergerLogic.DataTypes
 
         public override void Reset()
         {
+            base.Reset();
             this._tiles = this.GetTiles();
             this._tiles.MoveNext();
             this._done = false;

@@ -1,6 +1,7 @@
 using MergerLogic.Batching;
 using MergerLogic.Clients;
 using MergerLogic.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace MergerLogic.DataTypes
 {
@@ -8,15 +9,16 @@ namespace MergerLogic.DataTypes
     {
         private long _offset;
         private Extent _extent;
-        private readonly IConfigurationManager _configManager;
+        private readonly bool _vacuum;
         static readonly object _locker = new object();
 
-        public Gpkg(IConfigurationManager configuration, IServiceProvider container,
-            string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false, Extent? extent = null)
-            : base(container, DataType.GPKG, path, batchSize, grid, origin, isBase, extent)
+        public Gpkg(IServiceProvider container,
+            string path, int batchSize, Grid? grid, GridOrigin? origin, bool shouldBackup, bool isBase = false, bool vacuum = false, 
+            string? backupPath = null, Extent? extent = null)
+            : base(container, DataType.GPKG, path, batchSize, grid, origin, isBase, shouldBackup, backupPath, extent)
         {
             this._offset = 0;
-            this._configManager = configuration;
+            this._vacuum = vacuum;
 
             if (isBase)
             {
@@ -71,10 +73,11 @@ namespace MergerLogic.DataTypes
 
         public override void Reset()
         {
+            base.Reset();
             lock (_locker)
             {
                 this._offset = 0;
-            } 
+            }
         }
 
         public override List<Tile> GetNextBatch(out string currentBatchIdentifier, out string? nextBatchIdentifier, long? totalTilesCount)
@@ -150,18 +153,27 @@ namespace MergerLogic.DataTypes
             this.Utils.UpdateTileMatrixTable(this.IsOneXOne);
             this.Utils.CreateTileCacheValidationTriggers();
 
-            bool vacuum = this._configManager.GetConfiguration<bool>("GPKG", "vacuum");
-            if (vacuum)
+            if (this._vacuum)
             {
                 this.Utils.Vacuum();
             }
 
-            this.Reset();
+            base.Wrapup();
         }
 
         public override bool Exists()
         {
             return this.Utils.Exist();
+        }
+
+        protected override void CreateBackupFile()
+        {
+            if(this.ShouldBackup) {
+                // TODO: Change tiles to have GridOrigin so this could be inherited from Data
+                this._backup = new Gpkg(this._container, base._backupPath, this.BatchSize, this.Grid, GridOrigin.LOWER_LEFT, 
+                                        shouldBackup: false, isBase: true, this._vacuum, null, this.Extent);
+                // this._backup.IsNew = true;
+            }
         }
 
         public override long TileCount()

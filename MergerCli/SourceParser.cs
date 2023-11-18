@@ -99,6 +99,7 @@ namespace MergerCli
 
         private IData ParseFileSource(string[] args, ref int idx, int batchSize, bool isBase)
         {
+            this._logger.LogInformation("Parsing file source");
             const int requiredParamCount = 2;
             const int optionalParamCount = 2;
             int paramCount = this.ValidateAndGetSourceLength(args, idx, requiredParamCount, optionalParamCount);
@@ -115,7 +116,8 @@ namespace MergerCli
 
             idx += paramCount;
             Grid? grid = GetGrid(isOneXOne);
-            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, grid, origin, null, isBase);
+            this._logger.LogInformation("Creating file source");
+            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, grid, origin, "", null, isBase);
         }
 
         private IData ParseGpkgSource(string[] args, ref int idx, int batchSize, bool isBase)
@@ -142,7 +144,7 @@ namespace MergerCli
 
             idx += paramCount;
             Grid? grid = GetGrid(isOneXOne);
-            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, grid, origin, extent, isBase);
+            return this._dataFactory.CreateDataSource(sourceType, sourcePath, batchSize, grid, origin, $"{sourcePath}-backup.gpkg", extent, isBase);
         }
 
         private IData ParseHttpSource(string[] args, ref int idx, int batchSize, bool isBase)

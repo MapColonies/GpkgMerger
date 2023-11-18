@@ -17,12 +17,15 @@ namespace MergerService.Controllers
 
         public Grid? Grid { get; }
 
+        public string? BackupPath { get; }
+
         [System.Text.Json.Serialization.JsonIgnore]
         private JsonSerializerSettings _jsonSerializerSettings;
 
-        public Source(string path, string type, Extent? extent = null, GridOrigin? origin = null, Grid? grid = null)
+        public Source(string path, string type, Extent? extent = null, GridOrigin? origin = null, Grid? grid = null, string? backupPath = null)
         {
             this.Path = path;
+            this.BackupPath = backupPath;
             this.Type = type;
             this.Extent = extent;
             this.Origin = origin;

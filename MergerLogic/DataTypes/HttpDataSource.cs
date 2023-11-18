@@ -1,5 +1,6 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.Clients;
+using Microsoft.Extensions.Logging;
 
 namespace MergerLogic.DataTypes
 {
@@ -11,7 +12,7 @@ namespace MergerLogic.DataTypes
 
         protected HttpDataSource(IServiceProvider container,
             DataType type, string path, int batchSize, Extent extent, GridOrigin? origin, Grid? grid, int maxZoom, int minZoom = 0)
-            : base(container, type, path, batchSize, grid, origin, false)
+            : base(container, type, path, batchSize, grid, origin, false, false)
         {
             this.GenTileRanges(extent, this.Origin, minZoom, maxZoom);
         }
@@ -21,6 +22,10 @@ namespace MergerLogic.DataTypes
             // there is no reasonable way to validate url template source
             // this should be modified if we change the input to received capabilities and layer instead of pattern
             return true;
+        }
+
+        protected override void CreateBackupFile() {
+            this._logger.LogDebug($"{this.Type} source, skipping backup phase");
         }
 
         public override List<Tile> GetNextBatch(out string batchIdentifier, out string? nextBatchIdentifier, long? totalTilesCount)
@@ -42,6 +47,7 @@ namespace MergerLogic.DataTypes
 
         public override void Reset()
         {
+            base.Reset();
             this.BatchIndex = 0;
             this.Batches = this.GetTiles().Chunk(this.BatchSize).GetEnumerator();
         }
