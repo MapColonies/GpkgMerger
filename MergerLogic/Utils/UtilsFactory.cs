@@ -50,6 +50,7 @@ namespace MergerLogic.Utils
 
         public IS3Client GetS3Utils(string path)
         {
+            string storageClass = this._container.GetRequiredService<IConfigurationManager>().GetConfiguration("S3", "storageClass");
             string bucket = this._container.GetRequiredService<IConfigurationManager>().GetConfiguration("S3", "bucket");
             IAmazonS3? client = this._container.GetService<IAmazonS3>();
             if (client is null || bucket == string.Empty)
@@ -57,7 +58,7 @@ namespace MergerLogic.Utils
                 throw new Exception("S3 Data utils requires s3 client to be configured");
             }
             var logger = this._container.GetRequiredService<ILogger<S3Client>>();
-            return new S3Client(client, this._pathUtils, this._geoUtils, this._imageFormatter, logger, bucket, path);
+            return new S3Client(client, this._pathUtils, this._geoUtils, this._imageFormatter, logger, storageClass, bucket, path);
         }
 
         public T GetDataUtils<T>(string path) where T : IDataUtils
