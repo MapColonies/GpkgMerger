@@ -12,18 +12,20 @@ namespace MergerLogic.Clients
     public class S3Client : DataUtils, IS3Client
     {
         private readonly string _bucket;
-
         private readonly IAmazonS3 _client;
         private readonly ILogger _logger;
         private readonly IPathUtils _pathUtils;
+        private readonly S3StorageClass _storageClass;
 
         public S3Client(IAmazonS3 client, IPathUtils pathUtils, IGeoUtils geoUtils, IImageFormatter formatter, ILogger<S3Client> logger,
-            string bucket, string path) : base(path, geoUtils, formatter)
+            string storageClass, string bucket, string path) : base(path, geoUtils, formatter)
         {
             this._client = client;
             this._bucket = bucket;
             this._pathUtils = pathUtils;
             this._logger = logger;
+            // There is no validation on the storage class, only on PUT object we can know if the given class is supported
+            this._storageClass = new S3StorageClass(storageClass ?? S3StorageClass.Standard);
         }
 
         private byte[]? GetImageBytes(string key)
@@ -33,10 +35,8 @@ namespace MergerLogic.Clients
             {
                 this._logger.LogDebug($"[{methodName}] start, key {key}");
                 var request = new GetObjectRequest() { BucketName = this._bucket, Key = key };
-                this._logger.LogDebug($"[{methodName}] start GetObjectAsync, BucketName: {request.BucketName}, Key: {request.Key}");
                 var getObjectTask = this._client.GetObjectAsync(request);
                 GetObjectResponse res = getObjectTask.Result;
-                this._logger.LogDebug($"[{methodName}] requested key {key} recieved");
 
                 byte[] image;
                 using (MemoryStream ms = new MemoryStream())
@@ -66,6 +66,7 @@ namespace MergerLogic.Clients
             var key = this.GetTileKey(z, x, y);
             if (key == null)
             {
+                this._logger.LogDebug($"[{methodName}] tileKey is null for z: {z}, x: {x}, y: {y}");
                 return null;
             }
 
@@ -105,7 +106,10 @@ namespace MergerLogic.Clients
 
             var request = new PutObjectRequest()
             {
-                BucketName = this._bucket, CannedACL = S3CannedACL.PublicRead, Key = String.Format(key)
+                BucketName = this._bucket, 
+                CannedACL = S3CannedACL.PublicRead, 
+                Key = String.Format(key), 
+                StorageClass=this._storageClass
             };
 
             byte[] buffer = tile.GetImageBytes();
@@ -121,14 +125,10 @@ namespace MergerLogic.Clients
 
         private string? GetTileKey(int z, int x, int y)
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
-            this._logger.LogDebug($"[{methodName}] start z: {z}, x: {x}, y: {y}");
             string keyPrefix = this._pathUtils.GetTilePathWithoutExtension(this.path, z, x, y, true);
             var listRequests = new ListObjectsV2Request { BucketName = this._bucket, Prefix = keyPrefix, MaxKeys = 1 };
-            this._logger.LogDebug($"[{methodName}] start ListObjectsV2Async BucketName: {listRequests.BucketName}, Prefix: {listRequests.Prefix}");
             var listObjectsTask = this._client.ListObjectsV2Async(listRequests);
             string? result = listObjectsTask.Result.S3Objects.FirstOrDefault()?.Key;
-            this._logger.LogDebug($"[{methodName}] end z: {z}, x: {x}, y: {y}");
             return result;
         }
     }

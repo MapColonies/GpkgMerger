@@ -63,7 +63,7 @@ namespace MergerLogic.Extensions
 
         public static IServiceCollection RegisterServiceProvider(this IServiceCollection collection)
         {
-            return collection.AddSingleton<IServiceProvider>(sp => sp); ;
+            return collection.AddSingleton<IServiceProvider>(sp => sp);
         }
 
         public static IServiceCollection RegisterFileSystem(this IServiceCollection collection)
