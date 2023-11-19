@@ -3,10 +3,26 @@ using MergerLogic.Clients;
 using MergerService.Src;
 using MergerService.Utils;
 
-var builder = WebApplication.CreateBuilder(args);
+string reflectionLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions {
+    ContentRootPath = reflectionLocation,
+    Args = args
+});
+
+var b = builder.Configuration["hostBuilder:reloadConfigOnChange"];
+builder.Configuration["hostBuilder:reloadConfigOnChange"] = "false";
+
+string workingDirectory = Path.GetFullPath(Directory.GetCurrentDirectory());
+Console.WriteLine($"reflectionLocation: {Path.GetDirectoryName(reflectionLocation)}");
+Console.WriteLine($"System.IO Location: {Path.GetDirectoryName(workingDirectory)}");
+Console.WriteLine($"System.Environment.CurrentDirectory: {System.Environment.CurrentDirectory}");
+Console.WriteLine($"ContentRoot Path: {builder.Environment.ContentRootPath}");
+Console.WriteLine($"WebRootPath: {builder.Environment.WebRootPath}");
+Console.WriteLine($"ApplicationName: {builder.Environment.ApplicationName}");
+Console.WriteLine($"EnvironmentName: {builder.Environment.EnvironmentName}");
 
 // Add services to the container.
-
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
