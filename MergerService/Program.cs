@@ -1,26 +1,23 @@
-using MergerLogic.Extensions;
 using MergerLogic.Clients;
+using MergerLogic.Extensions;
 using MergerService.Src;
 using MergerService.Utils;
+using System.Reflection;
 
-string reflectionLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+string reflectionLocation = Assembly.GetExecutingAssembly().Location;
+string reflectionLocationDir = Path.GetDirectoryName(reflectionLocation);
 
-var builder = WebApplication.CreateBuilder(new WebApplicationOptions {
-    ContentRootPath = reflectionLocation,
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    ContentRootPath = reflectionLocationDir,
+    WebRootPath = reflectionLocationDir,
     Args = args
 });
 
-var b = builder.Configuration["hostBuilder:reloadConfigOnChange"];
 builder.Configuration["hostBuilder:reloadConfigOnChange"] = "false";
 
-string workingDirectory = Path.GetFullPath(Directory.GetCurrentDirectory());
-Console.WriteLine($"reflectionLocation: {Path.GetDirectoryName(reflectionLocation)}");
-Console.WriteLine($"System.IO Location: {Path.GetDirectoryName(workingDirectory)}");
-Console.WriteLine($"System.Environment.CurrentDirectory: {System.Environment.CurrentDirectory}");
 Console.WriteLine($"ContentRoot Path: {builder.Environment.ContentRootPath}");
 Console.WriteLine($"WebRootPath: {builder.Environment.WebRootPath}");
-Console.WriteLine($"ApplicationName: {builder.Environment.ApplicationName}");
-Console.WriteLine($"EnvironmentName: {builder.Environment.EnvironmentName}");
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -40,7 +37,8 @@ AppDomain.CurrentDomain.UnhandledException += OnUnhandledExceptionEventHandler;
 
 new Thread(() =>
 {
-    try {
+    try
+    {
         app.Run();
     }
     catch (Exception e)
