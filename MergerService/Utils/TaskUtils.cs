@@ -127,13 +127,10 @@ namespace MergerService.Utils
         {
             using (var activity = this._activitySource.StartActivity("reject task"))
             {
-                // activity.AddTag("attempts", attempts);
-                // activity.AddTag("resettable", resettable);
-
                 attempts++;
 
-                // Check if the task should actually fail
-                if (!resettable || attempts == this._maxAttempts)
+                // Check if the task should actually fail, check larger for tasks that have more retries (from task liberator)
+                if (!resettable || attempts >= this._maxAttempts)
                 {
                     UpdateFailed(jobId, taskId, attempts, reason, resettable, managerCallbackUrl);
                     return;
@@ -169,5 +166,7 @@ namespace MergerService.Utils
                 NotifyOnStatusChange(jobId, taskId, managerCallbackUrl);
             }
         }
+
+        public int MaxAttempts { get { return _maxAttempts; } }
     }
 }

@@ -185,6 +185,22 @@ namespace MergerService.Src
                     string? managerCallbackUrl = jobUtils.GetJob(task.JobId)?.Parameters.ManagerCallbackUrl;
                     string log = managerCallbackUrl == null ? "managerCallbackUrl not provided as job parameter" : $"managerCallback url: {managerCallbackUrl}";
                     this._logger.LogDebug($"[{methodName}]{log}");
+
+                    // fail task that was released by task liberator and reached max attempts
+                    if (task.Attempts > taskUtils.MaxAttempts)
+                    {
+                        try
+                        {
+                            string reason = string.IsNullOrEmpty(task.Reason) ? "Max attempts reached" : $"{task.Reason} and Max attempts reached";
+                            taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, reason, true, managerCallbackUrl);
+                        }
+                        catch (Exception innerError)
+                        {
+                            this._logger.LogError(innerError, $"[{methodName}] Error in MergerService while updating reject status, update task failure: {innerError.Message}");
+                        }
+                        continue;
+                    }
+
                     var totalTaskStopwatch = Stopwatch.StartNew();
                     bool taskSucceed = false;
 
