@@ -77,7 +77,10 @@ namespace MergerService.Models.Tasks
 
         [JsonInclude] public string JobId { get; }
 
-        [JsonInclude] public bool Resettable { get; }
+        [DefaultValue(true)]
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
+        [JsonInclude]
+        public bool Resettable { get; }
 
         [JsonInclude] public DateTime Created { get; }
 

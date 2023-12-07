@@ -23,6 +23,8 @@ namespace MergerService.Utils
         private readonly JsonSerializerSettings _jsonSerializerSettings;
         private readonly string _jobManagerUrl;
 
+        public int MaxAttempts { get { return _maxAttempts; } }
+
         public TaskUtils(IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<TaskUtils> logger,
             ActivitySource activitySource, IHeartbeatClient heartbeatClient)
         {
@@ -129,7 +131,7 @@ namespace MergerService.Utils
             {
                 attempts++;
 
-                // Check if the task should actually fail, check larger for tasks that have more retries (from task liberator)
+                // Check if the task should actually fail, use greater than for tasks that have more attempts because of task liberator
                 if (!resettable || attempts >= this._maxAttempts)
                 {
                     UpdateFailed(jobId, taskId, attempts, reason, resettable, managerCallbackUrl);
@@ -166,7 +168,5 @@ namespace MergerService.Utils
                 NotifyOnStatusChange(jobId, taskId, managerCallbackUrl);
             }
         }
-
-        public int MaxAttempts { get { return _maxAttempts; } }
     }
 }

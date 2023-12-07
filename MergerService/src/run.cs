@@ -191,12 +191,12 @@ namespace MergerService.Src
                     {
                         try
                         {
-                            string reason = string.IsNullOrEmpty(task.Reason) ? "Max attempts reached" : $"{task.Reason} and Max attempts reached";
-                            taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, reason, true, managerCallbackUrl);
+                            string reason = string.IsNullOrEmpty(task.Reason) ? $"Max attempts {taskUtils.MaxAttempts} reached, current attempt is {task.Attempts}" : $"{task.Reason} and Max attempts {taskUtils.MaxAttempts} reached with {task.Attempts} attempts";
+                            taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, reason, task.Resettable, managerCallbackUrl);
                         }
                         catch (Exception innerError)
                         {
-                            this._logger.LogError(innerError, $"[{methodName}] Error in MergerService while updating reject status, update task failure: {innerError.Message}");
+                            this._logger.LogError(innerError, $"[{methodName}] Error in MergerService while updating reject status due to max attemps reached with {task.Attempts}, update task failure: {innerError.Message}");
                         }
                         continue;
                     }
