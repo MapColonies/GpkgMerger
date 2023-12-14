@@ -1,12 +1,11 @@
 using MergerLogic.Clients;
-using System.Diagnostics;
-using System.Net.Http.Headers;
 using MergerLogic.Utils;
 using MergerService.Models.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
-using System.Text.Json;
+using System.Diagnostics;
+using System.Net.Http.Headers;
 using System.Reflection;
 
 namespace MergerService.Utils
@@ -22,8 +21,6 @@ namespace MergerService.Utils
         private readonly int _maxAttempts;
         private readonly JsonSerializerSettings _jsonSerializerSettings;
         private readonly string _jobManagerUrl;
-
-        public int MaxAttempts { get { return _maxAttempts; } }
 
         public TaskUtils(IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<TaskUtils> logger,
             ActivitySource activitySource, IHeartbeatClient heartbeatClient)
@@ -125,6 +122,12 @@ namespace MergerService.Utils
             }
         }
 
+        public bool IsMaxAttemptsReached(int attempts)
+        {
+            bool result = attempts >= this._maxAttempts;
+            return result;
+        }
+
         public void UpdateReject(string jobId, string taskId, int attempts, string reason, bool resettable, string? managerCallbackUrl)
         {
             using (var activity = this._activitySource.StartActivity("reject task"))
@@ -132,7 +135,7 @@ namespace MergerService.Utils
                 attempts++;
 
                 // Check if the task should actually fail, use greater than for tasks that have more attempts because of task liberator
-                if (!resettable || attempts >= this._maxAttempts)
+                if (!resettable || IsMaxAttemptsReached(attempts))
                 {
                     UpdateFailed(jobId, taskId, attempts, reason, resettable, managerCallbackUrl);
                     return;

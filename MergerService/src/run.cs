@@ -187,11 +187,11 @@ namespace MergerService.Src
                     this._logger.LogDebug($"[{methodName}]{log}");
 
                     // fail task that was released by task liberator and reached max attempts
-                    if (task.Attempts > taskUtils.MaxAttempts)
+                    if (taskUtils.IsMaxAttemptsReached(task.Attempts))
                     {
                         try
                         {
-                            string reason = string.IsNullOrEmpty(task.Reason) ? $"Max attempts {taskUtils.MaxAttempts} reached, current attempt is {task.Attempts}" : $"{task.Reason} and Max attempts {taskUtils.MaxAttempts} reached with {task.Attempts} attempts";
+                            string reason = string.IsNullOrEmpty(task.Reason) ? $"Max attempts reached, current attempt is {task.Attempts}" : $"{task.Reason} and Max attempts reached with {task.Attempts} attempts";
                             taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, reason, task.Resettable, managerCallbackUrl);
                         }
                         catch (Exception innerError)

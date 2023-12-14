@@ -1,4 +1,3 @@
-using MergerService.Controllers;
 using MergerService.Models.Tasks;
 
 namespace MergerService.Utils
@@ -13,6 +12,6 @@ namespace MergerService.Utils
 
         public void UpdateReject(string jobId, string taskId, int attempts, string reason, bool resettable, string? managerCallbackUrl);
 
-        public int MaxAttempts { get; }
+        public bool IsMaxAttemptsReached(int attempts);
     }
 }
