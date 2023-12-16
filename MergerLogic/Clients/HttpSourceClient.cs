@@ -19,11 +19,6 @@ namespace MergerLogic.Clients
         {
             string url = this._pathPatternUtils.RenderUrlTemplate(x, y, z);
             byte[]? data = this._httpClient.GetData(url, true);
-            if (data is null)
-            {
-                return null;
-            }
-
             return this.CreateTile(z, x, y, data);
         }
 

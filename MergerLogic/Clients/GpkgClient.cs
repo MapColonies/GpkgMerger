@@ -124,9 +124,9 @@ namespace MergerLogic.Clients
             }
         }
 
-        public override Tile GetTile(int z, int x, int y)
+        public override Tile? GetTile(int z, int x, int y)
         {
-            Tile tile = null;
+            byte[]? blob = null;
 
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
@@ -139,18 +139,11 @@ namespace MergerLogic.Clients
                     command.Parameters.AddWithValue("$z", z);
                     command.Parameters.AddWithValue("$x", x);
                     command.Parameters.AddWithValue("$y", y);
-
-                    var blob = (byte[])command.ExecuteScalar();
-                    if (blob == null)
-                    {
-                        return null;
-                    }
-
-                    tile = this.CreateTile(z, x, y, blob)!;
+                    blob = (byte[])command.ExecuteScalar();
                 }
             }
 
-            return tile;
+            return this.CreateTile(z, x, y, blob);
         }
 
         public override bool TileExists(int z, int x, int y)
