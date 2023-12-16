@@ -20,7 +20,7 @@ namespace MergerLogic.ImageProcessing
 
         public byte[]? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords, TileFormat format)
         {
-            var images = this.GetImageList(tiles, targetCoords, out bool singleImage);
+            var images = this.GetImageList(tiles, targetCoords);
             byte[] data;
             switch (images.Count)
             {
@@ -56,13 +56,12 @@ namespace MergerLogic.ImageProcessing
             }
         }
 
-        private List<MagickImage> GetImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords, out bool singleImage)
+        private List<MagickImage> GetImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords)
         {
             var images = new List<MagickImage>();
             int i = tiles.Count - 1;
             Tile? tile = null;
 
-            singleImage = false;
             bool hasAlpha = false;
             try
             {
@@ -72,7 +71,6 @@ namespace MergerLogic.ImageProcessing
                 this.AddTileToImageList(targetCoords, tile, images, out hasAlpha);
                 if (!hasAlpha)
                 {
-                    singleImage = true;
                     return images;
                 }
 
@@ -105,7 +103,6 @@ namespace MergerLogic.ImageProcessing
                 throw;
             }
 
-            singleImage = images.Count == 0 && tile != null;
             return images;
         }
 
