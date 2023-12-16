@@ -78,6 +78,7 @@ namespace MergerLogic.Batching
             }
 
             this._data = ImageFormatter.ConvertToFormat(this._data, format);
+            this.Format = format;
         }
 
         public void SetCoords(Coord cords)
