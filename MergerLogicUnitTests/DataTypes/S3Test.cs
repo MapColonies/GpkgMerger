@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.IO.Abstractions;
 using System.Threading;
 
 namespace MergerLogicUnitTests.DataTypes
@@ -19,6 +20,7 @@ namespace MergerLogicUnitTests.DataTypes
     [TestCategory("unit")]
     [TestCategory("S3")]
     [TestCategory("S3DataSource")]
+    [DeploymentItem(@"../../../TestData/test.jpeg")]
     public class S3Test
     {
         #region mocks
@@ -36,6 +38,7 @@ namespace MergerLogicUnitTests.DataTypes
         private Mock<IAmazonS3> _s3ClientMock;
         private Mock<IConfigurationManager> _configurationManagerMock;
         private Mock<IMetricsProvider> _metricsProviderMock;
+        private byte[] _jpegImageData;
 
         #endregion
 
@@ -79,6 +82,9 @@ namespace MergerLogicUnitTests.DataTypes
                 .Returns(this._configurationManagerMock.Object);
             this._configurationManagerMock.Setup(cm => cm.GetConfiguration("S3", "bucket"))
                 .Returns("bucket");
+
+            FileSystem fs = new FileSystem();
+            this._jpegImageData = fs.File.ReadAllBytes("test.jpeg");
         }
 
         #region TileExists
@@ -139,7 +145,7 @@ namespace MergerLogicUnitTests.DataTypes
             }
             else
             {
-                var tile = new Tile(cords, new byte[] { });
+                var tile = new Tile(cords, this._jpegImageData);
                 Assert.AreEqual(expected, s3Source.TileExists(tile));
             }
 
@@ -174,7 +180,7 @@ namespace MergerLogicUnitTests.DataTypes
             bool expectedNull)
         {
             Tile nullTile = null;
-            var existingTile = new Tile(2, 2, 3, new byte[] { });
+            var existingTile = new Tile(2, 2, 3, this._jpegImageData);
             this.SetupConstructorRequiredMocks();
 
             this._s3UtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
@@ -223,7 +229,7 @@ namespace MergerLogicUnitTests.DataTypes
         {
             bool expectedNull = cords.Z != 2;
             Tile nullTile = null;
-            var existingTile = new Tile(2, 2, 3, new byte[] { });
+            var existingTile = new Tile(2, 2, 3, this._jpegImageData);
             var sequence = new MockSequence();
             this.SetupConstructorRequiredMocks(true, sequence);
 
@@ -327,7 +333,7 @@ namespace MergerLogicUnitTests.DataTypes
         public void GetCorrespondingTileWithUpscale(bool isOneXOne, GridOrigin origin, bool isValidConversion)
         {
             Tile nullTile = null;
-            var tile = new Tile(2, 2, 3, new byte[] { });
+            var tile = new Tile(2, 2, 3, this._jpegImageData);
             var sequence = new MockSequence();
             this.SetupConstructorRequiredMocks(true, sequence);
 
@@ -442,8 +448,8 @@ namespace MergerLogicUnitTests.DataTypes
         {
             var testTiles = new Tile[]
             {
-                new Tile(1, 2, 3, new byte[] { }), new Tile(7, 7, 7, new byte[] { }),
-                new Tile(2, 2, 3, new byte[] { })
+                new Tile(1, 2, 3, this._jpegImageData), new Tile(7, 7, 7, this._jpegImageData),
+                new Tile(2, 2, 3, this._jpegImageData)
             };
             var seq = new MockSequence();
             this.SetupConstructorRequiredMocks(true, seq);
@@ -696,7 +702,7 @@ namespace MergerLogicUnitTests.DataTypes
                 });
             this._s3UtilsMock
                 .Setup(utils => utils.GetTile(It.IsAny<string>()))
-                .Returns(new Tile(0, 0, 0, Array.Empty<byte>()));
+                .Returns(new Tile(0, 0, 0, this._jpegImageData));
             if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock
@@ -745,8 +751,8 @@ namespace MergerLogicUnitTests.DataTypes
         {
             var tiles = new Tile?[]
             {
-                new Tile(0, 0, 0, new byte[] { }), new Tile(1, 1, 1, new byte[] { }),
-                new Tile(2, 2, 2, new byte[] { }), new Tile(3, 3, 3, new byte[] { }),
+                new Tile(0, 0, 0, this._jpegImageData), new Tile(1, 1, 1, this._jpegImageData),
+                new Tile(2, 2, 2, this._jpegImageData), new Tile(3, 3, 3, this._jpegImageData),
             };
             var tileBatches = tiles.Chunk(batchSize).ToList();
             var tileZoomCounts = tiles.GroupBy(n => n.Z).Select(g => (g.Key, g.Count())).OrderBy(z => z.Key);

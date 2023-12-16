@@ -1,6 +1,5 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.DataTypes;
-using MergerLogic.ImageProcessing;
 using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
@@ -19,6 +18,7 @@ namespace MergerLogicUnitTests.DataTypes
     [TestCategory("unit")]
     [TestCategory("FS")]
     [TestCategory("FSDataSource")]
+    [DeploymentItem(@"../../../TestData/test.jpeg")]
     public class FSTest
     {
         #region mocks
@@ -37,6 +37,7 @@ namespace MergerLogicUnitTests.DataTypes
         private Mock<IFileInfoFactory> _fileInfoFactoryMock;
         private Mock<IPath> _pathMock;
         private Mock<IMetricsProvider> _metricsProviderMock;
+        private byte[] _jpegImageData;
 
         #endregion
 
@@ -75,6 +76,9 @@ namespace MergerLogicUnitTests.DataTypes
                 .Returns(this._loggerFactoryMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IMetricsProvider)))
                 .Returns(this._metricsProviderMock.Object);
+
+            FileSystem fs = new FileSystem();
+            this._jpegImageData = fs.File.ReadAllBytes("test.jpeg");
         }
 
         #region TileExists
@@ -134,7 +138,7 @@ namespace MergerLogicUnitTests.DataTypes
             }
             else
             {
-                var tile = new Tile(cords, new byte[] { });
+                var tile = new Tile(cords, this._jpegImageData);
                 Assert.AreEqual(expected, fsSource.TileExists(tile));
             }
             this._fsUtilsMock.Verify(util => util.TileExists(cords.Z, cords.X, cords.Y),
@@ -169,7 +173,7 @@ namespace MergerLogicUnitTests.DataTypes
         {
             this.SetupConstructorRequiredMocks(isBase);
             Tile nullTile = null;
-            var existingTile = new Tile(2, 2, 3, new byte[] { });
+            var existingTile = new Tile(2, 2, 3, this._jpegImageData);
             this._fsUtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
                 .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
 
@@ -220,7 +224,7 @@ namespace MergerLogicUnitTests.DataTypes
             bool expectedNull = cords.Z != 2;
             this.SetupConstructorRequiredMocks(isBase);
             Tile nullTile = null;
-            var existingTile = new Tile(2, 2, 3, new byte[] { });
+            var existingTile = new Tile(2, 2, 3, this._jpegImageData);
             var sequence = new MockSequence();
             if (origin != GridOrigin.LOWER_LEFT)
             {
@@ -324,7 +328,7 @@ namespace MergerLogicUnitTests.DataTypes
         {
             this.SetupConstructorRequiredMocks(isBase);
             Tile nullTile = null;
-            var tile = new Tile(2, 2, 3, new byte[] { });
+            var tile = new Tile(2, 2, 3, this._jpegImageData);
             var sequence = new MockSequence();
 
             if (origin != GridOrigin.LOWER_LEFT)
@@ -763,15 +767,12 @@ namespace MergerLogicUnitTests.DataTypes
         [DynamicData(nameof(GenGetNextBatchParams), DynamicDataSourceType.Method)]
         public void GetNextBatch(bool isOneXOne, bool isBase, GridOrigin origin, int batchSize)
         {
-            var testFormat = TileFormat.Png; //this is needed for mocks but shouldn't effect the tested function.
-
             var tiles = new Tile?[]
             {
-                new Tile(0, 0, 0, new byte[] { }), new Tile(1, 1, 1, new byte[] { }), null,
-                new Tile(3, 3, 3, new byte[] { }), new Tile(4, 4, 4, new byte[] { }),
+                new Tile(0, 0, 0, this._jpegImageData), new Tile(1, 1, 1, this._jpegImageData), null,
+                new Tile(3, 3, 3, this._jpegImageData), new Tile(4, 4, 4, this._jpegImageData),
             };
             var tileBatches = tiles.Where(t => t is not null && (!isOneXOne || t.Z != 0)).Chunk(batchSize).ToList();
-            var batchIdx = 0;
             var seq = new MockSequence();
             this.SetupConstructorRequiredMocks(isBase, true, seq, new[] { "1" },
                 new string[] { "0.png", "1.jpg", "2.png", "invalid", "3.png", "4.png" });
@@ -780,8 +781,8 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._pathUtilsMock
                     .InSequence(seq)
-                    .Setup(utils => utils.FromPath(It.IsAny<string>(), out testFormat, false))
-                    .Returns<string, TileFormat, bool>((path, _, _) =>
+                    .Setup(utils => utils.FromPath(It.IsAny<string>(), false))
+                    .Returns<string, bool>((path, _) =>
                     {
                         int coord = int.Parse(path[..1]);
                         return new Coord(coord, coord, coord);
@@ -824,7 +825,7 @@ namespace MergerLogicUnitTests.DataTypes
                 Assert.AreEqual(expectedBatchId, batchIdentifier);
                 foreach (var tile in tileBatches[i])
                 {
-                    this._pathUtilsMock.Verify(utils => utils.FromPath(It.IsRegex($"^{tile.Z}\\.(png|jpg)$"), out It.Ref<TileFormat>.IsAny, false), Times.Once);
+                    this._pathUtilsMock.Verify(utils => utils.FromPath(It.IsRegex($"^{tile.Z}\\.(png|jpg)$"), false), Times.Once);
                     this._fsUtilsMock.Verify(utils => utils.GetTile(It.Is<Coord>(c => c.Z == tile.Z && c.X == tile.X && c.Y == tile.Y)));
                     if (origin == GridOrigin.UPPER_LEFT)
                     {
@@ -862,7 +863,6 @@ namespace MergerLogicUnitTests.DataTypes
             var seq = new MockSequence();
             this.SetupConstructorRequiredMocks(isBase, exists, seq);
 
-            IDirectoryInfo nullInfo = null;
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
 
             var action = () => new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test",
@@ -924,7 +924,6 @@ namespace MergerLogicUnitTests.DataTypes
 
         private void SetupGetTiles(bool isBase, bool isOneXOne, GridOrigin origin)
         {
-            var testFormat = TileFormat.Png; //this is needed for mocks but shouldn't effect the tested function.
             this.SetupConstructorRequiredMocks(isBase);
             var fileList = new List<string>();
             for (int i = 0; i < 10; i++)
@@ -944,11 +943,11 @@ namespace MergerLogicUnitTests.DataTypes
                 .Setup(d => d.EnumerateFiles(It.IsAny<string>(), "*.*", SearchOption.AllDirectories))
                 .Returns(fileList);
             this._pathUtilsMock
-                .Setup(utils => utils.FromPath(It.IsAny<string>(), out testFormat, false))
+                .Setup(utils => utils.FromPath(It.IsAny<string>(), false))
                 .Returns(new Coord(0, 0, 0));
             this._fsUtilsMock
                 .Setup(utils => utils.GetTile(It.IsAny<Coord>()))
-                .Returns(new Tile(0, 0, 0, Array.Empty<byte>()));
+                .Returns(new Tile(0, 0, 0, this._jpegImageData));
             if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock

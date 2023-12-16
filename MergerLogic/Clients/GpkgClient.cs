@@ -1,6 +1,5 @@
 using MergerLogic.Batching;
 using MergerLogic.Extensions;
-using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
 using System.Data.SQLite;
@@ -20,7 +19,7 @@ namespace MergerLogic.Clients
         private readonly IFileSystem _fileSystem;
 
         public GpkgClient(string path, ITimeUtils timeUtils, ILogger<GpkgClient> logger, IFileSystem fileSystem,
-            IGeoUtils geoUtils, IImageFormatter formatter) : base(path, geoUtils, formatter)
+            IGeoUtils geoUtils) : base(path, geoUtils)
         {
             this._timeUtils = timeUtils;
             this._logger = logger;
@@ -147,7 +146,7 @@ namespace MergerLogic.Clients
                         return null;
                     }
 
-                    tile = new Tile(z, x, y, blob);
+                    tile = this.CreateTile(z, x, y, blob)!;
                 }
             }
 
@@ -239,7 +238,7 @@ namespace MergerLogic.Clients
                             var y = reader.GetInt32(2);
                             var blob = (byte[])reader["tile_data"];
 
-                            Tile tile = new Tile(z, x, y, blob);
+                            Tile tile = this.CreateTile(z, x, y, blob)!;
                             tiles.Add(tile);
                         }
                     }
@@ -298,7 +297,7 @@ namespace MergerLogic.Clients
                         var y = reader.GetInt32(2);
                         var blob = (byte[])reader["tile_data"];
 
-                        lastTile = new Tile(z, x, y, blob);
+                        lastTile = this.CreateTile(z, x, y, blob)!;
                     }
                 }
             }

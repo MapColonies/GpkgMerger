@@ -1,10 +1,10 @@
 ﻿using MergerLogic.Clients;
 using MergerLogic.DataTypes;
-using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
+using System.IO.Abstractions;
 
 namespace MergerLogicUnitTests.Utils
 {
@@ -12,6 +12,7 @@ namespace MergerLogicUnitTests.Utils
     [TestCategory("unit")]
     [TestCategory("http")]
     [TestCategory("HttpUtils")]
+    [DeploymentItem(@"../../../TestData/test.jpeg")]
     public class HttpSourceUtilsTest
     {
         #region mocks
@@ -19,7 +20,7 @@ namespace MergerLogicUnitTests.Utils
         private Mock<IHttpRequestUtils> _httpRequestUtilsMock;
         private Mock<IPathPatternUtils> _pathPatternUtilsMock;
         private Mock<IGeoUtils> _geoUtilsMock;
-        private Mock<IImageFormatter> _imageFormatterMock;
+        private byte[] _jpegImageData;
         #endregion
 
         [TestInitialize]
@@ -29,7 +30,9 @@ namespace MergerLogicUnitTests.Utils
             this._httpRequestUtilsMock = this._repository.Create<IHttpRequestUtils>();
             this._pathPatternUtilsMock = this._repository.Create<IPathPatternUtils>();
             this._geoUtilsMock = this._repository.Create<IGeoUtils>();
-            this._imageFormatterMock = this._repository.Create<IImageFormatter>();
+
+            FileSystem fs = new FileSystem();
+            this._jpegImageData = fs.File.ReadAllBytes("test.jpeg");
         }
 
         #region GetTile
@@ -42,7 +45,7 @@ namespace MergerLogicUnitTests.Utils
         public void GetTile(bool useCoords, bool returnsNull)
         {
             Coord cords = new Coord(1, 2, 3);
-            byte[] data = Array.Empty<byte>();
+            byte[] data = this._jpegImageData;
 
             this._pathPatternUtilsMock.Setup(util => util.RenderUrlTemplate(cords.X, cords.Y, cords.Z))
                 .Returns("testPath");
@@ -50,7 +53,7 @@ namespace MergerLogicUnitTests.Utils
                 .Returns(returnsNull ? null : data);
 
             var httpSourceUtils = new HttpSourceClient("http://testPath", this._httpRequestUtilsMock.Object,
-                this._pathPatternUtilsMock.Object, this._geoUtilsMock.Object, this._imageFormatterMock.Object);
+                this._pathPatternUtilsMock.Object, this._geoUtilsMock.Object);
 
             var res = useCoords ? httpSourceUtils.GetTile(cords) : httpSourceUtils.GetTile(cords.Z, cords.X, cords.Y);
             if (returnsNull)
@@ -77,7 +80,7 @@ namespace MergerLogicUnitTests.Utils
         public void TileExists(bool exist)
         {
             Coord cords = new Coord(1, 2, 3);
-            byte[] data = Array.Empty<byte>();
+            byte[] data = this._jpegImageData;
 
             this._pathPatternUtilsMock.Setup(util => util.RenderUrlTemplate(cords.X, cords.Y, cords.Z))
                 .Returns("testPath");
@@ -85,7 +88,7 @@ namespace MergerLogicUnitTests.Utils
                 .Returns(exist ? data : null);
 
             var httpSourceUtils = new HttpSourceClient("http://testPath", this._httpRequestUtilsMock.Object,
-                this._pathPatternUtilsMock.Object, this._geoUtilsMock.Object, this._imageFormatterMock.Object);
+                this._pathPatternUtilsMock.Object, this._geoUtilsMock.Object);
 
             var res = httpSourceUtils.TileExists(cords.Z, cords.X, cords.Y);
 

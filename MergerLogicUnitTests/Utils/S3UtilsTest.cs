@@ -75,7 +75,7 @@ namespace MergerLogicUnitTests.Utils
             {
                 this._pathUtilsMock
                     .InSequence(seq)
-                    .Setup(utils => utils.FromPath("key", out tileFormat, true))
+                    .Setup(utils => utils.FromPath("key", true))
                     .Returns(cords);
             }
             else
@@ -119,7 +119,7 @@ namespace MergerLogicUnitTests.Utils
                 }
 
                 var s3Utils = new S3Client(this._s3ClientMock.Object, this._pathUtilsMock.Object,
-                    this._geoUtilsMock.Object, this._imageFormatterMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
+                    this._geoUtilsMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
 
                 Tile tile = null;
                 switch (paramType)
@@ -157,7 +157,7 @@ namespace MergerLogicUnitTests.Utils
             }
             if (paramType == GetTileParamType.String)
             {
-                this._pathUtilsMock.Verify(utils => utils.FromPath(It.IsAny<string>(), out It.Ref<TileFormat>.IsAny, It.IsAny<bool>()), Times.Once);
+                this._pathUtilsMock.Verify(utils => utils.FromPath(It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
             }
             else
             {
@@ -201,7 +201,7 @@ namespace MergerLogicUnitTests.Utils
                 });
 
             var s3Utils = new S3Client(this._s3ClientMock.Object, this._pathUtilsMock.Object,
-                this._geoUtilsMock.Object, this._imageFormatterMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
+                this._geoUtilsMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
 
             Assert.AreEqual(exist, s3Utils.TileExists(0, 0, 0));
 
@@ -222,7 +222,7 @@ namespace MergerLogicUnitTests.Utils
             var buff = new byte[10];
             int readLen = -1;
             var seq = new MockSequence();
-            var testTile = new Tile(0, 0, 0, new byte[1],TileFormat.Png);
+            var testTile = new Tile(0, 0, 0, new byte[1]);
             this._pathUtilsMock
                 .InSequence(seq)
                 .Setup(utils => utils.GetTilePath("test", testTile, true))
@@ -238,7 +238,7 @@ namespace MergerLogicUnitTests.Utils
                 });
 
             var s3Utils = new S3Client(this._s3ClientMock.Object, this._pathUtilsMock.Object,
-                this._geoUtilsMock.Object, this._imageFormatterMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
+                this._geoUtilsMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
             s3Utils.UpdateTile(testTile);
 
             this._pathUtilsMock.Verify(utils => utils.GetTilePath(It.IsAny<string>(),It.IsAny<Tile>(), It.IsAny<bool>()), Times.Once);

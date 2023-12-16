@@ -1,5 +1,4 @@
 ﻿using ImageMagick;
-using MergerLogic.Batching;
 using System.Runtime.Serialization;
 
 namespace MergerLogic.ImageProcessing
@@ -10,32 +9,16 @@ namespace MergerLogic.ImageProcessing
         [EnumMember(Value = "jpeg")] Jpeg,
     }
 
-    public class ImageFormatter : IImageFormatter
+    public class ImageFormatter
     {
-        public Tile ConvertToFormat(Tile tile, TileFormat format)
+        public static byte[] ConvertToFormat(byte[] tile, TileFormat format)
         {
-            var tileData = tile.GetImageBytes();
-            var currentFormat = this.GetTileFormat(tileData);
-            if (currentFormat != format)
-            {
-                using (var image = new MagickImage(tileData))
-                {
-                    this.ConvertToFormat(image, format);
-                    return new Tile(tile.Z, tile.X, tile.Y, image.ToByteArray());
-                }
-            }
-
-            return tile;
-        }
-
-        public byte[] ConvertToFormat(byte[] tile, TileFormat format)
-        {
-            var currentFormat = this.GetTileFormat(tile);
+            var currentFormat = GetTileFormat(tile);
             if (currentFormat != format)
             {
                 using (var image = new MagickImage(tile))
                 {
-                    this.ConvertToFormat(image, format);
+                    ConvertToFormat(image, format);
                     return image.ToByteArray();
                 }
             }
@@ -43,7 +26,7 @@ namespace MergerLogic.ImageProcessing
             return tile;
         }
 
-        public void ConvertToFormat(IMagickImage image, TileFormat format)
+        public static void ConvertToFormat(IMagickImage image, TileFormat format)
         {
             switch (format)
             {
@@ -56,7 +39,7 @@ namespace MergerLogic.ImageProcessing
             }
         }
 
-        public TileFormat? GetTileFormat(byte[] tile)
+        public static TileFormat? GetTileFormat(byte[] tile)
         {
             //files magic values: https://en.wikipedia.org/wiki/List_of_file_signatures
 

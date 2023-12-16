@@ -16,6 +16,8 @@ namespace MergerLogicUnitTests.Clients
     [TestCategory("unit")]
     [TestCategory("fs")]
     [TestCategory("FileClient")]
+    [DeploymentItem(@"../../../TestData/test.jpeg")]
+    [DeploymentItem(@"../../../TestData/test.png")]
     public class FileClientTest 
     {
         #region mocks
@@ -26,6 +28,8 @@ namespace MergerLogicUnitTests.Clients
         private Mock<IPath> _pathMock;
         private Mock<IDirectory> _directoryMock;   
         private Mock<IImageFormatter> _imageFormatterMock;
+        private byte[] _jpegImageData;
+        private byte[] _pngImageData;
         #endregion
 
         [TestInitialize]
@@ -41,6 +45,10 @@ namespace MergerLogicUnitTests.Clients
             this._fsMock.SetupGet(fs => fs.Path).Returns(this._pathMock.Object);
             this._fsMock.SetupGet(fs => fs.Directory).Returns(this._directoryMock.Object);
             this._imageFormatterMock = this._repository.Create<IImageFormatter>();
+
+            FileSystem fs = new FileSystem();
+            this._jpegImageData = fs.File.ReadAllBytes("test.jpeg");
+            this._pngImageData = fs.File.ReadAllBytes("test.png");
         }
 
         #region GetTile
@@ -60,7 +68,7 @@ namespace MergerLogicUnitTests.Clients
         public void GetTile(bool useCoords, bool returnsNull, TileFormat targetFormat)
         {
             Coord cords = new Coord(1, 2, 3);
-            byte[] data = Array.Empty<byte>();
+            byte[] data = targetFormat == TileFormat.Jpeg ? this._jpegImageData : this._pngImageData;
 
             var seq = new MockSequence();
             this._pathMock
@@ -83,8 +91,7 @@ namespace MergerLogicUnitTests.Clients
                     .Returns(targetFormat);
             }
 
-            var fileClient = new FileClient("testFilePath",
-                this._geoUtilsMock.Object,this._fsMock.Object, this._imageFormatterMock.Object);
+            var fileClient = new FileClient("testFilePath", this._geoUtilsMock.Object,this._fsMock.Object);
 
             var res = useCoords ? fileClient.GetTile(cords) : fileClient.GetTile(cords.Z, cords.X, cords.Y);
             if (returnsNull)
@@ -96,7 +103,7 @@ namespace MergerLogicUnitTests.Clients
                 Assert.AreEqual(cords.X, res.X);
                 Assert.AreEqual(cords.Y, res.Y);
                 Assert.AreEqual(cords.Z, res.Z);
-                Assert.AreEqual(targetFormat,res.Format);
+                Assert.AreEqual(targetFormat, res.Format);
                 CollectionAssert.AreEqual(data, res.GetImageBytes());
             }
             this._repository.VerifyAll();
@@ -112,7 +119,7 @@ namespace MergerLogicUnitTests.Clients
         public void TileExists(bool exist)
         {
             Coord cords = new Coord(1, 2, 3);
-            byte[] data = Array.Empty<byte>();
+            byte[] data = this._jpegImageData;
 
             var seq = new MockSequence();
             this._pathMock
@@ -124,8 +131,7 @@ namespace MergerLogicUnitTests.Clients
                 .Setup(dir => dir.EnumerateFiles("testFilePath", "testTilePath.*", SearchOption.TopDirectoryOnly))
                 .Returns(exist ? new string[]{"testFile"} : Array.Empty<string>());
 
-            var fileClient = new FileClient("testFilePath",
-                this._geoUtilsMock.Object,this._fsMock.Object, this._imageFormatterMock.Object);
+            var fileClient = new FileClient("testFilePath", this._geoUtilsMock.Object,this._fsMock.Object);
 
             var res = fileClient.TileExists(cords.Z, cords.X, cords.Y);
 
@@ -148,8 +154,7 @@ namespace MergerLogicUnitTests.Clients
                 .Setup(dir => dir.EnumerateFiles("testFilePath", "testTilePath.*", SearchOption.TopDirectoryOnly))
                 .Throws<DirectoryNotFoundException>();
 
-            var fileClient = new FileClient("testFilePath",
-                this._geoUtilsMock.Object, this._fsMock.Object, this._imageFormatterMock.Object);
+            var fileClient = new FileClient("testFilePath", this._geoUtilsMock.Object, this._fsMock.Object);
 
             var res = fileClient.TileExists(cords.Z, cords.X, cords.Y);
 

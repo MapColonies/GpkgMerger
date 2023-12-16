@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.IO.Abstractions;
 using System.Linq;
 
 namespace MergerLogicUnitTests.DataTypes
@@ -18,6 +19,7 @@ namespace MergerLogicUnitTests.DataTypes
     [TestCategory("XYZ")]
     [TestCategory("XYZDataSource")]
     [TestCategory("HttpDataSource")]
+    [DeploymentItem(@"../../../TestData/test.jpeg")]
 
     public class XYZTest
     {
@@ -32,6 +34,7 @@ namespace MergerLogicUnitTests.DataTypes
         private Mock<ILoggerFactory> _loggerFactoryMock;
         private Mock<ILogger<FS>> _loggerMock;
         private Mock<IMetricsProvider> _metricsProviderMock;
+        private byte[] _jpegImageData;
 
         #endregion
 
@@ -61,6 +64,9 @@ namespace MergerLogicUnitTests.DataTypes
                 .Returns(this._loggerFactoryMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IMetricsProvider)))
                 .Returns(this._metricsProviderMock.Object);
+            
+            FileSystem fs = new FileSystem();
+            this._jpegImageData = fs.File.ReadAllBytes("test.jpeg");
         }
 
         #region TileExists
@@ -120,7 +126,7 @@ namespace MergerLogicUnitTests.DataTypes
             }
             else
             {
-                var tile = new Tile(cords, new byte[] { });
+                var tile = new Tile(cords, this._jpegImageData);
                 Assert.AreEqual(expected, xyzSource.TileExists(tile));
             }
             this._httpUtilsMock.Verify(util => util.TileExists(cords.Z, cords.X, cords.Y),
@@ -154,7 +160,7 @@ namespace MergerLogicUnitTests.DataTypes
         {
             this.SetupConstructorRequiredMocks();
             Tile nullTile = null;
-            var existingTile = new Tile(2, 2, 3, new byte[] { });
+            var existingTile = new Tile(2, 2, 3, this._jpegImageData);
             this._httpUtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
                 .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
 
@@ -204,7 +210,7 @@ namespace MergerLogicUnitTests.DataTypes
             bool expectedNull = cords.Z != 2;
             this.SetupConstructorRequiredMocks();
             Tile nullTile = null;
-            var existingTile = new Tile(2, 2, 3, new byte[] { });
+            var existingTile = new Tile(2, 2, 3, this._jpegImageData);
             var sequence = new MockSequence();
             if (origin != GridOrigin.LOWER_LEFT)
             {
@@ -308,7 +314,7 @@ namespace MergerLogicUnitTests.DataTypes
         {
             this.SetupConstructorRequiredMocks();
             Tile nullTile = null;
-            var tile = new Tile(2, 2, 3, new byte[] { });
+            var tile = new Tile(2, 2, 3, this._jpegImageData);
             var sequence = new MockSequence();
 
             if (origin != GridOrigin.LOWER_LEFT)
@@ -578,7 +584,7 @@ namespace MergerLogicUnitTests.DataTypes
                     .Returns<Tile>(t => t);
                 this._httpUtilsMock
                     .Setup(utils => utils.GetTile(It.IsAny<Coord>()))
-                    .Returns(new Tile(0, 0, 0, Array.Empty<byte>()));
+                    .Returns(new Tile(0, 0, 0, this._jpegImageData));
                 this._oneXOneConvertorMock
                     .Setup(converter => converter.TryFromTwoXOne(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
                     .Returns<int, int, int>((z, x, y) => new Coord(z, x, y));
@@ -587,7 +593,7 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._httpUtilsMock
                     .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
-                    .Returns(new Tile(0, 0, 0, Array.Empty<byte>()));
+                    .Returns(new Tile(0, 0, 0, this._jpegImageData));
             }
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
@@ -627,13 +633,12 @@ namespace MergerLogicUnitTests.DataTypes
             // z = 0 is invalid conversion tile z = 2 is missing tile 
             var tiles = new Tile?[]
             {
-                new Tile(0, 0, 0, new byte[] { }), new Tile(1, 0, 0, new byte[] { }), null,
-                new Tile(3, 0, 0, new byte[] { }), new Tile(4, 0, 0, new byte[] { }),
+                new Tile(0, 0, 0, this._jpegImageData), new Tile(1, 0, 0, this._jpegImageData), null,
+                new Tile(3, 0, 0, this._jpegImageData), new Tile(4, 0, 0, this._jpegImageData),
             };
             var tileBatches = tiles.Where(t => t is not null && (!isOneXOne || t.Z != 0)).Chunk(batchSize).ToList();
-            var batchIdx = 0;
-
             var seq = new MockSequence();
+            
             for (var i = minZoom; i <= maxZoom; i++)
             {
                 this._geoUtilsMock

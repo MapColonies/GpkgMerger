@@ -29,22 +29,22 @@ namespace MergerLogic.Batching
 
         private byte[] _data;
 
-        public Tile(int z, int x, int y, byte[] data, TileFormat? format = null)
+        public Tile(int z, int x, int y, byte[] data)
         {
             this.Z = z;
             this.X = x;
             this.Y = y;
             this._data = data;
-            this.Format = format;
+            this.Format = ImageFormatter.GetTileFormat(data);
         }
 
-        public Tile(Coord cords, byte[] data, TileFormat? format = null)
+        public Tile(Coord cords, byte[] data)
         {
             this.Z = cords.Z;
             this.X = cords.X;
             this.Y = cords.Y;
             this._data = data;
-            this.Format = format;
+            this.Format = ImageFormatter.GetTileFormat(data);
         }
 
         public bool HasCoords(int z, int x, int y)
@@ -69,6 +69,15 @@ namespace MergerLogic.Batching
         public virtual byte[] GetImageBytes()
         {
             return this._data;
+        }
+
+        public void ConvertToFormat(TileFormat format)
+        {
+            if (this.Format == format) {
+                return;
+            }
+
+            this._data = ImageFormatter.ConvertToFormat(this._data, format);
         }
 
         public void SetCoords(Coord cords)

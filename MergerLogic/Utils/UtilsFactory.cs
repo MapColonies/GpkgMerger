@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.IO.Abstractions;
 using MergerLogic.Clients;
-using MergerLogic.ImageProcessing;
 
 namespace MergerLogic.Utils
 {
@@ -15,10 +14,9 @@ namespace MergerLogic.Utils
         private readonly IFileSystem _fileSystem;
         private readonly IServiceProvider _container;
         private readonly IHttpRequestUtils _httpRequestUtils;
-        private readonly IImageFormatter _imageFormatter;
 
         public UtilsFactory(IPathUtils pathUtils, ITimeUtils timeUtils, IGeoUtils geoUtils, IFileSystem fileSystem, IServiceProvider container,
-            IHttpRequestUtils httpRequestUtils, IImageFormatter formatter)
+            IHttpRequestUtils httpRequestUtils)
         {
             this._pathUtils = pathUtils;
             this._timeUtils = timeUtils;
@@ -26,26 +24,25 @@ namespace MergerLogic.Utils
             this._fileSystem = fileSystem;
             this._container = container;
             this._httpRequestUtils = httpRequestUtils;
-            this._imageFormatter = formatter;
         }
 
         #region dataUtils
 
         public IFileClient GetFileUtils(string path)
         {
-            return new FileClient(path, this._geoUtils, this._fileSystem, this._imageFormatter);
+            return new FileClient(path, this._geoUtils, this._fileSystem);
         }
 
         public IGpkgClient GetGpkgUtils(string path)
         {
             var logger = this._container.GetRequiredService<ILogger<GpkgClient>>();
-            return new GpkgClient(path, this._timeUtils, logger, this._fileSystem, this._geoUtils, this._imageFormatter);
+            return new GpkgClient(path, this._timeUtils, logger, this._fileSystem, this._geoUtils);
         }
 
         public IHttpSourceClient GetHttpUtils(string path)
         {
             IPathPatternUtils pathPatternUtils = this.GetPathPatternUtils(path);
-            return new HttpSourceClient(path, this._httpRequestUtils, pathPatternUtils, this._geoUtils, this._imageFormatter);
+            return new HttpSourceClient(path, this._httpRequestUtils, pathPatternUtils, this._geoUtils);
         }
 
         public IS3Client GetS3Utils(string path)
@@ -58,7 +55,7 @@ namespace MergerLogic.Utils
                 throw new Exception("S3 Data utils requires s3 client to be configured");
             }
             var logger = this._container.GetRequiredService<ILogger<S3Client>>();
-            return new S3Client(client, this._pathUtils, this._geoUtils, this._imageFormatter, logger, storageClass, bucket, path);
+            return new S3Client(client, this._pathUtils, this._geoUtils, logger, storageClass, bucket, path);
         }
 
         public T GetDataUtils<T>(string path) where T : IDataUtils

@@ -5,6 +5,7 @@ using MergerLogicUnitTests.testUtils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.IO.Abstractions;
 
 namespace MergerLogicUnitTests.Utils
 {
@@ -12,8 +13,22 @@ namespace MergerLogicUnitTests.Utils
     [TestCategory("unit")]
     [TestCategory("geo")]
     [TestCategory("geoUtils")]
+    [DeploymentItem(@"../../../TestData/test.jpeg")]
     public class GeoUtilsTest
     {
+        #region mocks
+
+        private byte[] _jpegImageData;
+
+        #endregion
+
+        [TestInitialize]
+        public void BeforeEach()
+        {
+            FileSystem fs = new FileSystem();
+            this._jpegImageData = fs.File.ReadAllBytes("test.jpeg");
+        }
+
         #region FlipY
 
         public enum GetFlipYParamType { Tile, Coord, Ints }
@@ -43,7 +58,7 @@ namespace MergerLogicUnitTests.Utils
                     res = geoUtils.FlipY(coords.Z, coords.Y);
                     break;
                 case GetFlipYParamType.Tile:
-                    res = geoUtils.FlipY(new Tile(coords, Array.Empty<byte>()));
+                    res = geoUtils.FlipY(new Tile(coords, this._jpegImageData));
                     break;
             }
             Assert.AreEqual(coords.X, res);

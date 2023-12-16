@@ -10,11 +10,10 @@ namespace MergerLogic.Utils
         protected readonly IGeoUtils GeoUtils;
         protected readonly IImageFormatter Formatter;
 
-        public DataUtils(string path, IGeoUtils geoUtils, IImageFormatter formatter)
+        public DataUtils(string path, IGeoUtils geoUtils)
         {
             this.path = path;
             this.GeoUtils = geoUtils;
-            this.Formatter = formatter;
         }
 
         public virtual bool IsValidGrid(bool isOneXOne = false) {
@@ -30,15 +29,19 @@ namespace MergerLogic.Utils
 
         public abstract bool TileExists(int z, int x, int y);
 
-        protected Tile? createTile(int z, int x, int y, byte[]? data)
+        protected Tile? CreateTile(int z, int x, int y, byte[]? data)
         {
             if (data == null)
             {
                 return null;
             }
 
-            var format = this.Formatter.GetTileFormat(data);
-            return new Tile(z, x, y, data, format);
+            return new Tile(z, x, y, data);
+        }
+
+        protected Tile? CreateTile(Coord coord, byte[]? data)
+        {
+            return this.CreateTile(coord.Z, coord.X, coord.Y, data);
         }
     }
 }
