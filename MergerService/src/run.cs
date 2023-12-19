@@ -36,6 +36,7 @@ namespace MergerService.Src
         private readonly string _filePath;
         private readonly bool _shouldValidate;
         private readonly int _maxTaskRetriesAttempts;
+        private readonly long _targetTilesChunkBytesMax;
 
         public Run(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, IConfigurationManager configurationManager,
             ILogger<Run> logger, ILogger<MergeTask> mergeTaskLogger, ILogger<TaskUtils> taskUtilsLogger, ILogger<JobUtils> jobUtilsLogger, ActivitySource activitySource,
@@ -61,6 +62,7 @@ namespace MergerService.Src
             this._shouldValidate = this._configurationManager.GetConfiguration<bool>("GENERAL", "validate");
             this._batchSize = this._configurationManager.GetConfiguration<int>("GENERAL", "batchSize");
             this._maxTaskRetriesAttempts = this._configurationManager.GetConfiguration<int>("TASK", "maxAttempts");
+            this._targetTilesChunkBytesMax = this._configurationManager.GetConfiguration<long>("GENERAL", "targetTilesChunkBytesMax");
         }
 
         private string BuildPath(Source source, bool isTarget)
@@ -339,8 +341,8 @@ namespace MergerService.Src
                         IData target = sources[0];
                         target.IsNew = metadata.IsNewTarget;
 
-                        // TODO: fix to use inner batch size (add iteration inside loop below)
-                        List<Tile> tiles = new List<Tile>((int)singleTileBatchCount);
+                        List<Tile> tiles = new List<Tile>(this._batchSize);
+                        long currentTilesChunkBytes = 0;
 
                         this._logger.LogInformation($"[{methodName}] Total amount of tiles to merge for current batch: {singleTileBatchCount}");
 
@@ -376,6 +378,16 @@ namespace MergerService.Src
                                     if (blob != null)
                                     {
                                         tiles.Add(new Tile(coord, blob));
+                                        currentTilesChunkBytes += blob.Length;
+
+                                        if (currentTilesChunkBytes >= this._targetTilesChunkBytesMax || tiles.Count >= this._batchSize)
+                                        {
+                                            this._logger.LogInformation($"[{methodName}] Updating target tiles chunk");
+                                            this.UpdateTargetTiles(target, tiles, task, overallTileProgressCount, totalTileCount, taskUtils);
+
+                                            tiles.Clear();
+                                            currentTilesChunkBytes = 0;
+                                        }
                                     }
 
                                     tileProgressCount++;
@@ -394,12 +406,10 @@ namespace MergerService.Src
                             this._metricsProvider.BatchWorkTimeHistogram(batchWorkTimeStopwatch.Elapsed.TotalSeconds);
                         }
 
-                        using (this._activitySource.StartActivity("saving tiles"))
+                        if (tiles.Count > 0)
                         {
-                            this._logger.LogInformation($"[{methodName}] target UpdateTiles");
-                            target.UpdateTiles(tiles);
-                            this._logger.LogDebug($"[{methodName}] UpdateRelativeProgress");
-                            UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);
+                            this._logger.LogInformation($"[{methodName}] Updating last target tiles chunk");
+                            this.UpdateTargetTiles(target, tiles, task, overallTileProgressCount, totalTileCount, taskUtils);
                         }
 
                         this._logger.LogInformation($"[{methodName}] Overall tile Count: {overallTileProgressCount} / {totalTileCount}");
@@ -452,6 +462,19 @@ namespace MergerService.Src
                 }
             }
             this._logger.LogDebug($"[{methodName}] end");
+        }
+
+        private void UpdateTargetTiles(IData target, List<Tile> tiles, MergeTask task, long overallTileProgressCount, long totalTileCount, ITaskUtils taskUtils)
+        {
+            string methodName = MethodBase.GetCurrentMethod().Name;
+
+            using (this._activitySource.StartActivity("saving tiles"))
+            {
+                this._logger.LogInformation($"[{methodName}] target UpdateTiles");
+                target.UpdateTiles(tiles);
+                this._logger.LogDebug($"[{methodName}] UpdateRelativeProgress");
+                UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);
+            }
         }
 
         private bool Validate(IData target, TileBounds bounds)
