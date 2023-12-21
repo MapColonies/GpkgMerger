@@ -36,7 +36,7 @@ namespace MergerService.Src
         private readonly string _filePath;
         private readonly bool _shouldValidate;
         private readonly int _maxTaskRetriesAttempts;
-        private readonly long _targetTilesChunkBytesMax;
+        private readonly long _batchMaxBytes;
 
         public Run(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, IConfigurationManager configurationManager,
             ILogger<Run> logger, ILogger<MergeTask> mergeTaskLogger, ILogger<TaskUtils> taskUtilsLogger, ILogger<JobUtils> jobUtilsLogger, ActivitySource activitySource,
@@ -62,7 +62,7 @@ namespace MergerService.Src
             this._shouldValidate = this._configurationManager.GetConfiguration<bool>("GENERAL", "validate");
             this._batchSize = this._configurationManager.GetConfiguration<int>("GENERAL", "batchSize");
             this._maxTaskRetriesAttempts = this._configurationManager.GetConfiguration<int>("TASK", "maxAttempts");
-            this._targetTilesChunkBytesMax = this._configurationManager.GetConfiguration<long>("GENERAL", "targetTilesChunkBytesMax");
+            this._batchMaxBytes = this._configurationManager.GetConfiguration<long>("GENERAL", "batchMaxBytes");
         }
 
         private string BuildPath(Source source, bool isTarget)
@@ -342,7 +342,7 @@ namespace MergerService.Src
                         target.IsNew = metadata.IsNewTarget;
 
                         List<Tile> tiles = new List<Tile>(this._batchSize);
-                        long currentTilesChunkBytes = 0;
+                        long currentBatchBytes = 0;
 
                         this._logger.LogInformation($"[{methodName}] Total amount of tiles to merge for current batch: {singleTileBatchCount}");
 
@@ -378,15 +378,17 @@ namespace MergerService.Src
                                     if (blob != null)
                                     {
                                         tiles.Add(new Tile(coord, blob));
-                                        currentTilesChunkBytes += blob.Length;
+                                        currentBatchBytes += blob.Length;
 
-                                        if (currentTilesChunkBytes >= this._targetTilesChunkBytesMax || tiles.Count >= this._batchSize)
+                                        // Flushes the "tiles" list if it reached the batch size or the batch max bytes
+                                        // This is done to prevent memory overflow
+                                        if (currentBatchBytes >= this._batchMaxBytes || tiles.Count >= this._batchSize)
                                         {
                                             this._logger.LogInformation($"[{methodName}] Updating target tiles chunk");
                                             this.UpdateTargetTiles(target, tiles, task, overallTileProgressCount, totalTileCount, taskUtils);
 
                                             tiles.Clear();
-                                            currentTilesChunkBytes = 0;
+                                            currentBatchBytes = 0;
                                         }
                                     }
 
