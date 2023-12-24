@@ -124,8 +124,7 @@ namespace MergerService.Utils
 
         public bool IsMaxAttemptsReached(int attempts)
         {
-            bool result = attempts >= this._maxAttempts;
-            return result;
+            return attempts >= this._maxAttempts;
         }
 
         public void UpdateReject(string jobId, string taskId, int attempts, string reason, bool resettable, string? managerCallbackUrl)
