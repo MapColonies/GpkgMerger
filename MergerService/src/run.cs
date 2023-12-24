@@ -32,6 +32,7 @@ namespace MergerService.Src
         private readonly IMetricsProvider _metricsProvider;
         private readonly string _inputPath;
         private readonly string _gpkgPath;
+        private readonly bool _limitBatchSize;
         private readonly int _batchSize;
         private readonly string _filePath;
         private readonly bool _shouldValidate;
@@ -63,6 +64,7 @@ namespace MergerService.Src
             this._batchSize = this._configurationManager.GetConfiguration<int>("GENERAL", "batchSize");
             this._maxTaskRetriesAttempts = this._configurationManager.GetConfiguration<int>("TASK", "maxAttempts");
             this._batchMaxBytes = this._configurationManager.GetConfiguration<long>("GENERAL", "batchMaxBytes");
+            this._limitBatchSize = this._configurationManager.GetConfiguration<bool>("GENERAL", "limitBatchSize");
         }
 
         private string BuildPath(Source source, bool isTarget)
@@ -382,7 +384,7 @@ namespace MergerService.Src
 
                                         // Flushes the "tiles" list if it reached the batch size or the batch max bytes
                                         // This is done to prevent memory overflow
-                                        if (currentBatchBytes >= this._batchMaxBytes || tiles.Count >= this._batchSize)
+                                        if (currentBatchBytes >= this._batchMaxBytes || (this._limitBatchSize && tiles.Count >= this._batchSize))
                                         {
                                             this._logger.LogInformation($"[{methodName}] Updating target tiles chunk");
                                             this.UpdateTargetTiles(target, tiles, task, overallTileProgressCount, totalTileCount, taskUtils);

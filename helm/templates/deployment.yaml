@@ -92,6 +92,8 @@ spec:
               value: {{ $gpkgPath }}
             - name: GENERAL__batchSize
               value: {{ .Values.env.general.batchSize | quote }}
+            - name: GENERAL__limitBatchSize
+              value: {{ .Values.env.general.limitBatchSize | quote }}
             - name: GENERAL__batchMaxBytes
               value: {{ .Values.env.general.batchMaxBytes | quote }}
             - name: GENERAL__filePath
