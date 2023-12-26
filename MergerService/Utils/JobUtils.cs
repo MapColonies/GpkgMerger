@@ -12,20 +12,18 @@ namespace MergerService.Utils
     public class JobUtils : IJobUtils
     {
         private readonly IHttpRequestUtils _httpClient;
-        private readonly IConfigurationManager _configuration;
+        private readonly MergerLogic.Utils.IConfigurationManager _configuration;
         private readonly ILogger _logger;
-        private readonly IHeartbeatClient _heartbeatClient;
         private readonly ActivitySource _activitySource;
         private readonly JsonSerializerSettings _jsonSerializerSettings;
         private readonly string _jobManagerUrl;
 
-        public JobUtils(IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<JobUtils> logger,
-            ActivitySource activitySource, IHeartbeatClient heartbeatClient)
+        public JobUtils(MergerLogic.Utils.IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<JobUtils> logger,
+            ActivitySource activitySource)
         {
             this._httpClient = httpClient;
             this._configuration = configuration;
             this._logger = logger;
-            this._heartbeatClient = heartbeatClient;
             this._activitySource = activitySource;
 
             // Construct Json serializer settings

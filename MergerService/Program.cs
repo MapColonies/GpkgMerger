@@ -1,6 +1,6 @@
 using MergerLogic.Clients;
 using MergerLogic.Extensions;
-using MergerService.Src;
+using MergerService.Runners;
 using MergerService.Utils;
 using System.Reflection;
 
@@ -24,8 +24,11 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.RegisterMergerLogicType();
-builder.Services.AddSingleton<IRun, Run>();
+builder.Services.AddSingleton<IMainRunner, MainRunner>();
 builder.Services.AddSingleton<ITaskUtils, TaskUtils>();
+builder.Services.AddSingleton<IJobUtils, JobUtils>();
+builder.Services.AddSingleton<ITaskRunner, TaskRunner>();
+builder.Services.AddSingleton<ITaskExecutor, TaskExecutor>();
 builder.Services.AddSingleton<IHeartbeatClient, HeartbeatClient>();
 
 var app = builder.Build();
@@ -49,7 +52,7 @@ new Thread(() =>
 
 try
 {
-    app.Services.GetRequiredService<IRun>().Start();
+    app.Services.GetRequiredService<IMainRunner>().Start();
 }
 catch (Exception e)
 {
