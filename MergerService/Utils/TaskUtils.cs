@@ -122,7 +122,7 @@ namespace MergerService.Utils
             }
         }
 
-        public bool IsMaxAttemptsReached(int attempts)
+        private bool IsMaxAttemptsReached(int attempts)
         {
             return attempts >= this._maxAttempts;
         }

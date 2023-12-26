@@ -35,6 +35,7 @@ namespace MergerService.Src
         private readonly int _batchSize;
         private readonly string _filePath;
         private readonly bool _shouldValidate;
+        private readonly int _maxTaskRetriesAttempts;
 
         public Run(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, IConfigurationManager configurationManager,
             ILogger<Run> logger, ILogger<MergeTask> mergeTaskLogger, ILogger<TaskUtils> taskUtilsLogger, ILogger<JobUtils> jobUtilsLogger, ActivitySource activitySource,
@@ -59,6 +60,7 @@ namespace MergerService.Src
             this._filePath = this._configurationManager.GetConfiguration("GENERAL", "filePath");
             this._shouldValidate = this._configurationManager.GetConfiguration<bool>("GENERAL", "validate");
             this._batchSize = this._configurationManager.GetConfiguration<int>("GENERAL", "batchSize");
+            this._maxTaskRetriesAttempts = this._configurationManager.GetConfiguration<int>("TASK", "maxAttempts");
         }
 
         private string BuildPath(Source source, bool isTarget)
@@ -186,8 +188,8 @@ namespace MergerService.Src
                     string log = managerCallbackUrl == null ? "managerCallbackUrl not provided as job parameter" : $"managerCallback url: {managerCallbackUrl}";
                     this._logger.LogDebug($"[{methodName}]{log}");
 
-                    // fail task that was released by task liberator and reached max attempts
-                    if (taskUtils.IsMaxAttemptsReached(task.Attempts))
+                    // check if needs to fail task that was released by task liberator and reached max attempts
+                    if (task.Attempts >= this._maxTaskRetriesAttempts)
                     {
                         try
                         {
