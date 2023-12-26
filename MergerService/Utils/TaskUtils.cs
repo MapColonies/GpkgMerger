@@ -122,11 +122,6 @@ namespace MergerService.Utils
             }
         }
 
-        private bool IsMaxAttemptsReached(int attempts)
-        {
-            return attempts >= this._maxAttempts;
-        }
-
         public void UpdateReject(string jobId, string taskId, int attempts, string reason, bool resettable, string? managerCallbackUrl)
         {
             using (var activity = this._activitySource.StartActivity("reject task"))
@@ -134,7 +129,7 @@ namespace MergerService.Utils
                 attempts++;
 
                 // Check if the task should actually fail, use greater than for tasks that have more attempts because of task liberator
-                if (!resettable || IsMaxAttemptsReached(attempts))
+                if (!resettable || attempts >= this._maxAttempts)
                 {
                     UpdateFailed(jobId, taskId, attempts, reason, resettable, managerCallbackUrl);
                     return;
