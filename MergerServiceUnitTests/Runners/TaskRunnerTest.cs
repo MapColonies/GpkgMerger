@@ -1,5 +1,8 @@
+using MergerLogic.Batching;
 using MergerLogic.Clients;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Monitoring.Metrics;
+using MergerService.Controllers;
 using MergerService.Models.Tasks;
 using MergerService.Runners;
 using MergerService.Utils;
@@ -62,8 +65,8 @@ namespace MergerLogicUnitTests.Utils
     public void WhenTaskExecutedSuccessfully_ShouldUpdateTaskCompletion()
     {
       var testTask = new MergeTask("testTaskId", "type", "description",
-        new MergeMetadata(MergerLogic.ImageProcessing.TileFormat.Jpeg, true, [], []),
-        Status.PENDING, 0, "reason", 0, "testJobId", true, new System.DateTime(), new System.DateTime());
+        new MergeMetadata(TileFormat.Jpeg, true, new TileBounds[0], new Source[0]),
+        Status.PENDING, 0, "reason", 0, "testJobId", true, new DateTime(), new DateTime());
 
       this._taskUtilsMock.Setup(taskUtils => taskUtils.GetTask(It.IsAny<string>(), It.IsAny<string>())).Returns(testTask);
       this._taskExecutorMock.Setup(taskExecutor => taskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, It.IsAny<string?>()));
@@ -81,8 +84,8 @@ namespace MergerLogicUnitTests.Utils
     {
       var testFailureMessage = "failed message";
       var testTask = new MergeTask("testTaskId", "type", "description",
-        new MergeMetadata(MergerLogic.ImageProcessing.TileFormat.Jpeg, true, [], []),
-        Status.PENDING, 0, "reason", 0, "testJobId", true, new System.DateTime(), new System.DateTime());
+        new MergeMetadata(TileFormat.Jpeg, true, new TileBounds[0], new Source[0]),
+        Status.PENDING, 0, "reason", 0, "testJobId", true, new DateTime(), new DateTime());
 
       this._taskUtilsMock.Setup(taskUtils => taskUtils.GetTask(It.IsAny<string>(), It.IsAny<string>())).Returns(testTask);
       this._taskExecutorMock.Setup(taskExecutor => taskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, It.IsAny<string?>())).Throws(new Exception(testFailureMessage));
