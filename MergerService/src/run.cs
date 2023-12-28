@@ -35,6 +35,7 @@ namespace MergerService.Src
         private readonly int _batchSize;
         private readonly string _filePath;
         private readonly bool _shouldValidate;
+        private readonly int _maxTaskRetriesAttempts;
 
         public Run(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, IConfigurationManager configurationManager,
             ILogger<Run> logger, ILogger<MergeTask> mergeTaskLogger, ILogger<TaskUtils> taskUtilsLogger, ILogger<JobUtils> jobUtilsLogger, ActivitySource activitySource,
@@ -59,6 +60,7 @@ namespace MergerService.Src
             this._filePath = this._configurationManager.GetConfiguration("GENERAL", "filePath");
             this._shouldValidate = this._configurationManager.GetConfiguration<bool>("GENERAL", "validate");
             this._batchSize = this._configurationManager.GetConfiguration<int>("GENERAL", "batchSize");
+            this._maxTaskRetriesAttempts = this._configurationManager.GetConfiguration<int>("TASK", "maxAttempts");
         }
 
         private string BuildPath(Source source, bool isTarget)
@@ -185,6 +187,22 @@ namespace MergerService.Src
                     string? managerCallbackUrl = jobUtils.GetJob(task.JobId)?.Parameters.ManagerCallbackUrl;
                     string log = managerCallbackUrl == null ? "managerCallbackUrl not provided as job parameter" : $"managerCallback url: {managerCallbackUrl}";
                     this._logger.LogDebug($"[{methodName}]{log}");
+
+                    // check if needs to fail task that was released by task liberator and reached max attempts
+                    if (task.Attempts >= this._maxTaskRetriesAttempts)
+                    {
+                        try
+                        {
+                            string reason = string.IsNullOrEmpty(task.Reason) ? $"Max attempts reached, current attempt is {task.Attempts}" : $"{task.Reason} and Max attempts reached with {task.Attempts} attempts";
+                            taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, reason, task.Resettable, managerCallbackUrl);
+                        }
+                        catch (Exception innerError)
+                        {
+                            this._logger.LogError(innerError, $"[{methodName}] Error in MergerService while updating reject status due to max attemps reached with {task.Attempts}, update task failure: {innerError.Message}");
+                        }
+                        continue;
+                    }
+
                     var totalTaskStopwatch = Stopwatch.StartNew();
                     bool taskSucceed = false;
 

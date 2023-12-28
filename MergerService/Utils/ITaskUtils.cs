@@ -1,4 +1,3 @@
-using MergerService.Controllers;
 using MergerService.Models.Tasks;
 
 namespace MergerService.Utils

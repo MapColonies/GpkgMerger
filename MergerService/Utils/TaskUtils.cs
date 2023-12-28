@@ -1,12 +1,11 @@
 using MergerLogic.Clients;
-using System.Diagnostics;
-using System.Net.Http.Headers;
 using MergerLogic.Utils;
 using MergerService.Models.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
-using System.Text.Json;
+using System.Diagnostics;
+using System.Net.Http.Headers;
 using System.Reflection;
 
 namespace MergerService.Utils
@@ -127,13 +126,10 @@ namespace MergerService.Utils
         {
             using (var activity = this._activitySource.StartActivity("reject task"))
             {
-                // activity.AddTag("attempts", attempts);
-                // activity.AddTag("resettable", resettable);
-
                 attempts++;
 
-                // Check if the task should actually fail
-                if (!resettable || attempts == this._maxAttempts)
+                // Check if the task should actually fail, use greater than for tasks that have more attempts because of task liberator
+                if (!resettable || attempts >= this._maxAttempts)
                 {
                     UpdateFailed(jobId, taskId, attempts, reason, resettable, managerCallbackUrl);
                     return;
