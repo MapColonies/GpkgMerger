@@ -69,7 +69,6 @@ namespace MergerLogic.ImageProcessing
                 return TileFormat.Jpeg;
             }
 
-
             return null;
         }
     }

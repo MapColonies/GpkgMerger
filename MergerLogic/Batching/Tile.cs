@@ -1,5 +1,6 @@
 using MergerLogic.DataTypes;
 using MergerLogic.ImageProcessing;
+using System.ComponentModel.DataAnnotations;
 
 namespace MergerLogic.Batching
 {
@@ -25,7 +26,7 @@ namespace MergerLogic.Batching
             internal set;
         }
 
-        public TileFormat? Format { get; internal set; }
+        public TileFormat Format { get; internal set; }
 
         private byte[] _data;
 
@@ -35,7 +36,7 @@ namespace MergerLogic.Batching
             this.X = x;
             this.Y = y;
             this._data = data;
-            this.Format = ImageFormatter.GetTileFormat(data);
+            this.Format = ImageFormatter.GetTileFormat(data) ?? throw new ValidationException($"Cannot create tile {this}, data is in invalid format");
         }
 
         public Tile(Coord cords, byte[] data)
@@ -44,7 +45,7 @@ namespace MergerLogic.Batching
             this.X = cords.X;
             this.Y = cords.Y;
             this._data = data;
-            this.Format = ImageFormatter.GetTileFormat(data);
+            this.Format = ImageFormatter.GetTileFormat(data) ?? throw new ValidationException($"Cannot create tile {this}, data is in invalid format");
         }
 
         public bool HasCoords(int z, int x, int y)
