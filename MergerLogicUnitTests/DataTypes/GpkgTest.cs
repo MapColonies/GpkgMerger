@@ -18,7 +18,6 @@ namespace MergerLogicUnitTests.DataTypes
     [TestCategory("unit")]
     [TestCategory("gpkg")]
     [TestCategory("gpkgDataSource")]
-    [DeploymentItem(@"../../../TestData/test.jpeg")]
     public class GpkgTest
     {
         #region mocks
@@ -64,8 +63,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IMetricsProvider)))
                 .Returns(this._metricsProviderMock.Object);
             
-            FileSystem fs = new FileSystem();
-            this._jpegImageData = fs.File.ReadAllBytes("test.jpeg");
+            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
         }
 
         #region TileExists

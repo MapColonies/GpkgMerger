@@ -3,8 +3,6 @@ using MergerLogic.DataTypes;
 using MergerLogic.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using System;
-using System.IO.Abstractions;
 
 namespace MergerLogicUnitTests.Utils
 {
@@ -12,7 +10,6 @@ namespace MergerLogicUnitTests.Utils
     [TestCategory("unit")]
     [TestCategory("http")]
     [TestCategory("HttpUtils")]
-    [DeploymentItem(@"../../../TestData/test.jpeg")]
     public class HttpSourceUtilsTest
     {
         #region mocks
@@ -31,8 +28,7 @@ namespace MergerLogicUnitTests.Utils
             this._pathPatternUtilsMock = this._repository.Create<IPathPatternUtils>();
             this._geoUtilsMock = this._repository.Create<IGeoUtils>();
 
-            FileSystem fs = new FileSystem();
-            this._jpegImageData = fs.File.ReadAllBytes("test.jpeg");
+            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
         }
 
         #region GetTile

@@ -19,7 +19,6 @@ namespace MergerLogicUnitTests.DataTypes
     [TestCategory("WMTS")]
     [TestCategory("WMTSDataSource")]
     [TestCategory("HttpDataSource")]
-    [DeploymentItem(@"../../../TestData/test.jpeg")]
 
     public class WMTSTest
     {
@@ -66,8 +65,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IMetricsProvider)))
                 .Returns(this._metricsProviderMock.Object);
             
-            FileSystem fs = new FileSystem();
-            this._jpegImageData = fs.File.ReadAllBytes("test.jpeg");
+            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
         }
 
         #region TileExists
@@ -435,8 +433,8 @@ namespace MergerLogicUnitTests.DataTypes
 
             var testTiles = new Tile[]
             {
-                    new Tile(1, 2, 3, new byte[] { 0}), new Tile(7, 7, 7, new byte[] { 1}),
-                    new Tile(2, 2, 3, new byte[] { 2})
+                    new Tile(1, 2, 3, this._jpegImageData), new Tile(7, 7, 7, this._jpegImageData),
+                    new Tile(2, 2, 3, this._jpegImageData)
             };
 
             Assert.ThrowsException<NotImplementedException>(() => wmtsSource.UpdateTiles(testTiles));

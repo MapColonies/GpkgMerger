@@ -19,7 +19,6 @@ namespace MergerLogicUnitTests.Utils
     [TestCategory("unit")]
     [TestCategory("gpkg")]
     [TestCategory("gpkgUtils")]
-    [DeploymentItem(@"../../../TestData/test.jpeg")]
     public class GpkgUtilsTest
     {
         #region mocks
@@ -48,8 +47,7 @@ namespace MergerLogicUnitTests.Utils
             this._fileSystemMock.SetupGet(fs => fs.Path).Returns(this._pathMock.Object);
             this._loggerMock = this._repository.Create<ILogger<GpkgClient>>(MockBehavior.Loose);
 
-            FileSystem fs = new FileSystem();
-            this._jpegImageData = fs.File.ReadAllBytes("test.jpeg");
+            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
         }
 
         #region GetTile
@@ -68,7 +66,7 @@ namespace MergerLogicUnitTests.Utils
         [DynamicData(nameof(GenGetTileParams), DynamicDataSourceType.Method)]
         public void GetTile(bool exist, bool useCoords)
         {
-            var data = new byte[1];
+            var data = this._jpegImageData;
             var cords = new Coord(0, 0, 0);
             var testTiles = exist ? new Tile[] { new Tile(cords, data) } : Array.Empty<Tile>();
 
@@ -109,7 +107,7 @@ namespace MergerLogicUnitTests.Utils
         [DataRow(false)]
         public void TileExists(bool exist)
         {
-            var data = new byte[1];
+            var data = this._jpegImageData;
             var cords = new Coord(0, 0, 0);
             var testTiles = exist ? new Tile[] { new Tile(cords, data) } : Array.Empty<Tile>();
 
@@ -257,8 +255,8 @@ namespace MergerLogicUnitTests.Utils
             string path = this.GetGpkgPath();
             var testTiles = new Tile[]
             {
-                new Tile(3, 3, 3, new byte[1]),
-                new Tile(4, 4, 4, new byte[1]),new Tile(5, 5, 5, new byte[1]),
+                new Tile(3, 3, 3, this._jpegImageData),
+                new Tile(4, 4, 4, this._jpegImageData),new Tile(5, 5, 5, this._jpegImageData),
             };
 
             using (var connection = new SQLiteConnection($"Data Source={path}"))
@@ -340,11 +338,11 @@ namespace MergerLogicUnitTests.Utils
         public void InsertTiles()
         {
             string path = this.GetGpkgPath();
-            var existingTiles = new Tile[] { new Tile(0, 0, 0, new byte[] { 1, 2, 3 }), new Tile(3, 3, 3, new byte[] { 1, 2, 3 }) };
+            var existingTiles = new Tile[] { new Tile(0, 0, 0, this._jpegImageData), new Tile(3, 3, 3, this._jpegImageData) };
             var testTiles = new Tile[]
             {
-                new Tile(3, 3, 3, new byte[1]),
-                new Tile(4, 4, 4, new byte[1]),new Tile(5, 5, 5, new byte[1]),
+                new Tile(3, 3, 3, this._jpegImageData),
+                new Tile(4, 4, 4, this._jpegImageData),new Tile(5, 5, 5, this._jpegImageData),
             };
 
             using (var connection = new SQLiteConnection($"Data Source={path}"))

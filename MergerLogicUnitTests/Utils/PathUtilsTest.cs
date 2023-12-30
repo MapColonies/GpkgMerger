@@ -4,7 +4,6 @@ using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using System;
 using System.Collections.Generic;
 using System.IO.Abstractions;
 
@@ -13,8 +12,6 @@ namespace MergerLogicUnitTests.Utils
     [TestClass]
     [TestCategory("unit")]
     [TestCategory("PathUtils")]
-    [DeploymentItem(@"../../../TestData/test.jpeg")]
-    [DeploymentItem(@"../../../TestData/test.png")]
     public class PathUtilsTest
     {
         #region mocks
@@ -38,9 +35,8 @@ namespace MergerLogicUnitTests.Utils
             this._fileSystemMock.SetupGet(fs => fs.Path).Returns(this._pathMock.Object);
             this._imageFormaterMock = this._repository.Create<IImageFormatter>();
 
-            FileSystem fs = new FileSystem();
-            this._jpegImageData = fs.File.ReadAllBytes("test.jpeg");
-            this._pngImageData = fs.File.ReadAllBytes("test.png");
+            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
+            this._pngImageData = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
         }
 
         #region RemoveTrailingSlash

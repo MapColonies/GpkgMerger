@@ -9,7 +9,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
 using System.Collections.Generic;
-using System.IO.Abstractions;
 using System.Linq;
 
 namespace MergerLogicUnitTests.DataTypes
@@ -19,7 +18,6 @@ namespace MergerLogicUnitTests.DataTypes
     [TestCategory("XYZ")]
     [TestCategory("XYZDataSource")]
     [TestCategory("HttpDataSource")]
-    [DeploymentItem(@"../../../TestData/test.jpeg")]
 
     public class XYZTest
     {
@@ -65,8 +63,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IMetricsProvider)))
                 .Returns(this._metricsProviderMock.Object);
             
-            FileSystem fs = new FileSystem();
-            this._jpegImageData = fs.File.ReadAllBytes("test.jpeg");
+            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
         }
 
         #region TileExists
@@ -434,8 +431,8 @@ namespace MergerLogicUnitTests.DataTypes
 
             var testTiles = new Tile[]
             {
-                    new Tile(1, 2, 3, new byte[] { 0}), new Tile(7, 7, 7, new byte[] { 1}),
-                    new Tile(2, 2, 3, new byte[] { 2})
+                    new Tile(1, 2, 3, this._jpegImageData), new Tile(7, 7, 7, this._jpegImageData),
+                    new Tile(2, 2, 3, this._jpegImageData)
             };
 
             Assert.ThrowsException<NotImplementedException>(() => xyzSource.UpdateTiles(testTiles));

@@ -3,9 +3,7 @@ using MergerLogic.DataTypes;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using System.Collections.Generic;
-using System.IO.Abstractions;
 
 namespace MergerLogicUnitTests.Utils
 {
@@ -13,7 +11,6 @@ namespace MergerLogicUnitTests.Utils
     [TestCategory("unit")]
     [TestCategory("1X1")]
     [TestCategory("OneXOneConvertor")]
-    [DeploymentItem(@"../../../TestData/test.jpeg")]
 
     public class OneXOneConvertorTest
     {
@@ -33,8 +30,7 @@ namespace MergerLogicUnitTests.Utils
         [TestInitialize]
         public void BeforeEach()
         {
-            FileSystem fs = new FileSystem();
-            this._jpegImageData = fs.File.ReadAllBytes("test.jpeg");
+            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
         }
 
         #region FromTwoXOne

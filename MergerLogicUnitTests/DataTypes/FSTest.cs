@@ -18,7 +18,6 @@ namespace MergerLogicUnitTests.DataTypes
     [TestCategory("unit")]
     [TestCategory("FS")]
     [TestCategory("FSDataSource")]
-    [DeploymentItem(@"../../../TestData/test.jpeg")]
     public class FSTest
     {
         #region mocks
@@ -77,8 +76,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IMetricsProvider)))
                 .Returns(this._metricsProviderMock.Object);
 
-            FileSystem fs = new FileSystem();
-            this._jpegImageData = fs.File.ReadAllBytes("test.jpeg");
+            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
         }
 
         #region TileExists
@@ -469,8 +467,8 @@ namespace MergerLogicUnitTests.DataTypes
 
             var testTiles = new Tile[]
             {
-                    new Tile(1, 2, 3, new byte[] { 0}), new Tile(7, 7, 7, new byte[] { 1}),
-                    new Tile(2, 2, 3, new byte[] { 2})
+                    new Tile(1, 2, 3, this._jpegImageData), new Tile(7, 7, 7, this._jpegImageData),
+                    new Tile(2, 2, 3, this._jpegImageData)
             };
 
             var tileComparer = EqualityComparerFactory.Create<Tile>((tile1, tile2) =>
@@ -493,15 +491,15 @@ namespace MergerLogicUnitTests.DataTypes
 
                 fsSource.UpdateTiles(testTiles);
 
-                CollectionAssert.AreEqual(new byte[] { 0 }, fileStreams[0].ToArray());
+                CollectionAssert.AreEqual(this._jpegImageData, fileStreams[0].ToArray());
                 if (isOneXOne)
                 {
-                    CollectionAssert.AreEqual(new byte[] { 2 }, fileStreams[1].ToArray());
+                    CollectionAssert.AreEqual(this._jpegImageData, fileStreams[1].ToArray());
                 }
                 else
                 {
-                    CollectionAssert.AreEqual(new byte[] { 1 }, fileStreams[1].ToArray());
-                    CollectionAssert.AreEqual(new byte[] { 2 }, fileStreams[2].ToArray());
+                    CollectionAssert.AreEqual(this._jpegImageData, fileStreams[1].ToArray());
+                    CollectionAssert.AreEqual(this._jpegImageData, fileStreams[2].ToArray());
                 }
             }
 
