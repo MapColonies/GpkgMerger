@@ -35,8 +35,8 @@ namespace MergerLogic.Batching
             this.Z = z;
             this.X = x;
             this.Y = y;
-            this._data = data;
             this.Format = ImageFormatter.GetTileFormat(data) ?? throw new ValidationException($"Cannot create tile {this}, data is in invalid format");
+            this._data = data;
         }
 
         public Tile(Coord cords, byte[] data)
@@ -44,8 +44,8 @@ namespace MergerLogic.Batching
             this.Z = cords.Z;
             this.X = cords.X;
             this.Y = cords.Y;
-            this._data = data;
             this.Format = ImageFormatter.GetTileFormat(data) ?? throw new ValidationException($"Cannot create tile {this}, data is in invalid format");
+            this._data = data;
         }
 
         public bool HasCoords(int z, int x, int y)
@@ -98,7 +98,8 @@ namespace MergerLogic.Batching
 
         public override string ToString()
         {
-            return $"z: {this.Z}, x: {this.X}, y: {this.Y}, data size: {this._data.Length}";
+            int dataSize = this._data?.Length ?? 0;
+            return $"z: {this.Z}, x: {this.X}, y: {this.Y}, data size: {dataSize}";
         }
     }
 }

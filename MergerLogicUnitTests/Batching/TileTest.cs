@@ -24,9 +24,10 @@ namespace MergerLogicUnitTests.Clients
 
         [TestMethod]
         [TestCategory("CreateTile")]
-        public void CreateTileWithUnknownDataFormatFails()
+        [DataRow(null)]
+        [DataRow(new byte[] { 0x43, 0x44, 0x30, 0x30, 0x31 })]
+        public void CreateTileWithUnknownDataFormatFails(byte[] data)
         {
-            byte[] data = { 0x43, 0x44, 0x30, 0x30, 0x31 };
             Assert.ThrowsException<ValidationException>(() => new Tile(0, 0, 0, data));
             this._repository.VerifyAll();
         }

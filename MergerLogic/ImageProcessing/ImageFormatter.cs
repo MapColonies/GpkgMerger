@@ -41,6 +41,10 @@ namespace MergerLogic.ImageProcessing
 
         public static TileFormat? GetTileFormat(byte[] tile)
         {
+            if (tile is null) {
+                return null;
+            }
+
             //files magic values: https://en.wikipedia.org/wiki/List_of_file_signatures
 
             //check if magic is png
