@@ -57,10 +57,6 @@ namespace MergerLogicUnitTests.ImageProcessing
             var testTile = new Tile(baseTileCoord, tileBytes);
             var resultTile = this._testTileScaler.Upscale(testTile, targetCoord);
 
-            Console.WriteLine($"-------- VITTTT -------------");
-            Console.WriteLine($"{Convert.ToBase64String(resultTile.GetImageBytes())}");
-            Console.WriteLine($"-------- VITTTT -------------");
-
             Assert.IsNotNull(resultTile);
             CollectionAssert.AreEqual(expectedTileBytes, resultTile.GetImageBytes());
         }

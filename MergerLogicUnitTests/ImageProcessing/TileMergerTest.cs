@@ -5,6 +5,7 @@ using MergerLogic.Monitoring.Metrics;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -79,6 +80,11 @@ namespace MergerLogicUnitTests.ImageProcessing
         {
             var tileBuilders = tiles.Select<Tile, CorrespondingTileBuilder>(tile => () => tile).ToList();
             var result = this._testTileMerger.MergeTiles(tileBuilders, targetCoord, tileFormat);
+
+
+            Console.WriteLine($"-------- VITTTT -------------");
+            Console.WriteLine($"{Convert.ToBase64String(result)}");
+            Console.WriteLine($"-------- VITTTT -------------");
 
             Assert.IsNotNull(result);
             CollectionAssert.AreEqual(expectedTileBytes, result);
