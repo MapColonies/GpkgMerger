@@ -45,6 +45,8 @@ namespace MergerLogicUnitTests.Utils
       this._heartbeatClientMock = this._mockRepository.Create<IHeartbeatClient>();
       this._metricsProviderMock = this._mockRepository.Create<IMetricsProvider>();
       this._configurationManagerMock = this._mockRepository.Create<MergerLogic.Utils.IConfigurationManager>();
+
+      this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("TASK", "maxAttempts")).Returns(1);
     }
 
     [TestMethod]

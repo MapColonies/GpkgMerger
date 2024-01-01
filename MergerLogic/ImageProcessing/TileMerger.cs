@@ -30,6 +30,7 @@ namespace MergerLogic.ImageProcessing
                     return null;
                 case 1:
                     ImageFormatter.ConvertToFormat(images[0], format);
+                    ImageFormatter.RemoveImageDateAttributes(images[0]);
                     data = images[0].ToByteArray();
                     images[0].Dispose();
                     this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] 1 image found");
@@ -45,9 +46,7 @@ namespace MergerLogic.ImageProcessing
                         this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] {imageCollection.Count} where found for merge, start 'imageMagic' merging");
                         using (var mergedImage = imageCollection.Flatten(MagickColor.FromRgba(0, 0, 0, 0)))
                         {
-                            mergedImage.RemoveAttribute("date:timestamp");
-                            mergedImage.RemoveAttribute("date:modify");
-                            mergedImage.RemoveAttribute("date:create");
+                            ImageFormatter.RemoveImageDateAttributes(mergedImage);
 
                             mergedImage.ColorSpace = ColorSpace.sRGB;
                             mergedImage.ColorType = mergedImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor;
