@@ -1,5 +1,4 @@
 using MergerLogic.Batching;
-using MergerLogic.Clients;
 using MergerLogic.DataTypes;
 using MergerLogic.ImageProcessing;
 using MergerLogic.Monitoring.Metrics;
@@ -73,7 +72,9 @@ namespace MergerLogicUnitTests.Utils
       this._testTileMerger = new TileMerger(_tileScalerMock.Object, _imageFormatterMock.Object, _tileMergerLoggerMock.Object);
       this._testFileSystem = new FileSystem();
 
-      this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "batchSize")).Returns(1);
+      this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "batchSize", "batchMaxSize")).Returns(1);
+      this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<bool>("GENERAL", "batchSize", "limitBatchSize")).Returns(true);
+      this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "batchMaxBytes")).Returns(1024);
     }
 
     [TestMethod]
