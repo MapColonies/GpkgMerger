@@ -63,12 +63,18 @@ namespace MergerService.Src
             this._filePath = this._configurationManager.GetConfiguration("GENERAL", "filePath");
             this._shouldValidate = this._configurationManager.GetConfiguration<bool>("GENERAL", "validate");
             this._maxTaskRetriesAttempts = this._configurationManager.GetConfiguration<int>("TASK", "maxAttempts");
+            this._batchMaxBytes = this._configurationManager.GetConfiguration<long>("GENERAL", "batchMaxBytes");
             this._batchMaxSize = this._configurationManager.GetConfiguration<int>("GENERAL", "batchSize", "batchMaxSize");
-            this._batchMaxBytes = this._configurationManager.GetConfiguration<long>("GENERAL", "batchSize", "batchMaxBytes");
             this._limitBatchSize = this._configurationManager.GetConfiguration<bool>("GENERAL", "batchSize", "limitBatchSize");
 
-            if (!this._limitBatchSize)
+            if (!this._limitBatchSize || this._batchMaxSize <= 0)
             {
+                if (this._limitBatchSize && this._batchMaxSize <= 0)
+                {
+                    string methodName = MethodBase.GetCurrentMethod().Name;
+                    this._logger.LogWarning($"[{methodName}] Got invalid max batch size: {this._batchMaxSize}, using default value: {DEFAULT_BATCH_SIZE}");
+                }
+
                 this._batchMaxSize = DEFAULT_BATCH_SIZE;
             }
         }
@@ -349,7 +355,7 @@ namespace MergerService.Src
                         IData target = sources[0];
                         target.IsNew = metadata.IsNewTarget;
 
-                        List<Tile> tiles = this._limitBatchSize ? new List<Tile>(this._batchMaxSize) : new List<Tile>();
+                        List<Tile> tiles = new List<Tile>((int)singleTileBatchCount);
                         long currentBatchBytes = 0;
 
                         this._logger.LogInformation($"[{methodName}] Total amount of tiles to merge for current batch: {singleTileBatchCount}");
@@ -392,7 +398,7 @@ namespace MergerService.Src
                                         // This is done to prevent memory overflow
                                         if (currentBatchBytes >= this._batchMaxBytes || (this._limitBatchSize && tiles.Count >= this._batchMaxSize))
                                         {
-                                            this._logger.LogInformation($"[{methodName}] Updating target tiles chunk");
+                                            this._logger.LogInformation($"[{methodName}] Updating tiles chunk Job: {task.JobId}, Task: {task.Id}");
                                             this.UpdateTargetTiles(target, tiles, task, overallTileProgressCount, totalTileCount, taskUtils);
 
                                             tiles.Clear();
@@ -480,7 +486,7 @@ namespace MergerService.Src
 
             using (this._activitySource.StartActivity("saving tiles"))
             {
-                this._logger.LogInformation($"[{methodName}] update {tiles.Count} tiles");
+                this._logger.LogInformation($"[{methodName}] Update {tiles.Count} tiles");
                 target.UpdateTiles(tiles);
                 this._logger.LogDebug($"[{methodName}] UpdateRelativeProgress");
                 UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);
