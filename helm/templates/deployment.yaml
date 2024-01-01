@@ -90,8 +90,12 @@ spec:
               value: {{ $sources }}
             - name: GENERAL__gpkgPath
               value: {{ $gpkgPath }}
-            - name: GENERAL__batchSize
-              value: {{ .Values.env.general.batchSize | quote }}
+            - name: GENERAL__batchSize__batchMaxSize
+              value: {{ .Values.env.general.batchSize.batchMaxSize | quote }}
+            - name: GENERAL__batchSize__limitBatchSize
+              value: {{ .Values.env.general.batchSize.limitBatchSize | quote }}
+            - name: GENERAL__batchMaxBytes
+              value: {{ .Values.env.general.batchMaxBytes | quote }}
             - name: GENERAL__filePath
               value: {{ $tilePath }}
             - name: AWS_ACCESS_KEY_ID
