@@ -45,6 +45,10 @@ namespace MergerLogic.ImageProcessing
                         this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] {imageCollection.Count} where found for merge, start 'imageMagic' merging");
                         using (var mergedImage = imageCollection.Flatten(MagickColor.FromRgba(0, 0, 0, 0)))
                         {
+                            mergedImage.RemoveAttribute("date:timestamp");
+                            mergedImage.RemoveAttribute("date:modify");
+                            mergedImage.RemoveAttribute("date:create");
+
                             mergedImage.ColorSpace = ColorSpace.sRGB;
                             mergedImage.ColorType = mergedImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor;
                             ImageFormatter.ConvertToFormat(mergedImage, format);
@@ -120,7 +124,7 @@ namespace MergerLogic.ImageProcessing
                     {
                         tile = this._tileScaler.Upscale(tile, targetCoords);
                     }
-                    
+
                     i--;
                     return tile;
                 }
@@ -136,7 +140,7 @@ namespace MergerLogic.ImageProcessing
                 hasAlpha = true;
                 return;
             }
-            
+
             if (tile!.Z > targetCoords.Z)
             {
                 throw new NotImplementedException("down scaling tiles is not supported");

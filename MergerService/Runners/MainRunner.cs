@@ -35,7 +35,8 @@ namespace MergerService.Runners
                 bool activatedAny = false;
                 foreach (var item in taskTypes)
                 {
-                    activatedAny = activatedAny || this._taskRunner.FetchAndRunTasks(item);
+                    var task = this._taskRunner.FetchTask(item);
+                    activatedAny = activatedAny || this._taskRunner.RunTask(task);
                 }
 
                 // Sleep only if there was no task to run for any type

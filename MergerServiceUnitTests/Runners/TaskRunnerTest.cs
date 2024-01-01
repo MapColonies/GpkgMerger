@@ -56,9 +56,11 @@ namespace MergerLogicUnitTests.Utils
         _taskUtilsMock.Object, _heartbeatClientMock.Object, _metricsProviderMock.Object,
         _configurationManagerMock.Object);
 
-      var testResult = testTaskRunner.FetchAndRunTasks(new KeyValuePair<string, string>("testJobType", "testTaskType"));
+      var testFetchResult = testTaskRunner.FetchTask(new KeyValuePair<string, string>("testJobType", "testTaskType"));
+      var testRunResult = testTaskRunner.RunTask(testFetchResult);
 
-      Assert.IsFalse(testResult);
+      Assert.IsNull(testFetchResult);
+      Assert.IsFalse(testRunResult);
     }
 
     [TestMethod]
@@ -75,7 +77,10 @@ namespace MergerLogicUnitTests.Utils
         _taskUtilsMock.Object, _heartbeatClientMock.Object, _metricsProviderMock.Object,
         _configurationManagerMock.Object);
 
-      testTaskRunner.FetchAndRunTasks(new KeyValuePair<string, string>("testJobType", "testTaskType"));
+      var testResultTask = testTaskRunner.FetchTask(new KeyValuePair<string, string>("testJobType", "testTaskType"));
+      testTaskRunner.RunTask(testResultTask);
+
+      Assert.AreEqual(testTask, testResultTask);
       _taskUtilsMock.Verify(taskUtils => taskUtils.UpdateCompletion(testTask.JobId, testTask.Id, It.IsAny<string?>()), Times.Once);
     }
 
@@ -94,7 +99,11 @@ namespace MergerLogicUnitTests.Utils
         _taskUtilsMock.Object, _heartbeatClientMock.Object, _metricsProviderMock.Object,
         _configurationManagerMock.Object);
 
-      testTaskRunner.FetchAndRunTasks(new KeyValuePair<string, string>("testJobType", "testTaskType"));
+
+      var testResultTask = testTaskRunner.FetchTask(new KeyValuePair<string, string>("testJobType", "testTaskType"));
+      testTaskRunner.RunTask(testResultTask);
+
+      Assert.AreEqual(testTask, testResultTask);
       _taskUtilsMock.Verify(taskUtils => taskUtils.UpdateReject(testTask.JobId, testTask.Id, testTask.Attempts, testFailureMessage, testTask.Resettable, It.IsAny<string?>()), Times.Once);
     }
   }

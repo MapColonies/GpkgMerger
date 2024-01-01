@@ -47,7 +47,7 @@ namespace MergerService.Runners
             return values;
         }
 
-        public bool FetchAndRunTasks(KeyValuePair<string, string> jobTaskTypesPair)
+        public MergeTask? FetchTask(KeyValuePair<string, string> jobTaskTypesPair)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             MergeTask? task;
@@ -64,12 +64,20 @@ namespace MergerService.Runners
                     ((HttpRequestException)e).StatusCode == HttpStatusCode.NotFound)
                 {
                     this._logger.LogDebug($"[{methodName}] No task was found to work on...");
-                    return false;
+                    return null;
                 }
 
                 this._logger.LogError(e, $"[{methodName}] Error in MergerService start - get task: {e.Message}");
-                return false;
+                return null;
             }
+
+            return task;
+        }
+
+        public bool RunTask(MergeTask? task)
+        {
+            string methodName = MethodBase.GetCurrentMethod().Name;
+
             // Guard clause in case there are no batches or sources
             if (task == null)
             {
@@ -104,7 +112,7 @@ namespace MergerService.Runners
             finally
             {
                 totalTaskStopwatch.Stop();
-                this._metricsProvider.TaskExecutionTimeHistogram(totalTaskStopwatch.Elapsed.TotalSeconds, taskType);
+                this._metricsProvider.TaskExecutionTimeHistogram(totalTaskStopwatch.Elapsed.TotalSeconds, task.Type);
                 this._heartbeatClient.Stop();
             }
 

@@ -6,6 +6,7 @@ namespace MergerService.Runners
   public interface ITaskRunner
   {
     List<KeyValuePair<string, string>> BuildTypeList();
-    bool FetchAndRunTasks(KeyValuePair<string, string> jobTaskTypesPair);
+    MergeTask? FetchTask(KeyValuePair<string, string> jobTaskTypesPair);
+    bool RunTask(MergeTask? task);
   }
 }
