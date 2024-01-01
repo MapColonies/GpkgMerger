@@ -1,5 +1,4 @@
 ﻿using MergerLogic.Batching;
-using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 
 namespace MergerLogic.Clients
@@ -10,7 +9,7 @@ namespace MergerLogic.Clients
         private IPathPatternUtils _pathPatternUtils;
 
         public HttpSourceClient(string path, IHttpRequestUtils httpClient, IPathPatternUtils pathPatternUtils,
-            IGeoUtils geoUtils, IImageFormatter formatter) : base(path, geoUtils, formatter)
+            IGeoUtils geoUtils) : base(path, geoUtils)
         {
             this._httpClient = httpClient;
             this._pathPatternUtils = pathPatternUtils;
@@ -20,12 +19,7 @@ namespace MergerLogic.Clients
         {
             string url = this._pathPatternUtils.RenderUrlTemplate(x, y, z);
             byte[]? data = this._httpClient.GetData(url, true);
-            if (data is null)
-            {
-                return null;
-            }
-
-            return new Tile(z, x, y, data);
+            return this.CreateTile(z, x, y, data);
         }
 
         public override bool TileExists(int z, int x, int y)

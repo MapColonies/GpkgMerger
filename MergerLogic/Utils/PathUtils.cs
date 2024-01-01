@@ -8,12 +8,10 @@ namespace MergerLogic.Utils
     public class PathUtils : IPathUtils
     {
         private readonly IFileSystem _fileSystem;
-        private readonly IImageFormatter _imageFormatter;
 
-        public PathUtils(IFileSystem fileSystem, IImageFormatter formatter)
+        public PathUtils(IFileSystem fileSystem)
         {
             this._fileSystem = fileSystem;
-            this._imageFormatter = formatter;
         }
 
         public string RemoveTrailingSlash(string path, bool isS3 = false)
@@ -29,8 +27,7 @@ namespace MergerLogic.Utils
 
         public string GetTilePath(string basePath, Tile tile, bool isS3 = false)
         {
-            var format = tile.Format ?? this._imageFormatter.GetTileFormat(tile.GetImageBytes());
-            return this.GetTilePath(basePath, tile.Z, tile.X, tile.Y, format!.Value, isS3);
+            return this.GetTilePath(basePath, tile.Z, tile.X, tile.Y, tile.Format, isS3);
         }
 
         public string GetTilePath(string basePath, int z, int x, int y, TileFormat format, bool isS3 = false)
@@ -38,7 +35,7 @@ namespace MergerLogic.Utils
             return $"{this.GetTilePathWithoutExtension(basePath, z, x, y, isS3)}{format.ToString().ToLower()}";
         }
 
-        public Coord FromPath(string path, out TileFormat format, bool isS3 = false)
+        public Coord FromPath(string path, bool isS3 = false)
         {
             string[] parts = path.Split(this.GetSeparator(isS3));
             int numParts = parts.Length;
@@ -48,14 +45,6 @@ namespace MergerLogic.Utils
             int z = int.Parse(parts[numParts - 3]);
             int x = int.Parse(parts[numParts - 2]);
             int y = int.Parse(last[0]);
-            if (last[1].ToLower() == "jpg")
-            {
-                format = TileFormat.Jpeg;
-            }
-            else
-            {
-                format = (TileFormat)Enum.Parse(typeof(TileFormat), last[1], true);
-            }
 
             return new Coord(z, x, y);
         }

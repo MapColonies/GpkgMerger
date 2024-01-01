@@ -2,7 +2,6 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
-using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
@@ -17,8 +16,8 @@ namespace MergerLogic.Clients
         private readonly IPathUtils _pathUtils;
         private readonly S3StorageClass _storageClass;
 
-        public S3Client(IAmazonS3 client, IPathUtils pathUtils, IGeoUtils geoUtils, IImageFormatter formatter, ILogger<S3Client> logger,
-            string storageClass, string bucket, string path) : base(path, geoUtils, formatter)
+        public S3Client(IAmazonS3 client, IPathUtils pathUtils, IGeoUtils geoUtils, ILogger<S3Client> logger,
+            string storageClass, string bucket, string path) : base(path, geoUtils)
         {
             this._client = client;
             this._bucket = bucket;
@@ -72,21 +71,21 @@ namespace MergerLogic.Clients
 
             byte[]? imageBytes = this.GetImageBytes(key);
             this._logger.LogDebug($"[{methodName}] end z: {z}, x: {x}, y: {y}");
-            return this.createTile(z, x, y, imageBytes);
+            return this.CreateTile(z, x, y, imageBytes);
         }
 
         public Tile? GetTile(string key)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             this._logger.LogDebug($"[{methodName}] start key: {key}");
-            Coord coords = this._pathUtils.FromPath(key, out TileFormat format, true);
+            Coord coords = this._pathUtils.FromPath(key, true);
             byte[]? imageBytes = this.GetImageBytes(key);
             if (imageBytes == null)
             {
                 return null;
             }
             this._logger.LogDebug($"[{methodName}] end key: {key}");
-            return new Tile(coords, imageBytes, format);
+            return this.CreateTile(coords, imageBytes);
         }
 
         public override bool TileExists(int z, int x, int y)

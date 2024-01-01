@@ -10,19 +10,17 @@ namespace MergerLogic.ImageProcessing
     public class TileMerger : ITileMerger
     {
         private readonly ITileScaler _tileScaler;
-        private readonly IImageFormatter _imageFormatter;
         private readonly ILogger<TileMerger> _logger;
 
-        public TileMerger(ITileScaler tileScaler, IImageFormatter imageFormatter, ILogger<TileMerger> logger)
+        public TileMerger(ITileScaler tileScaler, ILogger<TileMerger> logger)
         {
             this._logger = logger;
             this._tileScaler = tileScaler;
-            this._imageFormatter = imageFormatter;
         }
 
-        public byte[]? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords,TileFormat format)
+        public byte[]? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords, TileFormat format)
         {
-            var images = this.GetImageList(tiles, targetCoords, out bool singleImage);
+            var images = this.GetImageList(tiles, targetCoords);
             byte[] data;
             switch (images.Count)
             {
@@ -31,7 +29,7 @@ namespace MergerLogic.ImageProcessing
                     this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] No images where found return null");
                     return null;
                 case 1:
-                    this._imageFormatter.ConvertToFormat(images[0], format);
+                    ImageFormatter.ConvertToFormat(images[0], format);
                     data = images[0].ToByteArray();
                     images[0].Dispose();
                     this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] 1 image found");
@@ -49,7 +47,7 @@ namespace MergerLogic.ImageProcessing
                         {
                             mergedImage.ColorSpace = ColorSpace.sRGB;
                             mergedImage.ColorType = mergedImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor;
-                            this._imageFormatter.ConvertToFormat(mergedImage, format);
+                            ImageFormatter.ConvertToFormat(mergedImage, format);
                             var mergedImageBytes = mergedImage.ToByteArray();
                             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] 'imageMagic' merging finished");
                             return mergedImageBytes;
@@ -58,13 +56,12 @@ namespace MergerLogic.ImageProcessing
             }
         }
 
-        private List<MagickImage> GetImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords, out bool singleImage)
+        private List<MagickImage> GetImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords)
         {
             var images = new List<MagickImage>();
             int i = tiles.Count - 1;
             Tile? tile = null;
 
-            singleImage = false;
             bool hasAlpha = false;
             try
             {
@@ -74,7 +71,6 @@ namespace MergerLogic.ImageProcessing
                 this.AddTileToImageList(targetCoords, tile, images, out hasAlpha);
                 if (!hasAlpha)
                 {
-                    singleImage = true;
                     return images;
                 }
 
@@ -107,7 +103,6 @@ namespace MergerLogic.ImageProcessing
                 throw;
             }
 
-            singleImage = images.Count == 0 && tile != null;
             return images;
         }
 

@@ -1,6 +1,5 @@
 using MergerLogic.Batching;
 using MergerLogic.Extensions;
-using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
 using System.Data.SQLite;
@@ -20,7 +19,7 @@ namespace MergerLogic.Clients
         private readonly IFileSystem _fileSystem;
 
         public GpkgClient(string path, ITimeUtils timeUtils, ILogger<GpkgClient> logger, IFileSystem fileSystem,
-            IGeoUtils geoUtils, IImageFormatter formatter) : base(path, geoUtils, formatter)
+            IGeoUtils geoUtils) : base(path, geoUtils)
         {
             this._timeUtils = timeUtils;
             this._logger = logger;
@@ -125,9 +124,9 @@ namespace MergerLogic.Clients
             }
         }
 
-        public override Tile GetTile(int z, int x, int y)
+        public override Tile? GetTile(int z, int x, int y)
         {
-            Tile tile = null;
+            byte[]? blob = null;
 
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {
@@ -140,18 +139,11 @@ namespace MergerLogic.Clients
                     command.Parameters.AddWithValue("$z", z);
                     command.Parameters.AddWithValue("$x", x);
                     command.Parameters.AddWithValue("$y", y);
-
-                    var blob = (byte[])command.ExecuteScalar();
-                    if (blob == null)
-                    {
-                        return null;
-                    }
-
-                    tile = new Tile(z, x, y, blob);
+                    blob = (byte[])command.ExecuteScalar();
                 }
             }
 
-            return tile;
+            return this.CreateTile(z, x, y, blob);
         }
 
         public override bool TileExists(int z, int x, int y)
@@ -239,7 +231,7 @@ namespace MergerLogic.Clients
                             var y = reader.GetInt32(2);
                             var blob = (byte[])reader["tile_data"];
 
-                            Tile tile = new Tile(z, x, y, blob);
+                            Tile tile = this.CreateTile(z, x, y, blob)!;
                             tiles.Add(tile);
                         }
                     }
@@ -298,7 +290,7 @@ namespace MergerLogic.Clients
                         var y = reader.GetInt32(2);
                         var blob = (byte[])reader["tile_data"];
 
-                        lastTile = new Tile(z, x, y, blob);
+                        lastTile = this.CreateTile(z, x, y, blob)!;
                     }
                 }
             }

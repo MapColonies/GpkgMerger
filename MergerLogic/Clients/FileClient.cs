@@ -1,5 +1,4 @@
 using MergerLogic.Batching;
-using MergerLogic.ImageProcessing;
 using System.IO.Abstractions;
 using MergerLogic.Utils;
 
@@ -9,8 +8,8 @@ public class FileClient : DataUtils, IFileClient
 {
     private readonly IFileSystem _fileSystem;
 
-    public FileClient(string path, IGeoUtils geoUtils, IFileSystem fileSystem, IImageFormatter formatter) 
-        : base(path, geoUtils, formatter)
+    public FileClient(string path, IGeoUtils geoUtils, IFileSystem fileSystem) 
+        : base(path, geoUtils)
     {
         this._fileSystem = fileSystem;
     }
@@ -22,7 +21,7 @@ public class FileClient : DataUtils, IFileClient
         if (tilePath != null)
         {
             byte[] fileBytes = this._fileSystem.File.ReadAllBytes(tilePath);
-            return this.createTile(z, x, y, fileBytes);
+            return this.CreateTile(z, x, y, fileBytes);
         }
         else
         {

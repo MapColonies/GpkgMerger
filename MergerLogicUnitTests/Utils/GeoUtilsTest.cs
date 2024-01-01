@@ -14,6 +14,18 @@ namespace MergerLogicUnitTests.Utils
     [TestCategory("geoUtils")]
     public class GeoUtilsTest
     {
+        #region mocks
+
+        private byte[] _jpegImageData;
+
+        #endregion
+
+        [TestInitialize]
+        public void BeforeEach()
+        {
+            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
+        }
+
         #region FlipY
 
         public enum GetFlipYParamType { Tile, Coord, Ints }
@@ -43,7 +55,7 @@ namespace MergerLogicUnitTests.Utils
                     res = geoUtils.FlipY(coords.Z, coords.Y);
                     break;
                 case GetFlipYParamType.Tile:
-                    res = geoUtils.FlipY(new Tile(coords, Array.Empty<byte>()));
+                    res = geoUtils.FlipY(new Tile(coords, this._jpegImageData));
                     break;
             }
             Assert.AreEqual(coords.X, res);

@@ -3,7 +3,6 @@ using MergerLogic.DataTypes;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using System.Collections.Generic;
 
 namespace MergerLogicUnitTests.Utils
@@ -20,6 +19,18 @@ namespace MergerLogicUnitTests.Utils
             Cords,
             Ints,
             Tile
+        }
+
+        #region mocks
+
+        private byte[] _jpegImageData;
+
+        #endregion
+
+        [TestInitialize]
+        public void BeforeEach()
+        {
+            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
         }
 
         #region FromTwoXOne
@@ -53,7 +64,7 @@ namespace MergerLogicUnitTests.Utils
             {
                 OneXOneConvertorParameterType.Cords => convertor.FromTwoXOne(testData),
                 OneXOneConvertorParameterType.Ints => convertor.FromTwoXOne(testData.Z, testData.X, testData.Y),
-                OneXOneConvertorParameterType.Tile => convertor.FromTwoXOne(new Tile(testData, Array.Empty<byte>())),
+                OneXOneConvertorParameterType.Tile => convertor.FromTwoXOne(new Tile(testData, this._jpegImageData)),
                 _ => null
             };
 
@@ -72,7 +83,7 @@ namespace MergerLogicUnitTests.Utils
                 Assert.AreEqual(testExpected.ExpectedData.Z, resTile.Z);
                 Assert.AreEqual(testExpected.ExpectedData.X, resTile.X);
                 Assert.AreEqual(testExpected.ExpectedData.Y, resTile.Y);
-                CollectionAssert.AreEqual(Array.Empty<byte>(), resTile.GetImageBytes());
+                CollectionAssert.AreEqual(this._jpegImageData, resTile.GetImageBytes());
             }
         }
 
@@ -110,7 +121,7 @@ namespace MergerLogicUnitTests.Utils
             {
                 OneXOneConvertorParameterType.Cords => convertor.TryFromTwoXOne(testData),
                 OneXOneConvertorParameterType.Ints => convertor.TryFromTwoXOne(testData.Z, testData.X, testData.Y),
-                OneXOneConvertorParameterType.Tile => convertor.TryFromTwoXOne(new Tile(testData, Array.Empty<byte>())),
+                OneXOneConvertorParameterType.Tile => convertor.TryFromTwoXOne(new Tile(testData, this._jpegImageData)),
                 _ => null
             };
 
@@ -135,7 +146,7 @@ namespace MergerLogicUnitTests.Utils
                     Assert.AreEqual(testExpected.ExpectedData.Z, resTile.Z);
                     Assert.AreEqual(testExpected.ExpectedData.X, resTile.X);
                     Assert.AreEqual(testExpected.ExpectedData.Y, resTile.Y);
-                    CollectionAssert.AreEqual(Array.Empty<byte>(), resTile.GetImageBytes());
+                    CollectionAssert.AreEqual(this._jpegImageData, resTile.GetImageBytes());
                 }
             }
         }
@@ -173,7 +184,7 @@ namespace MergerLogicUnitTests.Utils
             {
                 OneXOneConvertorParameterType.Cords => convertor.ToTwoXOne(testData),
                 OneXOneConvertorParameterType.Ints => convertor.ToTwoXOne(testData.Z, testData.X, testData.Y),
-                OneXOneConvertorParameterType.Tile => convertor.ToTwoXOne(new Tile(testData, Array.Empty<byte>())),
+                OneXOneConvertorParameterType.Tile => convertor.ToTwoXOne(new Tile(testData, this._jpegImageData)),
                 _ => null
             };
 
@@ -192,7 +203,7 @@ namespace MergerLogicUnitTests.Utils
                 Assert.AreEqual(testExpected.ExpectedData.Z, resTile.Z);
                 Assert.AreEqual(testExpected.ExpectedData.X, resTile.X);
                 Assert.AreEqual(testExpected.ExpectedData.Y, resTile.Y);
-                CollectionAssert.AreEqual(Array.Empty<byte>(), resTile.GetImageBytes());
+                CollectionAssert.AreEqual(this._jpegImageData, resTile.GetImageBytes());
             }
         }
 
@@ -230,7 +241,7 @@ namespace MergerLogicUnitTests.Utils
             object? res = convertorParameterType switch
             {
                 OneXOneConvertorParameterType.Ints => convertor.TryToTwoXOne(testData.Z, testData.X, testData.Y),
-                OneXOneConvertorParameterType.Tile => convertor.TryToTwoXOne(new Tile(testData, Array.Empty<byte>())),
+                OneXOneConvertorParameterType.Tile => convertor.TryToTwoXOne(new Tile(testData, this._jpegImageData)),
                 _ => null
             };
 
@@ -255,7 +266,7 @@ namespace MergerLogicUnitTests.Utils
                     Assert.AreEqual(testExpected.ExpectedData.Z, resTile.Z);
                     Assert.AreEqual(testExpected.ExpectedData.X, resTile.X);
                     Assert.AreEqual(testExpected.ExpectedData.Y, resTile.Y);
-                    CollectionAssert.AreEqual(Array.Empty<byte>(), resTile.GetImageBytes());
+                    CollectionAssert.AreEqual(this._jpegImageData, resTile.GetImageBytes());
                 }
             }
         }

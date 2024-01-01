@@ -6,7 +6,7 @@ namespace MergerLogic.Utils
 {
     public interface IPathUtils
     {
-        Coord FromPath(string path, out TileFormat format, bool isS3 = false);
+        Coord FromPath(string path, bool isS3 = false);
         string GetTilePath(string basePath, int z, int x, int y, TileFormat format, bool isS3 = false);
         string GetTilePath(string basePath, Tile tile, bool isS3 = false);
         string RemoveTrailingSlash(string path, bool isS3 = false);

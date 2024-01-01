@@ -33,6 +33,8 @@ namespace MergerLogicUnitTests.Utils
         private Mock<ILogger<S3Client>> _loggerMock;
         private Mock<ILoggerFactory> _loggerFactoryMock;
 
+        private byte[] _jpegImageData;
+
         #endregion
 
         [TestInitialize]
@@ -47,6 +49,8 @@ namespace MergerLogicUnitTests.Utils
             this._loggerMock = this._repository.Create<ILogger<S3Client>>(MockBehavior.Loose);
             this._loggerFactoryMock = this._repository.Create<ILoggerFactory>();
             this._loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(this._loggerMock.Object);
+
+            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
         }
 
         #region GetTile
@@ -68,14 +72,14 @@ namespace MergerLogicUnitTests.Utils
         public void GetTile(bool exist, GetTileParamType paramType,TileFormat tileFormat)
         {
             var seq = new MockSequence();
-            var data = new byte[1];
+            var data = this._jpegImageData;
             var cords = new Coord(0, 0, 0);
 
             if (paramType == GetTileParamType.String)
             {
                 this._pathUtilsMock
                     .InSequence(seq)
-                    .Setup(utils => utils.FromPath("key", out tileFormat, true))
+                    .Setup(utils => utils.FromPath("key", true))
                     .Returns(cords);
             }
             else
@@ -119,7 +123,7 @@ namespace MergerLogicUnitTests.Utils
                 }
 
                 var s3Utils = new S3Client(this._s3ClientMock.Object, this._pathUtilsMock.Object,
-                    this._geoUtilsMock.Object, this._imageFormatterMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
+                    this._geoUtilsMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
 
                 Tile tile = null;
                 switch (paramType)
@@ -157,7 +161,7 @@ namespace MergerLogicUnitTests.Utils
             }
             if (paramType == GetTileParamType.String)
             {
-                this._pathUtilsMock.Verify(utils => utils.FromPath(It.IsAny<string>(), out It.Ref<TileFormat>.IsAny, It.IsAny<bool>()), Times.Once);
+                this._pathUtilsMock.Verify(utils => utils.FromPath(It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
             }
             else
             {
@@ -201,7 +205,7 @@ namespace MergerLogicUnitTests.Utils
                 });
 
             var s3Utils = new S3Client(this._s3ClientMock.Object, this._pathUtilsMock.Object,
-                this._geoUtilsMock.Object, this._imageFormatterMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
+                this._geoUtilsMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
 
             Assert.AreEqual(exist, s3Utils.TileExists(0, 0, 0));
 
@@ -219,10 +223,10 @@ namespace MergerLogicUnitTests.Utils
         [TestCategory("UpdateTile")]
         public void UpdateTile()
         {
-            var buff = new byte[10];
+            var buff = this._jpegImageData;
             int readLen = -1;
             var seq = new MockSequence();
-            var testTile = new Tile(0, 0, 0, new byte[1],TileFormat.Png);
+            var testTile = new Tile(0, 0, 0, buff);
             this._pathUtilsMock
                 .InSequence(seq)
                 .Setup(utils => utils.GetTilePath("test", testTile, true))
@@ -238,15 +242,15 @@ namespace MergerLogicUnitTests.Utils
                 });
 
             var s3Utils = new S3Client(this._s3ClientMock.Object, this._pathUtilsMock.Object,
-                this._geoUtilsMock.Object, this._imageFormatterMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
+                this._geoUtilsMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
             s3Utils.UpdateTile(testTile);
 
             this._pathUtilsMock.Verify(utils => utils.GetTilePath(It.IsAny<string>(),It.IsAny<Tile>(), It.IsAny<bool>()), Times.Once);
             this._s3ClientMock.Verify(s3 => s3.PutObjectAsync(It.Is<PutObjectRequest>(req =>
                 req.BucketName == "bucket" && req.Key == "key"), It.IsAny<CancellationToken>()), Times.Once);
 
-            Assert.AreEqual(1, readLen);
-            Assert.AreEqual(0, buff[0]);
+            Assert.AreEqual(buff.Length, readLen);
+            Assert.AreEqual(this._jpegImageData[0], buff[0]);
             this.VerifyAll();
         }
 
