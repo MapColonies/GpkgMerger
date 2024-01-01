@@ -74,14 +74,13 @@ namespace MergerLogicUnitTests.Utils
 
       this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "batchSize", "batchMaxSize")).Returns(1);
       this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<bool>("GENERAL", "batchSize", "limitBatchSize")).Returns(true);
-      this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "batchMaxBytes")).Returns(1024);
+      this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "batchMaxBytes")).Returns(1);
     }
 
     [TestMethod]
     [DynamicData(nameof(GetSingleTileTestParameters), DynamicDataSourceType.Method)]
     public void WhenGivenSourcesWithOneTile_ShouldWriteAllTilesToTarget(int numberOfSources, bool isTargetNew)
     {
-      var numberOfWriteCalls = isTargetNew ? numberOfSources : numberOfSources + 1;
       var taskTargetTuple = this.SetupTestTask(numberOfSources, isTargetNew);
       var testTask = taskTargetTuple.Item1;
       var targetDataMock = taskTargetTuple.Item2;
@@ -102,7 +101,7 @@ namespace MergerLogicUnitTests.Utils
         tiles => tiles.All(
           tile => testSourceTiles.Any(sourceTile => sourceTile.Z == tile.Z && sourceTile.X == tile.X && sourceTile.Y == tile.Y)
         )
-      )), Times.Exactly(numberOfWriteCalls));
+      )), Times.Exactly(numberOfSources));
 
       Assert.AreEqual(testSourceTiles.Length, resultWrittenTiles.Count);
       Assert.IsTrue(testSourceTiles.All(
