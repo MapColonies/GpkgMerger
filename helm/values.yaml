@@ -76,9 +76,10 @@ rasterCommon:
 env:
   general:
     validate: true
-    limitBatchSize: true
-    batchSize: 1000
-    batchMaxBytes: 20971520 # 20MB
+    batchSize:
+      limitBatchSize: true
+      batchMaxSize: 1000
+      batchMaxBytes: 838860800 # 800MB
   TASK:
     types:
       - jobType: 'Ingestion_Update'
