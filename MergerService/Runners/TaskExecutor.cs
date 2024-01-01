@@ -25,9 +25,9 @@ namespace MergerService.Runners
         private readonly string _gpkgPath;
         private readonly bool _limitBatchSize;
         private readonly int _batchMaxSize;
+        private readonly long _batchMaxBytes;
         private readonly string _filePath;
         private readonly bool _shouldValidate;
-        private readonly long _batchMaxBytes;
         private static readonly int DEFAULT_BATCH_SIZE = 1000;
 
         public TaskExecutor(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, MergerLogic.Utils.IConfigurationManager configurationManager,

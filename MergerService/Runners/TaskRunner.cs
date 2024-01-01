@@ -17,6 +17,7 @@ namespace MergerService.Runners
         private readonly IJobUtils _jobUtils;
         private readonly ILogger _logger;
         private readonly MergerLogic.Utils.IConfigurationManager _configurationManager;
+        private readonly int _maxTaskRetriesAttempts;
 
         public TaskRunner(ITaskExecutor taskExecutor, IJobUtils jobUtils, ILogger<TaskRunner> logger,
             ITaskUtils taskUtils, IHeartbeatClient heartbeatClient, IMetricsProvider metricsProvider,
@@ -29,6 +30,7 @@ namespace MergerService.Runners
             this._jobUtils = jobUtils;
             this._logger = logger;
             this._configurationManager = configurationManager;
+            this._maxTaskRetriesAttempts = this._configurationManager.GetConfiguration<int>("TASK", "maxAttempts");
         }
 
         public List<KeyValuePair<string, string>> BuildTypeList()
@@ -87,6 +89,23 @@ namespace MergerService.Runners
             string? managerCallbackUrl = this._jobUtils.GetJob(task.JobId)?.Parameters.ManagerCallbackUrl;
             string log = managerCallbackUrl == null ? "managerCallbackUrl not provided as job parameter" : $"managerCallback url: {managerCallbackUrl}";
             this._logger.LogDebug($"[{methodName}]{log}");
+
+            // check if needs to fail task that was released by task liberator and reached max attempts
+            if (task.Attempts >= this._maxTaskRetriesAttempts)
+            {
+                try
+                {
+                    string reason = string.IsNullOrEmpty(task.Reason) ? $"Max attempts reached, current attempt is {task.Attempts}" : $"{task.Reason} and Max attempts reached with {task.Attempts} attempts";
+                    this._taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, reason, task.Resettable, managerCallbackUrl);
+                }
+                catch (Exception innerError)
+                {
+                    this._logger.LogError(innerError, $"[{methodName}] Error in MergerService while updating reject status due to max attemps reached with {task.Attempts}, update task failure: {innerError.Message}");
+                }
+
+                return false;
+            }
+
             var totalTaskStopwatch = Stopwatch.StartNew();
             bool taskSucceed = false;
 
