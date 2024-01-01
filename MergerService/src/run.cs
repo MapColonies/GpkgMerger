@@ -398,7 +398,6 @@ namespace MergerService.Src
                                         // This is done to prevent memory overflow
                                         if (currentBatchBytes >= this._batchMaxBytes || (this._limitBatchSize && tiles.Count >= this._batchMaxSize))
                                         {
-                                            this._logger.LogInformation($"[{methodName}] Updating tiles chunk Job: {task.JobId}, Task: {task.Id}");
                                             this.UpdateTargetTiles(target, tiles, task, overallTileProgressCount, totalTileCount, taskUtils);
 
                                             tiles.Clear();
@@ -424,7 +423,6 @@ namespace MergerService.Src
 
                         if (tiles.Count > 0)
                         {
-                            this._logger.LogInformation($"[{methodName}] Updating last {tiles.Count} tiles chunk");
                             this.UpdateTargetTiles(target, tiles, task, overallTileProgressCount, totalTileCount, taskUtils);
                         }
 
@@ -486,9 +484,8 @@ namespace MergerService.Src
 
             using (this._activitySource.StartActivity("saving tiles"))
             {
-                this._logger.LogInformation($"[{methodName}] Update {tiles.Count} tiles");
+                this._logger.LogInformation($"[{methodName}] Updating {tiles.Count} tiles chunk Job: {task.JobId}, Task: {task.Id}");
                 target.UpdateTiles(tiles);
-                this._logger.LogDebug($"[{methodName}] UpdateRelativeProgress");
                 UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);
             }
         }
@@ -538,6 +535,9 @@ namespace MergerService.Src
             {
                 try
                 {
+                    string methodName = MethodBase.GetCurrentMethod().Name;
+                    this._logger.LogDebug($"[{methodName}] UpdateRelativeProgress");
+
                     task.Percentage = (int)(100 * (double)currentAmount / totalAmount);
                     UpdateParams updateParams = new UpdateParams()
                     {
