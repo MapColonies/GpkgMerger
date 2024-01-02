@@ -46,7 +46,7 @@ namespace MergerLogicUnitTests.ImageProcessing
                 File.ReadAllBytes("1.png"),
                 new Coord(16, 0, 0),
                 new Coord(17, 0, 0),
-                File.ReadAllBytes("4_upscaled_3_13.jpeg"), //TODO
+                File.ReadAllBytes("1_upscaled_16_17.png"),
             };
 
             yield return new object[] {
@@ -98,10 +98,6 @@ namespace MergerLogicUnitTests.ImageProcessing
         {
             var testTile = new Tile(baseTileCoord, tileBytes);
             var resultTile = this._testTileScaler.Upscale(testTile, targetCoord);
-
-            Console.WriteLine("------------- VIT --------------");
-            Console.WriteLine($"{Convert.ToBase64String(resultTile.GetImageBytes())}");
-            Console.WriteLine("------------- VIT --------------");
 
             Assert.IsNotNull(resultTile);
             CollectionAssert.AreEqual(expectedTileBytes, resultTile.GetImageBytes());
