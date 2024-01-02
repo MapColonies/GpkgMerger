@@ -131,7 +131,6 @@ namespace MergerLogic.ImageProcessing
 
             using (MagickImage tileImage = new MagickImage(tileBytes))
             {
-                ImageFormatter.RemoveImageDateAttributes(tileImage);
                 upscale = this.Upscale(tileImage, tile, targetCoords);
                 ImageFormatter.RemoveImageDateAttributes(upscale);
             }

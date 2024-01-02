@@ -16,12 +16,6 @@ namespace MergerLogicUnitTests.ImageProcessing
         public static IEnumerable<object[]> GetConvertToFormatTestParameters()
         {
             yield return new object[] {
-                File.ReadAllBytes("3.jpeg"),
-                TileFormat.Png,
-                false,
-            };
-
-            yield return new object[] {
                 File.ReadAllBytes("1.png"),
                 TileFormat.Jpeg,
                 false,
@@ -31,6 +25,12 @@ namespace MergerLogicUnitTests.ImageProcessing
                 File.ReadAllBytes("2.png"),
                 TileFormat.Png,
                 true,
+            };
+
+            yield return new object[] {
+                File.ReadAllBytes("3.jpeg"),
+                TileFormat.Png,
+                false,
             };
 
             yield return new object[] {
