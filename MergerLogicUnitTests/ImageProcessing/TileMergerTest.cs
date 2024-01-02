@@ -76,7 +76,7 @@ namespace MergerLogicUnitTests.ImageProcessing
                     new Tile(targetCoordHighZoom, File.ReadAllBytes("3.jpeg")),
                     new Tile(targetCoordLowZoom, File.ReadAllBytes("1.png"))
                 }, targetCoordHighZoom, TileFormat.Jpeg,
-                File.ReadAllBytes("3_1_merged_upscaled_5_15"),
+                File.ReadAllBytes("3_1_merged_upscaled_5_15.jpeg"),
             };
         }
 
