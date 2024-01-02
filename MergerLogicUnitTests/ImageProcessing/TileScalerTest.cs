@@ -40,7 +40,7 @@ namespace MergerLogicUnitTests.ImageProcessing
         #region Upscale
 
 
-        public static IEnumerable<object[]> GetUpscaleTilesTestParameters()
+        public static IEnumerable<object?[]> GetUpscaleTilesTestParameters()
         {
             yield return new object[] {
                 File.ReadAllBytes("1.png"),
@@ -94,13 +94,20 @@ namespace MergerLogicUnitTests.ImageProcessing
         [TestMethod]
         [TestCategory("Upscale")]
         [DynamicData(nameof(GetUpscaleTilesTestParameters), DynamicDataSourceType.Method)]
-        public void Upscale(byte[] tileBytes, Coord baseTileCoord, Coord targetCoord, byte[] expectedTileBytes)
+        public void Upscale(byte[] tileBytes, Coord baseTileCoord, Coord targetCoord, byte[]? expectedTileBytes)
         {
             var testTile = new Tile(baseTileCoord, tileBytes);
             var resultTile = this._testTileScaler.Upscale(testTile, targetCoord);
 
-            Assert.IsNotNull(resultTile);
-            CollectionAssert.AreEqual(expectedTileBytes, resultTile.GetImageBytes());
+            if (expectedTileBytes is null)
+            {
+                Assert.IsNull(resultTile);
+            }
+            else
+            {
+                Assert.IsNotNull(resultTile);
+                CollectionAssert.AreEqual(expectedTileBytes, resultTile.GetImageBytes());
+            }
         }
 
         #endregion

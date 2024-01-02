@@ -12,7 +12,7 @@ namespace MergerLogic.Utils
             }
 
             using var pixels = image.GetPixels();
-            // Check pixels to see if all are transparent
+            // Check pixels to see if at least one of them is transparent (or partially transparent)
             return pixels.Select(pixel => pixel.ToColor()).Any(color => color?.A != 255);
         }
 
@@ -24,7 +24,7 @@ namespace MergerLogic.Utils
             }
 
             using var pixels = image.GetPixels();
-            // Check pixels to see if all are transparent
+            // Check pixels to see if all are fully transparent
             return pixels.Select(pixel => pixel.ToColor()).All(color => color?.A == 0);
         }
 
