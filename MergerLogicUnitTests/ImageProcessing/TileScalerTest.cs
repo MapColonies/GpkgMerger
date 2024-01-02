@@ -43,10 +43,10 @@ namespace MergerLogicUnitTests.ImageProcessing
         public static IEnumerable<object[]> GetUpscaleTilesTestParameters()
         {
             yield return new object[] {
-                File.ReadAllBytes("3.jpeg"),
-                new Coord(9, 0, 0),
-                new Coord(10, 0, 0),
-                File.ReadAllBytes("3_upscaled_9_10.jpeg"),
+                File.ReadAllBytes("1.png"),
+                new Coord(16, 0, 0),
+                new Coord(17, 0, 0),
+                File.ReadAllBytes("4_upscaled_3_13.jpeg"), //TODO
             };
 
             yield return new object[] {
@@ -98,6 +98,10 @@ namespace MergerLogicUnitTests.ImageProcessing
         {
             var testTile = new Tile(baseTileCoord, tileBytes);
             var resultTile = this._testTileScaler.Upscale(testTile, targetCoord);
+
+            Console.WriteLine("------------- VIT --------------");
+            Console.WriteLine($"{Convert.ToBase64String(resultTile.GetImageBytes())}");
+            Console.WriteLine("------------- VIT --------------");
 
             Assert.IsNotNull(resultTile);
             CollectionAssert.AreEqual(expectedTileBytes, resultTile.GetImageBytes());

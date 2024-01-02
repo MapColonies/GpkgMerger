@@ -118,10 +118,10 @@ namespace MergerLogic.ImageProcessing
 
             upscaleStopwatch.Stop();
             this._metricsProvider.UpscaleTimePerTileHistogram(upscaleStopwatch.Elapsed.TotalSeconds);
-            bool isTransparent = ImageUtils.IsTransparent(scaledImage);
-            string message = isTransparent ? "transparent - return Empty tile" : "return valid upscaled tile";
+            bool isFullyTransparent = ImageUtils.IsFullyTransparent(scaledImage);
+            string message = isFullyTransparent ? "fully transparent - return Empty tile" : "return valid upscaled tile";
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] MagickImage Upscale Ended {fromTileToCoordMessage}, ${message}");
-            return isTransparent ? null : scaledImage; ;
+            return isFullyTransparent ? null : scaledImage;
         }
 
         public Tile? Upscale(Tile tile, Coord targetCoords)
