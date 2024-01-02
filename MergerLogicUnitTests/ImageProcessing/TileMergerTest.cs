@@ -47,36 +47,36 @@ namespace MergerLogicUnitTests.ImageProcessing
             var targetCoordLowZoom = new Coord(5, 0, 0);
             var targetCoordHighZoom = new Coord(15, 0, 0);
 
-            // yield return new object[] {
-            //     new Tile[] {
-            //         new Tile(targetCoord, File.ReadAllBytes("2.png")),
-            //         new Tile(targetCoord, File.ReadAllBytes("1.png"))
-            //     }, targetCoord, TileFormat.Png,
-            //     File.ReadAllBytes("2_1_merged.png"),
-            // };
+            yield return new object[] {
+                new Tile[] {
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("2.png")),
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("1.png"))
+                }, targetCoordHighZoom, TileFormat.Png,
+                File.ReadAllBytes("2_1_merged.png"),
+            };
 
-            // yield return new object[] {
-            //     new Tile[] {
-            //         new Tile(targetCoord, File.ReadAllBytes("3.jpeg")),
-            //         new Tile(targetCoord, File.ReadAllBytes("1.png"))
-            //     }, targetCoord, TileFormat.Jpeg,
-            //     File.ReadAllBytes("3_1_merged.jpeg"),
-            // };
+            yield return new object[] {
+                new Tile[] {
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("3.jpeg")),
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("1.png"))
+                }, targetCoordHighZoom, TileFormat.Jpeg,
+                File.ReadAllBytes("3_1_merged.jpeg"),
+            };
 
-            // yield return new object[] {
-            //     new Tile[] {
-            //         new Tile(targetCoord, File.ReadAllBytes("3.jpeg")),
-            //         new Tile(targetCoord, File.ReadAllBytes("4.jpeg"))
-            //     }, targetCoord, TileFormat.Jpeg,
-            //     File.ReadAllBytes("3_4_merged.jpeg"),
-            // };
+            yield return new object[] {
+                new Tile[] {
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("3.jpeg")),
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("4.jpeg"))
+                }, targetCoordHighZoom, TileFormat.Jpeg,
+                File.ReadAllBytes("3_4_merged.jpeg"),
+            };
 
             yield return new object[] {
                 new Tile[] {
                     new Tile(targetCoordHighZoom, File.ReadAllBytes("3.jpeg")),
                     new Tile(targetCoordLowZoom, File.ReadAllBytes("1.png"))
                 }, targetCoordHighZoom, TileFormat.Jpeg,
-                File.ReadAllBytes("3_4_merged.jpeg"),
+                File.ReadAllBytes("3_1_merged_upscaled_5_15"),
             };
         }
 
@@ -87,10 +87,6 @@ namespace MergerLogicUnitTests.ImageProcessing
         {
             var tileBuilders = tiles.Select<Tile, CorrespondingTileBuilder>(tile => () => tile).ToList();
             var result = this._testTileMerger.MergeTiles(tileBuilders, targetCoord, tileFormat);
-
-            Console.WriteLine("-------- VIT --------2");
-            Console.WriteLine($"{Convert.ToBase64String(result)}");
-            Console.WriteLine("-------- VIT --------2");
 
             Assert.IsNotNull(result);
             CollectionAssert.AreEqual(expectedTileBytes, result);
