@@ -34,7 +34,6 @@ namespace MergerLogicUnitTests.Utils
     private Mock<IMetricsProvider> _metricsProviderMock;
     private Mock<ITaskUtils> _taskUtilsMock;
     private Mock<ITileScaler> _tileScalerMock;
-    private Mock<IImageFormatter> _imageFormatterMock;
     private Mock<ILogger<TileMerger>> _tileMergerLoggerMock;
 
     private ActivitySource _testActivitySource;
@@ -65,11 +64,10 @@ namespace MergerLogicUnitTests.Utils
       this._metricsProviderMock = this._mockRepository.Create<IMetricsProvider>();
       this._taskUtilsMock = this._mockRepository.Create<ITaskUtils>();
       this._tileScalerMock = this._mockRepository.Create<ITileScaler>();
-      this._imageFormatterMock = this._mockRepository.Create<IImageFormatter>();
       this._tileMergerLoggerMock = this._mockRepository.Create<ILogger<TileMerger>>();
 
       this._testActivitySource = new ActivitySource("test");
-      this._testTileMerger = new TileMerger(_tileScalerMock.Object, _imageFormatterMock.Object, _tileMergerLoggerMock.Object);
+      this._testTileMerger = new TileMerger(_tileScalerMock.Object, _tileMergerLoggerMock.Object);
       this._testFileSystem = new FileSystem();
 
       this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "batchSize", "batchMaxSize")).Returns(1);
@@ -115,8 +113,8 @@ namespace MergerLogicUnitTests.Utils
       Coord[] testSourceCoords = new int[amountOfSources].Select((_, index) => new Coord(index + 2, index + 2, index + 2)).ToArray();
       Source testTarget = new Source("target", "target_type", new Extent(), GridOrigin.UPPER_LEFT, Grid.TwoXOne);
       Source[] testSources = testSourceCoords.Select((_, index) => new Source($"source_{index}", $"source_type_{index}")).ToArray();
-      Tile testTargetTile = new Tile(testTargetCoord, Convert.FromBase64String("R0lGODlhAQABAAAAACH5BAEAAAAALAAAAAABAAEAAAIBAAA="), null);
-      Tile[] testSourcesTiles = testSourceCoords.Select(coord => new Tile(coord, Convert.FromBase64String("R0lGODlhAQABAAAAACH5BAEAAAAALAAAAAABAAEAAAIBAAA="), null)).ToArray();
+      Tile testTargetTile = new Tile(testTargetCoord, Convert.FromBase64String("R0lGODlhAQABAAAAACH5BAEAAAAALAAAAAABAAEAAAIBAAA="));
+      Tile[] testSourcesTiles = testSourceCoords.Select(coord => new Tile(coord, Convert.FromBase64String("R0lGODlhAQABAAAAACH5BAEAAAAALAAAAAABAAEAAAIBAAA="))).ToArray();
       TileBounds[] tileBounds = testSourceCoords.Select(coord => new TileBounds(coord.Z, coord.X, coord.X + 1, coord.Y, coord.Y + 1)).ToArray();
       Mock<IData> targetDataMock = this._mockRepository.Create<IData>();
       Mock<IData>[] sourcesDataMocks = testSourcesTiles.Select((tile, index) =>
