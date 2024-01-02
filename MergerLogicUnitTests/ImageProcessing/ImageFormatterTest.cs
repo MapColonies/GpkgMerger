@@ -1,8 +1,5 @@
-﻿using MergerLogic.Batching;
-using MergerLogic.DataTypes;
-using MergerLogic.ImageProcessing;
+﻿using MergerLogic.ImageProcessing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -14,19 +11,6 @@ namespace MergerLogicUnitTests.ImageProcessing
     [DeploymentItem(@"../../../ImageProcessing/TestImages")]
     public class ImageFormatterTest
     {
-
-        #region mocks
-
-        private ImageFormatter _testImageFormatter;
-
-        #endregion
-
-        [TestInitialize]
-        public void BeforeEach()
-        {
-            this._testImageFormatter = new ImageFormatter();
-        }
-
         #region ConvertToFormat
 
         public static IEnumerable<object[]> GetConvertToFormatTestParameters()
@@ -60,16 +44,15 @@ namespace MergerLogicUnitTests.ImageProcessing
         [DynamicData(nameof(GetConvertToFormatTestParameters), DynamicDataSourceType.Method)]
         public void ConvertToFormat(byte[] tileBytes, TileFormat expectedTileFormat, bool expectedUnchanged)
         {
-            var testTile = new Tile(new Coord(0, 0, 0), tileBytes);
-            var resultTile = this._testImageFormatter.ConvertToFormat(testTile, expectedTileFormat);
-            var resultFormat = this._testImageFormatter.GetTileFormat(resultTile.GetImageBytes());
+            var resultTile = ImageFormatter.ConvertToFormat(tileBytes, expectedTileFormat);
+            var resultFormat = ImageFormatter.GetTileFormat(resultTile);
 
             Assert.IsNotNull(resultTile);
             Assert.AreEqual(expectedTileFormat, resultFormat);
 
             if (expectedUnchanged)
             {
-                CollectionAssert.AreEqual(tileBytes, resultTile.GetImageBytes());
+                CollectionAssert.AreEqual(tileBytes, resultTile);
             }
         }
 
@@ -94,7 +77,7 @@ namespace MergerLogicUnitTests.ImageProcessing
         [DynamicData(nameof(GetTileFormatTestParameters), DynamicDataSourceType.Method)]
         public void GetTileFormat(byte[] tileBytes, TileFormat expectedResultFormat)
         {
-            var resultFormat = this._testImageFormatter.GetTileFormat(tileBytes);
+            var resultFormat = ImageFormatter.GetTileFormat(tileBytes);
 
             Assert.IsNotNull(resultFormat);
             Assert.AreEqual(expectedResultFormat, resultFormat);

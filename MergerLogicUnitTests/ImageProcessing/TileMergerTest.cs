@@ -37,9 +37,7 @@ namespace MergerLogicUnitTests.ImageProcessing
             var tileMergerLoggerMock = this._mockRepository.Create<ILogger<TileMerger>>();
 
             var testTileScaler = new TileScaler(metricsProviderMock.Object, tileScalerLoggerMock.Object);
-            var testImageFormatter = new ImageFormatter();
-
-            this._testTileMerger = new TileMerger(testTileScaler, testImageFormatter, tileMergerLoggerMock.Object);
+            this._testTileMerger = new TileMerger(testTileScaler, tileMergerLoggerMock.Object);
         }
 
         #region MergeTiles
