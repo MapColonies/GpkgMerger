@@ -1,5 +1,8 @@
 .github/
 .idea/
+*/bin/
+*/obj/
+snapshots/
 TestResults/
 helm/
 *.gpkg
