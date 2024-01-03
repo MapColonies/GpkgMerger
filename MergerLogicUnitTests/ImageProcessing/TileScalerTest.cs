@@ -63,19 +63,19 @@ namespace MergerLogicUnitTests.ImageProcessing
             //     File.ReadAllBytes("5_upscaled_16_18.png"),
             // };
 
+            // yield return new object[] {
+            //     File.ReadAllBytes("5_8bit.png"),
+            //     new Coord(16, 0, 0),
+            //     new Coord(18, 0, 0),
+            //     File.ReadAllBytes("5_8bit_upscaled_16_18.png"),
+            // };
+
             yield return new object[] {
-                File.ReadAllBytes("5_8bit.png"),
+                File.ReadAllBytes("5_24bit.png"),
                 new Coord(16, 0, 0),
                 new Coord(18, 0, 0),
                 File.ReadAllBytes("5_upscaled_16_18.png"),
             };
-
-            // yield return new object[] {
-            //     File.ReadAllBytes("5_24bit.png"),
-            //     new Coord(16, 0, 0),
-            //     new Coord(18, 0, 0),
-            //     File.ReadAllBytes("5_upscaled_16_18.png"),
-            // };
 
             // yield return new object[] {
             //     File.ReadAllBytes("5_32bit.png"),
