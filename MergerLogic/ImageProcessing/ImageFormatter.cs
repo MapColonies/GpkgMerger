@@ -41,7 +41,8 @@ namespace MergerLogic.ImageProcessing
 
         public static TileFormat? GetTileFormat(byte[] tile)
         {
-            if (tile is null) {
+            if (tile is null)
+            {
                 return null;
             }
 
@@ -74,6 +75,18 @@ namespace MergerLogic.ImageProcessing
             }
 
             return null;
+        }
+
+        public static void RemoveImageDateAttributes(IMagickImage? image)
+        {
+            if (image == null)
+            {
+                return;
+            }
+
+            image.RemoveAttribute("date:timestamp");
+            image.RemoveAttribute("date:modify");
+            image.RemoveAttribute("date:create");
         }
     }
 }

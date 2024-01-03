@@ -19,5 +19,15 @@ namespace MergerLogic.DataTypes
             Console.WriteLine($"x: {this.X}");
             Console.WriteLine($"y: {this.Y}");
         }
+
+        public override bool Equals(object? obj)
+        {
+            return obj != null && obj.GetType() == typeof(Coord) && this.Equals((Coord)obj);
+        }
+
+        public bool Equals(Coord other)
+        {
+            return this.Z == other.Z && this.X == other.X && this.Y == other.Y;
+        }
     }
 }

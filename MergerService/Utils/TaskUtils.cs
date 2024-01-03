@@ -14,21 +14,19 @@ namespace MergerService.Utils
     public class TaskUtils : ITaskUtils
     {
         private readonly IHttpRequestUtils _httpClient;
-        private readonly IConfigurationManager _configuration;
+        private readonly MergerLogic.Utils.IConfigurationManager _configuration;
         private readonly ILogger _logger;
-        private readonly IHeartbeatClient _heartbeatClient;
         private readonly ActivitySource _activitySource;
         private readonly int _maxAttempts;
         private readonly JsonSerializerSettings _jsonSerializerSettings;
         private readonly string _jobManagerUrl;
 
-        public TaskUtils(IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<TaskUtils> logger,
-            ActivitySource activitySource, IHeartbeatClient heartbeatClient)
+        public TaskUtils(MergerLogic.Utils.IConfigurationManager configuration, IHttpRequestUtils httpClient, ILogger<TaskUtils> logger,
+            ActivitySource activitySource)
         {
             this._httpClient = httpClient;
             this._configuration = configuration;
             this._logger = logger;
-            this._heartbeatClient = heartbeatClient;
             this._activitySource = activitySource;
             this._maxAttempts = this._configuration.GetConfiguration<int>("TASK", "maxAttempts");
 
