@@ -77,6 +77,26 @@ namespace MergerLogicUnitTests.ImageProcessing
                 File.ReadAllBytes("invalid_image"),
                 null,
             };
+
+            yield return new object[] {
+                File.ReadAllBytes("5_8bit.png"),
+                TileFormat.Png,
+            };
+
+            yield return new object[] {
+                File.ReadAllBytes("5_24bit.png"),
+                TileFormat.Png,
+            };
+
+            yield return new object[] {
+                File.ReadAllBytes("5_32bit.png"),
+                TileFormat.Png,
+            };
+
+            yield return new object[] {
+                File.ReadAllBytes("5_64bit.png"),
+                TileFormat.Png,
+            };
         }
         [TestMethod]
         [TestCategory("GetTileFormat")]
