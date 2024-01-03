@@ -79,12 +79,14 @@ namespace MergerLogic.ImageProcessing
 
         public static void RemoveImageDateAttributes(IMagickImage? image)
         {
-            if (image != null)
+            if (image == null)
             {
-                image.RemoveAttribute("date:timestamp");
-                image.RemoveAttribute("date:modify");
-                image.RemoveAttribute("date:create");
+                return;
             }
+
+            image.RemoveAttribute("date:timestamp");
+            image.RemoveAttribute("date:modify");
+            image.RemoveAttribute("date:create");
         }
     }
 }
