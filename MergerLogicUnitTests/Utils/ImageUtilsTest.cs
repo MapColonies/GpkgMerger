@@ -28,6 +28,11 @@ namespace MergerLogicUnitTests.Utils
       };
 
       yield return new object[] {
+        File.ReadAllBytes("no_transparency.png"),
+        false,
+      };
+
+      yield return new object[] {
         File.ReadAllBytes("no_transparency.jpeg"),
         false,
       };
@@ -56,6 +61,11 @@ namespace MergerLogicUnitTests.Utils
 
       yield return new object[] {
         File.ReadAllBytes("partial_transparent.png"),
+        false,
+      };
+
+      yield return new object[] {
+        File.ReadAllBytes("no_transparency.png"),
         false,
       };
 
