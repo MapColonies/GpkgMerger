@@ -39,6 +39,7 @@ namespace MergerLogicUnitTests.Utils
     }
 
     [TestMethod]
+    [DynamicData(nameof(GetIsTransparentTestParameters), DynamicDataSourceType.Method)]
     public void IsTransparent(byte[] imageBytes, bool expectedResult)
     {
       using (var image = new MagickImage(imageBytes))
@@ -76,6 +77,7 @@ namespace MergerLogicUnitTests.Utils
     }
 
     [TestMethod]
+    [DynamicData(nameof(GetIsFullyTransparentTestParameters), DynamicDataSourceType.Method)]
     public void IsFullyTransparent(byte[] imageBytes, bool expectedResult)
     {
       using (var image = new MagickImage(imageBytes))
