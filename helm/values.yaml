@@ -43,26 +43,26 @@ cloudProvider:
   flavor: openshift
 
 image:
-  repository: gpkg-merge
+  repository: gpkg-merger
   tag: 'latest'
 
 serviceUrls:
-  jobManager: http://localhost:8084
-  heartbeatManager: http://localhost:8082
+  jobManager: ""
+  heartbeatManager: ""
 
 storage:
   fs:
     ingestionSourcePvc:
-      name: ingestion-source-pvc
-      subPath: ingestion-source
+      name: ""
+      subPath: ""
     internalPvc:
-      name: "internal-pvc"
-      tilesSubPath: tiles
-      gpkgSubPath: gpkgs
+      name: ""
+      tilesSubPath: ""
+      gpkgSubPath: ""
   s3:
-    endpointUrl: "localhost:9000"
+    endpointUrl: ""
     tilesBucket: ""
-    secretName: "s3-secret"
+    secretName: ""
     sslEnabled: false
     request:
       timeoutSec: 5
