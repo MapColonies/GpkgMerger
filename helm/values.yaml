@@ -34,6 +34,7 @@ enabled: true
 environment: development
 replicaCount: 1
 initialDelaySeconds: 60
+nodePort: 30011
 resetOnConfigChange: true
 isExporter: false
 
@@ -70,6 +71,7 @@ storage:
     logToConsole: false
 
 env:
+  protocol: TCP
   general:
     validate: true
     batchMaxBytes: 838860800 # 800MB

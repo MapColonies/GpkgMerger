@@ -1,5 +1,7 @@
 {{- $releaseName := .Release.Name -}}
 {{- $chartName := include "gpkg-merger.name" . -}}
+{{- $configmapName := include "configmap.fullname" . }}
+{{- $deploymentName := include "deployment.fullname" . }}
 {{- $cloudProviderFlavor := include "gpkg-merger.cloudProviderFlavor" . -}}
 {{- $cloudProviderDockerRegistryUrl := include "gpkg-merger.cloudProviderDockerRegistryUrl" . -}}
 {{- $cloudProviderImagePullSecretName := include "gpkg-merger.cloudProviderImagePullSecretName" . -}}
@@ -14,7 +16,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $releaseName }}-deployment
+  name: {{ $deploymentName }}
   labels:
     app: {{ $chartName }}
     component: {{ $chartName }}
@@ -111,7 +113,7 @@ spec:
                   key: secretAccessKey
           envFrom:
             - configMapRef:
-                name: {{ $releaseName }}-configmap
+                name: {{ $configmapName }}
           imagePullPolicy: "Always"
           ports:
             - name: http

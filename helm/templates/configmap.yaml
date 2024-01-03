@@ -2,6 +2,7 @@
 {{- $tracingUrl := include "gpkg-merger.tracingUrl" . -}}
 {{- $metricsUrl := include "gpkg-merger.metricsUrl" . -}}
 {{- $s3 := (include "common.s3.merged" .) | fromYaml }}
+{{- $configmapName := include "configmap.fullname" . }}
 {{- $serviceUrls := (include "common.serviceUrls.merged" .) | fromYaml }}
 {{- $s3HttpProtocol := ternary "https://" "http://" $s3.sslEnabled -}}
 
@@ -9,7 +10,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-configmap
+  name: {{ $configmapName }}
 data:
   GENERAL__validate: {{ .Values.env.general.validate | quote }}
   TASK__jobManagerUrl: {{ $serviceUrls.jobManager | quote }}
