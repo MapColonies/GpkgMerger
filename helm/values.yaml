@@ -46,7 +46,6 @@ image:
   repository: gpkg-merge
   tag: 'latest'
 
-
 serviceUrls:
   jobManager: http://localhost:8084
   heartbeatManager: http://localhost:8082
