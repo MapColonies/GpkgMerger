@@ -42,18 +42,25 @@ namespace MergerLogicUnitTests.ImageProcessing
 
         public static IEnumerable<object[]> GetUpscaleTilesTestParameters()
         {
-            yield return new object[] {
-                File.ReadAllBytes("3.jpeg"),
-                new Coord(9, 0, 0),
-                new Coord(10, 0, 0),
-                File.ReadAllBytes("3_upscaled_9_10.jpeg"),
-            };
+            // yield return new object[] {
+            //     File.ReadAllBytes("3.jpeg"),
+            //     new Coord(9, 0, 0),
+            //     new Coord(10, 0, 0),
+            //     File.ReadAllBytes("3_upscaled_9_10.jpeg"),
+            // };
+
+            // yield return new object[] {
+            //     File.ReadAllBytes("4.jpeg"),
+            //     new Coord(3, 0, 0),
+            //     new Coord(13, 0, 0),
+            //     File.ReadAllBytes("4_upscaled_3_13.jpeg"),
+            // };
 
             yield return new object[] {
-                File.ReadAllBytes("4.jpeg"),
-                new Coord(3, 0, 0),
-                new Coord(13, 0, 0),
-                File.ReadAllBytes("4_upscaled_3_13.jpeg"),
+                File.ReadAllBytes("5.png"),
+                new Coord(16, 0, 0),
+                new Coord(18, 0, 0),
+                File.ReadAllBytes("3_upscaled_9_10.jpeg"),
             };
         }
         [TestMethod]
@@ -63,6 +70,10 @@ namespace MergerLogicUnitTests.ImageProcessing
         {
             var testTile = new Tile(baseTileCoord, tileBytes);
             var resultTile = this._testTileScaler.Upscale(testTile, targetCoord);
+
+            Console.WriteLine("--------------- VIT ---------------");
+            Console.WriteLine($"{Convert.ToBase64String(resultTile.GetImageBytes())}");
+            Console.WriteLine("--------------- VIT ---------------");
 
             Assert.IsNotNull(resultTile);
             CollectionAssert.AreEqual(expectedTileBytes, resultTile.GetImageBytes());

@@ -39,6 +39,7 @@ namespace MergerLogicUnitTests.ImageProcessing
                 true,
             };
         }
+
         [TestMethod]
         [TestCategory("ConvertToFormat")]
         [DynamicData(nameof(GetConvertToFormatTestParameters), DynamicDataSourceType.Method)]
@@ -60,7 +61,7 @@ namespace MergerLogicUnitTests.ImageProcessing
 
         #region GetTileFormat
 
-        public static IEnumerable<object[]> GetTileFormatTestParameters()
+        public static IEnumerable<object?[]> GetTileFormatTestParameters()
         {
             yield return new object[] {
                 File.ReadAllBytes("1.png"),
@@ -71,16 +72,28 @@ namespace MergerLogicUnitTests.ImageProcessing
                 File.ReadAllBytes("3.jpeg"),
                 TileFormat.Jpeg,
             };
+
+            yield return new object?[] {
+                File.ReadAllBytes("invalid_image"),
+                null,
+            };
         }
         [TestMethod]
         [TestCategory("GetTileFormat")]
         [DynamicData(nameof(GetTileFormatTestParameters), DynamicDataSourceType.Method)]
-        public void GetTileFormat(byte[] tileBytes, TileFormat expectedResultFormat)
+        public void GetTileFormat(byte[] tileBytes, TileFormat? expectedResultFormat)
         {
             var resultFormat = ImageFormatter.GetTileFormat(tileBytes);
 
-            Assert.IsNotNull(resultFormat);
-            Assert.AreEqual(expectedResultFormat, resultFormat);
+            if (expectedResultFormat is null)
+            {
+                Assert.IsNull(resultFormat);
+            }
+            else
+            {
+                Assert.IsNotNull(resultFormat);
+                Assert.AreEqual(expectedResultFormat, resultFormat);
+            }
         }
 
         #endregion
