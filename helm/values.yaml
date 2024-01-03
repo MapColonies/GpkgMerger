@@ -3,6 +3,32 @@ global:
   tracing: {}
   metrics: {}
   environment: {}
+  useNodeAffinity: false
+  storage:
+    fs:
+      ingestionSourcePvc:
+        name: ""
+        subPath: ""
+      internalPvc:
+        name: ""
+        tilesSubPath: ""
+        gpkgSubPath: ""
+    s3:
+      endpointUrl: "localhost:9000"
+      tilesBucket: ""
+      secretName: "s3-secret"
+      sslEnabled: false
+      request:
+        timeoutSec: 5
+        retries: 3
+      logToConsole: false
+  serviceUrls:
+    jobManager: http://localhost:8084
+    heartbeatManager: http://localhost:8082
+  ca:
+    secretName: ''
+    path: '/usr/local/share/ca-certificates'
+    key: 'ca.crt'
 
 enabled: true
 environment: development
@@ -20,59 +46,30 @@ image:
   repository: gpkg-merge
   tag: 'latest'
 
-local:
-  s3:
-    secret:
-      create: false
-      accessKeyId: minikube
-      secretAccessKey: minikube
-  storage:
-    internalPv:
-      create: false #for local deployment only
-      name: local-tiles-pv
-      storage: 5Gi
-      hostPath: '/tiles' #tiles hostPatch
-    ingestionPv:
-      create: false #for local deployment only
-      name: local-sources-pv
-      storage: 5Gi
-      hostPath: /layerSources
-    internalPvc:
-      create: false #for local deployment only
-      storage: 4Gi
-    ingestionSourcePvc:
-      create: false #for local deployment only
-      storage: 4Gi
-    accessModes: ReadWriteOnce
-    storageClassName: host-path
 
-rasterCommon:
-  useNodeAffinity: false
-  serviceUrls:
-    jobManager: http://localhost:8084
-    heartbeatManager: http://localhost:8082
-  storage:
-    fs:
-      ingestionSourcePvc:
-        name: ingestion-source-pvc
-        subPath: ingestion-source
-      internalPvc:
-        name: "internal-pvc"
-        tilesSubPath: tiles
-        gpkgSubPath: gpkgs
-    s3:
-      endpointUrl: "localhost:9000"
-      tilesBucket: ""
-      secretName: "s3-secret"
-      sslEnabled: false
-      request:
-        timeoutSec: 5
-        retries: 3
-      logToConsole: false
-  ca:
-    secretName: ''
-    path: '/usr/local/share/ca-certificates'
-    key: 'ca.crt'
+serviceUrls:
+  jobManager: http://localhost:8084
+  heartbeatManager: http://localhost:8082
+
+storage:
+  fs:
+    ingestionSourcePvc:
+      name: ingestion-source-pvc
+      subPath: ingestion-source
+    internalPvc:
+      name: "internal-pvc"
+      tilesSubPath: tiles
+      gpkgSubPath: gpkgs
+  s3:
+    endpointUrl: "localhost:9000"
+    tilesBucket: ""
+    secretName: "s3-secret"
+    sslEnabled: false
+    request:
+      timeoutSec: 5
+      retries: 3
+    logToConsole: false
+
 env:
   general:
     validate: true
@@ -123,3 +120,28 @@ route:
     enabled: false # defaults to 30s by openshift
     duration: 60s # supported units (us, ms, s, m, h, d)
     
+local:
+  s3:
+    secret:
+      create: false
+      accessKeyId: minikube
+      secretAccessKey: minikube
+  storage:
+    internalPv:
+      create: false #for local deployment only
+      name: local-tiles-pv
+      storage: 5Gi
+      hostPath: '/tiles' #tiles hostPatch
+    ingestionPv:
+      create: false #for local deployment only
+      name: local-sources-pv
+      storage: 5Gi
+      hostPath: /layerSources
+    internalPvc:
+      create: false #for local deployment only
+      storage: 4Gi
+    ingestionSourcePvc:
+      create: false #for local deployment only
+      storage: 4Gi
+    accessModes: ReadWriteOnce
+    storageClassName: host-path
