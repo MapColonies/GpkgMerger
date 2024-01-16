@@ -7,7 +7,6 @@ namespace MergerLogic.Monitoring.Metrics
     public interface IMetricsProvider
     {
         void TaskExecutionTimeHistogram(double measuredTime, string taskType);
-        void BatchInitializationTimeHistogram(double measuredTime);
         void BatchUploadTimeHistogram(double measuredTime, DataType targetType);
         void BuildSourcesListTime(double measuredTime);
         void BatchWorkTimeHistogram(double measuredTime);

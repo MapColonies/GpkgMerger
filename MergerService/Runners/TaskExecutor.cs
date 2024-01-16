@@ -104,6 +104,12 @@ namespace MergerService.Runners
                 //taskActivity.AddTag("jobId", task.jodId);
                 //taskActivity.AddTag("taskId", task.id);
 
+                this._logger.LogDebug($"[{methodName}] BuildDataList");
+                List<IData> sources = this.BuildDataList(metadata.Sources, this._batchMaxSize);
+                
+                IData target = sources[0];
+                target.IsNew = metadata.IsNewTarget;
+
                 this._logger.LogDebug($"[{methodName}] Recived {metadata.Batches.Length} Batches");
                 long totalTileCount = metadata.Batches.Sum(batch => batch.Size());
                 long overallTileProgressCount = 0;
@@ -117,7 +123,6 @@ namespace MergerService.Runners
                     {
                         // TODO: remove comment and check that the activity is created (When bug will be fixed)
                         // batchActivity.AddTag("bbox", bounds.ToString());
-                        Stopwatch batchInitializationStopwatch = Stopwatch.StartNew();
                         mergeRunTimeStopwatch.Reset();
                         mergeRunTimeStopwatch.Start();
 
@@ -133,13 +138,6 @@ namespace MergerService.Runners
                         {
                             continue;
                         }
-
-                        this._logger.LogDebug($"[{methodName}] BuildDataList");
-                        List<IData> sources = this.BuildDataList(metadata.Sources, this._batchMaxSize);
-                        batchInitializationStopwatch.Stop();
-                        this._metricsProvider.BatchInitializationTimeHistogram(batchInitializationStopwatch.Elapsed.TotalSeconds);
-                        IData target = sources[0];
-                        target.IsNew = metadata.IsNewTarget;
 
                         List<Tile> tiles = new List<Tile>((int)singleTileBatchCount);
                         long currentBatchBytes = 0;

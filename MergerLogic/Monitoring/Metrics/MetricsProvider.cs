@@ -13,7 +13,6 @@ namespace MergerLogic.Monitoring.Metrics
         private enum MetricName
         {
             [EnumMember(Value = "task_execution_time")] TaskExecutionTimeHistogram,
-            [EnumMember(Value = "batch_initialization_time")] BatchInitializationTimeHistogram,
             [EnumMember(Value = "batch_upload_time")] BatchUploadTimeHistogram,
             [EnumMember(Value = "batch_work_time")] BatchWorkTimeHistogram,
             [EnumMember(Value = "build_sources_list_time")] BuildSourcesListTimeHistogram,
@@ -48,18 +47,6 @@ namespace MergerLogic.Monitoring.Metrics
                 measuredTime,
                 new string[] { "task_type" },
                 labelValues
-           );
-        }
-
-        public void BatchInitializationTimeHistogram(double measuredTime)
-        {
-            this.ObserveHistogram
-           (
-                MetricName.BatchInitializationTimeHistogram,
-                "Histogram of Batch Initialization time",
-                measuredTime,
-                null,
-                null
            );
         }
 
