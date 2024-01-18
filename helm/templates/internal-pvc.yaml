@@ -1,8 +1,9 @@
 {{- if .Values.local.storage.internalPvc.create -}}
+{{- $fs := (include "common.fs.merged" .) | fromYaml }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ .Values.rasterCommon.storage.fs.internalPvc.name }}
+  name: {{ $fs.internalPvc.name }}
   labels:
     app: {{ template "gpkg-merger.name" . }}
     component: "gpkg-merger"

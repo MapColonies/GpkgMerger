@@ -2,64 +2,17 @@ global:
   cloudProvider: {}
   tracing: {}
   metrics: {}
-  environment: {}
-
-enabled: true
-environment: development
-replicaCount: 1
-initialDelaySeconds: 60
-resetOnConfigChange: true
-isExporter: false
-
-cloudProvider:
-  dockerRegistryUrl: 'my-registry'
-  imagePullSecretName: 'my-registry-secret'
-  flavor: openshift
-
-image:
-  repository: gpkg-merge
-  tag: 'latest'
-
-local:
-  s3:
-    secret:
-      create: false
-      accessKeyId: minikube
-      secretAccessKey: minikube
-  storage:
-    internalPv:
-      create: false #for local deployment only
-      name: local-tiles-pv
-      storage: 5Gi
-      hostPath: '/tiles' #tiles hostPatch
-    ingestionPv:
-      create: false #for local deployment only
-      name: local-sources-pv
-      storage: 5Gi
-      hostPath: /layerSources
-    internalPvc:
-      create: false #for local deployment only
-      storage: 4Gi
-    ingestionSourcePvc:
-      create: false #for local deployment only
-      storage: 4Gi
-    accessModes: ReadWriteOnce
-    storageClassName: host-path
-
-rasterCommon:
+  environment: ""
   useNodeAffinity: false
-  serviceUrls:
-    jobManager: http://localhost:8084
-    heartbeatManager: http://localhost:8082
   storage:
     fs:
       ingestionSourcePvc:
-        name: ingestion-source-pvc
-        subPath: ingestion-source
+        name: ""
+        subPath: ""
       internalPvc:
-        name: "internal-pvc"
-        tilesSubPath: tiles
-        gpkgSubPath: gpkgs
+        name: ""
+        tilesSubPath: ""
+        gpkgSubPath: ""
     s3:
       endpointUrl: "localhost:9000"
       tilesBucket: ""
@@ -69,11 +22,63 @@ rasterCommon:
         timeoutSec: 5
         retries: 3
       logToConsole: false
+  serviceUrls:
+    jobManager: ""
+    heartbeatManager: ""
   ca:
     secretName: ''
     path: '/usr/local/share/ca-certificates'
     key: 'ca.crt'
+
+enabled: true
+environment: development
+replicaCount: 1
+initialDelaySeconds: 60
+nodePort: 30011
+resetOnConfigChange: true
+isExporter: false
+
+cloudProvider:
+  dockerRegistryUrl: 'my-registry'
+  imagePullSecretName: 'my-registry-secret'
+  flavor: openshift
+
+image:
+  repository: gpkg-merger
+  tag: 'latest'
+
+serviceUrls:
+  jobManager: ""
+  heartbeatManager: ""
+
+storage:
+  fs:
+    ingestionSourcePvc:
+      name: ""
+      subPath: ""
+    internalPvc:
+      name: ""
+      tilesSubPath: ""
+      gpkgSubPath: ""
+  s3:
+    endpointUrl: ""
+    tilesBucket: ""
+    secretName: ""
+    sslEnabled: false
+    request:
+      timeoutSec: 5
+      retries: 3
+    logToConsole: false
+
+# add pod annotations
+# example:
+# podAnnotations:
+  # annotation1: annotation-value-1
+  # annotation2: annotation-value-2
+podAnnotations: {}
+
 env:
+  protocol: TCP
   general:
     validate: true
     batchMaxBytes: 838860800 # 800MB
@@ -123,3 +128,28 @@ route:
     enabled: false # defaults to 30s by openshift
     duration: 60s # supported units (us, ms, s, m, h, d)
     
+local:
+  s3:
+    secret:
+      create: false
+      accessKeyId: minikube
+      secretAccessKey: minikube
+  storage:
+    internalPv:
+      create: false #for local deployment only
+      name: local-tiles-pv
+      storage: 5Gi
+      hostPath: '/tiles' #tiles hostPatch
+    ingestionPv:
+      create: false #for local deployment only
+      name: local-sources-pv
+      storage: 5Gi
+      hostPath: /layerSources
+    internalPvc:
+      create: false #for local deployment only
+      storage: 4Gi
+    ingestionSourcePvc:
+      create: false #for local deployment only
+      storage: 4Gi
+    accessModes: ReadWriteMany
+    storageClassName: host-path

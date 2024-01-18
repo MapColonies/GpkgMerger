@@ -1,19 +1,22 @@
 {{- $releaseName := .Release.Name -}}
 {{- $chartName := include "gpkg-merger.name" . -}}
+{{- $configmapName := include "configmap.fullname" . }}
+{{- $deploymentName := include "deployment.fullname" . }}
 {{- $cloudProviderFlavor := include "gpkg-merger.cloudProviderFlavor" . -}}
 {{- $cloudProviderDockerRegistryUrl := include "gpkg-merger.cloudProviderDockerRegistryUrl" . -}}
 {{- $cloudProviderImagePullSecretName := include "gpkg-merger.cloudProviderImagePullSecretName" . -}}
 {{- $imageTag := include "gpkg-merger.tag" . -}}
 {{- if .Values.enabled -}}
-
-{{ $gpkgPath := (printf "%s%s" "/app/tiles_outputs/" .Values.rasterCommon.storage.fs.internalPvc.gpkgSubPath) }}
-{{ $tilePath := (printf "%s%s" "/app/tiles_outputs/" .Values.rasterCommon.storage.fs.internalPvc.tilesSubPath) }}
-{{ $sources := (ternary $tilePath (printf "%s%s" "/layerSources/" .Values.rasterCommon.storage.fs.ingestionSourcePvc.subPath) .Values.isExporter ) }}
+{{- $s3 := (include "common.s3.merged" .) | fromYaml }}
+{{- $fs := (include "common.fs.merged" .) | fromYaml }}
+{{ $gpkgPath := (printf "%s%s" "/app/tiles_outputs/" $fs.internalPvc.gpkgSubPath) }}
+{{ $tilePath := (printf "%s%s" "/app/tiles_outputs/" $fs.internalPvc.tilesSubPath) }}
+{{ $sources := (ternary $tilePath (printf "%s%s" "/layerSources/" $fs.ingestionSourcePvc.subPath) .Values.isExporter ) }}
 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $releaseName }}-deployment
+  name: {{ $deploymentName }}
   labels:
     app: {{ $chartName }}
     component: {{ $chartName }}
@@ -35,16 +38,19 @@ spec:
         release: {{ $releaseName }}
         run: {{ $releaseName }}-{{ $chartName }}
         {{- include "gpkg-merger.selectorLabels" . | nindent 8 }}
-      {{- if .Values.resetOnConfigChange }}
       annotations:
+      {{- if .Values.resetOnConfigChange }}
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         {{- if .Values.env.metrics.enabled }}
         prometheus.io/port: {{ .Values.env.metrics.port | quote }}
         prometheus.io/scrape: {{ .Values.env.metrics.scrape | quote }}
         {{- end }}
+        {{- if .Values.podAnnotations }}
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+        {{- end }}
       {{- end }}
     spec:
-      {{- if .Values.rasterCommon.useNodeAffinity }}
+      {{- if .Values.global.useNodeAffinity }}
       affinity:
         podAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -63,14 +69,14 @@ spec:
       volumes:
       - name: ingestion-storage
         persistentVolumeClaim:
-          claimName: {{ .Values.rasterCommon.storage.fs.ingestionSourcePvc.name }}
+          claimName: {{ $fs.ingestionSourcePvc.name }}
       - name: output-storage
         persistentVolumeClaim:
-          claimName: {{ .Values.rasterCommon.storage.fs.internalPvc.name }}
-      {{- if .Values.rasterCommon.ca.secretName }}
+          claimName: {{ $fs.internalPvc.name }}
+      {{- if .Values.global.ca.secretName }}
       - name: root-ca
         secret:
-          secretName: {{ .Values.rasterCommon.ca.secretName }}
+          secretName: {{ .Values.global.ca.secretName }}
       {{- end }}
     #   nodeSelector:
     #     knownNode: eastus-1-node-1
@@ -80,9 +86,9 @@ spec:
           image: {{ $cloudProviderDockerRegistryUrl }}{{ .repository }}:{{ .tag }}
           {{- end }}
           env:
-            {{- if .Values.rasterCommon.ca.secretName }}
+            {{- if .Values.global.ca.secretName }}
             - name: SSL_CERT_DIR
-              value: {{ .Values.rasterCommon.ca.path | quote }}
+              value: {{ .Values.global.ca.path | quote }}
             {{- end }} 
             - name: SERVER_PORT
               value: "8080"
@@ -101,16 +107,16 @@ spec:
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.rasterCommon.storage.s3.secretName }}
+                  name: {{ $s3.secretName }}
                   key: accessKeyId
             - name: AWS_SECRET_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.rasterCommon.storage.s3.secretName }}
+                  name: {{ $s3.secretName }}
                   key: secretAccessKey
           envFrom:
             - configMapRef:
-                name: {{ $releaseName }}-configmap
+                name: {{ $configmapName }}
           imagePullPolicy: "Always"
           ports:
             - name: http
@@ -121,10 +127,10 @@ spec:
               mountPath: /layerSources
             - name: output-storage
               mountPath: /app/tiles_outputs
-            {{- if .Values.rasterCommon.ca.secretName }}
+            {{- if .Values.global.ca.secretName }}
             - name: root-ca
-              mountPath: {{ printf "%s/%s" .Values.rasterCommon.ca.path .Values.rasterCommon.ca.key | quote }}
-              subPath: {{ .Values.rasterCommon.ca.key | quote }} 
+              mountPath: {{ printf "%s/%s" .Values.global.ca.path .Values.global.ca.key | quote }}
+              subPath: {{ .Values.global.ca.key | quote }} 
             {{- end }} 
           {{- if .Values.resources.enabled }}
           resources:

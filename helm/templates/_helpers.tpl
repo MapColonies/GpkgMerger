@@ -2,7 +2,11 @@
 Expand the name of the chart.
 */}}
 {{- define "gpkg-merger.name" -}}
+{{- if .Values.isExporter }}
+{{- default (printf "%s-%s" .Chart.Name "exporter") | trunc 63 | trimSuffix "-" }}
+{{- else }}
 {{- default .Chart.Name | trunc 63 | trimSuffix "-" }}
+{{- end }}
 {{- end }}
 
 {{/*
@@ -24,13 +28,6 @@ Create chart name and version as used by the chart label.
 */}}
 {{- define "gpkg-merger.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
-Create service name as used by the service name label.
-*/}}
-{{- define "service.fullname" -}}
-{{- printf "%s-%s" .Release.Name "service" }}
 {{- end }}
 
 {{/*
