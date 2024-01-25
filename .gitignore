@@ -420,4 +420,4 @@ FodyWeavers.xsd
 *.sln.iml
 
 # Local value yaml
-helm/values-local.yaml
+helm/local.yaml

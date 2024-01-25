@@ -101,7 +101,7 @@ spec:
             - name: GENERAL__batchSize__limitBatchSize
               value: {{ .Values.env.general.batchSize.limitBatchSize | quote }}
             - name: GENERAL__batchMaxBytes
-              value: {{ .Values.env.general.batchMaxBytes | quote }}
+              value: {{ .Values.env.general.batchMaxBytes | int64 | quote }}
             - name: GENERAL__filePath
               value: {{ $tilePath }}
             - name: AWS_ACCESS_KEY_ID
