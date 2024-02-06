@@ -46,21 +46,21 @@ Custom definitions
 */}}
 
 {{- define "common.storage.merged" -}}
-{{- include "common.tplvalues.merge" ( dict "values" ( list .Values.global.storage .Values.storage ) "context" . ) }}
+{{- include "common.tplvalues.merge" ( dict "values" ( list .Values.storage .Values.global.storage ) "context" . ) }}
 {{- end -}}
 
 {{- define "common.db.merged" -}}
-{{- include "common.tplvalues.merge" ( dict "values" ( list .Values.global.db .Values.db ) "context" . ) }}
+{{- include "common.tplvalues.merge" ( dict "values" ( list .Values.db .Values.global.db ) "context" . ) }}
 {{- end -}}
 
 {{- define "common.s3.merged" -}}
-{{- include "common.tplvalues.merge" ( dict "values" ( list .Values.global.storage.s3 .Values.storage.s3 ) "context" . ) }}
+{{- include "common.tplvalues.merge" ( dict "values" ( list .Values.storage.s3 .Values.global.storage.s3 ) "context" . ) }}
 {{- end -}}
 
 {{- define "common.fs.merged" -}}
-{{- include "common.tplvalues.merge" ( dict "values" ( list .Values.global.storage.fs .Values.storage.fs ) "context" . ) }}
+{{- include "common.tplvalues.merge" ( dict "values" ( list .Values.storage.fs .Values.global.storage.fs ) "context" . ) }}
 {{- end -}}
 
 {{- define "common.serviceUrls.merged" -}}
-{{- include "common.tplvalues.merge" ( dict "values" ( list .Values.global.serviceUrls .Values.serviceUrls ) "context" . ) }}
+{{- include "common.tplvalues.merge" ( dict "values" ( list .Values.serviceUrls .Values.global.serviceUrls ) "context" . ) }}
 {{- end -}}
