@@ -2,11 +2,7 @@
 Expand the name of the chart.
 */}}
 {{- define "gpkg-merger.name" -}}
-{{- if .Values.isExporter }}
-{{- default (printf "%s-%s" .Chart.Name "exporter") | trunc 63 | trimSuffix "-" }}
-{{- else }}
 {{- default .Chart.Name | trunc 63 | trimSuffix "-" }}
-{{- end }}
 {{- end }}
 
 {{/*
