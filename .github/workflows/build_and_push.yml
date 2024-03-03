@@ -3,7 +3,7 @@ name: Match chart version and push to ACR
 on:
   push:
     tags:
-      - '*'
+      - 'c*'
 
   workflow_dispatch:
     inputs:
