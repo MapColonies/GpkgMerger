@@ -102,13 +102,13 @@ namespace MergerLogicUnitTests.Utils
           tile => testSourceTiles.Any(sourceTile => sourceTile.Z == tile.Z && sourceTile.X == tile.X && sourceTile.Y == tile.Y)
         )
       )), Times.Exactly(numberOfSources));
+      targetDataMock.Verify(targetData => targetData.Wrapup(), Times.Once);
 
       Assert.AreEqual(testSourceTiles.Length, resultWrittenTiles.Count);
       Assert.IsTrue(testSourceTiles.All(
         tile => resultWrittenTiles.Any(sourceTile => sourceTile.Z == tile.Z && sourceTile.X == tile.X && sourceTile.Y == tile.Y)
       ));
     }
-
 
     public static IEnumerable<object[]> GetBatchLimitTestParameters()
     {
@@ -183,12 +183,12 @@ namespace MergerLogicUnitTests.Utils
       testTaskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, null);
 
       targetDataMock.Verify(targetData => targetData.UpdateTiles(It.IsAny<IEnumerable<Tile>>()), Times.Exactly(amountOfFlushes));
-
+      targetDataMock.Verify(targetData => targetData.Wrapup(), Times.Once);
       Assert.AreEqual(testSourceTiles.Length, resultWrittenTiles.Count);
-      Assert.IsTrue(testSourceTiles.All(
-        tile => resultWrittenTiles.Any(sourceTile => sourceTile.Z == tile.Z && sourceTile.X == tile.X && sourceTile.Y == tile.Y)
-      ));
-    }
+        Assert.IsTrue(testSourceTiles.All(
+            tile => resultWrittenTiles.Any(sourceTile => sourceTile.Z == tile.Z && sourceTile.X == tile.X && sourceTile.Y == tile.Y)
+        ));
+      }
 
     private Tuple<MergeTask, Mock<IData>, Tile[]> SetupTestTask(int amountOfSources, bool isTargetNew)
     {

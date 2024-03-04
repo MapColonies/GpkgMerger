@@ -211,7 +211,6 @@ namespace MergerService.Runners
                         }
 
                         this._logger.LogInformation($"[{methodName}] Overall tile Count: {overallTileProgressCount} / {totalTileCount}");
-                        target.Wrapup();
 
                         mergeRunTimeStopwatch.Stop();
 
@@ -258,6 +257,7 @@ namespace MergerService.Runners
                     }
                     this._metricsProvider.TilesInBatchGauge(0);
                 }
+                target.Wrapup();
             }
             this._logger.LogDebug($"[{methodName}] end");
         }
