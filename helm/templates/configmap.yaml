@@ -41,4 +41,5 @@ data:
   HTTP__retries: {{ .Values.env.HTTP.retries | quote }}
   HEARTBEAT__baseUrl: {{ $serviceUrls.heartbeatManager | quote }}
   HEARTBEAT__intervalMs: {{ .Values.env.heartbeat.intervalMs | quote }}
+  S3__storageClass: {{ $s3.storageClass }}
 {{- end -}}
