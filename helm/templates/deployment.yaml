@@ -70,9 +70,6 @@ spec:
       - name: ingestion-storage
         persistentVolumeClaim:
           claimName: {{ $fs.ingestionSourcePvc.name }}
-      - name: output-storage
-        persistentVolumeClaim:
-          claimName: {{ $fs.internalPvc.name }}
       {{- if .Values.global.ca.secretName }}
       - name: root-ca
         secret:
@@ -125,7 +122,7 @@ spec:
           volumeMounts:
             - name: ingestion-storage
               mountPath: /layerSources
-            - name: output-storage
+            - name: ingestion-storage
               mountPath: /app/tiles_outputs
             {{- if .Values.global.ca.secretName }}
             - name: root-ca
