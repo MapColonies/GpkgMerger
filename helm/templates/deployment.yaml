@@ -78,7 +78,7 @@ spec:
     #   nodeSelector:
     #     knownNode: eastus-1-node-1
       containers:
-        - name: {{ $releaseName }}
+        - name: {{ $chartName }}
           {{- with .Values.image }}
           image: {{ $cloudProviderDockerRegistryUrl }}{{ .repository }}:{{ .tag }}
           {{- end }}
