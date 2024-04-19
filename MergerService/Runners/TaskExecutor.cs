@@ -168,15 +168,15 @@ namespace MergerService.Runners
                                         correspondingTileBuilders.Add(() => source.GetCorrespondingTile(coord, false));
                                     }
                                     var tileMergeStopwatch = Stopwatch.StartNew();
-                                    byte[]? blob = this._tileMerger.MergeTiles(correspondingTileBuilders, coord,
+                                    Tile? tile = this._tileMerger.MergeTiles(correspondingTileBuilders, coord,
                                         metadata.TargetFormat);
                                     tileMergeStopwatch.Stop();
                                     this._metricsProvider.MergeTimePerTileHistogram(tileMergeStopwatch.Elapsed.TotalSeconds, metadata.TargetFormat);
 
-                                    if (blob != null)
+                                    if (tile != null)
                                     {
-                                        tiles.Add(new Tile(coord, blob));
-                                        currentBatchBytes += blob.Length;
+                                        tiles.Add(tile);
+                                        currentBatchBytes += tile.Size();
 
                                         // Flushes the "tiles" list if it reached the batch size or the batch max bytes
                                         // This is done to prevent memory overflow

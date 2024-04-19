@@ -72,6 +72,10 @@ namespace MergerLogic.Batching
             return this._data;
         }
 
+        public int Size() {
+            return this._data.Length;
+        }
+
         public void ConvertToFormat(TileFormat format)
         {
             if (this.Format == format) {

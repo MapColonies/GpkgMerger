@@ -98,7 +98,7 @@ namespace MergerLogicUnitTests.ImageProcessing
             var result = this._testTileMerger.MergeTiles(tileBuilders, targetCoord, tileFormat);
 
             Assert.IsNotNull(result);
-            CollectionAssert.AreEqual(expectedTileBytes, result);
+            CollectionAssert.AreEqual(expectedTileBytes, result.GetImageBytes());
         }
 
         #endregion

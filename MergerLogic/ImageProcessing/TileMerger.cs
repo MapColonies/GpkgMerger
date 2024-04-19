@@ -18,10 +18,12 @@ namespace MergerLogic.ImageProcessing
             this._tileScaler = tileScaler;
         }
 
-        public byte[]? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords, TileFormat format)
+        public Tile? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords, TileFormat format)
         {
             var images = this.GetImageList(tiles, targetCoords);
             byte[] data;
+            Tile tile;
+            
             switch (images.Count)
             {
                 case 0:
@@ -29,12 +31,14 @@ namespace MergerLogic.ImageProcessing
                     this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] No images where found return null");
                     return null;
                 case 1:
-                    ImageFormatter.ConvertToFormat(images[0], format);
                     ImageFormatter.RemoveImageDateAttributes(images[0]);
                     data = images[0].ToByteArray();
                     images[0].Dispose();
                     this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] 1 image found");
-                    return data;
+
+                    tile = new Tile(targetCoords, data);
+                    tile.ConvertToFormat(format);
+                    return tile;
                 default:
                     using (var imageCollection = new MagickImageCollection())
                     {
@@ -50,10 +54,12 @@ namespace MergerLogic.ImageProcessing
 
                             mergedImage.ColorSpace = ColorSpace.sRGB;
                             mergedImage.ColorType = mergedImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor;
-                            ImageFormatter.ConvertToFormat(mergedImage, format);
                             var mergedImageBytes = mergedImage.ToByteArray();
                             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] 'imageMagic' merging finished");
-                            return mergedImageBytes;
+
+                            tile = new Tile(targetCoords, mergedImageBytes);
+                            tile.ConvertToFormat(format);
+                            return tile;
                         }
                     }
             }
