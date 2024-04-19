@@ -7,6 +7,7 @@ namespace MergerLogic.ImageProcessing
     {
         [EnumMember(Value = "png")] Png,
         [EnumMember(Value = "jpeg")] Jpeg,
+        [EnumMember(Value = "mixed")] Mixed,
     }
 
     public class ImageFormatter

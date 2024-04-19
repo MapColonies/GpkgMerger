@@ -29,7 +29,7 @@ namespace MergerLogic.ImageProcessing
                     this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] No images where found return null");
                     return null;
                 case 1:
-                    ImageFormatter.ConvertToFormat(images[0], format);
+                    // ImageFormatter.ConvertToFormat(images[0], format);
                     ImageFormatter.RemoveImageDateAttributes(images[0]);
                     data = images[0].ToByteArray();
                     images[0].Dispose();
@@ -50,7 +50,7 @@ namespace MergerLogic.ImageProcessing
 
                             mergedImage.ColorSpace = ColorSpace.sRGB;
                             mergedImage.ColorType = mergedImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor;
-                            ImageFormatter.ConvertToFormat(mergedImage, format);
+                            // ImageFormatter.ConvertToFormat(mergedImage, format);
                             var mergedImageBytes = mergedImage.ToByteArray();
                             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] 'imageMagic' merging finished");
                             return mergedImageBytes;

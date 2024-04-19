@@ -15,6 +15,8 @@ namespace MergerCli
         private readonly IConfigurationManager _configManager;
         private readonly ITileMerger _tileMerger;
         private readonly ILogger _logger;
+        private bool _uploadOnly;
+        private TileFormat _outputFormat;
         static readonly object _locker = new object();
 
         public Process(IConfigurationManager configuration, ITileMerger tileMerger, ILogger<Process> logger)
@@ -22,6 +24,8 @@ namespace MergerCli
             this._configManager = configuration;
             this._tileMerger = tileMerger;
             this._logger = logger;
+
+            this._outputFormat = this._configManager.GetConfiguration<TileFormat>("GENERAL", "outputFormat");
         }
 
         public void Start(TileFormat targetFormat, IData baseData, IData newData, BatchStatusManager batchStatusManager)
@@ -47,8 +51,9 @@ namespace MergerCli
             this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Total amount of tiles to merge: {totalTileCount - tileProgressCount}");
             var uploadOnly = this._configManager.GetConfiguration<bool>("GENERAL", "uploadOnly");
             
-            bool shouldUpscale = !(uploadOnly || baseData.IsNew);
-            _getTileByCoord = uploadOnly || baseData.IsNew ?
+            this._uploadOnly = uploadOnly || baseData.IsNew;
+            bool shouldUpscale = !this._uploadOnly;
+            _getTileByCoord = this._uploadOnly ?
                 (_) => null
                 :
                 (targetCoords) => baseData.GetCorrespondingTile(targetCoords, shouldUpscale);
@@ -115,12 +120,24 @@ namespace MergerCli
                 {
                     () => _getTileByCoord(targetCoords), () => newTile
                 };
+                
+                byte[]? image = newTile.GetImageBytes();
 
-                byte[]? image = this._tileMerger.MergeTiles(correspondingTileBuilders, targetCoords, targetFormat);
+                // if (!this._uploadOnly) {
+                //     image = this._tileMerger.MergeTiles(correspondingTileBuilders, targetCoords, targetFormat);
+                // }
 
                 if (image != null)
                 {
                     newTile = new Tile(newTile.Z, newTile.X, newTile.Y, image);
+                    
+                    // if (this._outputFormat != TileFormat.Mixed) {
+                    //     newTile.ConvertToFormat(targetFormat);
+                    // }
+                    
+                    // if (this._outputFormat == newTile.Format) {
+                    //     tiles.Add(newTile);
+                    // }
                     tiles.Add(newTile);
                 }
             }
