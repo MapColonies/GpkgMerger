@@ -52,15 +52,39 @@ namespace MergerLogicUnitTests.ImageProcessing
                 new Tile[] {
                     new Tile(targetCoordHighZoom, File.ReadAllBytes("2.png")),
                     new Tile(targetCoordHighZoom, File.ReadAllBytes("1.png"))
-                }, targetCoordHighZoom, TileFormat.Png,
+                }, targetCoordHighZoom, new TileFormatStrategy(TileFormat.Jpeg), TileFormat.Jpeg,
+                File.ReadAllBytes("2_1_merged.jpeg"),
+            };
+
+            yield return new object[] {
+                new Tile[] {
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("2.png")),
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("1.png"))
+                }, targetCoordHighZoom, new TileFormatStrategy(TileFormat.Png), TileFormat.Png,
                 File.ReadAllBytes("2_1_merged.png"),
+            };
+
+            yield return new object[] {
+                new Tile[] {
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("2.png")),
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("1.png"))
+                }, targetCoordHighZoom, new TileFormatStrategy(TileFormat.Png, TileFormatStrategy.FormatStrategy.Mixed),
+                TileFormat.Png, File.ReadAllBytes("2_1_merged.png"),
             };
 
             yield return new object[] {
                 new Tile[] {
                     new Tile(targetCoordHighZoom, File.ReadAllBytes("3.jpeg")),
                     new Tile(targetCoordHighZoom, File.ReadAllBytes("1.png"))
-                }, targetCoordHighZoom, TileFormat.Jpeg,
+                }, targetCoordHighZoom, new TileFormatStrategy(TileFormat.Png, TileFormatStrategy.FormatStrategy.Mixed),
+                TileFormat.Jpeg, File.ReadAllBytes("3_1_merged.jpeg"),
+            };
+
+            yield return new object[] {
+                new Tile[] {
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("3.jpeg")),
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("1.png"))
+                }, targetCoordHighZoom, new TileFormatStrategy(TileFormat.Jpeg), TileFormat.Jpeg,
                 File.ReadAllBytes("3_1_merged.jpeg"),
             };
 
@@ -68,15 +92,23 @@ namespace MergerLogicUnitTests.ImageProcessing
                 new Tile[] {
                     new Tile(targetCoordHighZoom, File.ReadAllBytes("3.jpeg")),
                     new Tile(targetCoordHighZoom, File.ReadAllBytes("4.jpeg"))
-                }, targetCoordHighZoom, TileFormat.Jpeg,
+                }, targetCoordHighZoom, new TileFormatStrategy(TileFormat.Jpeg), TileFormat.Jpeg,
                 File.ReadAllBytes("3_4_merged.jpeg"),
             };
 
             yield return new object[] {
                 new Tile[] {
                     new Tile(targetCoordHighZoom, File.ReadAllBytes("3.jpeg")),
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("4.jpeg"))
+                }, targetCoordHighZoom, new TileFormatStrategy(TileFormat.Png, TileFormatStrategy.FormatStrategy.Mixed),
+                TileFormat.Jpeg, File.ReadAllBytes("3_4_merged.jpeg"),
+            };
+
+            yield return new object[] {
+                new Tile[] {
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("3.jpeg")),
                     new Tile(targetCoordLowZoom, File.ReadAllBytes("1.png"))
-                }, targetCoordHighZoom, TileFormat.Jpeg,
+                }, targetCoordHighZoom, new TileFormatStrategy(TileFormat.Jpeg), TileFormat.Jpeg,
                 File.ReadAllBytes("3_1_merged_upscaled_5_15.jpeg"),
             };
 
@@ -84,7 +116,7 @@ namespace MergerLogicUnitTests.ImageProcessing
                 new Tile[] {
                     new Tile(targetCoordHighZoom, File.ReadAllBytes("3.jpeg")),
                     new Tile(targetCoordMediumZoom, File.ReadAllBytes("1.png"))
-                }, targetCoordHighZoom, TileFormat.Jpeg,
+                }, targetCoordHighZoom, new TileFormatStrategy(TileFormat.Jpeg), TileFormat.Jpeg,
                 File.ReadAllBytes("3_1_merged_upscaled_14_15.jpeg"),
             };
         }
@@ -92,12 +124,13 @@ namespace MergerLogicUnitTests.ImageProcessing
         [TestMethod]
         [TestCategory("MergeTiles")]
         [DynamicData(nameof(GetMergeTilesTestParameters), DynamicDataSourceType.Method)]
-        public void MergeTiles(Tile[] tiles, Coord targetCoord, TileFormat tileFormat, byte[] expectedTileBytes)
+        public void MergeTiles(Tile[] tiles, Coord targetCoord, TileFormatStrategy strategy, TileFormat expectedForamt, byte[] expectedTileBytes)
         {
             var tileBuilders = tiles.Select<Tile, CorrespondingTileBuilder>(tile => () => tile).ToList();
-            var result = this._testTileMerger.MergeTiles(tileBuilders, targetCoord, tileFormat);
+            var result = this._testTileMerger.MergeTiles(tileBuilders, targetCoord, strategy);
 
             Assert.IsNotNull(result);
+            Assert.AreEqual(expectedForamt, result.Format);
             CollectionAssert.AreEqual(expectedTileBytes, result.GetImageBytes());
         }
 

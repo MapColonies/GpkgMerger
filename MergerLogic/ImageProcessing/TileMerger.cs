@@ -18,12 +18,11 @@ namespace MergerLogic.ImageProcessing
             this._tileScaler = tileScaler;
         }
 
-        public Tile? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords, TileFormat format)
+        public Tile? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords, TileFormatStrategy strategy)
         {
             var images = this.GetImageList(tiles, targetCoords);
             byte[] data;
-            Tile tile;
-            
+
             switch (images.Count)
             {
                 case 0:
@@ -35,10 +34,7 @@ namespace MergerLogic.ImageProcessing
                     data = images[0].ToByteArray();
                     images[0].Dispose();
                     this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] 1 image found");
-
-                    tile = new Tile(targetCoords, data);
-                    tile.ConvertToFormat(format);
-                    return tile;
+                    break;
                 default:
                     using (var imageCollection = new MagickImageCollection())
                     {
@@ -54,15 +50,16 @@ namespace MergerLogic.ImageProcessing
 
                             mergedImage.ColorSpace = ColorSpace.sRGB;
                             mergedImage.ColorType = mergedImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor;
-                            var mergedImageBytes = mergedImage.ToByteArray();
+                            data = mergedImage.ToByteArray();
                             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] 'imageMagic' merging finished");
-
-                            tile = new Tile(targetCoords, mergedImageBytes);
-                            tile.ConvertToFormat(format);
-                            return tile;
                         }
                     }
+                    break;
             }
+
+            Tile tile = new Tile(targetCoords, data);
+            tile.ConvertToFormat(strategy.ApplyStrategy(tile.Format));
+            return tile;
         }
 
         private List<MagickImage> GetImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords)

@@ -9,11 +9,35 @@ namespace MergerLogic.ImageProcessing
         [EnumMember(Value = "jpeg")] Jpeg,
     }
 
+    public class TileFormatStrategy {
+        public enum FormatStrategy {
+            [EnumMember(Value = "fixed")] Fixed,
+            [EnumMember(Value = "mixed")] Mixed,
+        }
+
+        private FormatStrategy _strategy;
+        private TileFormat _format;
+
+        public TileFormatStrategy(TileFormat format, FormatStrategy strategy = FormatStrategy.Fixed)
+        {
+            this._strategy = strategy;
+            this._format = format;
+        }
+
+        public TileFormat ApplyStrategy(TileFormat format) {
+            if (this._strategy == FormatStrategy.Fixed) {
+                return this._format;
+            }
+
+            return format;
+        }
+    }
+
     public class ImageFormatter
     {
         public static byte[] ConvertToFormat(byte[] tile, TileFormat format)
         {
-            var currentFormat = GetTileFormat(tile);
+            TileFormat? currentFormat = GetTileFormat(tile);
             if (currentFormat != format)
             {
                 using (var image = new MagickImage(tile))

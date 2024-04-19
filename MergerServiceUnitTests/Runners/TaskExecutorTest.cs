@@ -116,16 +116,16 @@ namespace MergerLogicUnitTests.Utils
             // When the limit is 2, and there are total 5 tiles, we expect 3 flushes
             // We set the bytes limit to a high value to avoid it being reached by the test
             yield return new object[] {
-          true, 2, 1024 * 1024 * 80, 3, 5
-      };
+                true, 2, 1024 * 1024 * 80, 3, 5
+            };
 
             // Tests that given a batch bytes limit, it flushes every time it reaches the limit
             // When the limit is one byte more then twice the size of the tile, and there are total 7 tiles, we expect 3 flushes
             // (Flush every 3rd tile, and additional flush at the end)
             // We disable the size limit to avoid it being used in the test
             yield return new object[] {
-          false, 1, (File.ReadAllBytes("tile.jpeg").Length * 2) + 1, 3, 7
-      };
+                false, 1, (File.ReadAllBytes("tile.jpeg").Length * 2) + 1, 3, 7
+            };
         }
 
         [TestMethod]

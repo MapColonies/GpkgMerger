@@ -6,6 +6,7 @@ using Newtonsoft.Json.Converters;
 using System.ComponentModel;
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
+using static MergerLogic.ImageProcessing.TileFormatStrategy;
 
 namespace MergerService.Models.Tasks
 {
@@ -22,6 +23,8 @@ namespace MergerService.Models.Tasks
     public class MergeMetadata
     {
         [JsonInclude] public TileFormat TargetFormat { get; }
+
+        [JsonInclude] public FormatStrategy OutputFormatStrategy { get; }
         
         [JsonInclude] public bool IsNewTarget { get; }
         
@@ -32,9 +35,10 @@ namespace MergerService.Models.Tasks
         [System.Text.Json.Serialization.JsonIgnore]
         private JsonSerializerSettings _jsonSerializerSettings;
 
-        public MergeMetadata(TileFormat targetFormat, bool isNewTarget, TileBounds[] batches, Source[] sources)
+        public MergeMetadata(TileFormat targetFormat, bool isNewTarget, TileBounds[] batches, Source[] sources, FormatStrategy outputFormatStrategy = FormatStrategy.Fixed)
         {
             this.TargetFormat = targetFormat;
+            this.OutputFormatStrategy = outputFormatStrategy;
             this.IsNewTarget = isNewTarget;
             this.Batches = batches;
             this.Sources = sources;

@@ -78,10 +78,6 @@ namespace MergerLogic.Batching
 
         public void ConvertToFormat(TileFormat format)
         {
-            if (this.Format == format) {
-                return;
-            }
-
             this._data = ImageFormatter.ConvertToFormat(this._data, format);
             this.Format = format;
         }

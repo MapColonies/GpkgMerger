@@ -53,12 +53,11 @@ namespace MergerCli
             PrepareStatusManger();
 
             int batchSize = int.Parse(args[1]);
-            TileFormat format;
             List<IData> sources;
             try
             {
                 var parser = container.GetRequiredService<ISourceParser>();
-                sources = parser.ParseSources(args, batchSize, out format);
+                sources = parser.ParseSources(args, batchSize);
             }
             catch (Exception ex)
             {
@@ -101,7 +100,7 @@ namespace MergerCli
                         continue;
                     }
 
-                    process.Start(format, baseData, sources[i], _batchStatusManager);
+                    process.Start(baseData, sources[i], _batchStatusManager);
                     baseData.IsNew = false;
                     stopWatch.Stop();
 
@@ -161,7 +160,7 @@ namespace MergerCli
                         gpkg <path>  [bbox - in format 'minX,minY,maxX,maxY' - required base] [--1x1] [--UL / --LL] 
                     **** please note all layers must be 2X1 EPSG:4326 layers ****
                                     
-                merge sources: {programName} <batch_size> <target tiles format: png/jpeg> <base source> <additional source> [<another source>...]
+                merge sources: {programName} <batch_size> <base source> <additional source> [<another source>...]
                 Examples:
                 {programName} 1000 gpkg area1.gpkg gpkg area2.gpkg
                 {programName} 1000 s3 /path1/on/s3 s3 /path2/on/s3
