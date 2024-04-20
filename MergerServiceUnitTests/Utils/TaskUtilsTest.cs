@@ -6,7 +6,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
 
 namespace MergerLogicUnitTests.Utils
@@ -14,6 +17,7 @@ namespace MergerLogicUnitTests.Utils
   [TestClass]
   [TestCategory("unit")]
   [TestCategory("utils")]
+  [DeploymentItem(@"../../../Utils/TestData")]
   public class TaskUtilsTest
   {
     #region mocks
@@ -59,11 +63,17 @@ namespace MergerLogicUnitTests.Utils
       this._httpClientMock.Verify(httpClient => httpClient.PostData(expectedUrl, null, false), Times.Once);
     }
 
-    [TestMethod]
-    public void WhenGettingMalformedJsonTask_ShouldReturnNull()
+    public static IEnumerable<object[]> GetBadJsonTestParameters()
     {
-      var malformedJsonString = "bad json";
-      this._httpClientMock.Setup(httpClient => httpClient.PostData(It.IsAny<string>(), It.IsAny<HttpContent?>(), It.IsAny<bool>())).Returns(malformedJsonString);
+        yield return new object[] { "bad json" };
+        yield return new object[] { File.ReadAllText("invalidTask.json") };
+    }
+
+    [TestMethod]
+    [DynamicData(nameof(GetBadJsonTestParameters), DynamicDataSourceType.Method)]
+    public void WhenGettingMalformedJsonTask_ShouldReturnNull(string json)
+    {
+      this._httpClientMock.Setup(httpClient => httpClient.PostData(It.IsAny<string>(), It.IsAny<HttpContent?>(), It.IsAny<bool>())).Returns(json);
 
       var testTaskUtils = new TaskUtils(_configurationManagerMock.Object, _httpClientMock.Object, _taskUtilsLoggerMock.Object,
         _testActivitySource);
@@ -72,6 +82,28 @@ namespace MergerLogicUnitTests.Utils
 
       Assert.IsNull(resultTask);
     }
+
+    // [TestMethod]
+    // public void WhenGettingJsonTask_ShouldReturnTaskObject()
+    // {
+    //   int maxAttempts = this._configurationManagerMock.Object.GetConfiguration<int>("TASK", "maxAttempts");
+
+    //   string json = File.ReadAllText("validTask.json");
+    //   this._httpClientMock.Setup(httpClient => httpClient.PostData(It.IsAny<string>(), It.IsAny<HttpContent?>(), It.IsAny<bool>())).Returns(json);
+
+    //   var testTaskUtils = new TaskUtils(_configurationManagerMock.Object, _httpClientMock.Object, _taskUtilsLoggerMock.Object,
+    //     _testActivitySource);
+
+    //   var resultTask = testTaskUtils.GetTask("testJobType", "testTaskType");
+
+    //   Assert.IsNotNull(resultTask);
+    //   Assert.IsTrue(Guid.TryParse(resultTask.Id, out _));
+    //   Assert.IsTrue(Guid.TryParse(resultTask.JobId, out _));
+
+    //   Assert.IsNotNull(resultTask.Parameters);
+    //   Assert.IsTrue(resultTask.Percentage >= 0);
+    //   Assert.IsTrue(resultTask.Attempts >= 0 && resultTask.Attempts <= maxAttempts);
+    // }
 
     [TestMethod]
     public void WhenUpdatingTaskCompleted_ShouldSendCorrectStatusAndPercentage()
