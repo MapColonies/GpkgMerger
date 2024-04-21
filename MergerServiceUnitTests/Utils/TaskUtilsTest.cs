@@ -1,4 +1,5 @@
 using MergerLogic.Clients;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using MergerService.Models.Tasks;
 using MergerService.Utils;
@@ -83,27 +84,37 @@ namespace MergerLogicUnitTests.Utils
       Assert.IsNull(resultTask);
     }
 
-    // [TestMethod]
-    // public void WhenGettingJsonTask_ShouldReturnTaskObject()
-    // {
-    //   int maxAttempts = this._configurationManagerMock.Object.GetConfiguration<int>("TASK", "maxAttempts");
+    [TestMethod]
+    public void WhenGettingJsonTask_ShouldReturnTaskObject()
+    {
+      int maxAttempts = this._configurationManagerMock.Object.GetConfiguration<int>("TASK", "maxAttempts");
 
-    //   string json = File.ReadAllText("validTask.json");
-    //   this._httpClientMock.Setup(httpClient => httpClient.PostData(It.IsAny<string>(), It.IsAny<HttpContent?>(), It.IsAny<bool>())).Returns(json);
+      string json = File.ReadAllText("validTask.json");
+      this._httpClientMock.Setup(httpClient => httpClient.PostData(It.IsAny<string>(), It.IsAny<HttpContent?>(), It.IsAny<bool>())).Returns(json);
 
-    //   var testTaskUtils = new TaskUtils(_configurationManagerMock.Object, _httpClientMock.Object, _taskUtilsLoggerMock.Object,
-    //     _testActivitySource);
+      var testTaskUtils = new TaskUtils(_configurationManagerMock.Object, _httpClientMock.Object, _taskUtilsLoggerMock.Object,
+        _testActivitySource);
 
-    //   var resultTask = testTaskUtils.GetTask("testJobType", "testTaskType");
+      var resultTask = testTaskUtils.GetTask("testJobType", "testTaskType");
 
-    //   Assert.IsNotNull(resultTask);
-    //   Assert.IsTrue(Guid.TryParse(resultTask.Id, out _));
-    //   Assert.IsTrue(Guid.TryParse(resultTask.JobId, out _));
+      Assert.IsNotNull(resultTask);
+      
+      // Validate GUIDs
+      Assert.IsTrue(Guid.TryParse(resultTask.Id, out _));
+      Assert.IsTrue(Guid.TryParse(resultTask.JobId, out _));
 
-    //   Assert.IsNotNull(resultTask.Parameters);
-    //   Assert.IsTrue(resultTask.Percentage >= 0);
-    //   Assert.IsTrue(resultTask.Attempts >= 0 && resultTask.Attempts <= maxAttempts);
-    // }
+      // Validate dates
+      Assert.IsTrue(DateTime.TryParse(resultTask.Created.ToString(), out _));
+      Assert.IsTrue(DateTime.TryParse(resultTask.Updated.ToString(), out _));
+
+      Assert.IsNotNull(resultTask.Parameters);
+      Assert.IsTrue(resultTask.Parameters.Sources?.Length > 0);
+      Assert.IsTrue(resultTask.Parameters.Batches?.Length > 0);
+      Assert.IsInstanceOfType(resultTask.Parameters.TargetFormat, typeof(TileFormat));
+
+      Assert.IsTrue(resultTask.Percentage >= 0 && resultTask.Percentage <= 100);
+      Assert.IsTrue(resultTask.Attempts >= 0 && resultTask.Attempts <= maxAttempts);
+    }
 
     [TestMethod]
     public void WhenUpdatingTaskCompleted_ShouldSendCorrectStatusAndPercentage()
