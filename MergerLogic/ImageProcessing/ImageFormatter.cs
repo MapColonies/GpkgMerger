@@ -101,6 +101,22 @@ namespace MergerLogic.ImageProcessing
             return null;
         }
 
+        public static TileFormat? GetTileFormat(IMagickImage<byte> image) {
+            if(image.IsOpaque) {
+                image.Format = MagickFormat.Jpeg;
+            }
+
+            if (image.Format == MagickFormat.Jpg || image.Format == MagickFormat.Jpeg) {
+                return TileFormat.Jpeg;
+            }
+
+            if (image.Format == MagickFormat.Png || image.Format == MagickFormat.Png32) {
+                return TileFormat.Png;
+            }
+
+            return null;
+        }
+
         public static void RemoveImageDateAttributes(IMagickImage? image)
         {
             if (image == null)
