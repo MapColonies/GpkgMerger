@@ -7,6 +7,10 @@ namespace MergerLogic.Batching
 {
     public delegate Tile? CorrespondingTileBuilder();
 
+    // TODO: add to README that the Merger assumes EPSG:4326
+    /// <summary>
+    /// Class <c>Tile</c> represents a position of an image in the EPSG:4326 geographic tiling scheme
+    /// </summary>
     public class Tile
     {
         public int Z
