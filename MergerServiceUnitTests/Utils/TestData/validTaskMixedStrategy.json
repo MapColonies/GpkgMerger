@@ -1,0 +1,44 @@
+{
+    "id": "3a59ce9f-9279-43e2-936c-868ee5d0b244",
+    "type": "tilesMerging",
+    "description": "",
+    "parameters": {
+        "batches": [
+          {
+            "maxX": 156220,
+            "maxY": 88402,
+            "minX": 156219,
+            "minY": 88401,
+            "zoom": 17
+          }
+        ],
+        "sources": [
+          {
+            "path": "7a2ad240-c8a9-44a9-ae67-915144abec49/8c1081ab-1552-418a-87ae-b4ae25cdbf7c",
+            "type": "S3"
+          },
+          {
+            "grid": "2X1",
+            "path": "getmap_test_data/aza_north/gpkg/O_ihud_w84geo_Nov04_Sep22_gpkg_19_0.gpkg",
+            "type": "GPKG",
+            "extent": {
+              "maxX": 34.629350139437605,
+              "maxY": 31.552055574098873,
+              "minX": 34.49793037765059,
+              "minY": 31.401062364453793
+            }
+          }
+        ],
+        "isNewTarget": true,
+        "targetFormat": "JPEG",
+        "outputFormatStrategy": "mixed"
+      },
+    "status": "In-Progress",
+    "percentage": 0,
+    "reason": "",
+    "attempts": 0,
+    "jobId": "a2569d7e-2b86-43af-a6e3-e2096bbad6c5",
+    "resettable": false,
+    "created": "2024-01-25 10:29:10.429855+02",
+    "updated": "2024-01-25 10:42:50.70713+02"
+}
