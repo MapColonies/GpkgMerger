@@ -24,6 +24,8 @@ namespace MergerService.Models.Tasks
     {
         [JsonInclude] public TileFormat TargetFormat { get; }
 
+        [DefaultValue(FormatStrategy.Fixed)]
+        [JsonProperty(DefaultValueHandling=DefaultValueHandling.Populate)]
         [JsonInclude] public FormatStrategy OutputFormatStrategy { get; }
         
         [JsonInclude] public bool IsNewTarget { get; }
