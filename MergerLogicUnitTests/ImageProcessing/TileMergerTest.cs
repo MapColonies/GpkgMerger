@@ -65,6 +65,14 @@ namespace MergerLogicUnitTests.ImageProcessing
 
             yield return new object[] {
                 new Tile[] {
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("1.png")),
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("3.jpeg"))
+                }, targetCoordHighZoom, new TileFormatStrategy(TileFormat.Jpeg), TileFormat.Jpeg,
+                File.ReadAllBytes("3.jpeg"),
+            };
+
+            yield return new object[] {
+                new Tile[] {
                     new Tile(targetCoordHighZoom, File.ReadAllBytes("3.jpeg")),
                     new Tile(targetCoordHighZoom, File.ReadAllBytes("4.jpeg"))
                 }, targetCoordHighZoom, new TileFormatStrategy(TileFormat.Jpeg), TileFormat.Jpeg,
@@ -84,6 +92,14 @@ namespace MergerLogicUnitTests.ImageProcessing
                     new Tile(targetCoordHighZoom, File.ReadAllBytes("2.png")),
                     new Tile(targetCoordHighZoom, File.ReadAllBytes("1.png"))
                 }, targetCoordHighZoom, new TileFormatStrategy(TileFormat.Png, TileFormatStrategy.FormatStrategy.Mixed),
+                TileFormat.Png, File.ReadAllBytes("2_1_merged.png"),
+            };
+
+            yield return new object[] {
+                new Tile[] {
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("2.png")),
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("1.png"))
+                }, targetCoordHighZoom, new TileFormatStrategy(TileFormat.Jpeg, TileFormatStrategy.FormatStrategy.Mixed),
                 TileFormat.Png, File.ReadAllBytes("2_1_merged.png"),
             };
 
