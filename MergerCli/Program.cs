@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Runtime.Loader;
+using static MergerLogic.ImageProcessing.TileFormatStrategy;
 
 namespace MergerCli
 {
@@ -38,6 +39,9 @@ namespace MergerCli
             var config = container.GetRequiredService<IConfigurationManager>();
             var pathUtils = container.GetRequiredService<IPathUtils>();
             string outputPath = pathUtils.RemoveTrailingSlash(config.GetConfiguration("GENERAL", "resumeOutputFolder"));
+
+            FormatStrategy outputFormatStrategy = config.GetConfiguration<FormatStrategy>("TILE", "outputFormatStrategy");
+            TileFormat outputFormat = config.GetConfiguration<TileFormat>("TILE", "outputFormat");
             _resumeFilePath = $"{outputPath}/status.json";
 
             // If should resume, load status manager file and update states, else create from arguments
@@ -48,7 +52,7 @@ namespace MergerCli
             }
             else
             {
-                _batchStatusManager = new BatchStatusManager(args);
+                _batchStatusManager = new BatchStatusManager(args, outputFormat, outputFormatStrategy);
             }
             PrepareStatusManger();
 

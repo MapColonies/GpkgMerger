@@ -42,6 +42,10 @@ namespace MergerCli
             {
                 resumeMode = true;
                 this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Resume mode activated, resume batchId: {resumeBatchIdentifier}");
+
+                // Set strategy from status manager
+                this._tileFormatStrategy = new TileFormatStrategy(batchStatusManager.Format, batchStatusManager.Strategy);
+
                 // fix resume progress bug for gpkg, fs and web, fixing it for s3 requires storing additional data.
                 if (newData.Type != DataType.S3)
                 {

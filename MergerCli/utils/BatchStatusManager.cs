@@ -1,6 +1,9 @@
-﻿using System.Collections.Concurrent;
-using System.Text.Json;
+﻿using MergerLogic.ImageProcessing;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using System.Collections.Concurrent;
 using System.Text.Json.Serialization;
+using static MergerLogic.ImageProcessing.TileFormatStrategy;
 namespace MergerCli.Utils
 {
     internal class BatchStatusManager
@@ -39,15 +42,29 @@ namespace MergerCli.Utils
         public Dictionary<string, LayerStatus> States { get; private set; }
 
         [JsonInclude]
+        public FormatStrategy Strategy { get; private set; }
+
+        [JsonInclude]
+        public TileFormat Format { get; private set; }
+
+        [JsonInclude]
         public string[] Command { get; private set; }
         
         static readonly object _locker = new object();
 
-        public BatchStatusManager(string[] command)
+        [System.Text.Json.Serialization.JsonIgnore]
+        private JsonSerializerSettings _jsonSerializerSettings;
+
+        public BatchStatusManager(string[] command, TileFormat format, FormatStrategy strategy = FormatStrategy.Fixed)
         {
             this.BaseLayer = new BaseLayerStatus();
             this.States = new Dictionary<string, LayerStatus>();
+            this.Strategy = strategy;
+            this.Format = format;
             this.Command = command;
+
+            this._jsonSerializerSettings = new JsonSerializerSettings();
+            this._jsonSerializerSettings.Converters.Add(new StringEnumConverter());
         }
 
         public void SetCurrentBatch(string layer, string? batchIdentifier)
@@ -177,12 +194,15 @@ namespace MergerCli.Utils
         
         public override string ToString()
         {
-            return JsonSerializer.Serialize(this);
+            return JsonConvert.SerializeObject(this, this._jsonSerializerSettings);
         }
 
         public static BatchStatusManager FromJson(string json)
         {
-            BatchStatusManager? batchStatusManager = JsonSerializer.Deserialize<BatchStatusManager>(json);
+            JsonSerializerSettings jsonSerializerSettings = new JsonSerializerSettings();
+            jsonSerializerSettings.Converters.Add(new StringEnumConverter());
+
+            BatchStatusManager? batchStatusManager = JsonConvert.DeserializeObject<BatchStatusManager>(json, jsonSerializerSettings)!;
             if (batchStatusManager == null)
             {
                 throw new Exception("invalid batch status manager json");
