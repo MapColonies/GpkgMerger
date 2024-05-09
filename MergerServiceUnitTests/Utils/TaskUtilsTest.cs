@@ -81,8 +81,6 @@ namespace MergerLogicUnitTests.Utils
       var testTaskUtils = new TaskUtils(_configurationManagerMock.Object, _httpClientMock.Object, _taskUtilsLoggerMock.Object,
         _testActivitySource);
 
-      Console.WriteLine(json);
-
       var resultTask = testTaskUtils.GetTask("testJobType", "testTaskType");
 
       Assert.IsNull(resultTask);
