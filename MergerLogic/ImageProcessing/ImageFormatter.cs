@@ -110,7 +110,7 @@ namespace MergerLogic.ImageProcessing
                 return TileFormat.Jpeg;
             }
 
-            if (image.Format == MagickFormat.Png || image.Format == MagickFormat.Png32) {
+            if (image.Format == MagickFormat.Png) {
                 return TileFormat.Png;
             }
 
