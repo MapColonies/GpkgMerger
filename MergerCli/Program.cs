@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Runtime.Loader;
+using static MergerLogic.ImageProcessing.TileFormatStrategy;
 
 namespace MergerCli
 {
@@ -38,6 +39,9 @@ namespace MergerCli
             var config = container.GetRequiredService<IConfigurationManager>();
             var pathUtils = container.GetRequiredService<IPathUtils>();
             string outputPath = pathUtils.RemoveTrailingSlash(config.GetConfiguration("GENERAL", "resumeOutputFolder"));
+
+            FormatStrategy outputFormatStrategy = config.GetConfiguration<FormatStrategy>("TILE", "outputFormatStrategy");
+            TileFormat outputFormat = config.GetConfiguration<TileFormat>("TILE", "outputFormat");
             _resumeFilePath = $"{outputPath}/status.json";
 
             // If should resume, load status manager file and update states, else create from arguments
@@ -48,17 +52,16 @@ namespace MergerCli
             }
             else
             {
-                _batchStatusManager = new BatchStatusManager(args);
+                _batchStatusManager = new BatchStatusManager(args, outputFormat, outputFormatStrategy);
             }
             PrepareStatusManger();
 
             int batchSize = int.Parse(args[1]);
-            TileFormat format;
             List<IData> sources;
             try
             {
                 var parser = container.GetRequiredService<ISourceParser>();
-                sources = parser.ParseSources(args, batchSize, out format);
+                sources = parser.ParseSources(args, batchSize);
             }
             catch (Exception ex)
             {
@@ -101,7 +104,7 @@ namespace MergerCli
                         continue;
                     }
 
-                    process.Start(format, baseData, sources[i], _batchStatusManager);
+                    process.Start(baseData, sources[i], _batchStatusManager);
                     baseData.IsNew = false;
                     stopWatch.Stop();
 
@@ -161,7 +164,7 @@ namespace MergerCli
                         gpkg <path>  [bbox - in format 'minX,minY,maxX,maxY' - required base] [--1x1] [--UL / --LL] 
                     **** please note all layers must be 2X1 EPSG:4326 layers ****
                                     
-                merge sources: {programName} <batch_size> <target tiles format: png/jpeg> <base source> <additional source> [<another source>...]
+                merge sources: {programName} <batch_size> <base source> <additional source> [<another source>...]
                 Examples:
                 {programName} 1000 gpkg area1.gpkg gpkg area2.gpkg
                 {programName} 1000 s3 /path1/on/s3 s3 /path2/on/s3

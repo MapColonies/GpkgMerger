@@ -18,10 +18,11 @@ namespace MergerLogic.ImageProcessing
             this._tileScaler = tileScaler;
         }
 
-        public byte[]? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords, TileFormat format)
+        public Tile? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords, TileFormatStrategy strategy)
         {
             var images = this.GetImageList(tiles, targetCoords);
-            byte[] data;
+            IMagickImage<byte> image;
+
             switch (images.Count)
             {
                 case 0:
@@ -29,12 +30,10 @@ namespace MergerLogic.ImageProcessing
                     this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] No images where found return null");
                     return null;
                 case 1:
-                    ImageFormatter.ConvertToFormat(images[0], format);
                     ImageFormatter.RemoveImageDateAttributes(images[0]);
-                    data = images[0].ToByteArray();
-                    images[0].Dispose();
+                    image = images[0];
                     this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] 1 image found");
-                    return data;
+                    break;
                 default:
                     using (var imageCollection = new MagickImageCollection())
                     {
@@ -50,13 +49,17 @@ namespace MergerLogic.ImageProcessing
 
                             mergedImage.ColorSpace = ColorSpace.sRGB;
                             mergedImage.ColorType = mergedImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor;
-                            ImageFormatter.ConvertToFormat(mergedImage, format);
-                            var mergedImageBytes = mergedImage.ToByteArray();
+                            image = new MagickImage(mergedImage);
                             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] 'imageMagic' merging finished");
-                            return mergedImageBytes;
                         }
                     }
+                    break;
             }
+
+            Tile tile = new Tile(targetCoords, image);
+            image.Dispose();
+            tile.ConvertToFormat(strategy.ApplyStrategy(tile.Format));
+            return tile;
         }
 
         private List<MagickImage> GetImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords)

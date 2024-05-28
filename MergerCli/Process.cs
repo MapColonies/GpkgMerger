@@ -6,6 +6,7 @@ using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Reflection;
+using static MergerLogic.ImageProcessing.TileFormatStrategy;
 
 namespace MergerCli
 {
@@ -15,6 +16,7 @@ namespace MergerCli
         private readonly IConfigurationManager _configManager;
         private readonly ITileMerger _tileMerger;
         private readonly ILogger _logger;
+        private TileFormatStrategy _tileFormatStrategy;
         static readonly object _locker = new object();
 
         public Process(IConfigurationManager configuration, ITileMerger tileMerger, ILogger<Process> logger)
@@ -22,9 +24,13 @@ namespace MergerCli
             this._configManager = configuration;
             this._tileMerger = tileMerger;
             this._logger = logger;
+
+            FormatStrategy outputFormatStrategy = this._configManager.GetConfiguration<FormatStrategy>("TILE", "outputFormatStrategy");
+            TileFormat outputFormat = this._configManager.GetConfiguration<TileFormat>("TILE", "outputFormat");
+            this._tileFormatStrategy = new TileFormatStrategy(outputFormat, outputFormatStrategy);
         }
 
-        public void Start(TileFormat targetFormat, IData baseData, IData newData, BatchStatusManager batchStatusManager)
+        public void Start(IData baseData, IData newData, BatchStatusManager batchStatusManager)
         {
             long totalTileCount = newData.TileCount();
             batchStatusManager.InitializeLayer(newData.Path);
@@ -36,6 +42,10 @@ namespace MergerCli
             {
                 resumeMode = true;
                 this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Resume mode activated, resume batchId: {resumeBatchIdentifier}");
+
+                // Set strategy from status manager
+                this._tileFormatStrategy = new TileFormatStrategy(batchStatusManager.Format, batchStatusManager.Strategy);
+
                 // fix resume progress bug for gpkg, fs and web, fixing it for s3 requires storing additional data.
                 if (newData.Type != DataType.S3)
                 {
@@ -47,13 +57,14 @@ namespace MergerCli
             this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Total amount of tiles to merge: {totalTileCount - tileProgressCount}");
             var uploadOnly = this._configManager.GetConfiguration<bool>("GENERAL", "uploadOnly");
             
-            bool shouldUpscale = !(uploadOnly || baseData.IsNew);
-            _getTileByCoord = uploadOnly || baseData.IsNew ?
+            uploadOnly = uploadOnly || baseData.IsNew;
+            bool shouldUpscale = !uploadOnly;
+            _getTileByCoord = uploadOnly ?
                 (_) => null
                 :
                 (targetCoords) => baseData.GetCorrespondingTile(targetCoords, shouldUpscale);
             
-            ParallelRun(targetFormat, baseData, newData, batchStatusManager,
+            ParallelRun(baseData, newData, batchStatusManager,
                 tileProgressCount, totalTileCount, resumeBatchIdentifier, resumeMode, pollForBatch);
             
             batchStatusManager.CompleteLayer(newData.Path);
@@ -97,7 +108,7 @@ namespace MergerCli
             }
         }
         
-        private void ProcessBatch(TileFormat targetFormat, IData baseData, List<Tile> newTiles, ref long tileProgressCount, long totalTileCount,ref bool pollForBatch)
+        private void ProcessBatch(IData baseData, List<Tile> newTiles, ref long tileProgressCount, long totalTileCount,ref bool pollForBatch)
         {
             ConcurrentBag<Tile> tiles = new ConcurrentBag<Tile>();
             
@@ -116,12 +127,11 @@ namespace MergerCli
                     () => _getTileByCoord(targetCoords), () => newTile
                 };
 
-                byte[]? image = this._tileMerger.MergeTiles(correspondingTileBuilders, targetCoords, targetFormat);
+                Tile? tile = this._tileMerger.MergeTiles(correspondingTileBuilders, targetCoords, this._tileFormatStrategy);
 
-                if (image != null)
+                if (tile != null)
                 {
-                    newTile = new Tile(newTile.Z, newTile.X, newTile.Y, image);
-                    tiles.Add(newTile);
+                    tiles.Add(tile);
                 }
             }
 
@@ -131,7 +141,7 @@ namespace MergerCli
             this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Tile Count: {tileProgressCount} / {totalTileCount}");
         }
 
-        private void ParallelRun(TileFormat targetFormat, IData baseData, IData newData,
+        private void ParallelRun(IData baseData, IData newData,
             BatchStatusManager batchStatusManager, long tileProgressCount, long totalTileCount, string? resumeBatchIdentifier, bool resumeMode,bool pollForBatch)
         {
             var numOfThreads = this._configManager.GetConfiguration<int>("GENERAL", "parallel", "numOfThreads");
@@ -140,7 +150,7 @@ namespace MergerCli
                 while (tileProgressCount != totalTileCount && pollForBatch)
                 {
                     var batchResult = ManageBatchIdentifier(batchStatusManager, newData, resumeBatchIdentifier, totalTileCount, ref resumeMode);
-                    ProcessBatch(targetFormat, baseData, batchResult.newTiles, ref tileProgressCount,
+                    ProcessBatch(baseData, batchResult.newTiles, ref tileProgressCount,
                         totalTileCount, ref pollForBatch);
                     batchStatusManager.CompleteBatch(newData.Path, batchResult.currentBatchIdentifier, tileProgressCount);
                 }

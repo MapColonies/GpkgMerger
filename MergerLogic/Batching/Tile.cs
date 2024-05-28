@@ -1,3 +1,4 @@
+using ImageMagick;
 using MergerLogic.DataTypes;
 using MergerLogic.ImageProcessing;
 using System.ComponentModel.DataAnnotations;
@@ -6,6 +7,10 @@ namespace MergerLogic.Batching
 {
     public delegate Tile? CorrespondingTileBuilder();
 
+    // TODO: add to README that the Merger assumes EPSG:4326
+    /// <summary>
+    /// Class <c>Tile</c> represents a position of an image in the EPSG:4326 geographic tiling scheme
+    /// </summary>
     public class Tile
     {
         public int Z
@@ -48,6 +53,15 @@ namespace MergerLogic.Batching
             this._data = data;
         }
 
+        public Tile(Coord cords, IMagickImage<byte> image)
+        {
+            this.Z = cords.Z;
+            this.X = cords.X;
+            this.Y = cords.Y;
+            this.Format = ImageFormatter.GetTileFormat(image) ?? throw new ValidationException($"Cannot create tile {this}, data is in invalid format");
+            this._data = image.ToByteArray();
+        }
+
         public bool HasCoords(int z, int x, int y)
         {
             return z == this.Z && x == this.X && y == this.Y;
@@ -72,12 +86,12 @@ namespace MergerLogic.Batching
             return this._data;
         }
 
+        public int Size() {
+            return this._data.Length;
+        }
+
         public void ConvertToFormat(TileFormat format)
         {
-            if (this.Format == format) {
-                return;
-            }
-
             this._data = ImageFormatter.ConvertToFormat(this._data, format);
             this.Format = format;
         }

@@ -1,4 +1,5 @@
 using MergerLogic.Clients;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using MergerService.Models.Tasks;
 using MergerService.Utils;
@@ -6,14 +7,19 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
+using static MergerLogic.ImageProcessing.TileFormatStrategy;
 
 namespace MergerLogicUnitTests.Utils
 {
   [TestClass]
   [TestCategory("unit")]
   [TestCategory("utils")]
+  [DeploymentItem(@"../../../Utils/TestData")]
   public class TaskUtilsTest
   {
     #region mocks
@@ -59,11 +65,18 @@ namespace MergerLogicUnitTests.Utils
       this._httpClientMock.Verify(httpClient => httpClient.PostData(expectedUrl, null, false), Times.Once);
     }
 
-    [TestMethod]
-    public void WhenGettingMalformedJsonTask_ShouldReturnNull()
+    public static IEnumerable<object[]> GetBadJsonTestParameters()
     {
-      var malformedJsonString = "bad json";
-      this._httpClientMock.Setup(httpClient => httpClient.PostData(It.IsAny<string>(), It.IsAny<HttpContent?>(), It.IsAny<bool>())).Returns(malformedJsonString);
+        yield return new object[] { "bad json" };
+        yield return new object[] { File.ReadAllText("invalidTask.json") };
+        yield return new object[] { File.ReadAllText("invalidTaskStrategy.json") };
+    }
+
+    [TestMethod]
+    [DynamicData(nameof(GetBadJsonTestParameters), DynamicDataSourceType.Method)]
+    public void WhenGettingMalformedJsonTask_ShouldReturnNull(string json)
+    {
+      this._httpClientMock.Setup(httpClient => httpClient.PostData(It.IsAny<string>(), It.IsAny<HttpContent?>(), It.IsAny<bool>())).Returns(json);
 
       var testTaskUtils = new TaskUtils(_configurationManagerMock.Object, _httpClientMock.Object, _taskUtilsLoggerMock.Object,
         _testActivitySource);
@@ -71,6 +84,59 @@ namespace MergerLogicUnitTests.Utils
       var resultTask = testTaskUtils.GetTask("testJobType", "testTaskType");
 
       Assert.IsNull(resultTask);
+    }
+
+    public static IEnumerable<object[]> GetGoodJsonTestParameters()
+    {
+        yield return new object[] { File.ReadAllText("validTaskNoStrategy.json") };
+        yield return new object[] { File.ReadAllText("validTaskMixedStrategy.json") };
+    }
+
+    [TestMethod]
+    [DynamicData(nameof(GetGoodJsonTestParameters), DynamicDataSourceType.Method)]
+    public void WhenGettingJsonTask_ShouldReturnTaskObject(string json)
+    {
+      int maxAttempts = this._configurationManagerMock.Object.GetConfiguration<int>("TASK", "maxAttempts");
+      this._httpClientMock.Setup(httpClient => httpClient.PostData(It.IsAny<string>(), It.IsAny<HttpContent?>(), It.IsAny<bool>())).Returns(json);
+
+      var testTaskUtils = new TaskUtils(_configurationManagerMock.Object, _httpClientMock.Object, _taskUtilsLoggerMock.Object,
+        _testActivitySource);
+      var resultTask = testTaskUtils.GetTask("testJobType", "testTaskType");
+
+      Assert.IsNotNull(resultTask);
+      
+      // Validate GUIDs
+      Assert.IsTrue(Guid.TryParse(resultTask.Id, out _));
+      Assert.IsTrue(Guid.TryParse(resultTask.JobId, out _));
+
+      // Validate dates
+      Assert.IsTrue(DateTime.TryParse(resultTask.Created.ToString(), out _));
+      Assert.IsTrue(DateTime.TryParse(resultTask.Updated.ToString(), out _));
+
+      Assert.IsNotNull(resultTask.Parameters);
+      Assert.IsTrue(resultTask.Parameters.Sources?.Length > 0);
+      Assert.IsTrue(resultTask.Parameters.Batches?.Length > 0);
+      Assert.IsInstanceOfType(resultTask.Parameters.TargetFormat, typeof(TileFormat));
+      Assert.IsInstanceOfType(resultTask.Parameters.OutputFormatStrategy, typeof(FormatStrategy));
+
+      Assert.IsTrue(resultTask.Percentage >= 0 && resultTask.Percentage <= 100);
+      Assert.IsTrue(resultTask.Attempts >= 0 && resultTask.Attempts <= maxAttempts);
+    }
+
+    [TestMethod]
+    public void WhenGettingJsonTaskWithoutStrategy_ShouldHaveFixedDefaultStrategy()
+    {
+      string json = File.ReadAllText("validTaskNoStrategy.json");
+      int maxAttempts = this._configurationManagerMock.Object.GetConfiguration<int>("TASK", "maxAttempts");
+      this._httpClientMock.Setup(httpClient => httpClient.PostData(It.IsAny<string>(), It.IsAny<HttpContent?>(), It.IsAny<bool>())).Returns(json);
+
+      var testTaskUtils = new TaskUtils(_configurationManagerMock.Object, _httpClientMock.Object, _taskUtilsLoggerMock.Object,
+        _testActivitySource);
+      var resultTask = testTaskUtils.GetTask("testJobType", "testTaskType");
+
+      Assert.IsNotNull(resultTask);
+      Assert.IsInstanceOfType(resultTask.Parameters.OutputFormatStrategy, typeof(FormatStrategy));
+      Assert.AreEqual(resultTask.Parameters.OutputFormatStrategy, FormatStrategy.Fixed);
     }
 
     [TestMethod]
