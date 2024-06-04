@@ -12,7 +12,6 @@ namespace MergerCli
 {
     internal class Process : IProcess
     {
-        private Func<Coord, Tile?> _getTileByCoord;
         private readonly IConfigurationManager _configManager;
         private readonly ITileMerger _tileMerger;
         private readonly ILogger _logger;
@@ -55,14 +54,6 @@ namespace MergerCli
             }
 
             this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Total amount of tiles to merge: {totalTileCount - tileProgressCount}");
-            var uploadOnly = this._configManager.GetConfiguration<bool>("GENERAL", "uploadOnly");
-            
-            uploadOnly = uploadOnly || baseData.IsNew;
-            bool shouldUpscale = !uploadOnly;
-            _getTileByCoord = uploadOnly ?
-                (_) => null
-                :
-                (targetCoords) => baseData.GetCorrespondingTile(targetCoords, shouldUpscale);
             
             ParallelRun(baseData, newData, batchStatusManager,
                 tileProgressCount, totalTileCount, resumeBatchIdentifier, resumeMode, pollForBatch);
@@ -118,16 +109,21 @@ namespace MergerCli
                 return;
             }
 
+            bool uploadOnly = this._configManager.GetConfiguration<bool>("GENERAL", "uploadOnly") || baseData.IsNew;
+            uploadOnly = uploadOnly || baseData.IsNew;
+            bool shouldUpscale = !uploadOnly;
+
             for (int i = 0; i < newTiles.Count; i++)
             {
                 var newTile = newTiles[i];
                 var targetCoords = newTile.GetCoord();
                 List<CorrespondingTileBuilder> correspondingTileBuilders = new List<CorrespondingTileBuilder>()
                 {
-                    () => _getTileByCoord(targetCoords), () => newTile
+                    () => baseData.GetCorrespondingTile(targetCoords, shouldUpscale),
+                    () => newTile
                 };
 
-                Tile? tile = this._tileMerger.MergeTiles(correspondingTileBuilders, targetCoords, this._tileFormatStrategy);
+                Tile? tile = this._tileMerger.MergeTiles(correspondingTileBuilders, targetCoords, this._tileFormatStrategy, uploadOnly);
 
                 if (tile != null)
                 {
