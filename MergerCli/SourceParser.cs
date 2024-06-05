@@ -26,16 +26,11 @@ namespace MergerCli
             Environment.Exit(1);
         }
 
-        public List<IData> ParseSources(string[] args, int batchSize, out TileFormat format)
+        public List<IData> ParseSources(string[] args, int batchSize)
         {
             List<IData> sources = new List<IData>();
-            if (!TileFormat.TryParse(args[2], true, out format))
-            {
-                this._logger.LogError($"invalid target tile format: {args[2]}");
-                Environment.Exit(1);
-            }
 
-            int idx = 3;
+            int idx = 2;
             bool isBase = true;
             while (idx < args.Length)
             {

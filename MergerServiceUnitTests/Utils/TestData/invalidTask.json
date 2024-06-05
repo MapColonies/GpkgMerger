@@ -1,0 +1,18 @@
+{
+    "id": "",
+    "type": "",
+    "description": "",
+    "parameters": {
+        "tileFormat": "",
+        "outputFormatStrategy": "",
+        "isNewTarget": ""
+    },
+    "status": "",
+    "percentage": "",
+    "reason": "",
+    "attempts": 0,
+    "jobId": "",
+    "resettable": false,
+    "created": "",
+    "updated": ""
+}

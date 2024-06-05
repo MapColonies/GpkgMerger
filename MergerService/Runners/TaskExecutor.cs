@@ -30,7 +30,7 @@ namespace MergerService.Runners
         private readonly bool _shouldValidate;
         private static readonly int DEFAULT_BATCH_SIZE = 1000;
 
-        public TaskExecutor(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, MergerLogic.Utils.IConfigurationManager configurationManager,
+        public TaskExecutor(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, IConfigurationManager configurationManager,
             ILogger<TaskExecutor> logger, ActivitySource activitySource,
             IFileSystem fileSystem, IMetricsProvider metricsProvider)
         {
@@ -85,6 +85,8 @@ namespace MergerService.Runners
             MergeMetadata metadata = task.Parameters;
             Stopwatch mergeRunTimeStopwatch = new Stopwatch();
             TimeSpan ts;
+
+            TileFormatStrategy strategy = new TileFormatStrategy(metadata.TargetFormat, metadata.OutputFormatStrategy);
 
             bool shouldUpscale = !metadata.IsNewTarget;
             Func<IData, Coord, Tile?> getTileByCoord = metadata.IsNewTarget
@@ -168,15 +170,14 @@ namespace MergerService.Runners
                                         correspondingTileBuilders.Add(() => source.GetCorrespondingTile(coord, false));
                                     }
                                     var tileMergeStopwatch = Stopwatch.StartNew();
-                                    byte[]? blob = this._tileMerger.MergeTiles(correspondingTileBuilders, coord,
-                                        metadata.TargetFormat);
+                                    Tile? tile = this._tileMerger.MergeTiles(correspondingTileBuilders, coord, strategy);
                                     tileMergeStopwatch.Stop();
                                     this._metricsProvider.MergeTimePerTileHistogram(tileMergeStopwatch.Elapsed.TotalSeconds, metadata.TargetFormat);
 
-                                    if (blob != null)
+                                    if (tile != null)
                                     {
-                                        tiles.Add(new Tile(coord, blob));
-                                        currentBatchBytes += blob.Length;
+                                        tiles.Add(tile);
+                                        currentBatchBytes += tile.Size();
 
                                         // Flushes the "tiles" list if it reached the batch size or the batch max bytes
                                         // This is done to prevent memory overflow

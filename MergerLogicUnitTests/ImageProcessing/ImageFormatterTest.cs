@@ -38,6 +38,30 @@ namespace MergerLogicUnitTests.ImageProcessing
                 TileFormat.Jpeg,
                 true,
             };
+
+            yield return new object[] {
+                File.ReadAllBytes("5_8bit.png"),
+                TileFormat.Png,
+                true,
+            };
+
+            yield return new object[] {
+                File.ReadAllBytes("5_24bit.png"),
+                TileFormat.Png,
+                true,
+            };
+
+            yield return new object[] {
+                File.ReadAllBytes("5_32bit.png"),
+                TileFormat.Png,
+                true,
+            };
+
+            yield return new object[] {
+                File.ReadAllBytes("5_64bit.png"),
+                TileFormat.Png,
+                true,
+            };
         }
 
         [TestMethod]

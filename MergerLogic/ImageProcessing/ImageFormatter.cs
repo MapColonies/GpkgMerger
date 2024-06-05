@@ -9,11 +9,35 @@ namespace MergerLogic.ImageProcessing
         [EnumMember(Value = "jpeg")] Jpeg,
     }
 
+    public class TileFormatStrategy {
+        public enum FormatStrategy {
+            [EnumMember(Value = "fixed")] Fixed,
+            [EnumMember(Value = "mixed")] Mixed,
+        }
+
+        private FormatStrategy _strategy;
+        private TileFormat _format;
+
+        public TileFormatStrategy(TileFormat format, FormatStrategy strategy = FormatStrategy.Fixed)
+        {
+            this._strategy = strategy;
+            this._format = format;
+        }
+
+        public TileFormat ApplyStrategy(TileFormat format) {
+            if (this._strategy == FormatStrategy.Fixed) {
+                return this._format;
+            }
+
+            return format;
+        }
+    }
+
     public class ImageFormatter
     {
         public static byte[] ConvertToFormat(byte[] tile, TileFormat format)
         {
-            var currentFormat = GetTileFormat(tile);
+            TileFormat? currentFormat = GetTileFormat(tile);
             if (currentFormat != format)
             {
                 using (var image = new MagickImage(tile))
@@ -72,6 +96,22 @@ namespace MergerLogic.ImageProcessing
                      tile[10] == 0x00 && tile[11] == 0x00)
             {
                 return TileFormat.Jpeg;
+            }
+
+            return null;
+        }
+
+        public static TileFormat? GetTileFormat(IMagickImage<byte> image) {
+            if(image.IsOpaque) {
+                image.Format = MagickFormat.Jpeg;
+            }
+
+            if (image.Format == MagickFormat.Jpg || image.Format == MagickFormat.Jpeg) {
+                return TileFormat.Jpeg;
+            }
+
+            if (image.Format == MagickFormat.Png) {
+                return TileFormat.Png;
             }
 
             return null;

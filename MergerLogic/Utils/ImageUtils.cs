@@ -12,8 +12,15 @@ namespace MergerLogic.Utils
             }
 
             using var pixels = image.GetPixels();
-            // Check pixels to see if at least one of them is transparent (or partially transparent)
-            return pixels.Select(pixel => pixel.ToColor()).Any(color => color?.A != 255);
+            
+            foreach (var pixel in pixels)
+            {
+                if (pixel.ToColor()?.A != 255) {
+                    return true;
+                }
+            }
+            
+            return false;
         }
 
         public static bool IsFullyTransparent(MagickImage image)
