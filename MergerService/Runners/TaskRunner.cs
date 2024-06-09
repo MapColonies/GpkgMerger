@@ -96,7 +96,7 @@ namespace MergerService.Runners
                 try
                 {
                     string reason = string.IsNullOrEmpty(task.Reason) ? $"Max attempts reached, current attempt is {task.Attempts}" : $"{task.Reason} and Max attempts reached with {task.Attempts} attempts";
-                    this._logger.LogInformation($"[{methodName}] reject job because attemts count reached, jobId {task.JobId}, taskId {task.Id}, {reason}");
+                    this._logger.LogWarning($"[{methodName}] reject job because attemts count reached, jobId {task.JobId}, taskId {task.Id}, {reason}");
                     this._taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, reason, task.Resettable, managerCallbackUrl);
                 }
                 catch (Exception innerError)
