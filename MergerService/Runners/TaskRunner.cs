@@ -85,6 +85,7 @@ namespace MergerService.Runners
             {
                 return false;
             }
+
             this._logger.LogInformation($"[{methodName}] Run Task: jobId {task.JobId}, taskId {task.Id}");
             string? managerCallbackUrl = this._jobUtils.GetJob(task.JobId)?.Parameters.ManagerCallbackUrl;
             string log = managerCallbackUrl == null ? "managerCallbackUrl not provided as job parameter" : $"managerCallback url: {managerCallbackUrl}";
