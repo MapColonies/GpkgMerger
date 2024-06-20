@@ -206,10 +206,10 @@ namespace MergerLogicUnitTests.Utils
                 var sourceDataMock = this._mockRepository.Create<IData>();
                 sourceDataMock.Setup(sourceData => sourceData.GetCorrespondingTile(testSourceCoords[index], It.IsAny<bool>())).Returns(tile);
                 this._dataFactoryMock.Setup(
-            dataFactory => dataFactory.CreateDataSource(
-              testSources[index].Type, testSources[index].Path, It.IsAny<int>(),
-              testSources[index].Grid, testSources[index].Origin, testSources[index].Extent, It.IsAny<bool>())
-          ).Returns(sourceDataMock.Object);
+                  dataFactory => dataFactory.CreateDataSource(
+                    testSources[index].Type, testSources[index].Path, It.IsAny<int>(),
+                    testSources[index].Grid, testSources[index].Origin, testSources[index].Extent, It.IsAny<bool>())
+                ).Returns(sourceDataMock.Object);
                 return sourceDataMock;
             }).ToArray();
 
@@ -221,8 +221,8 @@ namespace MergerLogicUnitTests.Utils
 
             if (!isTargetNew)
             {
-                targetDataMock.Setup(targetData => targetData.GetCorrespondingTile(testTargetCoord, It.IsAny<bool>())).Returns(testTargetTile);
-                tileBounds = tileBounds.Prepend(new TileBounds(testTargetCoord.Z, testTargetCoord.X, testTargetCoord.X + 1, testTargetCoord.Y, testTargetCoord.Y + 1)).ToArray();
+              targetDataMock.Setup(targetData => targetData.GetCorrespondingTile(testTargetCoord, It.IsAny<bool>())).Returns(testTargetTile);
+              tileBounds = tileBounds.Prepend(new TileBounds(testTargetCoord.Z, testTargetCoord.X, testTargetCoord.X + 1, testTargetCoord.Y, testTargetCoord.Y + 1)).ToArray();
             }
 
             var testTask = new MergeTask("id", "type", "description",
