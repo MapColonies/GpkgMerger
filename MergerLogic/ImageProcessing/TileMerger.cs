@@ -21,11 +21,13 @@ namespace MergerLogic.ImageProcessing
         public Tile? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords, TileFormatStrategy strategy, bool uploadOnly = false)
         {
             if(uploadOnly) {
+                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Configured to upload only mode");
                 // Ignore target if in upload only mode
                 tiles = tiles.Skip(1).ToList();
 
                 // In case there is only one source then we can just return the data as is
                 if(tiles.Count == 1) {
+                    this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Only one source was found, using raw image");
                     Tile? rawTile = tiles[0]();
                     rawTile?.ConvertToFormat(strategy.ApplyStrategy(rawTile.Format));
                     return rawTile;
