@@ -109,8 +109,7 @@ namespace MergerCli
                 return;
             }
 
-            bool uploadOnly = this._configManager.GetConfiguration<bool>("GENERAL", "uploadOnly") || baseData.IsNew;
-            uploadOnly = uploadOnly || baseData.IsNew;
+            bool uploadOnly = baseData.IsNew || this._configManager.GetConfiguration<bool>("GENERAL", "uploadOnly");
             bool shouldUpscale = !uploadOnly;
 
             for (int i = 0; i < newTiles.Count; i++)
