@@ -88,5 +88,63 @@ namespace MergerLogicUnitTests.Utils
     }
 
     #endregion
+
+    #region IsValidImageDimensions
+
+    public static IEnumerable<object[]> GetIsValidImageDimensionsTestParameters()
+    {
+      yield return new object[] {
+        File.ReadAllBytes("100x100.jpeg"),
+        false,
+      };
+
+      yield return new object[] {
+        File.ReadAllBytes("100x100.png"),
+        false,
+      };
+
+      yield return new object[] {
+        File.ReadAllBytes("100x256.jpeg"),
+        false,
+      };
+
+      yield return new object[] {
+        File.ReadAllBytes("100x256.png"),
+        false,
+      };
+
+      yield return new object[] {
+        File.ReadAllBytes("256x100.jpeg"),
+        false,
+      };
+
+      yield return new object[] {
+        File.ReadAllBytes("256x100.png"),
+        false,
+      };
+
+      yield return new object[] {
+        File.ReadAllBytes("no_transparency.jpeg"),
+        true,
+      };
+
+      yield return new object[] {
+        File.ReadAllBytes("no_transparency.png"),
+        true,
+      };
+    }
+
+    [TestMethod]
+    [DynamicData(nameof(GetIsValidImageDimensionsTestParameters), DynamicDataSourceType.Method)]
+
+    public void IsValidImageDimensions(byte[] imageBytes, bool expectedResult)
+    {
+      using (var image = new MagickImage(imageBytes))
+      {
+        var result = ImageUtils.IsValidImageDimensions(image);
+        Assert.AreEqual(expectedResult, result);
+      }
+    }
+    #endregion
   }
 }

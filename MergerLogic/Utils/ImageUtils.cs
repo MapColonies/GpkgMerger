@@ -12,14 +12,15 @@ namespace MergerLogic.Utils
             }
 
             using var pixels = image.GetPixels();
-            
+
             foreach (var pixel in pixels)
             {
-                if (pixel.ToColor()?.A != 255) {
+                if (pixel.ToColor()?.A != 255)
+                {
                     return true;
                 }
             }
-            
+
             return false;
         }
 
@@ -33,6 +34,15 @@ namespace MergerLogic.Utils
             using var pixels = image.GetPixels();
             // Check pixels to see if all are fully transparent
             return pixels.Select(pixel => pixel.ToColor()).All(color => color?.A == 0);
+        }
+
+        public static bool IsValidImageDimensions(MagickImage image)
+        {
+            if (image.Height == 256 && image.Width == 256)
+            {
+                return true;
+            }
+            return false;
         }
 
         // public static bool IsEmpty(MagickImage image)
