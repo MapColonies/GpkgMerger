@@ -102,7 +102,7 @@ namespace MergerService.Runners
                 }
                 catch (Exception innerError)
                 {
-                    this._logger.LogError(innerError, $"[{methodName}] job {task.JobId}, task {task.Id} Error in MergerService while updating reject status due to max attemps reached with {task.Attempts}, update task failure: {innerError.Message}");
+                    this._logger.LogError(innerError, $"[{methodName}] Error in MergerService while updating reject status for job {task.JobId}, task {task.Id} due to max attemps reached with {task.Attempts}, update task failure: {innerError.Message}");
                 }
 
                 return false;
