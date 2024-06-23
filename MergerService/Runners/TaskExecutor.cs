@@ -87,15 +87,7 @@ namespace MergerService.Runners
             TimeSpan ts;
 
             TileFormatStrategy strategy = new TileFormatStrategy(metadata.TargetFormat, metadata.OutputFormatStrategy);
-
             bool shouldUpscale = !metadata.IsNewTarget;
-            Func<IData, Coord, Tile?> getTileByCoord = metadata.IsNewTarget
-                ? (_, _) => null
-                : (source, coord) =>
-                {
-                    Tile? resultTile = source.GetCorrespondingTile(coord, shouldUpscale);
-                    return resultTile;
-                };
 
             // Log the task
             this._logger.LogInformation($"[{methodName}] starting task: {task.ToString()}");
@@ -161,7 +153,8 @@ namespace MergerService.Runners
                                     // Create tile builder list for current coord for all sources
                                     List<CorrespondingTileBuilder> correspondingTileBuilders = new List<CorrespondingTileBuilder>();
                                     // Add target tile
-                                    correspondingTileBuilders.Add(() => getTileByCoord(sources[0], coord));
+                                    correspondingTileBuilders.Add(() => sources[0].GetCorrespondingTile(coord, shouldUpscale));
+                                    
                                     // Add all sources tiles 
                                     this._logger.LogDebug($"[{methodName}] Get tile sources");
                                     foreach (IData source in sources.Skip(1))
@@ -170,7 +163,7 @@ namespace MergerService.Runners
                                         correspondingTileBuilders.Add(() => source.GetCorrespondingTile(coord, false));
                                     }
                                     var tileMergeStopwatch = Stopwatch.StartNew();
-                                    Tile? tile = this._tileMerger.MergeTiles(correspondingTileBuilders, coord, strategy);
+                                    Tile? tile = this._tileMerger.MergeTiles(correspondingTileBuilders, coord, strategy, metadata.IsNewTarget);
                                     tileMergeStopwatch.Stop();
                                     this._metricsProvider.MergeTimePerTileHistogram(tileMergeStopwatch.Elapsed.TotalSeconds, metadata.TargetFormat);
 
