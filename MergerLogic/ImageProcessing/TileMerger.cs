@@ -21,13 +21,13 @@ namespace MergerLogic.ImageProcessing
         public Tile? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords, TileFormatStrategy strategy, bool uploadOnly = false)
         {
             if(uploadOnly) {
-                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Configured to upload only mode");
+                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] Configured to upload only mode");
                 // Ignore target if in upload only mode
                 tiles = tiles.Skip(1).ToList();
 
                 // In case there is only one source then we can just return the data as is
                 if(tiles.Count == 1) {
-                    this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Only one source was found, using raw image");
+                    this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] Only one source was found, using raw image");
                     Tile? rawTile = tiles[0]();
                     rawTile?.ConvertToFormat(strategy.ApplyStrategy(rawTile.Format));
                     return rawTile;
@@ -41,12 +41,12 @@ namespace MergerLogic.ImageProcessing
             {
                 case 0:
                     // There are no images
-                    this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] No images where found return null");
+                    this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] No images where found return null");
                     return null;
                 case 1:
                     ImageFormatter.RemoveImageDateAttributes(images[0]);
                     image = images[0];
-                    this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] 1 image found");
+                    this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] 1 image found");
                     break;
                 default:
                     using (var imageCollection = new MagickImageCollection())
@@ -56,7 +56,7 @@ namespace MergerLogic.ImageProcessing
                             imageCollection.Add(images[i]);
                         }
 
-                        this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] {imageCollection.Count} where found for merge, start 'imageMagic' merging");
+                        this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] {imageCollection.Count} where found for merge, start 'imageMagic' merging");
                         using (var mergedImage = imageCollection.Flatten(MagickColor.FromRgba(0, 0, 0, 0)))
                         {
                             ImageFormatter.RemoveImageDateAttributes(mergedImage);
@@ -64,7 +64,7 @@ namespace MergerLogic.ImageProcessing
                             mergedImage.ColorSpace = ColorSpace.sRGB;
                             mergedImage.ColorType = mergedImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor;
                             image = new MagickImage(mergedImage);
-                            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] 'imageMagic' merging finished");
+                            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] 'imageMagic' merging finished");
                         }
                     }
                     break;
@@ -90,7 +90,7 @@ namespace MergerLogic.ImageProcessing
                     // protect in case all "sources" tiles are null
                     if (images.Count == 0 && i == 0 && !uploadOnly)
                     {
-                        this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] All sources are empty - return");
+                        this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] All sources are empty - return");
                         return images;
                     }
 
