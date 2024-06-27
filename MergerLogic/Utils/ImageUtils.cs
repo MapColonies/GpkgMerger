@@ -1,4 +1,5 @@
 using ImageMagick;
+using MergerLogic.Batching;
 
 namespace MergerLogic.Utils
 {
@@ -36,13 +37,9 @@ namespace MergerLogic.Utils
             return pixels.Select(pixel => pixel.ToColor()).All(color => color?.A == 0);
         }
 
-        public static bool IsValidImageDimensions(MagickImage image)
+        public static bool IsValidImageDimensions(Tile tile, int allowedImageSize)
         {
-            if (image.Height == 256 && image.Width == 256)
-            {
-                return true;
-            }
-            return false;
+            return tile.Width == allowedImageSize && tile.Height == allowedImageSize;
         }
 
         // public static bool IsEmpty(MagickImage image)
