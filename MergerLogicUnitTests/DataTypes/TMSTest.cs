@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
 
@@ -19,6 +20,7 @@ namespace MergerLogicUnitTests.DataTypes
     [TestCategory("TMS")]
     [TestCategory("TMSDataSource")]
     [TestCategory("HttpDataSource")]
+    [DeploymentItem(@"../../../DataTypes/TestImages")]
     public class TMSTest
     {
         #region mocks
@@ -62,8 +64,7 @@ namespace MergerLogicUnitTests.DataTypes
                 .Returns(this._loggerFactoryMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IMetricsProvider)))
                 .Returns(this._metricsProviderMock.Object);
-            
-            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
+            this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
         }
 
         #region TileExists

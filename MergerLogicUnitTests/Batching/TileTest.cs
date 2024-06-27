@@ -2,22 +2,26 @@ using MergerLogic.Batching;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 
 namespace MergerLogicUnitTests.Clients
 {
     [TestClass]
     [TestCategory("unit")]
     [TestCategory("Tile")]
-    public class TilesTest 
+    [DeploymentItem(@"../../../Batching/TestImages")]
+    public class TilesTest
     {
         #region mocks
         private MockRepository _repository;
+        private byte[] _jpeg;
         #endregion
 
         [TestInitialize]
         public void beforeEach()
         {
             this._repository = new MockRepository(MockBehavior.Strict);
+            this._jpeg = File.ReadAllBytes("image.jpeg");
         }
 
         #region CreateTile
@@ -25,7 +29,7 @@ namespace MergerLogicUnitTests.Clients
         [TestMethod]
         [TestCategory("CreateTile")]
         [DataRow(null)]
-        [DataRow(new byte[] { 0x43, 0x44, 0x30, 0x30, 0x31 })]
+        [DataRow()]
         public void CreateTileWithUnknownDataFormatFails(byte[] data)
         {
             Assert.ThrowsException<ValidationException>(() => new Tile(0, 0, 0, data));

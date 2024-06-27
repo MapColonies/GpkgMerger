@@ -1,6 +1,8 @@
 using ImageMagick;
+using MergerLogic.Batching;
 using MergerLogic.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -89,61 +91,74 @@ namespace MergerLogicUnitTests.Utils
 
     #endregion
 
-    #region IsValidImageDimensions
+    #region ImageDimensions
 
-    public static IEnumerable<object[]> GetIsValidImageDimensionsTestParameters()
+    public static IEnumerable<object[]> GetImageDimensionsTestParameters()
     {
       yield return new object[] {
         File.ReadAllBytes("100x100.jpeg"),
+        (100, 100),
         false,
       };
 
       yield return new object[] {
         File.ReadAllBytes("100x100.png"),
+        (100, 100),
         false,
       };
 
       yield return new object[] {
         File.ReadAllBytes("100x256.jpeg"),
+        (100, 256),
         false,
       };
 
       yield return new object[] {
         File.ReadAllBytes("100x256.png"),
+        (100, 256),
         false,
       };
 
       yield return new object[] {
         File.ReadAllBytes("256x100.jpeg"),
+        (256, 100),
         false,
       };
 
       yield return new object[] {
         File.ReadAllBytes("256x100.png"),
+        (256, 100),
         false,
       };
 
       yield return new object[] {
         File.ReadAllBytes("no_transparency.jpeg"),
+        (256, 256),
         true,
       };
 
       yield return new object[] {
         File.ReadAllBytes("no_transparency.png"),
+        (256, 256),
         true,
       };
     }
 
     [TestMethod]
-    [DynamicData(nameof(GetIsValidImageDimensionsTestParameters), DynamicDataSourceType.Method)]
-
-    public void IsValidImageDimensions(byte[] imageBytes, bool expectedResult)
+    [DynamicData(nameof(GetImageDimensionsTestParameters), DynamicDataSourceType.Method)]
+    public void IsDimMatchProperties(byte[] imageBytes, (int, int) dimensions, bool shouldBeValid)
     {
-      using (var image = new MagickImage(imageBytes))
-      {
-        var result = ImageUtils.IsValidImageDimensions(image);
-        Assert.AreEqual(expectedResult, result);
-      }
+      Tile tile = new Tile(0, 0, 0, imageBytes);
+      Assert.AreEqual((tile.Width, tile.Height), dimensions);
+    }
+
+    [TestMethod]
+    [DynamicData(nameof(GetImageDimensionsTestParameters), DynamicDataSourceType.Method)]
+    public void IsValidImageDimensions(byte[] imageBytes, (int, int) dimensions, bool shouldBeValid)
+    {
+      Tile tile = new Tile(0, 0, 0, imageBytes);
+      var result = ImageUtils.IsValidImageDimensions(tile, 256);
+      Assert.AreEqual(shouldBeValid, result);
     }
     #endregion
   }
