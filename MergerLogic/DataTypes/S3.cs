@@ -25,7 +25,7 @@ namespace MergerLogic.DataTypes
         public S3(IPathUtils pathUtils, IServiceProvider container, string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase)
             : base(container, DataType.S3, path, batchSize, grid, origin, isBase)
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Ctor started");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] Ctor started");
             this._pathUtils = pathUtils;
             this._continuationToken = null;
             this._endOfRead = false;
@@ -35,17 +35,17 @@ namespace MergerLogic.DataTypes
             this._zoomEnumerator = this._zoomLevels.GetEnumerator();
             // In order to get a correct first value we must do an initial MoveNext call
             this._zoomEnumerator.MoveNext();
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Ctor ended");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] Ctor ended");
         }
 
         protected override void Initialize()
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] start");
             var configurationManager = this._container.GetRequiredService<IConfigurationManager>();
             var client = this._container.GetService<IAmazonS3>();
             this._client = client ?? throw new Exception("s3 configuration is required");
             this._bucket = configurationManager.GetConfiguration("S3", "bucket");
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended");
         }
 
         protected override GridOrigin DefaultOrigin()
@@ -55,18 +55,18 @@ namespace MergerLogic.DataTypes
 
         public override void Reset()
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] start");
             this._continuationToken = null;
             this._endOfRead = false;
             this._zoomEnumerator = this._zoomLevels.GetEnumerator();
             // In order to get a correct first value we must do an initial MoveNext call
             this._zoomEnumerator.MoveNext();
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended");
         }
 
         private List<int> GetZoomLevels()
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] start");
             List<int> zoomLevels = new List<int>();
 
             for (int zoomLevel = 0; zoomLevel < Data<IS3Client>.MaxZoomRead; zoomLevel++)
@@ -76,7 +76,7 @@ namespace MergerLogic.DataTypes
                     zoomLevels.Add(zoomLevel);
                 }
             }
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended");
             return zoomLevels;
         }
 
@@ -84,7 +84,7 @@ namespace MergerLogic.DataTypes
         {
             lock (_locker)
             {
-                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start");
+                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] start");
                 currentBatchIdentifier = this._continuationToken ?? nullStringValue;
                 List<Tile> tiles = new List<Tile>();
                 int missingTiles = this.BatchSize;
@@ -133,7 +133,7 @@ namespace MergerLogic.DataTypes
                 }
 
                 nextBatchIdentifier = this._continuationToken;
-                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end");
+                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] end");
                 return tiles;
             }
         }
@@ -145,7 +145,7 @@ namespace MergerLogic.DataTypes
 
         private bool FolderExists(string directory)
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] start");
             directory = $"{this.Path}/{directory}";
 
             var listRequests = new ListObjectsV2Request
@@ -157,21 +157,21 @@ namespace MergerLogic.DataTypes
             };
             var task = this._client.ListObjectsV2Async(listRequests);
             var response = task.Result;
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] end");
             return response.KeyCount > 0;
         }
 
         public override bool Exists()
         {
-            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] bucket: {this._bucket}, path: {this.Path}");
+            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod()?.Name}] bucket: {this._bucket}, path: {this.Path}");
             bool exists = FolderExists("");
-            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] ended");
+            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod()?.Name}] ended");
             return exists;
         }
 
         public override long TileCount()
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] start");
             long tileCount = 0;
             string? continuationToken = null;
 
@@ -191,18 +191,18 @@ namespace MergerLogic.DataTypes
                 tileCount += response.KeyCount;
                 continuationToken = response.NextContinuationToken;
             } while (continuationToken != null);
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] end");
             return tileCount;
         }
 
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] start");
             foreach (var tile in targetTiles)
             {
                 this.Utils.UpdateTile(tile);
             }
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] end");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] end");
         }
     }
 }

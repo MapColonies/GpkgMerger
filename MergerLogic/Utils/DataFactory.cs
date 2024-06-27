@@ -48,7 +48,7 @@ namespace MergerLogic.Utils
             {
                 //skip existence validation for base data to allow creation of new data for FS and S3
                 if (isBase)
-                    this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] base data at path '{path}' does not exists and will be created");
+                    this._logger.LogInformation($"[{MethodBase.GetCurrentMethod()?.Name}] base data at path '{path}' does not exists and will be created");
                 else
                     throw new Exception($"path '{path}' to data does not exist.");
             }
@@ -89,7 +89,7 @@ namespace MergerLogic.Utils
             {
                 //skip existence validation for base data to allow creation of new data for FS and S3
                 if (isBase)
-                    this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] base data at path '{path}' does not exists and will be created");
+                    this._logger.LogInformation($"[{MethodBase.GetCurrentMethod()?.Name}] base data at path '{path}' does not exists and will be created");
                 else
                     throw new Exception($"path '{path}' to data does not exist.");
             }

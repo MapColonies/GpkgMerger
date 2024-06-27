@@ -8,7 +8,6 @@ namespace MergerLogic.Utils
     {
         protected readonly string path;
         protected readonly IGeoUtils GeoUtils;
-        protected readonly IImageFormatter Formatter;
 
         public DataUtils(string path, IGeoUtils geoUtils)
         {

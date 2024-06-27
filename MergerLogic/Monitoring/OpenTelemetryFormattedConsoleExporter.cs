@@ -45,7 +45,7 @@ namespace MergerLogic.Monitoring
             return attributes != null ? new Dictionary<string, object>(attributes) : new Dictionary<string, object>();
         }
 
-        private string GetResourceAttribute(Dictionary<string, object> resource, string attribute, string defaultValue)
+        private string? GetResourceAttribute(Dictionary<string, object> resource, string attribute, string defaultValue)
         {
             return resource.ContainsKey(attribute) ? resource[attribute]?.ToString() : defaultValue;
         }
