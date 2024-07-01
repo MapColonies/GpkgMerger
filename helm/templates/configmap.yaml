@@ -22,8 +22,8 @@ data:
   TASK__maxAttempts: {{ .Values.env.TASK.maxAttempts | quote }}
   S3__url: {{ printf "%s%s" $s3HttpProtocol $s3.endpointUrl | quote }}
   S3__bucket: {{ $s3.tilesBucket | quote }}
-  S3__request_timeoutSec: {{ $s3.request.timeoutSec | quote }}
-  S3__request_retries: {{ $s3.request.retries | quote }}
+  S3__request__timeoutSec: {{ $s3.request.timeoutSec | quote }}
+  S3__request__retries: {{ $s3.request.retries | quote }}
   S3__logToConsole: {{ $s3.logToConsole | quote }}
   Logging__LogLevel__Default: {{ .Values.env.logging.logLevel.default | quote }}
   Logging__Microsoft.AspNetCore: {{ .Values.env.logging.logLevel.aspNetCore | quote }}
