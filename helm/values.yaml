@@ -87,6 +87,7 @@ env:
     batchSize:
       limitBatchSize: true
       batchMaxSize: 1000
+    allowedPixelSize: 256
   TASK:
     types:
       - jobType: 'Ingestion_Update'

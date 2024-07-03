@@ -1,6 +1,7 @@
 using ImageMagick;
 using MergerLogic.DataTypes;
 using MergerLogic.ImageProcessing;
+using MergerLogic.Utils;
 using System.ComponentModel.DataAnnotations;
 
 namespace MergerLogic.Batching
@@ -51,6 +52,13 @@ namespace MergerLogic.Batching
             this.Height = info.Height;
 
             this._data = data;
+
+            // int allowedPixelSize = configuration.GetConfiguration<int>("GENERAL", "allowedPixelSize");
+            int allowedPixelSize = 256;
+            if (this.Width != allowedPixelSize || this.Height != allowedPixelSize)
+            {
+                throw new ArgumentException($"The image dimensions ({this.Width}x{this.Height}) does not match the allowed size ({allowedPixelSize})");
+            }
         }
 
         public Tile(Coord cords, byte[] data)
