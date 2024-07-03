@@ -2,6 +2,7 @@ using MergerLogic.Batching;
 using MergerLogicUnitTests.testUtils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
@@ -28,7 +29,9 @@ namespace MergerLogicUnitTests.Clients
 
         public static IEnumerable<object[]> GenCreateTileUnknownFormatParams()
         {
+#nullable disable
             yield return new object[] { null };
+#nullable enable
             yield return new object[] { File.ReadAllBytes("image.gif") };
         }
 
@@ -57,6 +60,63 @@ namespace MergerLogicUnitTests.Clients
             this._repository.VerifyAll();
         }
 
+        #endregion
+
+        #region imageDimensions
+        public static IEnumerable<object[]> ValidTilesSizeTestParameters()
+        {
+            yield return new object[] {
+                File.ReadAllBytes("no_transparency.jpeg"),
+                (256, 256)
+            };
+            yield return new object[] {
+                File.ReadAllBytes("no_transparency.png"),
+                (256, 256)
+            };
+        }
+        public static IEnumerable<object[]> InvalidTilesSizeTestParameters()
+        {
+            yield return new object[] {
+                File.ReadAllBytes("100x100.jpeg"),
+                (100, 100)
+            };
+            yield return new object[] {
+                File.ReadAllBytes("100x100.png"),
+                (100, 100)
+            };
+            yield return new object[] {
+                File.ReadAllBytes("100x256.jpeg"),
+                (100, 256)
+            };
+            yield return new object[] {
+                File.ReadAllBytes("100x256.png"),
+                (100, 256)
+            };
+            yield return new object[] {
+                File.ReadAllBytes("256x100.jpeg"),
+                (256, 100)
+            };
+            yield return new object[] {
+                File.ReadAllBytes("256x100.png"),
+                (256, 100)
+            };
+        }
+
+        [TestMethod]
+        [DynamicData(nameof(ValidTilesSizeTestParameters), DynamicDataSourceType.Method)]
+        public void IsAcceptsValidTileSize(byte[] imageBytes, (int, int) dimensions)
+        {
+            Tile tile = new Tile(0, 0, 0, imageBytes);
+            Assert.AreEqual((tile.Width, tile.Height), dimensions);
+        }
+
+        [TestMethod]
+        [DynamicData(nameof(InvalidTilesSizeTestParameters), DynamicDataSourceType.Method)]
+        [ExpectedException(typeof(ArgumentException))]
+        public void IsRejectsInvalidTileSize(byte[] imageBytes, (int, int) dimensions)
+        {
+            new Tile(0, 0, 0, imageBytes);
+        }
         #endregion
     }
 }
