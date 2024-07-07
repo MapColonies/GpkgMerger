@@ -15,8 +15,8 @@ namespace MergerLogicBenchmarksTests
     {
         public static void Main(string[] args)
         {
-            // var summary = BenchmarkRunner.Run<UpscaleBenchmarkTest>();
-            var summary2 = BenchmarkRunner.Run<MergeTilesBenchmarkTest>();
+            var summary = BenchmarkRunner.Run<UpscaleBenchmarkTest>();
+            // var summary2 = BenchmarkRunner.Run<MergeTilesBenchmarkTest>();
         }
     }
 }
