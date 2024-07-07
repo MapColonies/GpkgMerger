@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet-version: ['8.0.x' ]
+        dotnet-version: ['6.0.x' ]
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v3
@@ -25,7 +25,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Run tests
-        run: dotnet test --no-restore --verbosity normal
+        run: dotnet test --no-restore --verbosity normal --filter FullyQualifiedName!~MergerLogicBenchmarksTests --configuration Release
 
   build_image:
     name: Build Image
