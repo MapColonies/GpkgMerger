@@ -22,7 +22,7 @@ jobs:
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build --filter FullyQualifiedName!~MergerLogicBenchmarksTests --configuration Release --no-restore
 
       - name: Run tests
         run: dotnet test --no-restore --verbosity normal --filter FullyQualifiedName!~MergerLogicBenchmarksTests --configuration Release
