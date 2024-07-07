@@ -16,8 +16,8 @@ namespace MergerLogic.Clients
         private readonly IPathUtils _pathUtils;
         private readonly S3StorageClass _storageClass;
 
-        public S3Client(IAmazonS3 client, IPathUtils pathUtils, IGeoUtils geoUtils, ILogger<S3Client> logger,
-            string storageClass, string bucket, string path) : base(path, geoUtils)
+        public S3Client(IAmazonS3 client, IPathUtils pathUtils, IGeoUtils geoUtils, ILogger<S3Client> logger, IConfigurationManager configuration,
+            string storageClass, string bucket, string path) : base(path, geoUtils, configuration)
         {
             this._client = client;
             this._bucket = bucket;
@@ -105,10 +105,10 @@ namespace MergerLogic.Clients
 
             var request = new PutObjectRequest()
             {
-                BucketName = this._bucket, 
-                CannedACL = S3CannedACL.PublicRead, 
-                Key = String.Format(key), 
-                StorageClass=this._storageClass
+                BucketName = this._bucket,
+                CannedACL = S3CannedACL.PublicRead,
+                Key = String.Format(key),
+                StorageClass = this._storageClass
             };
 
             byte[] buffer = tile.GetImageBytes();

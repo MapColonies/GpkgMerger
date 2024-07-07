@@ -9,7 +9,7 @@ namespace MergerLogic.Clients
         private IPathPatternUtils _pathPatternUtils;
 
         public HttpSourceClient(string path, IHttpRequestUtils httpClient, IPathPatternUtils pathPatternUtils,
-            IGeoUtils geoUtils) : base(path, geoUtils)
+        IGeoUtils geoUtils, IConfigurationManager configuration) : base(path, geoUtils, configuration)
         {
             this._httpClient = httpClient;
             this._pathPatternUtils = pathPatternUtils;

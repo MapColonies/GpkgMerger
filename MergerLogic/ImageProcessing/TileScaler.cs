@@ -14,15 +14,18 @@ namespace MergerLogic.ImageProcessing
         private const int TILE_SIZE = 256;
         private readonly IMetricsProvider _metricsProvider;
         private readonly ILogger<TileScaler> _logger;
+        private readonly IConfigurationManager _configurationManager;
 
-        public TileScaler(IMetricsProvider metricsProvider, ILogger<TileScaler> logger)
+        public TileScaler(IMetricsProvider metricsProvider, ILogger<TileScaler> logger, IConfigurationManager configuration)
         {
             this._metricsProvider = metricsProvider;
             this._logger = logger;
+            this._configurationManager = configuration;
         }
 
         public MagickImage? Upscale(MagickImage baseImage, Tile baseTile, Coord targetCoords)
         {
+
             string fromTileToCoordMessage = $"from tile z:{baseTile.Z}, x:{baseTile.X}, y:{baseTile.Y} to coords z:{targetCoords.Z}, x:{targetCoords.X}, y:{targetCoords.Y}";
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] MagickImage Upscale Begin {fromTileToCoordMessage}");
             var upscaleStopwatch = Stopwatch.StartNew();
@@ -135,7 +138,7 @@ namespace MergerLogic.ImageProcessing
                 ImageFormatter.RemoveImageDateAttributes(upscale);
             }
 
-            return upscale is null ? null : new Tile(targetCoords, upscale.ToByteArray());
+            return upscale is null ? null : new Tile(this._configurationManager, targetCoords, upscale.ToByteArray());
         }
     }
 }

@@ -40,12 +40,15 @@ namespace MergerLogic.Batching
 
         private byte[] _data;
 
-        public Tile(int z, int x, int y, byte[] data)
+        private readonly IConfigurationManager _configManager;
+
+        public Tile(IConfigurationManager configuration, int z, int x, int y, byte[] data)
         {
             this.Z = z;
             this.X = x;
             this.Y = y;
             this.Format = ImageFormatter.GetTileFormat(data) ?? throw new ValidationException($"Cannot create tile {this}, data is in invalid format");
+            this._configManager = configuration;
 
             var info = new MagickImageInfo(data);
             this.Width = info.Width;
@@ -53,30 +56,18 @@ namespace MergerLogic.Batching
 
             this._data = data;
 
-            // int allowedPixelSize = configuration.GetConfiguration<int>("GENERAL", "allowedPixelSize");
-            int allowedPixelSize = 256;
+            int allowedPixelSize = configuration.GetConfiguration<int>("GENERAL", "allowedPixelSize");
             if (this.Width != allowedPixelSize || this.Height != allowedPixelSize)
             {
                 throw new ArgumentException($"The image dimensions ({this.Width}x{this.Height}) does not match the allowed size ({allowedPixelSize})");
             }
         }
 
-        public Tile(Coord cords, byte[] data)
+        public Tile(IConfigurationManager configuration, Coord cords, byte[] data) => new Tile(configuration, cords.Z, cords.X, cords.Y, data);
+
+        public Tile(IConfigurationManager configuration, Coord cords, IMagickImage<byte> image)
         {
-            this.Z = cords.Z;
-            this.X = cords.X;
-            this.Y = cords.Y;
-            this.Format = ImageFormatter.GetTileFormat(data) ?? throw new ValidationException($"Cannot create tile {this}, data is in invalid format");
-
-            var info = new MagickImageInfo(data);
-            this.Width = info.Width;
-            this.Height = info.Height;
-
-            this._data = data;
-        }
-
-        public Tile(Coord cords, IMagickImage<byte> image)
-        {
+            this._configManager = configuration;
             this.Z = cords.Z;
             this.X = cords.X;
             this.Y = cords.Y;
@@ -84,6 +75,12 @@ namespace MergerLogic.Batching
             this.Width = image.Width;
             this.Height = image.Height;
             this._data = image.ToByteArray();
+
+            int allowedPixelSize = configuration.GetConfiguration<int>("GENERAL", "allowedPixelSize");
+            if (this.Width != allowedPixelSize || this.Height != allowedPixelSize)
+            {
+                throw new ArgumentException($"The image dimensions ({this.Width}x{this.Height}) does not match the allowed size ({allowedPixelSize})");
+            }
         }
 
         public bool HasCoords(int z, int x, int y)

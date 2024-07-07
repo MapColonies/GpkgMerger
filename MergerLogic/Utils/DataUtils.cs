@@ -9,14 +9,17 @@ namespace MergerLogic.Utils
         protected readonly string path;
         protected readonly IGeoUtils GeoUtils;
         protected readonly IImageFormatter Formatter;
+        private readonly IConfigurationManager _configurationManager;
 
-        public DataUtils(string path, IGeoUtils geoUtils)
+        public DataUtils(string path, IGeoUtils geoUtils, IConfigurationManager configuration)
         {
             this.path = path;
             this.GeoUtils = geoUtils;
+            this._configurationManager = configuration;
         }
 
-        public virtual bool IsValidGrid(bool isOneXOne = false) {
+        public virtual bool IsValidGrid(bool isOneXOne = false)
+        {
             return true;
         }
 
@@ -36,7 +39,7 @@ namespace MergerLogic.Utils
                 return null;
             }
 
-            return new Tile(z, x, y, data);
+            return new Tile(this._configurationManager, z, x, y, data);
         }
 
         protected Tile? CreateTile(Coord coord, byte[]? data)

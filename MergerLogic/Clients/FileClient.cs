@@ -8,8 +8,8 @@ public class FileClient : DataUtils, IFileClient
 {
     private readonly IFileSystem _fileSystem;
 
-    public FileClient(string path, IGeoUtils geoUtils, IFileSystem fileSystem) 
-        : base(path, geoUtils)
+    public FileClient(string path, IGeoUtils geoUtils, IFileSystem fileSystem, IConfigurationManager configuration)
+        : base(path, geoUtils, configuration)
     {
         this._fileSystem = fileSystem;
     }
@@ -31,7 +31,7 @@ public class FileClient : DataUtils, IFileClient
 
     public override bool TileExists(int z, int x, int y)
     {
-        return this.GetTilePath(z,x,y) != null;
+        return this.GetTilePath(z, x, y) != null;
     }
 
     private string? GetTilePath(int z, int x, int y)
