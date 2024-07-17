@@ -1,5 +1,5 @@
 using MergerLogic.Batching;
-using MergerLogicUnitTests.testUtils;
+using MergerLogic.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
@@ -17,12 +17,17 @@ namespace MergerLogicUnitTests.Clients
     {
         #region mocks
         private MockRepository _repository;
+        private Mock<IConfigurationManager> _configurationManagerMock;
         #endregion
 
         [TestInitialize]
         public void beforeEach()
         {
             this._repository = new MockRepository(MockBehavior.Strict);
+            this._configurationManagerMock = this._repository.Create<IConfigurationManager>();
+
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
+                .Returns(256);
         }
 
         #region CreateTile
@@ -40,7 +45,7 @@ namespace MergerLogicUnitTests.Clients
         [DynamicData(nameof(GenCreateTileUnknownFormatParams), DynamicDataSourceType.Method)]
         public void CreateTileWithUnknownDataFormatFails(byte[] data)
         {
-            Assert.ThrowsException<ValidationException>(() => new Tile(0, 0, 0, data));
+            Assert.ThrowsException<ValidationException>(() => new Tile(this._configurationManagerMock.Object, 0, 0, 0, data));
             this._repository.VerifyAll();
         }
 
@@ -55,7 +60,7 @@ namespace MergerLogicUnitTests.Clients
         [DynamicData(nameof(GenCreateTileParams), DynamicDataSourceType.Method)]
         public void CreateTile(byte[] data)
         {
-            Tile tile = new Tile(0, 0, 0, data);
+            Tile tile = new Tile(this._configurationManagerMock.Object, 0, 0, 0, data);
             Assert.AreEqual(tile.GetImageBytes(), data);
             this._repository.VerifyAll();
         }
@@ -106,7 +111,7 @@ namespace MergerLogicUnitTests.Clients
         [DynamicData(nameof(ValidTilesSizeTestParameters), DynamicDataSourceType.Method)]
         public void IsAcceptsValidTileSize(byte[] imageBytes, (int, int) dimensions)
         {
-            Tile tile = new Tile(0, 0, 0, imageBytes);
+            Tile tile = new Tile(this._configurationManagerMock.Object, 0, 0, 0, imageBytes);
             Assert.AreEqual((tile.Width, tile.Height), dimensions);
         }
 
@@ -115,7 +120,7 @@ namespace MergerLogicUnitTests.Clients
         [ExpectedException(typeof(ArgumentException))]
         public void IsRejectsInvalidTileSize(byte[] imageBytes, (int, int) dimensions)
         {
-            new Tile(0, 0, 0, imageBytes);
+            new Tile(this._configurationManagerMock.Object, 0, 0, 0, imageBytes);
         }
         #endregion
     }

@@ -22,6 +22,7 @@ namespace MergerLogicUnitTests.Utils
         private Mock<IFileSystem> _fileSystemMock;
         private Mock<IPath> _pathMock;
         private Mock<IImageFormatter> _imageFormaterMock;
+        private Mock<IConfigurationManager> _configurationManagerMock;
         private byte[] _jpegImageData;
         private byte[] _pngImageData;
 
@@ -36,6 +37,9 @@ namespace MergerLogicUnitTests.Utils
             this._fileSystemMock = this._repository.Create<IFileSystem>();
             this._fileSystemMock.SetupGet(fs => fs.Path).Returns(this._pathMock.Object);
             this._imageFormaterMock = this._repository.Create<IImageFormatter>();
+            this._configurationManagerMock = this._repository.Create<IConfigurationManager>();
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
+                .Returns(256);
 
             this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
             this._pngImageData = File.ReadAllBytes("no_transparency.png");
@@ -76,7 +80,7 @@ namespace MergerLogicUnitTests.Utils
         {
             var data = format == TileFormat.Jpeg ? this._jpegImageData : this._pngImageData;
             var utils = new PathUtils(this._fileSystemMock.Object);
-            var res = utils.GetTilePath("test#subTest", new Tile(0, 1, 2, data));
+            var res = utils.GetTilePath("test#subTest", new Tile(this._configurationManagerMock.Object, 0, 1, 2, data));
             Assert.AreEqual($"test#subTest#0#1#2.{format.ToString().ToLower()}", res);
         }
 

@@ -19,6 +19,7 @@ namespace MergerLogicUnitTests.Utils
         private Mock<IHttpRequestUtils> _httpRequestUtilsMock;
         private Mock<IPathPatternUtils> _pathPatternUtilsMock;
         private Mock<IGeoUtils> _geoUtilsMock;
+        private Mock<IConfigurationManager> _configurationManagerMock;
         private byte[] _jpegImageData;
         #endregion
 
@@ -29,6 +30,10 @@ namespace MergerLogicUnitTests.Utils
             this._httpRequestUtilsMock = this._repository.Create<IHttpRequestUtils>();
             this._pathPatternUtilsMock = this._repository.Create<IPathPatternUtils>();
             this._geoUtilsMock = this._repository.Create<IGeoUtils>();
+            this._configurationManagerMock = this._repository.Create<IConfigurationManager>();
+
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
+                .Returns(256);
 
             this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
         }
@@ -51,7 +56,7 @@ namespace MergerLogicUnitTests.Utils
                 .Returns(returnsNull ? null : data);
 
             var httpSourceUtils = new HttpSourceClient("http://testPath", this._httpRequestUtilsMock.Object,
-                this._pathPatternUtilsMock.Object, this._geoUtilsMock.Object);
+                this._pathPatternUtilsMock.Object, this._geoUtilsMock.Object, this._configurationManagerMock.Object);
 
             var res = useCoords ? httpSourceUtils.GetTile(cords) : httpSourceUtils.GetTile(cords.Z, cords.X, cords.Y);
             if (returnsNull)
@@ -86,7 +91,7 @@ namespace MergerLogicUnitTests.Utils
                 .Returns(exist ? data : null);
 
             var httpSourceUtils = new HttpSourceClient("http://testPath", this._httpRequestUtilsMock.Object,
-                this._pathPatternUtilsMock.Object, this._geoUtilsMock.Object);
+                this._pathPatternUtilsMock.Object, this._geoUtilsMock.Object, this._configurationManagerMock.Object);
 
             var res = httpSourceUtils.TileExists(cords.Z, cords.X, cords.Y);
 

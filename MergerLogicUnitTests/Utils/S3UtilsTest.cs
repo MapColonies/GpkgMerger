@@ -33,6 +33,7 @@ namespace MergerLogicUnitTests.Utils
         private Mock<IImageFormatter> _imageFormatterMock;
         private Mock<ILogger<S3Client>> _loggerMock;
         private Mock<ILoggerFactory> _loggerFactoryMock;
+        private Mock<IConfigurationManager> _configurationManagerMock;
 
         private byte[] _jpegImageData;
 
@@ -46,10 +47,13 @@ namespace MergerLogicUnitTests.Utils
             this._pathUtilsMock = this._repository.Create<IPathUtils>();
             this._geoUtilsMock = this._repository.Create<IGeoUtils>();
             this._imageFormatterMock = this._repository.Create<IImageFormatter>();
+            this._configurationManagerMock = this._repository.Create<IConfigurationManager>();
 
             this._loggerMock = this._repository.Create<ILogger<S3Client>>(MockBehavior.Loose);
             this._loggerFactoryMock = this._repository.Create<ILoggerFactory>();
             this._loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(this._loggerMock.Object);
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
+                .Returns(256);
 
             this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
         }
@@ -124,7 +128,7 @@ namespace MergerLogicUnitTests.Utils
                 }
 
                 var s3Utils = new S3Client(this._s3ClientMock.Object, this._pathUtilsMock.Object,
-                    this._geoUtilsMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
+                    this._geoUtilsMock.Object, this._loggerMock.Object, this._configurationManagerMock.Object, "STANDARD", "bucket", "test");
 
                 Tile tile = null;
                 switch (paramType)
@@ -206,7 +210,7 @@ namespace MergerLogicUnitTests.Utils
                 });
 
             var s3Utils = new S3Client(this._s3ClientMock.Object, this._pathUtilsMock.Object,
-                this._geoUtilsMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
+                this._geoUtilsMock.Object, this._loggerMock.Object, this._configurationManagerMock.Object, "STANDARD", "bucket", "test");
 
             Assert.AreEqual(exist, s3Utils.TileExists(0, 0, 0));
 
@@ -227,7 +231,7 @@ namespace MergerLogicUnitTests.Utils
             var buff = this._jpegImageData;
             int readLen = -1;
             var seq = new MockSequence();
-            var testTile = new Tile(0, 0, 0, buff);
+            var testTile = new Tile(this._configurationManagerMock.Object, 0, 0, 0, buff);
             this._pathUtilsMock
                 .InSequence(seq)
                 .Setup(utils => utils.GetTilePath("test", testTile, true))
@@ -243,7 +247,7 @@ namespace MergerLogicUnitTests.Utils
                 });
 
             var s3Utils = new S3Client(this._s3ClientMock.Object, this._pathUtilsMock.Object,
-                this._geoUtilsMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
+                this._geoUtilsMock.Object, this._loggerMock.Object, this._configurationManagerMock.Object, "STANDARD", "bucket", "test");
             s3Utils.UpdateTile(testTile);
 
             this._pathUtilsMock.Verify(utils => utils.GetTilePath(It.IsAny<string>(), It.IsAny<Tile>(), It.IsAny<bool>()), Times.Once);
