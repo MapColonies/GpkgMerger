@@ -52,10 +52,12 @@ jobs:
         type: docker
         scope: raster
         artifact-name: tiles-merger-cli
-        artifact-tag: ${{ github.ref_name }}  
+        artifact-tag: ${{ github.ref_name }}
+      needs: [update_service_artifact]
 
   build_and_push_helm:
       uses: MapColonies/shared-workflows/.github/workflows/build-and-push-helm.yaml@v2
       secrets: inherit
       with:
         scope: raster
+      needs: [update_service_artifact, update_cli_artifact]
