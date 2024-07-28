@@ -46,7 +46,7 @@ jobs:
         artifact-tag: ${{ github.ref_name }
 
   update_cli_artifact:
-      uses: MapColonies/shared-workflows/.github/workflows/update-artifacts-fileyaml@v2
+      uses: MapColonies/shared-workflows/.github/workflows/update-artifacts-file.yaml@v2
       secrets: inherit
       with:
         type: docker
