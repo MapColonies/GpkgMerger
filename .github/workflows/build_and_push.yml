@@ -38,7 +38,7 @@ jobs:
         run: docker push ${{ secrets.ACR_URL }}/tiles-merger-cli:${{ github.ref_name }}
 
   update_service_artifact:
-      uses: MapColonies/shared-workflows/.github/workflows/update-artifacts-file.yaml@feat/retry
+      uses: MapColonies/shared-workflows/.github/workflows/update-artifacts-file.yaml@v2
       secrets: inherit
       with:
         type: docker
@@ -47,7 +47,7 @@ jobs:
         artifact-tag: ${{ github.ref_name }}
 
   update_cli_artifact:
-      uses: MapColonies/shared-workflows/.github/workflows/update-artifacts-file.yaml@feat/retry
+      uses: MapColonies/shared-workflows/.github/workflows/update-artifacts-file.yaml@v2
       secrets: inherit
       with:
         type: docker
@@ -56,7 +56,7 @@ jobs:
         artifact-tag: ${{ github.ref_name }}
 
   build_and_push_helm:
-      uses: MapColonies/shared-workflows/.github/workflows/build-and-push-helm.yaml@feat/retry
+      uses: MapColonies/shared-workflows/.github/workflows/build-and-push-helm.yaml@v2
       secrets: inherit
       with:
         scope: raster
