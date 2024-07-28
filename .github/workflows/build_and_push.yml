@@ -2,7 +2,7 @@ name: Match chart version and push to ACR
 
 on:
   push:
-    branches:
+    tags:
       - '*'
 
   workflow_dispatch:
