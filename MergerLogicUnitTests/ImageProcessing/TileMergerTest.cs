@@ -334,8 +334,6 @@ namespace MergerLogicUnitTests.ImageProcessing
             var tileBuilders = tiles.Select<Tile, CorrespondingTileBuilder>(tile => () => tile).ToList();
             var result = this._testTileMerger.MergeTiles(tileBuilders, targetCoord, strategy, uploadOnly);
 
-            File.WriteAllBytes("/home/shimonc1/Documents/GpkgMerger/MergerLogicUnitTests/ImageProcessing/TestImages/temp", result.GetImageBytes());
-
             Assert.IsNotNull(result);
             Assert.AreEqual(expectedForamt, result.Format);
             CollectionAssert.AreEqual(expectedTileBytes, result.GetImageBytes());
