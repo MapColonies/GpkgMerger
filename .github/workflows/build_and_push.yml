@@ -10,6 +10,7 @@ on:
       version:
         required: false
         type: string
+
 env:
   HELM_EXPERIMENTAL_OCI: 1
 
@@ -36,40 +37,26 @@ jobs:
       - name: Push CLI docker image
         run: docker push ${{ secrets.ACR_URL }}/tiles-merger-cli:${{ github.ref_name }}
 
+  update_service_artifact:
+      uses: MapColonies/shared-workflows/.github/workflows/update-artifacts-file.yaml@v2
+      secrets: inherit
+      with:
+        type: docker
+        scope: raster
+        artifact-name: tiles-merger-service
+        artifact-tag: ${{ github.ref_name }}
+
+  update_cli_artifact:
+      uses: MapColonies/shared-workflows/.github/workflows/update-artifacts-file.yaml@v2
+      secrets: inherit
+      with:
+        type: docker
+        scope: raster
+        artifact-name: tiles-merger-cli
+        artifact-tag: ${{ github.ref_name }}
+
   build_and_push_helm:
-    name: publish helm to acr
-    runs-on: ubuntu-latest
-    steps:    
-      - name: checkout repo from latest commit
-        uses: actions/checkout@v2
-
-      - name: install helm
-        uses: Azure/setup-helm@v1
-        with:
-          version: 'v3.6.3'
-
-      - name: login to acr using helm
-        run: |
-          helm registry login ${{ secrets.ACR_URL }} --username ${{ secrets.ACR_PUSH_USER }} --password ${{ secrets.ACR_PUSH_TOKEN }} 
-
-      - name: Get Chart name
-        run: |
-          export "CHART=$(cat Chart.yaml | grep name | awk '{print $2; exit}')"
-          echo "CHART=$CHART" >> $GITHUB_ENV
-        working-directory: ./helm
-
-      - name: Get version 
-        run: |
-          export "VER=$(cat Chart.yaml | grep version | awk '{print $2; exit}')"
-          echo "VER=$VER" >> $GITHUB_ENV
-        working-directory: ./helm
-
-      - name: save helm chart to local registry
-        run: |
-          helm chart save . '${{ secrets.ACR_URL }}/helm/${{ env.CHART }}:${{ env.VER }}'
-        working-directory: ./helm
-      
-      - name: publish chart to acr
-        run: |
-          helm chart push ${{ secrets.ACR_URL }}/helm/${{ env.CHART }}:${{ env.VER }}
-        working-directory: ./helm
+      uses: MapColonies/shared-workflows/.github/workflows/build-and-push-helm.yaml@v2
+      secrets: inherit
+      with:
+        scope: raster
