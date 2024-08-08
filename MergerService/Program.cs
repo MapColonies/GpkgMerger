@@ -14,7 +14,7 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
     Args = args
 });
 
-builder.Configuration["hostBuilder:reloadConfigOnChange"] = "false";
+builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
 
 Console.WriteLine($"ContentRoot Path: {builder.Environment.ContentRootPath}");
 Console.WriteLine($"WebRootPath: {builder.Environment.WebRootPath}");
