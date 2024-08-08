@@ -5,6 +5,7 @@ global:
   environment: ""
   useNodeAffinity: false
   storage:
+    tilesStorageProvider: ""
     fs:
       ingestionSourcePvc:
         name: ""
@@ -53,6 +54,7 @@ serviceUrls:
   heartbeatManager: ""
 
 storage:
+  tilesStorageProvider: ""
   fs:
     ingestionSourcePvc:
       name: ""
