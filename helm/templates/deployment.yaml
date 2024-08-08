@@ -9,6 +9,7 @@
 {{- if .Values.enabled -}}
 {{- $s3 := (include "common.s3.merged" .) | fromYaml }}
 {{- $fs := (include "common.fs.merged" .) | fromYaml }}
+{{- $storage := (include "common.storage.merged" .) | fromYaml }}
 {{ $gpkgPath := (printf "%s%s" "/app/tiles_outputs/" $fs.internalPvc.gpkgSubPath) }}
 {{ $tilePath := (printf "%s%s" "/app/tiles_outputs/" $fs.internalPvc.tilesSubPath) }}
 {{ $sources := (ternary $tilePath (printf "%s%s" "/layerSources/" $fs.ingestionSourcePvc.subPath) .Values.isExporter ) }}
@@ -101,6 +102,7 @@ spec:
               value: {{ .Values.env.general.batchMaxBytes | int64 | quote }}
             - name: GENERAL__filePath
               value: {{ $tilePath }}
+            {{- if eq $storage.tilesStorageProvider "S3"}}  
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
@@ -111,6 +113,7 @@ spec:
                 secretKeyRef:
                   name: {{ $s3.secretName }}
                   key: secretAccessKey
+            {{- end }}      
           envFrom:
             - configMapRef:
                 name: {{ $configmapName }}
