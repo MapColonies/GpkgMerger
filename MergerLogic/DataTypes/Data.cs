@@ -65,7 +65,7 @@ namespace MergerLogic.DataTypes
         protected readonly IMetricsProvider _metricsProvider;
 
         #region tile grid converters
-        protected IOneXOneConvertor OneXOneConvertor = null;
+        protected IOneXOneConvertor? OneXOneConvertor = null;
         protected NullableTileConvertorFunction FromCurrentGridTile;
         protected GetCoordFromCoordFunction FromCurrentGridCoord;
         protected NullableTileConvertorFunction ToCurrentGrid;
@@ -78,7 +78,7 @@ namespace MergerLogic.DataTypes
         protected Data(IServiceProvider container, DataType type, string path, int batchSize, Grid? grid,
             GridOrigin? origin, bool isBase, Extent? extent = null)
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
+            string? methodName = MethodBase.GetCurrentMethod()?.Name;
             this._container = container;
             var loggerFactory = container.GetRequiredService<ILoggerFactory>();
             this._logger = loggerFactory.CreateLogger(this.GetType());
@@ -165,17 +165,17 @@ namespace MergerLogic.DataTypes
 
         protected virtual void Initialize()
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] {this.Type} source, skipping initialization phase");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] {this.Type} source, skipping initialization phase");
         }
 
         protected virtual void Create()
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] {this.Type} source, skipping creation phase");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] {this.Type} source, skipping creation phase");
         }
 
         protected virtual void Validate()
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] {this.Type} source, skipping validation phase");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] {this.Type} source, skipping validation phase");
         }
 
         protected abstract GridOrigin DefaultOrigin();
@@ -187,7 +187,7 @@ namespace MergerLogic.DataTypes
 
         protected virtual void SetExtent(Extent? extent)
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] {this.Type} source, skipping extent set phase");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] {this.Type} source, skipping extent set phase");
         }
 
         protected virtual Extent GetExtent()
@@ -199,7 +199,7 @@ namespace MergerLogic.DataTypes
 
         protected virtual Tile? InternalGetLastExistingTile(Coord coords)
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] started for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] started for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}");
             // get tiles coordinates
             int z = coords.Z;
             int baseTileX = coords.X;
@@ -243,7 +243,7 @@ namespace MergerLogic.DataTypes
             var orderedTilesArray = tilesResponseArray.OrderBy(kvp => kvp.Key);
             Tile? lastTile = orderedTilesArray.Last().Value;
             string message = lastTile == null ? "null" : $"z:{lastTile.Z}, x:{lastTile.X}, y:{lastTile.Y}";
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended, lastTile: {message}");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended, lastTile: {message}");
             return lastTile;
         }
 
@@ -274,25 +274,25 @@ namespace MergerLogic.DataTypes
                 return null;
             }
             Tile? tile = this.InternalGetLastExistingTile(newCoords);
-            return tile != null ? this.OneXOneConvertor.ToTwoXOne(tile) : null;
+            return tile != null ? this.OneXOneConvertor?.ToTwoXOne(tile) : null;
         }
 
         protected virtual Tile? GetOneXOneTile(int z, int x, int y)
         {
-            Coord? oneXoneBaseCoords = this.OneXOneConvertor.TryFromTwoXOne(z, x, y);
+            Coord? oneXoneBaseCoords = this.OneXOneConvertor?.TryFromTwoXOne(z, x, y);
             if (oneXoneBaseCoords == null)
             {
                 return null;
             }
             Tile? tile = this.Utils.GetTile(oneXoneBaseCoords);
-            return tile != null ? this.OneXOneConvertor.ToTwoXOne(tile) : null;
+            return tile != null ? this.OneXOneConvertor?.ToTwoXOne(tile) : null;
         }
 
         public abstract List<Tile> GetNextBatch(out string batchIdentifier, out string? nextBatchIdentifier, long? totalTilesCount);
 
         public Tile? GetCorrespondingTile(Coord coords, bool upscale)
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] start for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}, upscale: {upscale}");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] start for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}, upscale: {upscale}");
             Stopwatch stopwatch = Stopwatch.StartNew();
             Tile? correspondingTile = this.GetTile(coords.Z, coords.X, coords.Y);
 
@@ -303,14 +303,14 @@ namespace MergerLogic.DataTypes
             stopwatch.Stop();
             this._metricsProvider.TotalFetchTimePerTileHistogram(stopwatch.Elapsed.TotalMilliseconds);
             string correspondingTileMessage = correspondingTile == null ? "null" : $"z:{correspondingTile.Z}, x:{correspondingTile.X}, y:{correspondingTile.Y}";
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] finished for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}, correspondingTile: {correspondingTileMessage}, upscale: {upscale}");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] finished for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}, correspondingTile: {correspondingTileMessage}, upscale: {upscale}");
             return correspondingTile;
         }
 
         public void UpdateTiles(IEnumerable<Tile> tiles)
         {
             var stopwatch = Stopwatch.StartNew();
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] update tiles started");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] update tiles started");
             var targetTiles = tiles.Select(tile =>
             {
                 Tile convertedTile = this.ConvertOriginTile(tile);
@@ -318,7 +318,7 @@ namespace MergerLogic.DataTypes
                 return targetTile;
             }).Where(tile => tile is not null);
             this.InternalUpdateTiles(targetTiles);
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] update tiles ended");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] update tiles ended");
             stopwatch.Stop();
             this._metricsProvider.BatchUploadTimeHistogram(stopwatch.Elapsed.TotalSeconds, this.Type);
         }
@@ -328,7 +328,7 @@ namespace MergerLogic.DataTypes
         public virtual void Wrapup()
         {
             this.Reset();
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] {this.Type} source, skipping wrapup phase");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] {this.Type} source, skipping wrapup phase");
         }
 
         public abstract bool Exists();

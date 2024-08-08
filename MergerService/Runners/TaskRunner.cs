@@ -86,6 +86,7 @@ namespace MergerService.Runners
                 return false;
             }
 
+            this._logger.LogInformation($"[{methodName}] Run Task: jobId {task.JobId}, taskId {task.Id}");
             string? managerCallbackUrl = this._jobUtils.GetJob(task.JobId)?.Parameters.ManagerCallbackUrl;
             string log = managerCallbackUrl == null ? "managerCallbackUrl not provided as job parameter" : $"managerCallback url: {managerCallbackUrl}";
             this._logger.LogDebug($"[{methodName}]{log}");
@@ -96,11 +97,12 @@ namespace MergerService.Runners
                 try
                 {
                     string reason = string.IsNullOrEmpty(task.Reason) ? $"Max attempts reached, current attempt is {task.Attempts}" : $"{task.Reason} and Max attempts reached with {task.Attempts} attempts";
+                    this._logger.LogWarning($"[{methodName}] reject job because attemts count reached, jobId {task.JobId}, taskId {task.Id}, {reason}");
                     this._taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, reason, task.Resettable, managerCallbackUrl);
                 }
                 catch (Exception innerError)
                 {
-                    this._logger.LogError(innerError, $"[{methodName}] Error in MergerService while updating reject status due to max attemps reached with {task.Attempts}, update task failure: {innerError.Message}");
+                    this._logger.LogError(innerError, $"[{methodName}] Error in MergerService while updating reject status for job {task.JobId}, task {task.Id} due to max attemps reached with {task.Attempts}, update task failure: {innerError.Message}");
                 }
 
                 return false;

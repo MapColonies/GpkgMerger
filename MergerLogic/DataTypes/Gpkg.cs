@@ -17,7 +17,7 @@ namespace MergerLogic.DataTypes
             string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false, Extent? extent = null)
             : base(container, DataType.GPKG, path, batchSize, grid, origin, isBase, extent)
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Ctor started");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] Ctor started");
             this._offset = 0;
             this._configManager = configuration;
 
@@ -30,7 +30,7 @@ namespace MergerLogic.DataTypes
             {
                 this._extent = this.Utils.GetExtent();
             }
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Ctor ended");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] Ctor ended");
         }
 
         protected override void SetExtent(Extent? extent)
@@ -57,20 +57,20 @@ namespace MergerLogic.DataTypes
 
         protected override void Create()
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] started");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] started");
             this.Utils.Create(this._extent, this.IsOneXOne);
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended");
         }
 
         protected override void Validate()
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] started");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] started");
             if (!this.Utils.IsValidGrid(this.IsOneXOne))
             {
                 var gridType = this.IsOneXOne ? "1X1" : "2X1";
                 throw new Exception($"{this.Type} source {this.Path} don't have valid {gridType} grid.");
             }
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended");
         }
 
         protected override GridOrigin DefaultOrigin()
@@ -90,7 +90,7 @@ namespace MergerLogic.DataTypes
         {
             lock (_locker)
             {
-                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] started");
+                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] started");
                 currentBatchIdentifier = this._offset.ToString();
                 List<Tile> tiles = new List<Tile>();
                 if (this._offset != totalTilesCount)
@@ -113,7 +113,7 @@ namespace MergerLogic.DataTypes
                     return tiles;
                 }
                 nextBatchIdentifier = this._offset.ToString();
-                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended");
+                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended");
                 return tiles;
             }
         }
@@ -128,7 +128,7 @@ namespace MergerLogic.DataTypes
 
         protected override Tile? InternalGetLastExistingTile(Coord baseCoords)
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] started for coord: z:{baseCoords.Z}, x:{baseCoords.X}, y:{baseCoords.Y}");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] started for coord: z:{baseCoords.Z}, x:{baseCoords.X}, y:{baseCoords.Y}");
             int cordsLength = baseCoords.Z << 1;
             int[] coords = new int[cordsLength];
 
@@ -147,7 +147,7 @@ namespace MergerLogic.DataTypes
 
             Tile? lastTile = this.Utils.GetLastTile(coords, z);
             string message = lastTile == null ? "null" : $"z:{lastTile.Z}, x:{lastTile.X}, y:{lastTile.Y}";
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended, lastTile {message}");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended, lastTile {message}");
             return lastTile;
         }
 
@@ -161,7 +161,7 @@ namespace MergerLogic.DataTypes
 
         public override void Wrapup()
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] started");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] started");
             this.Utils.UpdateTileMatrixTable(this.IsOneXOne);
             this.Utils.CreateTileCacheValidationTriggers();
 
@@ -172,30 +172,30 @@ namespace MergerLogic.DataTypes
             }
 
             this.Reset();
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended");
         }
 
         public override bool Exists()
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] started");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] started");
             bool exists = this.Utils.Exist();
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended");
             return exists;
         }
 
         public override long TileCount()
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] started");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] started");
             long result = this.Utils.GetTileCount();
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended");
             return result;
         }
 
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
         {
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] started");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] started");
             this.Utils.InsertTiles(targetTiles);
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] ended");
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended");
         }
     }
 }

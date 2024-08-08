@@ -40,7 +40,7 @@ namespace MergerCli
             if (resumeBatchIdentifier != null)
             {
                 resumeMode = true;
-                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod().Name}] Resume mode activated, resume batchId: {resumeBatchIdentifier}");
+                this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] Resume mode activated, resume batchId: {resumeBatchIdentifier}");
 
                 // Set strategy from status manager
                 this._tileFormatStrategy = new TileFormatStrategy(batchStatusManager.Format, batchStatusManager.Strategy);
@@ -53,11 +53,11 @@ namespace MergerCli
                 }
             }
 
-            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Total amount of tiles to merge: {totalTileCount - tileProgressCount}");
-            
+            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod()?.Name}] Total amount of tiles to merge: {totalTileCount - tileProgressCount}");
+
             ParallelRun(baseData, newData, batchStatusManager,
                 tileProgressCount, totalTileCount, resumeBatchIdentifier, resumeMode, pollForBatch);
-            
+
             batchStatusManager.CompleteLayer(newData.Path);
             newData.Reset();
             // base data wrap up is in program as the same base data object is used in multiple calls 
@@ -79,7 +79,7 @@ namespace MergerCli
                             newData.setBatchIdentifier(resumeBatchIdentifier);
                         }
                     }
-                    
+
                     var incompleteBatch = batchStatusManager.GetFirstIncompleteBatch(newData.Path);
                     if (incompleteBatch is not null)
                     {
@@ -88,21 +88,21 @@ namespace MergerCli
                 }
 
                 List<Tile> newTiles = newData.GetNextBatch(out string? currentBatchIdentifier, out string? nextBatchIdentifier, totalTileCount);
-                
+
                 if (!resumeMode && newTiles.Count != 0)
                 {
                     batchStatusManager.AssignBatch(newData.Path, currentBatchIdentifier);
                     batchStatusManager.SetCurrentBatch(newData.Path, nextBatchIdentifier);
                 }
-                
+
                 return (newTiles, currentBatchIdentifier);
             }
         }
-        
-        private void ProcessBatch(IData baseData, List<Tile> newTiles, ref long tileProgressCount, long totalTileCount,ref bool pollForBatch)
+
+        private void ProcessBatch(IData baseData, List<Tile> newTiles, ref long tileProgressCount, long totalTileCount, ref bool pollForBatch)
         {
             ConcurrentBag<Tile> tiles = new ConcurrentBag<Tile>();
-            
+
             if (newTiles.Count == 0)
             {
                 pollForBatch = false;
@@ -133,11 +133,11 @@ namespace MergerCli
             baseData.UpdateTiles(tiles);
 
             Interlocked.Add(ref tileProgressCount, tiles.Count);
-            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Tile Count: {tileProgressCount} / {totalTileCount}");
+            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod()?.Name}] Tile Count: {tileProgressCount} / {totalTileCount}");
         }
 
         private void ParallelRun(IData baseData, IData newData,
-            BatchStatusManager batchStatusManager, long tileProgressCount, long totalTileCount, string? resumeBatchIdentifier, bool resumeMode,bool pollForBatch)
+            BatchStatusManager batchStatusManager, long tileProgressCount, long totalTileCount, string? resumeBatchIdentifier, bool resumeMode, bool pollForBatch)
         {
             var numOfThreads = this._configManager.GetConfiguration<int>("GENERAL", "parallel", "numOfThreads");
             Parallel.For(0, numOfThreads, new ParallelOptions { MaxDegreeOfParallelism = -1 }, _ =>
@@ -151,7 +151,7 @@ namespace MergerCli
                 }
             });
         }
-        
+
         public void Validate(IData baseData, IData newData, string? incompleteBatchIdentifier)
         {
             List<Tile> newTiles;
@@ -159,7 +159,7 @@ namespace MergerCli
 
             long totalTileCount = newData.TileCount();
             long tilesChecked = 0;
-            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Base tile Count: {baseData.TileCount()}, New tile count: {totalTileCount}");
+            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod()?.Name}] Base tile Count: {baseData.TileCount()}, New tile count: {totalTileCount}");
 
             do
             {
@@ -178,19 +178,19 @@ namespace MergerCli
                     }
                     else
                     {
-                        this._logger.LogError($"[{MethodBase.GetCurrentMethod().Name}] Missing tile: {newTile}");
+                        this._logger.LogError($"[{MethodBase.GetCurrentMethod()?.Name}] Missing tile: {newTile}");
                     }
                 }
 
                 newTileCount += newTiles.Count;
                 tilesChecked += newTiles.Count;
-                this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Total tiles checked: {tilesChecked}/{totalTileCount}");
+                this._logger.LogInformation($"[{MethodBase.GetCurrentMethod()?.Name}] Total tiles checked: {tilesChecked}/{totalTileCount}");
                 hasSameTiles = newTileCount == baseMatchCount;
             } while (hasSameTiles && newTiles.Count > 0);
 
             newData.Reset();
 
-            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Target's valid: {hasSameTiles}");
+            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod()?.Name}] Target's valid: {hasSameTiles}");
         }
     }
 }

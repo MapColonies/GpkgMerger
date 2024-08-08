@@ -29,7 +29,7 @@ namespace MergerLogic.Clients
 
         private byte[]? GetImageBytes(string key)
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
+            string? methodName = MethodBase.GetCurrentMethod()?.Name;
             try
             {
                 this._logger.LogDebug($"[{methodName}] start, key {key}");
