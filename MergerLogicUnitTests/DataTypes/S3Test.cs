@@ -7,10 +7,12 @@ using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 
 namespace MergerLogicUnitTests.DataTypes
@@ -19,6 +21,7 @@ namespace MergerLogicUnitTests.DataTypes
     [TestCategory("unit")]
     [TestCategory("S3")]
     [TestCategory("S3DataSource")]
+    [DeploymentItem(@"../../../DataTypes/TestImages")]
     public class S3Test
     {
         #region mocks
@@ -80,8 +83,10 @@ namespace MergerLogicUnitTests.DataTypes
                 .Returns(this._configurationManagerMock.Object);
             this._configurationManagerMock.Setup(cm => cm.GetConfiguration("S3", "bucket"))
                 .Returns("bucket");
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
+                .Returns(256);
 
-            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
+            this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
         }
 
         #region TileExists
@@ -142,7 +147,7 @@ namespace MergerLogicUnitTests.DataTypes
             }
             else
             {
-                var tile = new Tile(cords, this._jpegImageData);
+                var tile = new Tile(this._configurationManagerMock.Object, cords, this._jpegImageData);
                 Assert.AreEqual(expected, s3Source.TileExists(tile));
             }
 
@@ -177,7 +182,7 @@ namespace MergerLogicUnitTests.DataTypes
             bool expectedNull)
         {
             Tile nullTile = null;
-            var existingTile = new Tile(2, 2, 3, this._jpegImageData);
+            var existingTile = new Tile(this._configurationManagerMock.Object, 2, 2, 3, this._jpegImageData);
             this.SetupConstructorRequiredMocks();
 
             this._s3UtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
@@ -226,7 +231,7 @@ namespace MergerLogicUnitTests.DataTypes
         {
             bool expectedNull = cords.Z != 2;
             Tile nullTile = null;
-            var existingTile = new Tile(2, 2, 3, this._jpegImageData);
+            var existingTile = new Tile(this._configurationManagerMock.Object, 2, 2, 3, this._jpegImageData);
             var sequence = new MockSequence();
             this.SetupConstructorRequiredMocks(true, sequence);
 
@@ -330,7 +335,7 @@ namespace MergerLogicUnitTests.DataTypes
         public void GetCorrespondingTileWithUpscale(bool isOneXOne, GridOrigin origin, bool isValidConversion)
         {
             Tile nullTile = null;
-            var tile = new Tile(2, 2, 3, this._jpegImageData);
+            var tile = new Tile(this._configurationManagerMock.Object, 2, 2, 3, this._jpegImageData);
             var sequence = new MockSequence();
             this.SetupConstructorRequiredMocks(true, sequence);
 
@@ -445,8 +450,9 @@ namespace MergerLogicUnitTests.DataTypes
         {
             var testTiles = new Tile[]
             {
-                new Tile(1, 2, 3, this._jpegImageData), new Tile(7, 7, 7, this._jpegImageData),
-                new Tile(2, 2, 3, this._jpegImageData)
+                new Tile(this._configurationManagerMock.Object, 1, 2, 3, this._jpegImageData),
+                new Tile(this._configurationManagerMock.Object, 7, 7, 7, this._jpegImageData),
+                new Tile(this._configurationManagerMock.Object, 2, 2, 3, this._jpegImageData)
             };
             var seq = new MockSequence();
             this.SetupConstructorRequiredMocks(true, seq);
@@ -699,7 +705,7 @@ namespace MergerLogicUnitTests.DataTypes
                 });
             this._s3UtilsMock
                 .Setup(utils => utils.GetTile(It.IsAny<string>()))
-                .Returns(new Tile(0, 0, 0, this._jpegImageData));
+                .Returns(new Tile(this._configurationManagerMock.Object, 0, 0, 0, this._jpegImageData));
             if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock

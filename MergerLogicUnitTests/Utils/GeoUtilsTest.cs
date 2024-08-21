@@ -3,8 +3,10 @@ using MergerLogic.DataTypes;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace MergerLogicUnitTests.Utils
 {
@@ -12,10 +14,14 @@ namespace MergerLogicUnitTests.Utils
     [TestCategory("unit")]
     [TestCategory("geo")]
     [TestCategory("geoUtils")]
+    [DeploymentItem(@"../../../Utils/TestData")]
+
     public class GeoUtilsTest
     {
         #region mocks
 
+        private MockRepository _repository;
+        private Mock<IConfigurationManager> _configurationManagerMock;
         private byte[] _jpegImageData;
 
         #endregion
@@ -23,7 +29,11 @@ namespace MergerLogicUnitTests.Utils
         [TestInitialize]
         public void BeforeEach()
         {
-            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
+            this._repository = new MockRepository(MockBehavior.Strict);
+            this._configurationManagerMock = this._repository.Create<IConfigurationManager>();
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
+                .Returns(256);
+            this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
         }
 
         #region FlipY
@@ -55,7 +65,7 @@ namespace MergerLogicUnitTests.Utils
                     res = geoUtils.FlipY(coords.Z, coords.Y);
                     break;
                 case GetFlipYParamType.Tile:
-                    res = geoUtils.FlipY(new Tile(coords, this._jpegImageData));
+                    res = geoUtils.FlipY(new Tile(this._configurationManagerMock.Object, coords, this._jpegImageData));
                     break;
             }
             Assert.AreEqual(coords.X, res);

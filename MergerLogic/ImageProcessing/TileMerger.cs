@@ -11,22 +11,26 @@ namespace MergerLogic.ImageProcessing
     {
         private readonly ITileScaler _tileScaler;
         private readonly ILogger<TileMerger> _logger;
+        private readonly IConfigurationManager _configurationManager;
 
-        public TileMerger(ITileScaler tileScaler, ILogger<TileMerger> logger)
+        public TileMerger(ITileScaler tileScaler, ILogger<TileMerger> logger, IConfigurationManager configuration)
         {
             this._logger = logger;
             this._tileScaler = tileScaler;
+            this._configurationManager = configuration;
         }
 
         public Tile? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords, TileFormatStrategy strategy, bool uploadOnly = false)
         {
-            if(uploadOnly) {
+            if (uploadOnly)
+            {
                 this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] Configured to upload only mode");
                 // Ignore target if in upload only mode
                 tiles = tiles.Skip(1).ToList();
 
                 // In case there is only one source then we can just return the data as is
-                if(tiles.Count == 1) {
+                if (tiles.Count == 1)
+                {
                     this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] Only one source was found, using raw image");
                     Tile? rawTile = tiles[0]();
                     rawTile?.ConvertToFormat(strategy.ApplyStrategy(rawTile.Format));
@@ -70,7 +74,7 @@ namespace MergerLogic.ImageProcessing
                     break;
             }
 
-            Tile tile = new Tile(targetCoords, image);
+            Tile tile = new Tile(this._configurationManager, targetCoords, image);
             image.Dispose();
             tile.ConvertToFormat(strategy.ApplyStrategy(tile.Format));
             return tile;

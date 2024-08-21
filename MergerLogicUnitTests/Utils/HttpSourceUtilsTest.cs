@@ -3,6 +3,7 @@ using MergerLogic.DataTypes;
 using MergerLogic.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using System.IO;
 
 namespace MergerLogicUnitTests.Utils
 {
@@ -10,6 +11,7 @@ namespace MergerLogicUnitTests.Utils
     [TestCategory("unit")]
     [TestCategory("http")]
     [TestCategory("HttpUtils")]
+    [DeploymentItem(@"../../../Utils/TestData")]
     public class HttpSourceUtilsTest
     {
         #region mocks
@@ -17,8 +19,10 @@ namespace MergerLogicUnitTests.Utils
         private Mock<IHttpRequestUtils> _httpRequestUtilsMock;
         private Mock<IPathPatternUtils> _pathPatternUtilsMock;
         private Mock<IGeoUtils> _geoUtilsMock;
+        private Mock<IConfigurationManager> _configurationManagerMock;
         private byte[] _jpegImageData;
         #endregion
+        private readonly Times anyNumberOfTimes = Times.AtMost(int.MaxValue);
 
         [TestInitialize]
         public void beforeEach()
@@ -27,8 +31,12 @@ namespace MergerLogicUnitTests.Utils
             this._httpRequestUtilsMock = this._repository.Create<IHttpRequestUtils>();
             this._pathPatternUtilsMock = this._repository.Create<IPathPatternUtils>();
             this._geoUtilsMock = this._repository.Create<IGeoUtils>();
+            this._configurationManagerMock = this._repository.Create<IConfigurationManager>();
 
-            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
+                .Returns(256).Verifiable(anyNumberOfTimes);
+
+            this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
         }
 
         #region GetTile
@@ -49,7 +57,7 @@ namespace MergerLogicUnitTests.Utils
                 .Returns(returnsNull ? null : data);
 
             var httpSourceUtils = new HttpSourceClient("http://testPath", this._httpRequestUtilsMock.Object,
-                this._pathPatternUtilsMock.Object, this._geoUtilsMock.Object);
+                this._pathPatternUtilsMock.Object, this._geoUtilsMock.Object, this._configurationManagerMock.Object);
 
             var res = useCoords ? httpSourceUtils.GetTile(cords) : httpSourceUtils.GetTile(cords.Z, cords.X, cords.Y);
             if (returnsNull)
@@ -84,11 +92,11 @@ namespace MergerLogicUnitTests.Utils
                 .Returns(exist ? data : null);
 
             var httpSourceUtils = new HttpSourceClient("http://testPath", this._httpRequestUtilsMock.Object,
-                this._pathPatternUtilsMock.Object, this._geoUtilsMock.Object);
+                this._pathPatternUtilsMock.Object, this._geoUtilsMock.Object, this._configurationManagerMock.Object);
 
             var res = httpSourceUtils.TileExists(cords.Z, cords.X, cords.Y);
 
-           Assert.AreEqual(exist,res);
+            Assert.AreEqual(exist, res);
             this._repository.VerifyAll();
         }
 

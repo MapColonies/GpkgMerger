@@ -9,7 +9,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
 using System.Collections.Generic;
-using System.IO.Abstractions;
+using System.IO;
 using System.Linq;
 
 namespace MergerLogicUnitTests.DataTypes
@@ -18,6 +18,7 @@ namespace MergerLogicUnitTests.DataTypes
     [TestCategory("unit")]
     [TestCategory("gpkg")]
     [TestCategory("gpkgDataSource")]
+    [DeploymentItem(@"../../../DataTypes/TestImages")]
     public class GpkgTest
     {
         #region mocks
@@ -35,6 +36,7 @@ namespace MergerLogicUnitTests.DataTypes
         private byte[] _jpegImageData;
 
         #endregion
+        private readonly Times anyNumberOfTimes = Times.AtMost(int.MaxValue);
 
         [TestInitialize]
         public void BeforeEach()
@@ -52,6 +54,8 @@ namespace MergerLogicUnitTests.DataTypes
             this._loggerFactoryMock = this._repository.Create<ILoggerFactory>();
             this._loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(this._loggerMock.Object);
             this._serviceProviderMock = this._repository.Create<IServiceProvider>();
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
+                .Returns(256).Verifiable(anyNumberOfTimes);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IOneXOneConvertor)))
                 .Returns(this._oneXOneConvertorMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IUtilsFactory)))
@@ -62,8 +66,7 @@ namespace MergerLogicUnitTests.DataTypes
                 .Returns(this._geoUtilsMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IMetricsProvider)))
                 .Returns(this._metricsProviderMock.Object);
-            
-            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
+            this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
         }
 
         #region TileExists
@@ -127,7 +130,7 @@ namespace MergerLogicUnitTests.DataTypes
             }
             else
             {
-                var tile = new Tile(cords, this._jpegImageData);
+                var tile = new Tile(this._configurationManagerMock.Object, cords, this._jpegImageData);
                 Assert.AreEqual(expected, gpkg.TileExists(tile));
             }
             this._gpkgUtilsMock.Verify(util => util.TileExists(cords.Z, cords.X, cords.Y),
@@ -163,7 +166,7 @@ namespace MergerLogicUnitTests.DataTypes
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             this.SetupRequiredBaseMocks(isBase, false, extent);
             Tile nullTile = null;
-            var existingTile = new Tile(2, 2, 3, this._jpegImageData);
+            var existingTile = new Tile(this._configurationManagerMock.Object, 2, 2, 3, this._jpegImageData);
             this._gpkgUtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
                 .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
 
@@ -219,7 +222,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             this.SetupRequiredBaseMocks(isBase, isOneXOne, extent);
             Tile nullTile = null;
-            var existingTile = new Tile(2, 2, 3, this._jpegImageData);
+            var existingTile = new Tile(this._configurationManagerMock.Object, 2, 2, 3, this._jpegImageData);
             var sequence = new MockSequence();
             if (origin != GridOrigin.LOWER_LEFT)
             {
@@ -325,7 +328,7 @@ namespace MergerLogicUnitTests.DataTypes
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
             Tile nullTile = null;
-            var tile = new Tile(2, 2, 3, this._jpegImageData);
+            var tile = new Tile(this._configurationManagerMock.Object, 2, 2, 3, this._jpegImageData);
             var sequence = new MockSequence();
 
             this.SetupRequiredBaseMocks(isBase, isOneXOne, extent);
@@ -461,8 +464,9 @@ namespace MergerLogicUnitTests.DataTypes
 
             var testTiles = new Tile[]
             {
-                new Tile(1, 2, 3, this._jpegImageData), new Tile(7, 7, 7, this._jpegImageData),
-                new Tile(2, 2, 3, this._jpegImageData)
+                new Tile(this._configurationManagerMock.Object, 1, 2, 3, this._jpegImageData),
+                new Tile(this._configurationManagerMock.Object, 7, 7, 7, this._jpegImageData),
+                new Tile(this._configurationManagerMock.Object, 2, 2, 3, this._jpegImageData)
             };
             gpkg.UpdateTiles(testTiles);
 
@@ -708,7 +712,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             this.SetupRequiredBaseMocks(isBase, isOneXOne, extent);
             this._gpkgUtilsMock.Setup(utils => utils.GetBatch(batchSize, It.IsAny<long>()))
-                .Returns(new List<Tile> { new Tile(0, 0, 0, this._jpegImageData) });
+                .Returns(new List<Tile> { new Tile(this._configurationManagerMock.Object, 0, 0, 0, this._jpegImageData) });
             if (origin == GridOrigin.UPPER_LEFT)
             {
                 this._geoUtilsMock.Setup(converter => converter.FlipY(It.IsAny<Tile>()))
@@ -759,8 +763,10 @@ namespace MergerLogicUnitTests.DataTypes
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
             var tiles = new Tile[]
             {
-                new Tile(0, 0, 0, this._jpegImageData), new Tile(1, 1, 1, this._jpegImageData),
-                new Tile(2, 2, 2, this._jpegImageData), new Tile(3, 3, 3, this._jpegImageData),
+                new Tile(this._configurationManagerMock.Object, 0, 0, 0, this._jpegImageData),
+                new Tile(this._configurationManagerMock.Object, 1, 1, 1, this._jpegImageData),
+                new Tile(this._configurationManagerMock.Object, 2, 2, 2, this._jpegImageData),
+                new Tile(this._configurationManagerMock.Object, 3, 3, 3, this._jpegImageData),
             };
             var tileBatches = tiles.Chunk(batchSize).ToList();
 

@@ -54,10 +54,10 @@ namespace MergerCli
             }
 
             this._logger.LogInformation($"[{MethodBase.GetCurrentMethod()?.Name}] Total amount of tiles to merge: {totalTileCount - tileProgressCount}");
-            
+
             ParallelRun(baseData, newData, batchStatusManager,
                 tileProgressCount, totalTileCount, resumeBatchIdentifier, resumeMode, pollForBatch);
-            
+
             batchStatusManager.CompleteLayer(newData.Path);
             newData.Reset();
             // base data wrap up is in program as the same base data object is used in multiple calls 
@@ -79,7 +79,7 @@ namespace MergerCli
                             newData.setBatchIdentifier(resumeBatchIdentifier);
                         }
                     }
-                    
+
                     var incompleteBatch = batchStatusManager.GetFirstIncompleteBatch(newData.Path);
                     if (incompleteBatch is not null)
                     {
@@ -88,21 +88,21 @@ namespace MergerCli
                 }
 
                 List<Tile> newTiles = newData.GetNextBatch(out string? currentBatchIdentifier, out string? nextBatchIdentifier, totalTileCount);
-                
+
                 if (!resumeMode && newTiles.Count != 0)
                 {
                     batchStatusManager.AssignBatch(newData.Path, currentBatchIdentifier);
                     batchStatusManager.SetCurrentBatch(newData.Path, nextBatchIdentifier);
                 }
-                
+
                 return (newTiles, currentBatchIdentifier);
             }
         }
-        
-        private void ProcessBatch(IData baseData, List<Tile> newTiles, ref long tileProgressCount, long totalTileCount,ref bool pollForBatch)
+
+        private void ProcessBatch(IData baseData, List<Tile> newTiles, ref long tileProgressCount, long totalTileCount, ref bool pollForBatch)
         {
             ConcurrentBag<Tile> tiles = new ConcurrentBag<Tile>();
-            
+
             if (newTiles.Count == 0)
             {
                 pollForBatch = false;
@@ -137,7 +137,7 @@ namespace MergerCli
         }
 
         private void ParallelRun(IData baseData, IData newData,
-            BatchStatusManager batchStatusManager, long tileProgressCount, long totalTileCount, string? resumeBatchIdentifier, bool resumeMode,bool pollForBatch)
+            BatchStatusManager batchStatusManager, long tileProgressCount, long totalTileCount, string? resumeBatchIdentifier, bool resumeMode, bool pollForBatch)
         {
             var numOfThreads = this._configManager.GetConfiguration<int>("GENERAL", "parallel", "numOfThreads");
             Parallel.For(0, numOfThreads, new ParallelOptions { MaxDegreeOfParallelism = -1 }, _ =>
@@ -151,7 +151,7 @@ namespace MergerCli
                 }
             });
         }
-        
+
         public void Validate(IData baseData, IData newData, string? incompleteBatchIdentifier)
         {
             List<Tile> newTiles;

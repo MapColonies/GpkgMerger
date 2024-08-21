@@ -1,6 +1,8 @@
 using ImageMagick;
+using MergerLogic.Batching;
 using MergerLogic.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -86,7 +88,6 @@ namespace MergerLogicUnitTests.Utils
         Assert.AreEqual(expectedResult, result);
       }
     }
-
     #endregion
   }
 }

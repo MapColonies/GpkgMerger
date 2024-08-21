@@ -5,6 +5,7 @@ using MergerLogicUnitTests.testUtils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Abstractions;
 
 namespace MergerLogicUnitTests.Utils
@@ -12,6 +13,7 @@ namespace MergerLogicUnitTests.Utils
     [TestClass]
     [TestCategory("unit")]
     [TestCategory("PathUtils")]
+    [DeploymentItem(@"../../../Utils/TestData")]
     public class PathUtilsTest
     {
         #region mocks
@@ -20,6 +22,7 @@ namespace MergerLogicUnitTests.Utils
         private Mock<IFileSystem> _fileSystemMock;
         private Mock<IPath> _pathMock;
         private Mock<IImageFormatter> _imageFormaterMock;
+        private Mock<IConfigurationManager> _configurationManagerMock;
         private byte[] _jpegImageData;
         private byte[] _pngImageData;
 
@@ -34,9 +37,12 @@ namespace MergerLogicUnitTests.Utils
             this._fileSystemMock = this._repository.Create<IFileSystem>();
             this._fileSystemMock.SetupGet(fs => fs.Path).Returns(this._pathMock.Object);
             this._imageFormaterMock = this._repository.Create<IImageFormatter>();
+            this._configurationManagerMock = this._repository.Create<IConfigurationManager>();
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
+                .Returns(256);
 
-            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
-            this._pngImageData = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+            this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
+            this._pngImageData = File.ReadAllBytes("no_transparency.png");
         }
 
         #region RemoveTrailingSlash
@@ -74,7 +80,7 @@ namespace MergerLogicUnitTests.Utils
         {
             var data = format == TileFormat.Jpeg ? this._jpegImageData : this._pngImageData;
             var utils = new PathUtils(this._fileSystemMock.Object);
-            var res = utils.GetTilePath("test#subTest", new Tile(0, 1, 2, data));
+            var res = utils.GetTilePath("test#subTest", new Tile(this._configurationManagerMock.Object, 0, 1, 2, data));
             Assert.AreEqual($"test#subTest#0#1#2.{format.ToString().ToLower()}", res);
         }
 
@@ -88,7 +94,7 @@ namespace MergerLogicUnitTests.Utils
         }
 
         [TestMethod]
-        [DynamicData(nameof(GenGetTilePathCoordsParams),DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GenGetTilePathCoordsParams), DynamicDataSourceType.Method)]
         public void GetTilePathCoords(bool isS3, TileFormat format)
         {
             var utils = new PathUtils(this._fileSystemMock.Object);
@@ -120,7 +126,7 @@ namespace MergerLogicUnitTests.Utils
         }
 
         [TestMethod]
-        [DynamicData(nameof(GenFromPathParams),DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GenFromPathParams), DynamicDataSourceType.Method)]
         public void FromPath(bool isS3, TileFormat expectedFormat)
         {
             var utils = new PathUtils(this._fileSystemMock.Object);

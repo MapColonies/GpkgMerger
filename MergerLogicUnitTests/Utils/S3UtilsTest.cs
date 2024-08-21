@@ -21,6 +21,7 @@ namespace MergerLogicUnitTests.Utils
     [TestCategory("unit")]
     [TestCategory("S3")]
     [TestCategory("s3Utils")]
+    [DeploymentItem(@"../../../Utils/TestData")]
     public class S3UtilsTest
     {
         #region mocks
@@ -32,6 +33,7 @@ namespace MergerLogicUnitTests.Utils
         private Mock<IImageFormatter> _imageFormatterMock;
         private Mock<ILogger<S3Client>> _loggerMock;
         private Mock<ILoggerFactory> _loggerFactoryMock;
+        private Mock<IConfigurationManager> _configurationManagerMock;
 
         private byte[] _jpegImageData;
 
@@ -45,12 +47,15 @@ namespace MergerLogicUnitTests.Utils
             this._pathUtilsMock = this._repository.Create<IPathUtils>();
             this._geoUtilsMock = this._repository.Create<IGeoUtils>();
             this._imageFormatterMock = this._repository.Create<IImageFormatter>();
+            this._configurationManagerMock = this._repository.Create<IConfigurationManager>();
 
             this._loggerMock = this._repository.Create<ILogger<S3Client>>(MockBehavior.Loose);
             this._loggerFactoryMock = this._repository.Create<ILoggerFactory>();
             this._loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(this._loggerMock.Object);
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
+                .Returns(256);
 
-            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
+            this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
         }
 
         #region GetTile
@@ -69,7 +74,7 @@ namespace MergerLogicUnitTests.Utils
         [TestMethod]
         [TestCategory("GetTile")]
         [DynamicData(nameof(GenGetTileParams), DynamicDataSourceType.Method)]
-        public void GetTile(bool exist, GetTileParamType paramType,TileFormat tileFormat)
+        public void GetTile(bool exist, GetTileParamType paramType, TileFormat tileFormat)
         {
             var seq = new MockSequence();
             var data = this._jpegImageData;
@@ -97,7 +102,7 @@ namespace MergerLogicUnitTests.Utils
                         It.IsAny<CancellationToken>()))
                     .ReturnsAsync(new ListObjectsV2Response()
                     {
-                        S3Objects = exist ? new List<S3Object>() {new S3Object(){Key = "key"}} : new List<S3Object>()
+                        S3Objects = exist ? new List<S3Object>() { new S3Object() { Key = "key" } } : new List<S3Object>()
                     });
             }
 
@@ -123,7 +128,7 @@ namespace MergerLogicUnitTests.Utils
                 }
 
                 var s3Utils = new S3Client(this._s3ClientMock.Object, this._pathUtilsMock.Object,
-                    this._geoUtilsMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
+                    this._geoUtilsMock.Object, this._loggerMock.Object, this._configurationManagerMock.Object, "STANDARD", "bucket", "test");
 
                 Tile tile = null;
                 switch (paramType)
@@ -135,10 +140,10 @@ namespace MergerLogicUnitTests.Utils
                         tile = s3Utils.GetTile(cords.Z, cords.X, cords.Y);
                         break;
                     case GetTileParamType.String:
-                        if(exist)
+                        if (exist)
                         {
                             tile = s3Utils.GetTile("key");
-                        } 
+                        }
                         else
                         {
                             Assert.ThrowsException<Exception>(() => s3Utils.GetTile("key"));
@@ -167,7 +172,7 @@ namespace MergerLogicUnitTests.Utils
             {
                 this._pathUtilsMock.Verify(utils => utils.GetTilePathWithoutExtension(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(),
                     It.IsAny<int>(), It.IsAny<bool>()), Times.Once);
-                this._s3ClientMock.Verify(s3=> s3.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(),It.IsAny<CancellationToken>()),Times.Once);
+                this._s3ClientMock.Verify(s3 => s3.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), It.IsAny<CancellationToken>()), Times.Once);
             }
 
             if (exist || paramType == GetTileParamType.String)
@@ -205,7 +210,7 @@ namespace MergerLogicUnitTests.Utils
                 });
 
             var s3Utils = new S3Client(this._s3ClientMock.Object, this._pathUtilsMock.Object,
-                this._geoUtilsMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
+                this._geoUtilsMock.Object, this._loggerMock.Object, this._configurationManagerMock.Object, "STANDARD", "bucket", "test");
 
             Assert.AreEqual(exist, s3Utils.TileExists(0, 0, 0));
 
@@ -226,7 +231,7 @@ namespace MergerLogicUnitTests.Utils
             var buff = this._jpegImageData;
             int readLen = -1;
             var seq = new MockSequence();
-            var testTile = new Tile(0, 0, 0, buff);
+            var testTile = new Tile(this._configurationManagerMock.Object, 0, 0, 0, buff);
             this._pathUtilsMock
                 .InSequence(seq)
                 .Setup(utils => utils.GetTilePath("test", testTile, true))
@@ -242,10 +247,10 @@ namespace MergerLogicUnitTests.Utils
                 });
 
             var s3Utils = new S3Client(this._s3ClientMock.Object, this._pathUtilsMock.Object,
-                this._geoUtilsMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
+                this._geoUtilsMock.Object, this._loggerMock.Object, this._configurationManagerMock.Object, "STANDARD", "bucket", "test");
             s3Utils.UpdateTile(testTile);
 
-            this._pathUtilsMock.Verify(utils => utils.GetTilePath(It.IsAny<string>(),It.IsAny<Tile>(), It.IsAny<bool>()), Times.Once);
+            this._pathUtilsMock.Verify(utils => utils.GetTilePath(It.IsAny<string>(), It.IsAny<Tile>(), It.IsAny<bool>()), Times.Once);
             this._s3ClientMock.Verify(s3 => s3.PutObjectAsync(It.Is<PutObjectRequest>(req =>
                 req.BucketName == "bucket" && req.Key == "key"), It.IsAny<CancellationToken>()), Times.Once);
 

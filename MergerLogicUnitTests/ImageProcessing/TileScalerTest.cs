@@ -1,7 +1,9 @@
-﻿using MergerLogic.Batching;
+﻿using Castle.Components.DictionaryAdapter.Xml;
+using MergerLogic.Batching;
 using MergerLogic.DataTypes;
 using MergerLogic.ImageProcessing;
 using MergerLogic.Monitoring.Metrics;
+using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -20,6 +22,7 @@ namespace MergerLogicUnitTests.ImageProcessing
         #region mocks
 
         private MockRepository _mockRepository;
+        private Mock<IConfigurationManager> _configurationManagerMock;
 
         private TileScaler _testTileScaler;
 
@@ -32,8 +35,12 @@ namespace MergerLogicUnitTests.ImageProcessing
 
             var metricsProviderMock = this._mockRepository.Create<IMetricsProvider>();
             var tileScalerLoggerMock = this._mockRepository.Create<ILogger<TileScaler>>();
+            this._configurationManagerMock = this._mockRepository.Create<IConfigurationManager>();
 
-            this._testTileScaler = new TileScaler(metricsProviderMock.Object, tileScalerLoggerMock.Object);
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
+                .Returns(256);
+
+            this._testTileScaler = new TileScaler(metricsProviderMock.Object, tileScalerLoggerMock.Object, this._configurationManagerMock.Object);
         }
 
         #region Upscale
@@ -110,7 +117,7 @@ namespace MergerLogicUnitTests.ImageProcessing
         [DynamicData(nameof(GetUpscaleTilesTestParameters), DynamicDataSourceType.Method)]
         public void Upscale(byte[] tileBytes, Coord baseTileCoord, Coord targetCoord, byte[]? expectedTileBytes)
         {
-            var testTile = new Tile(baseTileCoord, tileBytes);
+            var testTile = new Tile(this._configurationManagerMock.Object, baseTileCoord, tileBytes);
             var resultTile = this._testTileScaler.Upscale(testTile, targetCoord);
 
             if (expectedTileBytes is null)

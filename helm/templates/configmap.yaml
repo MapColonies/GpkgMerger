@@ -13,6 +13,7 @@ metadata:
   name: {{ $configmapName }}
 data:
   GENERAL__validate: {{ .Values.env.general.validate | quote }}
+  GENERAL__allowedPixelSize: {{ .Values.env.general.allowedPixelSize | quote }}
   TASK__jobManagerUrl: {{ $serviceUrls.jobManager | quote }}
   {{- range $i, $e := .Values.env.TASK.types }}
   TASK__types__{{ $i }}__jobType: {{ $e.jobType }}
