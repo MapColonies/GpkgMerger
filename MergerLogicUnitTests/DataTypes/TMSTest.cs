@@ -68,7 +68,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IMetricsProvider)))
                 .Returns(this._metricsProviderMock.Object);
             this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
                 .Returns(256);
 
         }

@@ -35,8 +35,9 @@ namespace MergerLogicUnitTests.Utils
         [TestInitialize]
         public void BeforeEach()
         {
+            this._repository = new MockRepository(MockBehavior.Strict);
             this._configurationManagerMock = this._repository.Create<IConfigurationManager>();
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
                 .Returns(256);
             this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
         }

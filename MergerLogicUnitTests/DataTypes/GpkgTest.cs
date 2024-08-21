@@ -36,6 +36,7 @@ namespace MergerLogicUnitTests.DataTypes
         private byte[] _jpegImageData;
 
         #endregion
+        private readonly Times anyNumberOfTimes = Times.AtMost(int.MaxValue);
 
         [TestInitialize]
         public void BeforeEach()
@@ -53,8 +54,8 @@ namespace MergerLogicUnitTests.DataTypes
             this._loggerFactoryMock = this._repository.Create<ILoggerFactory>();
             this._loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(this._loggerMock.Object);
             this._serviceProviderMock = this._repository.Create<IServiceProvider>();
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
-                .Returns(256);
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
+                .Returns(256).Verifiable(anyNumberOfTimes);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IOneXOneConvertor)))
                 .Returns(this._oneXOneConvertorMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IUtilsFactory)))

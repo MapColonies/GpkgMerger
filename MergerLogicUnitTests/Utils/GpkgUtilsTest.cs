@@ -51,7 +51,7 @@ namespace MergerLogicUnitTests.Utils
 
             this._fileSystemMock.SetupGet(fs => fs.File).Returns(this._fileMock.Object);
             this._fileSystemMock.SetupGet(fs => fs.Path).Returns(this._pathMock.Object);
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
                 .Returns(256);
 
             this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
@@ -852,8 +852,10 @@ namespace MergerLogicUnitTests.Utils
                 foreach (Tile tile in testTiles)
                 {
                     byte[] tileBytes = tile.GetImageBytes();
-                    SQLiteParameter blobParameter = new SQLiteParameter("$blob", System.Data.DbType.Binary, tileBytes.Length);
-                    blobParameter.Value = tileBytes;
+                    SQLiteParameter blobParameter = new SQLiteParameter("$blob", DbType.Binary, tileBytes.Length)
+                    {
+                        Value = tileBytes
+                    };
 
                     command.Parameters.AddWithValue("$z", tile.Z);
                     command.Parameters.AddWithValue("$x", tile.X);

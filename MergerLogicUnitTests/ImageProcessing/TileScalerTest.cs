@@ -37,7 +37,7 @@ namespace MergerLogicUnitTests.ImageProcessing
             var tileScalerLoggerMock = this._mockRepository.Create<ILogger<TileScaler>>();
             this._configurationManagerMock = this._mockRepository.Create<IConfigurationManager>();
 
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
                 .Returns(256);
 
             this._testTileScaler = new TileScaler(metricsProviderMock.Object, tileScalerLoggerMock.Object, this._configurationManagerMock.Object);

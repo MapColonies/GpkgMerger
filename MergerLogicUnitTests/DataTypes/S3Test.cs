@@ -83,7 +83,7 @@ namespace MergerLogicUnitTests.DataTypes
                 .Returns(this._configurationManagerMock.Object);
             this._configurationManagerMock.Setup(cm => cm.GetConfiguration("S3", "bucket"))
                 .Returns("bucket");
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
                 .Returns(256);
 
             this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");

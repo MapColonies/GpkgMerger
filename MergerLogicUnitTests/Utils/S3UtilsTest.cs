@@ -52,7 +52,7 @@ namespace MergerLogicUnitTests.Utils
             this._loggerMock = this._repository.Create<ILogger<S3Client>>(MockBehavior.Loose);
             this._loggerFactoryMock = this._repository.Create<ILoggerFactory>();
             this._loggerFactoryMock.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(this._loggerMock.Object);
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
                 .Returns(256);
 
             this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");

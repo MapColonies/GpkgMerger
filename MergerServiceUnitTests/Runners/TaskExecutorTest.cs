@@ -68,7 +68,7 @@ namespace MergerLogicUnitTests.Utils
       this._tileScalerMock = this._mockRepository.Create<ITileScaler>();
       this._tileMergerLoggerMock = this._mockRepository.Create<ILogger<TileMerger>>();
 
-      this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
+      this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
         .Returns(256);
 
       this._testActivitySource = new ActivitySource("test");
@@ -138,7 +138,6 @@ namespace MergerLogicUnitTests.Utils
       this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "batchSize", "batchMaxSize")).Returns(batchMaxSize);
       this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<bool>("GENERAL", "batchSize", "limitBatchSize")).Returns(limitBatchSize);
       this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "batchMaxBytes")).Returns(batchMaxBytes);
-      this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize")).Returns(256);
 
       byte[] tileBytes = File.ReadAllBytes("tile.jpeg");
       Source testTarget = new Source("target", "target_type", new Extent(), GridOrigin.UPPER_LEFT, Grid.TwoXOne);

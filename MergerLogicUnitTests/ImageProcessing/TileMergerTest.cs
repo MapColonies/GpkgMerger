@@ -39,7 +39,7 @@ namespace MergerLogicUnitTests.ImageProcessing
             var tileMergerLoggerMock = this._mockRepository.Create<ILogger<TileMerger>>();
             this._configurationManagerMock = this._mockRepository.Create<IConfigurationManager>();
 
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
                 .Returns(256);
 
             var testTileScaler = new TileScaler(metricsProviderMock.Object, tileScalerLoggerMock.Object, this._configurationManagerMock.Object);
@@ -48,7 +48,7 @@ namespace MergerLogicUnitTests.ImageProcessing
 
         #region MergeTiles
 
-        public IEnumerable<object[]> GetMergeTilesTestParameters()
+        public static IEnumerable<object[]> GetMergeTilesTestParameters()
         {
             var targetCoordLowZoom = new Coord(5, 0, 0);
             var targetCoordMediumZoom = new Coord(14, 0, 0);

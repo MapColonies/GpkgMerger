@@ -22,6 +22,7 @@ namespace MergerLogicUnitTests.Utils
         private Mock<IConfigurationManager> _configurationManagerMock;
         private byte[] _jpegImageData;
         #endregion
+        private readonly Times anyNumberOfTimes = Times.AtMost(int.MaxValue);
 
         [TestInitialize]
         public void beforeEach()
@@ -32,8 +33,8 @@ namespace MergerLogicUnitTests.Utils
             this._geoUtilsMock = this._repository.Create<IGeoUtils>();
             this._configurationManagerMock = this._repository.Create<IConfigurationManager>();
 
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
-                .Returns(256);
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
+                .Returns(256).Verifiable(anyNumberOfTimes);
 
             this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
         }

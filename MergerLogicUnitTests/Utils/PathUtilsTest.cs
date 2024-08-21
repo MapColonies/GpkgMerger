@@ -38,7 +38,7 @@ namespace MergerLogicUnitTests.Utils
             this._fileSystemMock.SetupGet(fs => fs.Path).Returns(this._pathMock.Object);
             this._imageFormaterMock = this._repository.Create<IImageFormatter>();
             this._configurationManagerMock = this._repository.Create<IConfigurationManager>();
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
                 .Returns(256);
 
             this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");

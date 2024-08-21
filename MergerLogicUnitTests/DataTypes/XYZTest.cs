@@ -7,7 +7,6 @@ using MergerLogicUnitTests.testUtils;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Moq.Protected;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -67,7 +66,7 @@ namespace MergerLogicUnitTests.DataTypes
                 .Returns(this._loggerFactoryMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IMetricsProvider)))
                 .Returns(this._metricsProviderMock.Object);
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
                 .Returns(256);
 
             this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
@@ -82,7 +81,6 @@ namespace MergerLogicUnitTests.DataTypes
                     new Coord(2,2,3), //existing tile
                     new Coord(1,2,3), //missing tile
                     new Coord(0,2,3) //invalid conversion tile
-
                 }, //cords
                 new object[] { true, false }, //is one on one
                 new object[] { GridOrigin.LOWER_LEFT, GridOrigin.UPPER_LEFT }, //origin

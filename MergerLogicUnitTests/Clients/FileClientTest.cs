@@ -31,6 +31,7 @@ namespace MergerLogicUnitTests.Clients
         private byte[] _jpegImageData;
         private byte[] _pngImageData;
         #endregion
+        private readonly Times anyNumberOfTimes = Times.AtMost(int.MaxValue);
 
         [TestInitialize]
         public void beforeEach()
@@ -45,8 +46,8 @@ namespace MergerLogicUnitTests.Clients
             this._fsMock.SetupGet(fs => fs.File).Returns(this._fileMock.Object);
             this._fsMock.SetupGet(fs => fs.Path).Returns(this._pathMock.Object);
             this._fsMock.SetupGet(fs => fs.Directory).Returns(this._directoryMock.Object);
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
-                .Returns(256);
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
+                .Returns(256).Verifiable(anyNumberOfTimes);
             this._imageFormatterMock = this._repository.Create<IImageFormatter>();
 
             this._jpegImageData = File.ReadAllBytes("image.jpeg");

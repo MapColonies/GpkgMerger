@@ -19,6 +19,7 @@ namespace MergerLogicUnitTests.Clients
         private MockRepository _repository;
         private Mock<IConfigurationManager> _configurationManagerMock;
         #endregion
+        private readonly Times anyNumberOfTimes = Times.AtMost(int.MaxValue);
 
         [TestInitialize]
         public void beforeEach()
@@ -26,8 +27,8 @@ namespace MergerLogicUnitTests.Clients
             this._repository = new MockRepository(MockBehavior.Strict);
             this._configurationManagerMock = this._repository.Create<IConfigurationManager>();
 
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
-                .Returns(256);
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
+                .Returns(256).Verifiable(anyNumberOfTimes);
         }
 
         #region CreateTile

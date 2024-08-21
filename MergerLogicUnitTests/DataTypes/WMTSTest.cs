@@ -39,7 +39,6 @@ namespace MergerLogicUnitTests.DataTypes
         private Mock<IConfigurationManager> _configurationManagerMock;
         private byte[] _jpegImageData;
 
-
         #endregion
 
         [TestInitialize]
@@ -69,7 +68,7 @@ namespace MergerLogicUnitTests.DataTypes
                 .Returns(this._loggerFactoryMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IMetricsProvider)))
                 .Returns(this._metricsProviderMock.Object);
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
                 .Returns(256);
 
             this._jpegImageData = File.ReadAllBytes("image.jpeg");

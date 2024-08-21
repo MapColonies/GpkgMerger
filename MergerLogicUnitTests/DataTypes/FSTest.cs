@@ -55,7 +55,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._pathMock = this._repository.Create<IPath>();
             this._fileSystemMock = this._repository.Create<IFileSystem>();
             this._configurationManagerMock = this._repository.Create<IConfigurationManager>();
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "allowedPixelSize"))
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize"))
                 .Returns(256);
             this._fileSystemMock.SetupGet(fs => fs.Directory).Returns(this._directoryMock.Object);
             this._fileSystemMock.SetupGet(fs => fs.FileInfo).Returns(this._fileInfoFactoryMock.Object);
