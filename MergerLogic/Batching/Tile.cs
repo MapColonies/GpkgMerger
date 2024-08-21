@@ -56,14 +56,14 @@ namespace MergerLogic.Batching
 
             this._data = data;
 
-            int allowedPixelSize = configuration.GetConfiguration<int>("GENERAL", "allowedPixelSize");
+            int allowedPixelSize = _configManager.GetConfiguration<int>("GENERAL", "allowedPixelSize");
             if (this.Width != allowedPixelSize || this.Height != allowedPixelSize)
             {
                 throw new ArgumentException($"The image dimensions ({this.Width}x{this.Height}) does not match the allowed size ({allowedPixelSize})");
             }
         }
 
-        public Tile(IConfigurationManager configuration, Coord cords, byte[] data) => new Tile(configuration, cords.Z, cords.X, cords.Y, data);
+        public Tile(IConfigurationManager configuration, Coord cords, byte[] data) : this(configuration, cords.Z, cords.X, cords.Y, data) { }
 
         public Tile(IConfigurationManager configuration, Coord cords, IMagickImage<byte> image)
         {
