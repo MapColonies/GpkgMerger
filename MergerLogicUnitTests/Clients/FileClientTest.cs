@@ -16,7 +16,8 @@ namespace MergerLogicUnitTests.Clients
     [TestCategory("unit")]
     [TestCategory("fs")]
     [TestCategory("FileClient")]
-    public class FileClientTest 
+    [DeploymentItem(@"../../../Clients/TestImages")]
+    public class FileClientTest
     {
         #region mocks
         private MockRepository _repository;
@@ -24,7 +25,7 @@ namespace MergerLogicUnitTests.Clients
         private Mock<IFileSystem> _fsMock;
         private Mock<IFile> _fileMock;
         private Mock<IPath> _pathMock;
-        private Mock<IDirectory> _directoryMock;   
+        private Mock<IDirectory> _directoryMock;
         private Mock<IImageFormatter> _imageFormatterMock;
         private byte[] _jpegImageData;
         private byte[] _pngImageData;
@@ -44,8 +45,8 @@ namespace MergerLogicUnitTests.Clients
             this._fsMock.SetupGet(fs => fs.Directory).Returns(this._directoryMock.Object);
             this._imageFormatterMock = this._repository.Create<IImageFormatter>();
 
-            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
-            this._pngImageData = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+            this._jpegImageData = File.ReadAllBytes("image.jpeg");
+            this._pngImageData = File.ReadAllBytes("image.png");
         }
 
         #region GetTile
@@ -61,7 +62,7 @@ namespace MergerLogicUnitTests.Clients
         }
 
         [TestMethod]
-        [DynamicData(nameof(GetGetTileParams),DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GetGetTileParams), DynamicDataSourceType.Method)]
         public void GetTile(bool useCoords, bool returnsNull, TileFormat targetFormat)
         {
             Coord cords = new Coord(1, 2, 3);
@@ -88,7 +89,7 @@ namespace MergerLogicUnitTests.Clients
                     .Returns(targetFormat);
             }
 
-            var fileClient = new FileClient("testFilePath", this._geoUtilsMock.Object,this._fsMock.Object);
+            var fileClient = new FileClient("testFilePath", this._geoUtilsMock.Object, this._fsMock.Object);
 
             var res = useCoords ? fileClient.GetTile(cords) : fileClient.GetTile(cords.Z, cords.X, cords.Y);
             if (returnsNull)
@@ -121,18 +122,18 @@ namespace MergerLogicUnitTests.Clients
             var seq = new MockSequence();
             this._pathMock
                 .InSequence(seq)
-                .Setup(util => util.Join(cords.Z.ToString(),cords.X.ToString(),cords.Y.ToString()))
+                .Setup(util => util.Join(cords.Z.ToString(), cords.X.ToString(), cords.Y.ToString()))
                 .Returns("testTilePath");
             this._directoryMock
                 .InSequence(seq)
                 .Setup(dir => dir.EnumerateFiles("testFilePath", "testTilePath.*", SearchOption.TopDirectoryOnly))
-                .Returns(exist ? new string[]{"testFile"} : Array.Empty<string>());
+                .Returns(exist ? new string[] { "testFile" } : Array.Empty<string>());
 
-            var fileClient = new FileClient("testFilePath", this._geoUtilsMock.Object,this._fsMock.Object);
+            var fileClient = new FileClient("testFilePath", this._geoUtilsMock.Object, this._fsMock.Object);
 
             var res = fileClient.TileExists(cords.Z, cords.X, cords.Y);
 
-           Assert.AreEqual(exist,res);
+            Assert.AreEqual(exist, res);
             this._repository.VerifyAll();
         }
 

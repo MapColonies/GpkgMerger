@@ -5,6 +5,7 @@ using MergerLogicUnitTests.testUtils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Abstractions;
 
 namespace MergerLogicUnitTests.Utils
@@ -12,6 +13,7 @@ namespace MergerLogicUnitTests.Utils
     [TestClass]
     [TestCategory("unit")]
     [TestCategory("PathUtils")]
+    [DeploymentItem(@"../../../Utils/TestData")]
     public class PathUtilsTest
     {
         #region mocks
@@ -35,8 +37,8 @@ namespace MergerLogicUnitTests.Utils
             this._fileSystemMock.SetupGet(fs => fs.Path).Returns(this._pathMock.Object);
             this._imageFormaterMock = this._repository.Create<IImageFormatter>();
 
-            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
-            this._pngImageData = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+            this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
+            this._pngImageData = File.ReadAllBytes("no_transparency.png");
         }
 
         #region RemoveTrailingSlash
@@ -88,7 +90,7 @@ namespace MergerLogicUnitTests.Utils
         }
 
         [TestMethod]
-        [DynamicData(nameof(GenGetTilePathCoordsParams),DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GenGetTilePathCoordsParams), DynamicDataSourceType.Method)]
         public void GetTilePathCoords(bool isS3, TileFormat format)
         {
             var utils = new PathUtils(this._fileSystemMock.Object);
@@ -120,7 +122,7 @@ namespace MergerLogicUnitTests.Utils
         }
 
         [TestMethod]
-        [DynamicData(nameof(GenFromPathParams),DynamicDataSourceType.Method)]
+        [DynamicData(nameof(GenFromPathParams), DynamicDataSourceType.Method)]
         public void FromPath(bool isS3, TileFormat expectedFormat)
         {
             var utils = new PathUtils(this._fileSystemMock.Object);

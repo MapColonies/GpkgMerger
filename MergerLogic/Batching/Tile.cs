@@ -33,6 +33,10 @@ namespace MergerLogic.Batching
 
         public TileFormat Format { get; internal set; }
 
+        public int Width { get; internal set; }
+
+        public int Height { get; internal set; }
+
         private byte[] _data;
 
         public Tile(int z, int x, int y, byte[] data)
@@ -41,17 +45,19 @@ namespace MergerLogic.Batching
             this.X = x;
             this.Y = y;
             this.Format = ImageFormatter.GetTileFormat(data) ?? throw new ValidationException($"Cannot create tile {this}, data is in invalid format");
+            var info = new MagickImageInfo(data);
+            this.Width = info.Width;
+            this.Height = info.Height;
             this._data = data;
+
+            int allowedPixelSize = 256;
+            if (this.Width != allowedPixelSize || this.Height != allowedPixelSize)
+            {
+                throw new ArgumentException($"The image dimensions ({this.Width}x{this.Height}) does not match the allowed size ({allowedPixelSize})");
+            }
         }
 
-        public Tile(Coord cords, byte[] data)
-        {
-            this.Z = cords.Z;
-            this.X = cords.X;
-            this.Y = cords.Y;
-            this.Format = ImageFormatter.GetTileFormat(data) ?? throw new ValidationException($"Cannot create tile {this}, data is in invalid format");
-            this._data = data;
-        }
+        public Tile(Coord cords, byte[] data) : this(cords.Z, cords.X, cords.Y, data) { }
 
         public Tile(Coord cords, IMagickImage<byte> image)
         {
@@ -59,7 +65,15 @@ namespace MergerLogic.Batching
             this.X = cords.X;
             this.Y = cords.Y;
             this.Format = ImageFormatter.GetTileFormat(image) ?? throw new ValidationException($"Cannot create tile {this}, data is in invalid format");
+            this.Width = image.Width;
+            this.Height = image.Height;
             this._data = image.ToByteArray();
+
+            int allowedPixelSize = 256;
+            if (this.Width != allowedPixelSize || this.Height != allowedPixelSize)
+            {
+                throw new ArgumentException($"The image dimensions ({this.Width}x{this.Height}) does not match the allowed size ({allowedPixelSize})");
+            }
         }
 
         public bool HasCoords(int z, int x, int y)
@@ -78,6 +92,8 @@ namespace MergerLogic.Batching
             Console.WriteLine($"x: {this.X}");
             Console.WriteLine($"y: {this.Y}");
             // Console.WriteLine($"blob: {this.Blob}");
+            Console.WriteLine($"width: {this.Width}");
+            Console.WriteLine($"height: {this.Height}");
             Console.WriteLine($"data Size: {this._data.Length}");
         }
 
@@ -86,7 +102,8 @@ namespace MergerLogic.Batching
             return this._data;
         }
 
-        public int Size() {
+        public int Size()
+        {
             return this._data.Length;
         }
 

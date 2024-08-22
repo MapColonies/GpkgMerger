@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace MergerLogicUnitTests.DataTypes
@@ -18,6 +19,7 @@ namespace MergerLogicUnitTests.DataTypes
     [TestCategory("XYZ")]
     [TestCategory("XYZDataSource")]
     [TestCategory("HttpDataSource")]
+    [DeploymentItem(@"../../../DataTypes/TestImages")]
 
     public class XYZTest
     {
@@ -62,8 +64,8 @@ namespace MergerLogicUnitTests.DataTypes
                 .Returns(this._loggerFactoryMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IMetricsProvider)))
                 .Returns(this._metricsProviderMock.Object);
-            
-            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
+
+            this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
         }
 
         #region TileExists
@@ -635,7 +637,7 @@ namespace MergerLogicUnitTests.DataTypes
             };
             var tileBatches = tiles.Where(t => t is not null && (!isOneXOne || t.Z != 0)).Chunk(batchSize).ToList();
             var seq = new MockSequence();
-            
+
             for (var i = minZoom; i <= maxZoom; i++)
             {
                 this._geoUtilsMock

@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 
 namespace MergerLogicUnitTests.DataTypes
@@ -19,6 +20,7 @@ namespace MergerLogicUnitTests.DataTypes
     [TestCategory("unit")]
     [TestCategory("S3")]
     [TestCategory("S3DataSource")]
+    [DeploymentItem(@"../../../DataTypes/TestImages")]
     public class S3Test
     {
         #region mocks
@@ -81,7 +83,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._configurationManagerMock.Setup(cm => cm.GetConfiguration("S3", "bucket"))
                 .Returns("bucket");
 
-            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
+            this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
         }
 
         #region TileExists

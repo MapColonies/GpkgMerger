@@ -9,7 +9,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System;
 using System.Collections.Generic;
-using System.IO.Abstractions;
+using System.IO;
 using System.Linq;
 
 namespace MergerLogicUnitTests.DataTypes
@@ -18,6 +18,7 @@ namespace MergerLogicUnitTests.DataTypes
     [TestCategory("unit")]
     [TestCategory("gpkg")]
     [TestCategory("gpkgDataSource")]
+    [DeploymentItem(@"../../../DataTypes/TestImages")]
     public class GpkgTest
     {
         #region mocks
@@ -62,8 +63,8 @@ namespace MergerLogicUnitTests.DataTypes
                 .Returns(this._geoUtilsMock.Object);
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IMetricsProvider)))
                 .Returns(this._metricsProviderMock.Object);
-            
-            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
+
+            this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
         }
 
         #region TileExists

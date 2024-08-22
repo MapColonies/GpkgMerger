@@ -1,14 +1,18 @@
 using MergerLogic.Batching;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 
 namespace MergerLogicUnitTests.Clients
 {
     [TestClass]
     [TestCategory("unit")]
     [TestCategory("Tile")]
-    public class TilesTest 
+    [DeploymentItem(@"../../../Batching/TestImages")]
+    public class TilesTest
     {
         #region mocks
         private MockRepository _repository;
@@ -22,20 +26,32 @@ namespace MergerLogicUnitTests.Clients
 
         #region CreateTile
 
+        public static IEnumerable<object[]> GenCreateTileUnknownFormatParams()
+        {
+#nullable disable
+            yield return new object[] { null };
+#nullable enable
+            yield return new object[] { File.ReadAllBytes("image.gif") };
+        }
+
         [TestMethod]
         [TestCategory("CreateTile")]
-        [DataRow(null)]
-        [DataRow(new byte[] { 0x43, 0x44, 0x30, 0x30, 0x31 })]
+        [DynamicData(nameof(GenCreateTileUnknownFormatParams), DynamicDataSourceType.Method)]
         public void CreateTileWithUnknownDataFormatFails(byte[] data)
         {
             Assert.ThrowsException<ValidationException>(() => new Tile(0, 0, 0, data));
             this._repository.VerifyAll();
         }
 
+        public static IEnumerable<object[]> GenCreateTileParams()
+        {
+            yield return new object[] { File.ReadAllBytes("image.jpeg") };
+            yield return new object[] { File.ReadAllBytes("image.png") };
+        }
+
         [TestMethod]
         [TestCategory("CreateTile")]
-        [DataRow(new byte[] { 0xFF, 0xD8, 0xFF, 0xDB })]
-        [DataRow(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A })]
+        [DynamicData(nameof(GenCreateTileParams), DynamicDataSourceType.Method)]
         public void CreateTile(byte[] data)
         {
             Tile tile = new Tile(0, 0, 0, data);
@@ -43,6 +59,63 @@ namespace MergerLogicUnitTests.Clients
             this._repository.VerifyAll();
         }
 
+        #endregion
+
+        #region imageDimensions
+        public static IEnumerable<object[]> ValidTilesSizeTestParameters()
+        {
+            yield return new object[] {
+                File.ReadAllBytes("no_transparency.jpeg"),
+                (256, 256)
+            };
+            yield return new object[] {
+                File.ReadAllBytes("no_transparency.png"),
+                (256, 256)
+            };
+        }
+        public static IEnumerable<object[]> InvalidTilesSizeTestParameters()
+        {
+            yield return new object[] {
+                File.ReadAllBytes("100x100.jpeg"),
+                (100, 100)
+            };
+            yield return new object[] {
+                File.ReadAllBytes("100x100.png"),
+                (100, 100)
+            };
+            yield return new object[] {
+                File.ReadAllBytes("100x256.jpeg"),
+                (100, 256)
+            };
+            yield return new object[] {
+                File.ReadAllBytes("100x256.png"),
+                (100, 256)
+            };
+            yield return new object[] {
+                File.ReadAllBytes("256x100.jpeg"),
+                (256, 100)
+            };
+            yield return new object[] {
+                File.ReadAllBytes("256x100.png"),
+                (256, 100)
+            };
+        }
+
+        [TestMethod]
+        [DynamicData(nameof(ValidTilesSizeTestParameters), DynamicDataSourceType.Method)]
+        public void IsAcceptsValidTileSize(byte[] imageBytes, (int, int) dimensions)
+        {
+            Tile tile = new Tile(0, 0, 0, imageBytes);
+            Assert.AreEqual((tile.Width, tile.Height), dimensions);
+        }
+
+        [TestMethod]
+        [DynamicData(nameof(InvalidTilesSizeTestParameters), DynamicDataSourceType.Method)]
+        [ExpectedException(typeof(ArgumentException))]
+        public void IsRejectsInvalidTileSize(byte[] imageBytes, (int, int) dimensions)
+        {
+            new Tile(0, 0, 0, imageBytes);
+        }
         #endregion
     }
 }
