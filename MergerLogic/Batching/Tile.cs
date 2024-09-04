@@ -1,6 +1,7 @@
 using ImageMagick;
 using MergerLogic.DataTypes;
 using MergerLogic.ImageProcessing;
+using MergerLogic.Utils;
 using System.ComponentModel.DataAnnotations;
 
 namespace MergerLogic.Batching
@@ -39,6 +40,8 @@ namespace MergerLogic.Batching
 
         private byte[] _data;
 
+        private readonly int allowedPixelSize = 256;
+
         public Tile(int z, int x, int y, byte[] data)
         {
             this.Z = z;
@@ -50,11 +53,7 @@ namespace MergerLogic.Batching
             this.Height = info.Height;
             this._data = data;
 
-            int allowedPixelSize = 256;
-            if (this.Width != allowedPixelSize || this.Height != allowedPixelSize)
-            {
-                throw new ArgumentException($"The image dimensions ({this.Width}x{this.Height}) does not match the allowed size ({allowedPixelSize})");
-            }
+            ImageUtils.ValidateTileSize(allowedPixelSize, this.Width, this.Height);
         }
 
         public Tile(Coord cords, byte[] data) : this(cords.Z, cords.X, cords.Y, data) { }
@@ -69,11 +68,7 @@ namespace MergerLogic.Batching
             this.Height = image.Height;
             this._data = image.ToByteArray();
 
-            int allowedPixelSize = 256;
-            if (this.Width != allowedPixelSize || this.Height != allowedPixelSize)
-            {
-                throw new ArgumentException($"The image dimensions ({this.Width}x{this.Height}) does not match the allowed size ({allowedPixelSize})");
-            }
+            ImageUtils.ValidateTileSize(allowedPixelSize, this.Width, this.Height);
         }
 
         public bool HasCoords(int z, int x, int y)
