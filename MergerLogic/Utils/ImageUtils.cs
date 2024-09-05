@@ -40,7 +40,7 @@ namespace MergerLogic.Utils
         {
             if (width != validTileDimensions || height != validTileDimensions)
             {
-                throw new ArgumentException($"The image dimensions ({width}x{height}) does not match the allowed size ({validTileDimensions})");
+                throw new ArgumentException($"The image dimensions ({width}x{height}) does not match the allowed size ({validTileDimensions}x{validTileDimensions})");
             }
         }
 
