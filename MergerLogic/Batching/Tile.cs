@@ -40,8 +40,6 @@ namespace MergerLogic.Batching
 
         private byte[] _data;
 
-        private readonly int allowedPixelSize = 256;
-
         public Tile(int z, int x, int y, byte[] data)
         {
             this.Z = z;
@@ -53,7 +51,7 @@ namespace MergerLogic.Batching
             this.Height = info.Height;
             this._data = data;
 
-            ImageUtils.ValidateTileSize(allowedPixelSize, this.Width, this.Height);
+            ImageUtils.ValidateTileSize(this.Width, this.Height);
         }
 
         public Tile(Coord cords, byte[] data) : this(cords.Z, cords.X, cords.Y, data) { }
@@ -68,7 +66,7 @@ namespace MergerLogic.Batching
             this.Height = image.Height;
             this._data = image.ToByteArray();
 
-            ImageUtils.ValidateTileSize(allowedPixelSize, this.Width, this.Height);
+            ImageUtils.ValidateTileSize(this.Width, this.Height);
         }
 
         public bool HasCoords(int z, int x, int y)
