@@ -17,9 +17,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MergerService", "MergerService\MergerService.csproj", "{000F75C1-01FD-423F-94CD-6F24C5C31A3B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MergerLogicUnitTests", "MergerLogicUnitTests\MergerLogicUnitTests.csproj", "{29DADE7E-10F0-4AD0-9EAE-CF0387E3F1F1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MergerLogicUnitTests", "MergerLogicUnitTests\MergerLogicUnitTests.csproj", "{29DADE7E-10F0-4AD0-9EAE-CF0387E3F1F1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MergerServiceUnitTests", "MergerServiceUnitTests\MergerServiceUnitTests.csproj", "{1E0BF0FA-12E2-4CEA-99C7-1AB692494795}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MergerServiceUnitTests", "MergerServiceUnitTests\MergerServiceUnitTests.csproj", "{1E0BF0FA-12E2-4CEA-99C7-1AB692494795}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MergerLogicBanchmarkTests", "MergerLogicBanchmarkTests\MergerLogicBanchmarkTests.csproj", "{FD89E1F2-7C6E-42E0-96E5-2D7D1D567836}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -47,6 +49,10 @@ Global
 		{1E0BF0FA-12E2-4CEA-99C7-1AB692494795}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E0BF0FA-12E2-4CEA-99C7-1AB692494795}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E0BF0FA-12E2-4CEA-99C7-1AB692494795}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD89E1F2-7C6E-42E0-96E5-2D7D1D567836}.Debug|Any CPU.ActiveCfg = Release|Any CPU
+		{FD89E1F2-7C6E-42E0-96E5-2D7D1D567836}.Debug|Any CPU.Build.0 = Release|Any CPU
+		{FD89E1F2-7C6E-42E0-96E5-2D7D1D567836}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD89E1F2-7C6E-42E0-96E5-2D7D1D567836}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
