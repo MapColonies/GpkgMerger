@@ -18,6 +18,7 @@ namespace MergerLogicUnitTests.DataTypes
     [TestCategory("unit")]
     [TestCategory("FS")]
     [TestCategory("FSDataSource")]
+    [DeploymentItem(@"../../../DataTypes/TestImages")]
     public class FSTest
     {
         #region mocks
@@ -76,7 +77,7 @@ namespace MergerLogicUnitTests.DataTypes
             this._serviceProviderMock.Setup(container => container.GetService(typeof(IMetricsProvider)))
                 .Returns(this._metricsProviderMock.Object);
 
-            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
+            this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
         }
 
         #region TileExists

@@ -3,6 +3,7 @@ using MergerLogic.DataTypes;
 using MergerLogic.Utils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using System.IO;
 
 namespace MergerLogicUnitTests.Utils
 {
@@ -10,6 +11,7 @@ namespace MergerLogicUnitTests.Utils
     [TestCategory("unit")]
     [TestCategory("http")]
     [TestCategory("HttpUtils")]
+    [DeploymentItem(@"../../../Utils/TestData")]
     public class HttpSourceUtilsTest
     {
         #region mocks
@@ -28,7 +30,7 @@ namespace MergerLogicUnitTests.Utils
             this._pathPatternUtilsMock = this._repository.Create<IPathPatternUtils>();
             this._geoUtilsMock = this._repository.Create<IGeoUtils>();
 
-            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
+            this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
         }
 
         #region GetTile
@@ -88,7 +90,7 @@ namespace MergerLogicUnitTests.Utils
 
             var res = httpSourceUtils.TileExists(cords.Z, cords.X, cords.Y);
 
-           Assert.AreEqual(exist,res);
+            Assert.AreEqual(exist, res);
             this._repository.VerifyAll();
         }
 

@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
+using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
 
@@ -19,6 +20,7 @@ namespace MergerLogicUnitTests.Utils
     [TestCategory("unit")]
     [TestCategory("gpkg")]
     [TestCategory("gpkgUtils")]
+    [DeploymentItem(@"../../../Utils/TestData")]
     public class GpkgUtilsTest
     {
         #region mocks
@@ -47,7 +49,7 @@ namespace MergerLogicUnitTests.Utils
             this._fileSystemMock.SetupGet(fs => fs.Path).Returns(this._pathMock.Object);
             this._loggerMock = this._repository.Create<ILogger<GpkgClient>>(MockBehavior.Loose);
 
-            this._jpegImageData = new byte[] { 0xFF, 0xD8, 0xFF, 0xDB};
+            this._jpegImageData = File.ReadAllBytes("no_transparency.jpeg");
         }
 
         #region GetTile
@@ -129,7 +131,7 @@ namespace MergerLogicUnitTests.Utils
         }
 
         #endregion
-        
+
         #region GetBatch
         public static IEnumerable<object[]> GenGetBatchParams()
         {
