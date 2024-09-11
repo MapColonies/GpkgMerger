@@ -131,7 +131,11 @@ namespace MergerLogic.ImageProcessing
             }
 
             var tileBytes = tile.GetImageBytes();
-            MagickImage? tileImage = new MagickImage(tileBytes);
+            MagickImage? tileImage = new MagickImage(tileBytes)
+            {
+                ColorSpace = ColorSpace.sRGB
+            };
+            
             if (tile.Z < targetCoords.Z)
             {
                 var upscale = this._tileScaler.Upscale(tileImage, tile, targetCoords);

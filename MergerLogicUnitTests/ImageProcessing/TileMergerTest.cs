@@ -163,6 +163,48 @@ namespace MergerLogicUnitTests.ImageProcessing
             };
             #endregion
 
+            #region Test cases for grayscale
+            yield return new object[] {
+                new Tile[] {
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("grayscale_paletted.jpeg")),
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("6_rgb.png"))
+                }, targetCoordHighZoom, new TileFormatStrategy(TileFormat.Png, TileFormatStrategy.FormatStrategy.Mixed),
+                TileFormat.Jpeg, false, File.ReadAllBytes("grayscale_paletted_6_rgb_merged.jpeg"),
+            };
+
+            yield return new object[] {
+                new Tile[] {
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("grayscale_paletted.jpeg")),
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("6_paletted.png"))
+                }, targetCoordHighZoom, new TileFormatStrategy(TileFormat.Png, TileFormatStrategy.FormatStrategy.Mixed),
+                TileFormat.Jpeg, false, File.ReadAllBytes("grayscale_paletted_6_paletted_merged.jpeg"),
+            };
+
+            yield return new object[] {
+                new Tile[] {
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("grayscale_rgb.jpeg")),
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("6_rgb.png"))
+                }, targetCoordHighZoom, new TileFormatStrategy(TileFormat.Png, TileFormatStrategy.FormatStrategy.Mixed),
+                TileFormat.Jpeg, false, File.ReadAllBytes("grayscale_rgb_6_rgb_merged.jpeg"),
+            };
+
+            yield return new object[] {
+                new Tile[] {
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("grayscale_rgb.jpeg")),
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("6_paletted.png"))
+                }, targetCoordHighZoom, new TileFormatStrategy(TileFormat.Png, TileFormatStrategy.FormatStrategy.Mixed),
+                TileFormat.Jpeg, false, File.ReadAllBytes("grayscale_rgb_6_paletted_merged.jpeg"),
+            };
+
+            yield return new object[] {
+                new Tile[] {
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("grayscale.jpeg")),
+                    new Tile(targetCoordHighZoom, File.ReadAllBytes("6_paletted.png"))
+                }, targetCoordHighZoom, new TileFormatStrategy(TileFormat.Png, TileFormatStrategy.FormatStrategy.Mixed),
+                TileFormat.Jpeg, false, File.ReadAllBytes("grayscale_6_paletted_merged.jpeg"),
+            };
+            #endregion
+
             #region Test cases for ignoring target
             yield return new object[] {
                 new Tile[] {
