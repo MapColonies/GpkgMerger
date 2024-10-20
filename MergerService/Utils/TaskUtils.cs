@@ -67,13 +67,13 @@ namespace MergerService.Utils
             }
         }
 
-        private void NotifyOnStatusChange(string jobId, string taskId, string managerCallbackUrl)
+        private void NotifyOnStatusChange(string taskId, string managerCallbackUrl)
         {
             using (this._activitySource.StartActivity("notify Manager on task completion"))
             {
                 // Notify Manager on task completion
-                this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Notifying Manager on completion, job: {jobId}, task: {taskId}");
-                string relativeUri = $"jobs/{jobId}/{taskId}/completed";
+                this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Notifying Manager on completion, task: {taskId}");
+                string relativeUri = $"tasks/{taskId}/notify";
                 string url = new Uri(new Uri(managerCallbackUrl), relativeUri).ToString();
                 _ = this._httpClient.PostData(url, null);
             }
@@ -116,7 +116,7 @@ namespace MergerService.Utils
             if (managerCallbackUrl is not null)
             {
                 // Update Manager on task completion
-                NotifyOnStatusChange(jobId, taskId, managerCallbackUrl);
+                NotifyOnStatusChange(taskId, managerCallbackUrl);
             }
         }
 
@@ -160,7 +160,7 @@ namespace MergerService.Utils
             if (managerCallbackUrl is not null)
             {
                 // Notify Manager on task failure
-                NotifyOnStatusChange(jobId, taskId, managerCallbackUrl);
+                NotifyOnStatusChange(taskId, managerCallbackUrl);
             }
         }
     }
