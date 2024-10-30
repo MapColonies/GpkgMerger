@@ -10,19 +10,19 @@ namespace MergerService.Models.Jobs
         [JsonInclude] public string[] FileNames { get; }
         [JsonInclude] public string OriginDirectory { get; }
         [JsonInclude] public string LayerRelativePath { get; }
-        [JsonInclude] public string? ManagerCallbackUrl { get; }
+        [JsonInclude] public AdditionalParams? AdditionalParams { get; }
 
         [System.Text.Json.Serialization.JsonIgnore]
         private JsonSerializerSettings _jsonSerializerSettings;
 
-        public JobMergeMetadata(JobMetadata metadata, string[] fileNames,string originDirectory, string layerRelativePath,
-            string managerCallbackUrl)
+        public JobMergeMetadata(JobMetadata metadata, string[] fileNames, string originDirectory, string layerRelativePath,
+            AdditionalParams additionalParams)
         {
             this.Metadata = metadata;
             this.FileNames = fileNames;
             this.OriginDirectory = originDirectory;
             this.LayerRelativePath = layerRelativePath;
-            this.ManagerCallbackUrl = managerCallbackUrl;
+            this.AdditionalParams = additionalParams;
 
             this._jsonSerializerSettings = new JsonSerializerSettings();
             this._jsonSerializerSettings.Converters.Add(new StringEnumConverter());
@@ -38,5 +38,5 @@ namespace MergerService.Models.Jobs
             return JsonConvert.SerializeObject(this, this._jsonSerializerSettings)!;
         }
     }
-    
+
 }
