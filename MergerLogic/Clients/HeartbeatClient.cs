@@ -49,6 +49,12 @@ namespace MergerLogic.Clients
 
         public void Stop()
         {
+            if (!this._timer.Enabled)
+            {
+                throw new Exception($"[{MethodBase.GetCurrentMethod().Name}] Heartbeat interval must be running in order to stop it.");
+            }
+            this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Stops heartbeats for taskId={this._taskId}");
+            this._timer.Stop();
             try
             {
                 string relativeUri = $"heartbeat/remove";
@@ -63,12 +69,6 @@ namespace MergerLogic.Clients
             }
             finally
             {
-                if (!this._timer.Enabled)
-                {
-                    throw new Exception($"[{MethodBase.GetCurrentMethod().Name}] Heartbeat interval must be running in order to stop it.");
-                }
-                this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Stops heartbeats for taskId={this._taskId}");
-                this._timer.Stop();
                 this._taskId = null;
             }
         }
