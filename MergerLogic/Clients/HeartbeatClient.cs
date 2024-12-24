@@ -1,7 +1,10 @@
 using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System.Reflection;
+using System.Text;
 using System.Timers;
+using System.Net.Http.Json;
 
 namespace MergerLogic.Clients
 {
@@ -27,14 +30,16 @@ namespace MergerLogic.Clients
             this._timer.Elapsed += this.Send;
         }
 
-        ~HeartbeatClient() {
+        ~HeartbeatClient()
+        {
             this._timer.Elapsed -= this.Send;
             this._timer.Dispose();
         }
 
         public void Start(string taskId)
         {
-            if (this._timer.Enabled) {
+            if (this._timer.Enabled)
+            {
                 this.Stop();
             }
             this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Starting heartbeat for task={taskId}");
@@ -50,7 +55,23 @@ namespace MergerLogic.Clients
             }
             this._logger.LogInformation($"[{MethodBase.GetCurrentMethod().Name}] Stops heartbeats for taskId={this._taskId}");
             this._timer.Stop();
-            this._taskId = null;
+            try
+            {
+                string relativeUri = $"heartbeat/remove";
+                string url = new Uri(new Uri(this._baseUrl), relativeUri).ToString();
+                var content = JsonContent.Create(new[] { this._taskId });
+                this._httpClient.PostData(url, content);
+            }
+            catch (Exception e)
+            {
+                string message = $"[{MethodBase.GetCurrentMethod().Name}] Could not delete heartbeat for task={this._taskId}, {e.Message}";
+                this._logger.LogError(message);
+                throw new Exception(message, e);
+            }
+            finally
+            {
+                this._taskId = null;
+            }
         }
 
         public void Send(object? sender, ElapsedEventArgs elapsedEventArgs)
@@ -66,7 +87,6 @@ namespace MergerLogic.Clients
                 this._logger.LogError($"[{MethodBase.GetCurrentMethod().Name}] Could not send heartbeat for task={this._taskId}, {e.Message}");
                 throw;
             }
-
         }
     }
 }
