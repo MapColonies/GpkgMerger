@@ -64,8 +64,9 @@ namespace MergerLogic.Clients
             }
             catch (Exception e)
             {
-                this._logger.LogError($"[{MethodBase.GetCurrentMethod().Name}] Could not delete heartbeat for task={this._taskId}, {e.Message}");
-                throw;
+                string message = ($"[{MethodBase.GetCurrentMethod().Name}] Could not delete heartbeat for task={this._taskId}, {e.Message}");
+                this._logger.LogError(message);
+                throw new Exception(message, e);
             }
             finally
             {
