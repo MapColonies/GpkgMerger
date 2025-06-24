@@ -93,35 +93,35 @@ namespace MergerLogicUnitTests.Utils
                     .Returns("key");
             }
 
-            if (exist)
+            using (var dataStream = new MemoryStream(data))
             {
-                this._amazonS3ClientMock.Setup(s3 => s3.GetObjectAsync(It.Is<GetObjectRequest>(req =>
-                        req.BucketName == "bucket" && req.Key == "key"), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(new GetObjectResponse() { ResponseStream = dataStream });
-                this._imageFormatterMock.Setup(formatter => formatter.GetTileFormat(It.IsAny<byte[]>()))
-                    .Returns(tileFormat);
-
-                if (paramType == GetTileParamType.String)
+                if (exist)
                 {
-                    this._s3ClientMock.Setup(s3 => s3.GetTile(It.IsAny<string>())).Returns(new Tile(cords, data));
+                    this._amazonS3ClientMock.Setup(s3 => s3.GetObjectAsync(It.Is<GetObjectRequest>(req =>
+                            req.BucketName == "bucket" && req.Key == "key"), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new GetObjectResponse() { ResponseStream = dataStream });
+                    this._imageFormatterMock.Setup(formatter => formatter.GetTileFormat(It.IsAny<byte[]>()))
+                        .Returns(tileFormat);
+
+                    if (paramType == GetTileParamType.String)
+                    {
+                        this._s3ClientMock.Setup(s3 => s3.GetTile(It.IsAny<string>())).Returns(new Tile(cords, data));
+                    }
+                    else
+                    {
+                        this._s3ClientMock.Setup(s3 => s3.GetTile(It.IsAny<int>(), It.IsAny<int>(),
+                            It.IsAny<int>())).Returns(new Tile(cords, data));
+                    }
                 }
                 else
                 {
-                    this._s3ClientMock.Setup(s3 => s3.GetTile(It.IsAny<int>(), It.IsAny<int>(),
-                        It.IsAny<int>())).Returns(new Tile(cords, data));
+                    this._amazonS3ClientMock
+                        .InSequence(seq)
+                        .Setup(s3 => s3.GetObjectAsync(It.Is<GetObjectRequest>(req =>
+                            req.BucketName == "bucket" && req.Key == "key"), It.IsAny<CancellationToken>()))
+                        .ThrowsAsync(new AggregateException("test"));
                 }
-            }
-            else
-            {
-                this._amazonS3ClientMock
-                    .InSequence(seq)
-                    .Setup(s3 => s3.GetObjectAsync(It.Is<GetObjectRequest>(req =>
-                        req.BucketName == "bucket" && req.Key == "key"), It.IsAny<CancellationToken>()))
-                    .ThrowsAsync(new AggregateException("test"));
-            }
 
-            using (var dataStream = new MemoryStream(data))
-            {
                 var s3Utils = new S3Client(this._amazonS3ClientMock.Object, this._pathUtilsMock.Object,
                     this._geoUtilsMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
 
