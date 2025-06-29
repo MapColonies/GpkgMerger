@@ -194,7 +194,7 @@ namespace MergerLogicUnitTests.Utils
                 .Setup(s3 => s3.GetObjectAsync(It.Is<GetObjectRequest>(req =>
                         req.BucketName == "bucket" && req.Key == "key"),
                     It.IsAny<CancellationToken>()))
-                .Throws(new Exception());
+                .Throws(new AggregateException());
             }
 
             var s3Utils = new S3Client(this._amazonS3ClientMock.Object, this._pathUtilsMock.Object,
