@@ -208,37 +208,6 @@ namespace MergerLogicUnitTests.Utils
             this.VerifyAll();
         }
 
-        // [TestMethod]
-        // [TestCategory("TileExists")]
-        // [DataRow(true)]
-        // [DataRow(false)]
-        // public void TileDoesNotExists(bool exist)
-        // {
-        //     var seq = new MockSequence();
-        //     this._pathUtilsMock
-        //         .InSequence(seq)
-        //         .Setup(utils => utils.GetTilePathWithoutExtension("test", 0, 0, 0, true))
-        //         .Returns("key");
-
-        //     this._s3ClientMock
-        //         .InSequence(seq)
-        //         .Setup(s3 => s3.GetObjectAsync(It.Is<GetObjectRequest>(req =>
-        //                 req.BucketName == "bucket" && req.Key == "key"),
-        //             It.IsAny<CancellationToken>()))
-        //         .Throws(new Exception());
-
-        //     var s3Utils = new S3Client(this._s3ClientMock.Object, this._pathUtilsMock.Object,
-        //         this._geoUtilsMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
-
-        //     Assert.AreEqual(exist, s3Utils.TileExists(0, 0, 0));
-
-        //     this._pathUtilsMock.Verify(utils => utils.GetTilePathWithoutExtension("test", 0, 0, 0, true), Times.Once);
-        //     this._s3ClientMock.Verify(s3 => s3.GetObjectAsync(It.Is<GetObjectRequest>(req =>
-        //                 req.BucketName == "bucket" && req.Key == "key"), It.IsAny<CancellationToken>()), Times.Once);
-        //     Assert.ThrowsException<Exception>(() => s3Utils.TileExists(0, 0, 0));
-        //     this.VerifyAll();
-        // }
-
         #endregion
 
         #region UpdateTile
