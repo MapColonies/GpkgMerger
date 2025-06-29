@@ -133,7 +133,7 @@ namespace MergerLogic.Clients
                 string result = getObjectTask.Result.Key;
                 return result;
             }
-            catch (Exception e)
+            catch (AggregateException e)
             {
                 this._logger.LogDebug($"[{methodName}] error getting key: {e.Message}");
                 return null;
