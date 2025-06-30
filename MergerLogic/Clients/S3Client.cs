@@ -27,6 +27,21 @@ namespace MergerLogic.Clients
             this._storageClass = new S3StorageClass(storageClass ?? S3StorageClass.Standard);
         }
 
+        private bool IsKeyError(Exception e)
+        {
+            if (e is AmazonS3Exception ex)
+            {
+                return ex.ErrorCode == "NoSuchKey";
+            }
+
+            if (e.InnerException is AmazonS3Exception en)
+            {
+                return en.ErrorCode == "NoSuchKey";
+            }
+            
+            return false;
+        }
+
         private byte[]? GetImageBytes(string key)
         {
             string? methodName = MethodBase.GetCurrentMethod()?.Name;
@@ -52,9 +67,14 @@ namespace MergerLogic.Clients
             }
             catch (AggregateException e)
             {
-                string message = $"exception while getting key {key}, Message: {e.Message}";
-                this._logger.LogDebug($"[{methodName}] {message}");
-                return null;
+                if (IsKeyError(e))
+                {
+                    string message = $"exception while getting key {key}, Message: {e.Message}";
+                    this._logger.LogDebug($"[{methodName}] {message}");
+                    return null;
+                }
+                // In case there are other errors such as connection to S3
+                throw e;
             }
         }
 
@@ -135,8 +155,13 @@ namespace MergerLogic.Clients
             }
             catch (AggregateException e)
             {
-                this._logger.LogDebug($"[{methodName}] error getting key: {e.Message}");
-                return null;
+                if (IsKeyError(e))
+                {
+                    this._logger.LogDebug($"[{methodName}] error getting key: {e.Message}");
+                    return null;
+                }
+                // In case there are other errors such as connection to S3
+                throw e;
             }
         }
     }

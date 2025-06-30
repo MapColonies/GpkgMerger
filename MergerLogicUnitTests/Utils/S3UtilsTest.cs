@@ -119,7 +119,7 @@ namespace MergerLogicUnitTests.Utils
                         .InSequence(seq)
                         .Setup(s3 => s3.GetObjectAsync(It.Is<GetObjectRequest>(req =>
                             req.BucketName == "bucket" && req.Key == "key"), It.IsAny<CancellationToken>()))
-                        .ThrowsAsync(new AggregateException("test"));
+                        .ThrowsAsync(new AmazonS3Exception("", Amazon.Runtime.ErrorType.Unknown, "NoSuchKey", "", System.Net.HttpStatusCode.NoContent));
                 }
 
                 var s3Utils = new S3Client(this._amazonS3ClientMock.Object, this._pathUtilsMock.Object,
@@ -194,7 +194,7 @@ namespace MergerLogicUnitTests.Utils
                 .Setup(s3 => s3.GetObjectAsync(It.Is<GetObjectRequest>(req =>
                         req.BucketName == "bucket" && req.Key == "key"),
                     It.IsAny<CancellationToken>()))
-                .Throws(new AggregateException());
+                .ThrowsAsync(new AmazonS3Exception("", Amazon.Runtime.ErrorType.Unknown, "NoSuchKey", "", System.Net.HttpStatusCode.NoContent));
             }
 
             var s3Utils = new S3Client(this._amazonS3ClientMock.Object, this._pathUtilsMock.Object,
