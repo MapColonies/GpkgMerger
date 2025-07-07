@@ -2,6 +2,7 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
@@ -82,11 +83,17 @@ namespace MergerLogic.Clients
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             this._logger.LogDebug($"[{methodName}] start z: {z}, x: {x}, y: {y}");
-            string keyPrefix = this._pathUtils.GetTilePathWithoutExtension(this.path, z, x, y, true);
+            string keyPrefix = this._pathUtils.GetTilePath(this.path, z, x, y, TileFormat.Jpeg, true);
+
             byte[]? imageBytes = this.GetImageBytes(keyPrefix);
             if (imageBytes == null)
             {
-                return null;
+                keyPrefix = this._pathUtils.GetTilePath(this.path, z, x, y, TileFormat.Png, true);
+                imageBytes = this.GetImageBytes(keyPrefix);
+                if (imageBytes == null)
+                {
+                    return null;
+                }
             }
 
             this._logger.LogDebug($"[{methodName}] end z: {z}, x: {x}, y: {y}");
@@ -102,6 +109,7 @@ namespace MergerLogic.Clients
             {
                 return null;
             }
+            
             this._logger.LogDebug($"[{methodName}] end key: {key}");
             Coord coords = this._pathUtils.FromPath(key, true);
             return this.CreateTile(coords, imageBytes);
