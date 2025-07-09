@@ -69,6 +69,103 @@ namespace MergerLogicUnitTests.Utils
             });
         }
 
+        // TODO: revert to this test
+        // [TestMethod]
+        // [TestCategory("GetTile")]
+        // [DynamicData(nameof(GenGetTileParams), DynamicDataSourceType.Method)]
+        // public void GetTile(bool exist, GetTileParamType paramType, TileFormat tileFormat)
+        // {
+        //     var seq = new MockSequence();
+        //     var data = this._jpegImageData;
+        //     var cords = new Coord(0, 0, 0);
+
+        //     if (paramType != GetTileParamType.String)
+        //     {
+        //         this._pathUtilsMock
+        //             .InSequence(seq)
+        //             .Setup(utils => utils.GetTilePath("test", 0, 0, 0, TileFormat.Jpeg, true))
+        //             .Returns("key");
+        //     }
+
+        //     using (var dataStream = new MemoryStream(data))
+        //     {
+        //         if (exist)
+        //         {
+        //             this._amazonS3ClientMock
+        //                 .Setup(s3 => s3.GetObjectAsync(It.Is<GetObjectRequest>(req =>
+        //                     req.BucketName == "bucket" && req.Key == "key"), It.IsAny<CancellationToken>()))
+        //                 .ReturnsAsync(new GetObjectResponse() { ResponseStream = dataStream });
+        //             this._imageFormatterMock.Setup(formatter => formatter.GetTileFormat(It.IsAny<byte[]>()))
+        //                 .Returns(tileFormat);
+
+        //             if (paramType == GetTileParamType.String)
+        //             {
+        //                 this._s3ClientMock.Setup(s3 => s3.GetTile(It.IsAny<string>())).Returns(new Tile(cords, data));
+        //             }
+        //             else
+        //             {
+        //                 this._s3ClientMock.Setup(s3 => s3.GetTile(It.IsAny<int>(), It.IsAny<int>(),
+        //                     It.IsAny<int>())).Returns(new Tile(cords, data));
+        //             }
+        //         }
+        //         else
+        //         {
+        //             this._amazonS3ClientMock
+        //                 .InSequence(seq)
+        //                 .Setup(s3 => s3.GetObjectAsync(It.Is<GetObjectRequest>(req =>
+        //                     req.BucketName == "bucket" && req.Key == "key"), It.IsAny<CancellationToken>()))
+        //                 .ThrowsAsync(new AmazonS3Exception("", Amazon.Runtime.ErrorType.Unknown, "NoSuchKey", "", System.Net.HttpStatusCode.NoContent));
+        //         }
+
+        //         if (paramType == GetTileParamType.String)
+        //         {
+        //             this._pathUtilsMock
+        //                 .InSequence(seq)
+        //                 .Setup(utils => utils.FromPath("key", true))
+        //                 .Returns(cords);
+        //         }
+
+        //         var s3Utils = new S3Client(this._amazonS3ClientMock.Object, this._pathUtilsMock.Object,
+        //             this._geoUtilsMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
+
+        //         Tile? tile = null;
+        //         switch (paramType)
+        //         {
+        //             case GetTileParamType.Coord:
+        //                 tile = s3Utils.GetTile(cords);
+        //                 break;
+        //             case GetTileParamType.Ints:
+        //                 tile = s3Utils.GetTile(cords.Z, cords.X, cords.Y);
+        //                 break;
+        //             case GetTileParamType.String:
+        //                 tile = exist ? s3Utils.GetTile("key") : null;
+        //                 break;
+        //         }
+
+        //         if (!exist)
+        //         {
+        //             Assert.IsNull(tile);
+        //         }
+        //         else
+        //         {
+        //             this._amazonS3ClientMock.Verify(s3 => s3.GetObjectAsync(It.IsAny<GetObjectRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+        //             Assert.AreEqual(cords.Z, tile.Z);
+        //             Assert.AreEqual(cords.X, tile.X);
+        //             Assert.AreEqual(cords.Y, tile.Y);
+        //             CollectionAssert.AreEqual(data, tile.GetImageBytes());
+        //         }
+        //     }
+
+        //     if (paramType != GetTileParamType.String)
+        //     {
+        //         this._pathUtilsMock.Verify(utils => utils.GetTilePath(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(),
+        //             It.IsAny<int>(), It.IsAny<TileFormat>(), It.IsAny<bool>()), Times.Once());
+        //     }
+
+        //     this.VerifyAll();
+        // }
+
+        // TODO: remove this test after fileFormat fix (pass as part of each source)
         [TestMethod]
         [TestCategory("GetTile")]
         [DynamicData(nameof(GenGetTileParams), DynamicDataSourceType.Method)]
@@ -78,26 +175,20 @@ namespace MergerLogicUnitTests.Utils
             var data = this._jpegImageData;
             var cords = new Coord(0, 0, 0);
 
-            if (paramType == GetTileParamType.String)
-            {
-                this._pathUtilsMock
-                    .InSequence(seq)
-                    .Setup(utils => utils.FromPath("key", true))
-                    .Returns(cords);
-            }
-            else
-            {
-                this._pathUtilsMock
-                    .InSequence(seq)
-                    .Setup(utils => utils.GetTilePathWithoutExtension("test", 0, 0, 0, true))
-                    .Returns("key");
-            }
-
             using (var dataStream = new MemoryStream(data))
             {
+                if (paramType != GetTileParamType.String)
+                {
+                    this._pathUtilsMock
+                        .InSequence(seq)
+                        .Setup(utils => utils.GetTilePath("test", 0, 0, 0, TileFormat.Jpeg, true))
+                        .Returns("key");
+                }
+
                 if (exist)
                 {
-                    this._amazonS3ClientMock.Setup(s3 => s3.GetObjectAsync(It.Is<GetObjectRequest>(req =>
+                    this._amazonS3ClientMock
+                        .Setup(s3 => s3.GetObjectAsync(It.Is<GetObjectRequest>(req =>
                             req.BucketName == "bucket" && req.Key == "key"), It.IsAny<CancellationToken>()))
                         .ReturnsAsync(new GetObjectResponse() { ResponseStream = dataStream });
                     this._imageFormatterMock.Setup(formatter => formatter.GetTileFormat(It.IsAny<byte[]>()))
@@ -108,6 +199,47 @@ namespace MergerLogicUnitTests.Utils
                         this._s3ClientMock.Setup(s3 => s3.GetTile(It.IsAny<string>())).Returns(new Tile(cords, data));
                     }
                     else
+                    {
+                        this._s3ClientMock.Setup(s3 => s3.GetTile(It.IsAny<int>(), It.IsAny<int>(),
+                            It.IsAny<int>())).Returns(new Tile(cords, data));
+                    }
+                }
+                else
+                {
+                    this._amazonS3ClientMock
+                        .InSequence(seq)
+                        .Setup(s3 => s3.GetObjectAsync(It.Is<GetObjectRequest>(req =>
+                            req.BucketName == "bucket" && req.Key == "key"), It.IsAny<CancellationToken>()))
+                        .ThrowsAsync(new AmazonS3Exception("", Amazon.Runtime.ErrorType.Unknown, "NoSuchKey", "", System.Net.HttpStatusCode.NoContent));
+                }
+
+                if (paramType == GetTileParamType.String)
+                {
+                    this._pathUtilsMock
+                        .InSequence(seq)
+                        .Setup(utils => utils.FromPath("key", true))
+                        .Returns(cords);
+                }
+
+                // Repeat
+                if (paramType != GetTileParamType.String)
+                {
+                    this._pathUtilsMock
+                        .InSequence(seq)
+                        .Setup(utils => utils.GetTilePath("test", 0, 0, 0, TileFormat.Png, true))
+                        .Returns("key");
+                }
+
+                if (exist)
+                {
+                    this._amazonS3ClientMock
+                        .Setup(s3 => s3.GetObjectAsync(It.Is<GetObjectRequest>(req =>
+                            req.BucketName == "bucket" && req.Key == "key"), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new GetObjectResponse() { ResponseStream = dataStream });
+                    this._imageFormatterMock.Setup(formatter => formatter.GetTileFormat(It.IsAny<byte[]>()))
+                        .Returns(tileFormat);
+
+                    if (paramType != GetTileParamType.String)
                     {
                         this._s3ClientMock.Setup(s3 => s3.GetTile(It.IsAny<int>(), It.IsAny<int>(),
                             It.IsAny<int>())).Returns(new Tile(cords, data));
@@ -145,7 +277,19 @@ namespace MergerLogicUnitTests.Utils
                 }
                 else
                 {
-                    this._amazonS3ClientMock.Verify(s3 => s3.GetObjectAsync(It.IsAny<GetObjectRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+                    if (paramType == GetTileParamType.String)
+                    {
+                        this._amazonS3ClientMock.Verify(s3 => s3.GetObjectAsync(It.IsAny<GetObjectRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+                    }
+                    else if (!exist)
+                    {
+                        this._amazonS3ClientMock.Verify(s3 => s3.GetObjectAsync(It.IsAny<GetObjectRequest>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+                    }
+                    else
+                    {
+                        this._amazonS3ClientMock.Verify(s3 => s3.GetObjectAsync(It.IsAny<GetObjectRequest>(), It.IsAny<CancellationToken>()), Times.Once());
+                    }
+
                     Assert.AreEqual(cords.Z, tile.Z);
                     Assert.AreEqual(cords.X, tile.X);
                     Assert.AreEqual(cords.Y, tile.Y);
@@ -155,8 +299,16 @@ namespace MergerLogicUnitTests.Utils
 
             if (paramType != GetTileParamType.String)
             {
-                this._pathUtilsMock.Verify(utils => utils.GetTilePathWithoutExtension(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(),
-                    It.IsAny<int>(), It.IsAny<bool>()), Times.Once());
+                if (!exist)
+                {
+                    this._pathUtilsMock.Verify(utils => utils.GetTilePath(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(),
+                    It.IsAny<int>(), It.IsAny<TileFormat>(), It.IsAny<bool>()), Times.Exactly(2));
+                }
+                else
+                {
+                    this._pathUtilsMock.Verify(utils => utils.GetTilePath(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(),
+                    It.IsAny<int>(), It.IsAny<TileFormat>(), It.IsAny<bool>()), Times.Once());
+                }
             }
 
             this.VerifyAll();
