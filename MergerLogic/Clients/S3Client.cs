@@ -2,6 +2,7 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using MergerLogic.Batching;
 using MergerLogic.DataTypes;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
@@ -25,6 +26,21 @@ namespace MergerLogic.Clients
             this._logger = logger;
             // There is no validation on the storage class, only on PUT object we can know if the given class is supported
             this._storageClass = new S3StorageClass(storageClass ?? S3StorageClass.Standard);
+        }
+
+        private bool IsKeyError(Exception e)
+        {
+            if (e is AmazonS3Exception ex)
+            {
+                return ex.ErrorCode == "NoSuchKey";
+            }
+
+            if (e.InnerException is AmazonS3Exception en)
+            {
+                return en.ErrorCode == "NoSuchKey";
+            }
+            
+            return false;
         }
 
         private byte[]? GetImageBytes(string key)
@@ -52,9 +68,14 @@ namespace MergerLogic.Clients
             }
             catch (AggregateException e)
             {
-                string message = $"exception while getting key {key}, Message: {e.Message}";
-                this._logger.LogError($"[{methodName}] {message}");
-                throw new Exception(message, e);
+                if (IsKeyError(e))
+                {
+                    string message = $"exception while getting key {key}, Message: {e.Message}";
+                    this._logger.LogDebug($"[{methodName}] {message}");
+                    return null;
+                }
+                // In case there are other errors such as connection to S3
+                throw e;
             }
         }
 
@@ -62,14 +83,19 @@ namespace MergerLogic.Clients
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             this._logger.LogDebug($"[{methodName}] start z: {z}, x: {x}, y: {y}");
-            var key = this.GetTileKey(z, x, y);
-            if (key == null)
+            string keyPrefix = this._pathUtils.GetTilePath(this.path, z, x, y, TileFormat.Jpeg, true);
+
+            byte[]? imageBytes = this.GetImageBytes(keyPrefix);
+            if (imageBytes == null)
             {
-                this._logger.LogDebug($"[{methodName}] tileKey is null for z: {z}, x: {x}, y: {y}");
-                return null;
+                keyPrefix = this._pathUtils.GetTilePath(this.path, z, x, y, TileFormat.Png, true);
+                imageBytes = this.GetImageBytes(keyPrefix);
+                if (imageBytes == null)
+                {
+                    return null;
+                }
             }
 
-            byte[]? imageBytes = this.GetImageBytes(key);
             this._logger.LogDebug($"[{methodName}] end z: {z}, x: {x}, y: {y}");
             return this.CreateTile(z, x, y, imageBytes);
         }
@@ -78,13 +104,14 @@ namespace MergerLogic.Clients
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             this._logger.LogDebug($"[{methodName}] start key: {key}");
-            Coord coords = this._pathUtils.FromPath(key, true);
             byte[]? imageBytes = this.GetImageBytes(key);
             if (imageBytes == null)
             {
                 return null;
             }
+            
             this._logger.LogDebug($"[{methodName}] end key: {key}");
+            Coord coords = this._pathUtils.FromPath(key, true);
             return this.CreateTile(coords, imageBytes);
         }
 
@@ -92,9 +119,9 @@ namespace MergerLogic.Clients
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             this._logger.LogDebug($"[{methodName}] start z: {z}, x: {x}, y: {y}");
-            bool isExists = this.GetTileKey(z, x, y) != null;
+            bool exists = this.GetTileKey(z, x, y) != null;
             this._logger.LogDebug($"[{methodName}] end z: {z}, x: {x}, y: {y}");
-            return isExists;
+            return exists;
         }
 
         public void UpdateTile(Tile tile)
@@ -105,10 +132,10 @@ namespace MergerLogic.Clients
 
             var request = new PutObjectRequest()
             {
-                BucketName = this._bucket, 
-                CannedACL = S3CannedACL.PublicRead, 
-                Key = String.Format(key), 
-                StorageClass=this._storageClass
+                BucketName = this._bucket,
+                CannedACL = S3CannedACL.PublicRead,
+                Key = String.Format(key),
+                StorageClass = this._storageClass
             };
 
             byte[] buffer = tile.GetImageBytes();
@@ -124,11 +151,26 @@ namespace MergerLogic.Clients
 
         private string? GetTileKey(int z, int x, int y)
         {
+            string methodName = MethodBase.GetCurrentMethod().Name;
             string keyPrefix = this._pathUtils.GetTilePathWithoutExtension(this.path, z, x, y, true);
-            var listRequests = new ListObjectsV2Request { BucketName = this._bucket, Prefix = keyPrefix, MaxKeys = 1 };
-            var listObjectsTask = this._client.ListObjectsV2Async(listRequests);
-            string? result = listObjectsTask.Result.S3Objects.FirstOrDefault()?.Key;
-            return result;
+
+            try
+            {
+                var getRequest = new GetObjectRequest { BucketName = this._bucket, Key = keyPrefix };
+                var getObjectTask = this._client.GetObjectAsync(getRequest);
+                string result = getObjectTask.Result.Key;
+                return result;
+            }
+            catch (AggregateException e)
+            {
+                if (IsKeyError(e))
+                {
+                    this._logger.LogDebug($"[{methodName}] error getting key: {e.Message}");
+                    return null;
+                }
+                // In case there are other errors such as connection to S3
+                throw e;
+            }
         }
     }
 }
