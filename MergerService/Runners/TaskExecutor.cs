@@ -338,7 +338,7 @@ namespace MergerService.Runners
                 for (int y = bounds.MinY; y < bounds.MaxY; y++)
                 {
                     Coord coord = new Coord(bounds.Zoom, x, y);
-                    if (target.TileExists(coord, null))
+                    if (target.TileExists(coord))
                     {
                         ++tilesChecked;
                     }
