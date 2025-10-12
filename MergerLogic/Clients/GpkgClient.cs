@@ -1,5 +1,6 @@
 using MergerLogic.Batching;
 using MergerLogic.Extensions;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
 using System.Data.SQLite;
@@ -124,7 +125,7 @@ namespace MergerLogic.Clients
             }
         }
 
-        public override Tile? GetTile(int z, int x, int y)
+        public override Tile? GetTile(int z, int x, int y, TileFormat? format = null)
         {
             byte[]? blob = null;
 
@@ -146,7 +147,7 @@ namespace MergerLogic.Clients
             return this.CreateTile(z, x, y, blob);
         }
 
-        public override bool TileExists(int z, int x, int y)
+        public override bool TileExists(int z, int x, int y, TileFormat? format = null)
         {
             using (var connection = new SQLiteConnection($"Data Source={this.path}"))
             {

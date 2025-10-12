@@ -1,5 +1,6 @@
 using MergerLogic.Batching;
 using MergerLogic.Clients;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
@@ -126,7 +127,7 @@ namespace MergerLogic.DataTypes
             }
         }
 
-        protected override Tile? InternalGetLastExistingTile(Coord baseCoords)
+        protected override Tile? InternalGetLastExistingTile(Coord baseCoords, TileFormat? format = null)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] started for coord: z:{baseCoords.Z}, x:{baseCoords.X}, y:{baseCoords.Y}");
             int cordsLength = baseCoords.Z << 1;
