@@ -111,7 +111,7 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._httpUtilsMock
                     .InSequence(seq)
-                    .Setup(utils => utils.TileExists(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+                    .Setup(utils => utils.TileExists(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
                     .Returns<int, int, int>((z, x, y) => z == 2);
             }
 
@@ -122,14 +122,14 @@ namespace MergerLogicUnitTests.DataTypes
             var expected = cords.Z == 2;
             if (useCoords)
             {
-                Assert.AreEqual(expected, wmtsSource.TileExists(cords));
+                Assert.AreEqual(expected, wmtsSource.TileExists(cords, null));
             }
             else
             {
                 var tile = new Tile(cords, this._jpegImageData);
-                Assert.AreEqual(expected, wmtsSource.TileExists(tile));
+                Assert.AreEqual(expected, wmtsSource.TileExists(tile, null));
             }
-            this._httpUtilsMock.Verify(util => util.TileExists(cords.Z, cords.X, cords.Y),
+            this._httpUtilsMock.Verify(util => util.TileExists(cords.Z, cords.X, cords.Y, null),
                 cords.Z != 0 || !isOneXOne
                     ? Times.Once
                     : Times.Never);
@@ -161,15 +161,15 @@ namespace MergerLogicUnitTests.DataTypes
             this.SetupConstructorRequiredMocks();
             Tile nullTile = null;
             var existingTile = new Tile(2, 2, 3, this._jpegImageData);
-            this._httpUtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+            this._httpUtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
                 .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             var wmtsSource = new WMTS(this._serviceProviderMock.Object, "test", batchSize, extent, Grid.TwoXOne, GridOrigin.LOWER_LEFT, 21, 0);
 
             var cords = new Coord(z, x, y);
-            Assert.AreEqual(expectedNull ? null : existingTile, wmtsSource.GetCorrespondingTile(cords, false));
-            this._httpUtilsMock.Verify(util => util.GetTile(z, x, y), Times.Once);
+            Assert.AreEqual(expectedNull ? null : existingTile, wmtsSource.GetCorrespondingTile(cords, null, false));
+            this._httpUtilsMock.Verify(util => util.GetTile(z, x, y, null), Times.Once);
             this.VerifyAll();
         }
 
@@ -230,7 +230,7 @@ namespace MergerLogicUnitTests.DataTypes
                 {
                     this._httpUtilsMock
                         .InSequence(sequence)
-                        .Setup(utils => utils.GetTile(It.IsAny<Coord>()))
+                        .Setup(utils => utils.GetTile(It.IsAny<Coord>(), null))
                         .Returns<Coord>(cords => cords.Z == 2 ? existingTile : nullTile);
                 }
                 if (cords.Z == 2)
@@ -245,7 +245,7 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._httpUtilsMock
                     .InSequence(sequence)
-                    .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+                    .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
                     .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
             }
 
@@ -253,7 +253,7 @@ namespace MergerLogicUnitTests.DataTypes
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
             var wmtsSource = new WMTS(this._serviceProviderMock.Object, "test", 10, extent, grid, origin, 21, 0);
 
-            var res = wmtsSource.GetCorrespondingTile(cords, enableUpscale);
+            var res = wmtsSource.GetCorrespondingTile(cords, null, enableUpscale);
             if (expectedNull)
             {
                 Assert.IsNull(res);
@@ -273,7 +273,7 @@ namespace MergerLogicUnitTests.DataTypes
                 this._oneXOneConvertorMock.Verify(converter => converter.TryFromTwoXOne(cords.Z, cords.X, cords.Y));
                 if (cords.Z != 0)
                 {
-                    this._httpUtilsMock.Verify(util => util.GetTile(It.Is<Coord>(C => C.Z == cords.Z && C.X == cords.X && C.Y == cords.Y)), Times.Once);
+                    this._httpUtilsMock.Verify(util => util.GetTile(It.Is<Coord>(C => C.Z == cords.Z && C.X == cords.X && C.Y == cords.Y), null), Times.Once);
                 }
                 if (cords.Z == 2)
                 {
@@ -282,7 +282,7 @@ namespace MergerLogicUnitTests.DataTypes
             }
             else
             {
-                this._httpUtilsMock.Verify(utils => utils.GetTile(cords.Z, cords.X, cords.Y));
+                this._httpUtilsMock.Verify(utils => utils.GetTile(cords.Z, cords.X, cords.Y, null));
             }
             this.VerifyAll();
         }
@@ -334,7 +334,7 @@ namespace MergerLogicUnitTests.DataTypes
                 {
                     this._httpUtilsMock
                         .InSequence(sequence)
-                        .Setup(utils => utils.GetTile(It.Is<Coord>(c => c.Z == 5 && c.X == 2 && c.Y == 3)))
+                        .Setup(utils => utils.GetTile(It.Is<Coord>(c => c.Z == 5 && c.X == 2 && c.Y == 3), null))
                         .Returns(nullTile);
                 }
 
@@ -346,7 +346,7 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._httpUtilsMock
                     .InSequence(sequence)
-                    .Setup(utils => utils.GetTile(5, 2, 3))
+                    .Setup(utils => utils.GetTile(5, 2, 3, null))
                     .Returns(nullTile);
             }
             if (origin != GridOrigin.LOWER_LEFT)
@@ -361,7 +361,7 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._httpUtilsMock
                     .InSequence(sequence)
-                    .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+                    .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
                     .Returns(i == 4 ? tile : nullTile);
             }
             if (isOneXOne)
@@ -379,7 +379,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             var expectedTile = isValidConversion ? tile : null;
             var expectedCallsAfterConversion = isValidConversion ? Times.Once() : Times.Never();
-            Assert.AreEqual(expectedTile, wmtsSource.GetCorrespondingTile(upscaleCords, true));
+            Assert.AreEqual(expectedTile, wmtsSource.GetCorrespondingTile(upscaleCords, null, true));
             if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock.Verify(utils => utils.FlipY(5, 3), Times.Once);
@@ -388,12 +388,12 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._oneXOneConvertorMock.Verify(converter =>
                     converter.TryFromTwoXOne(5, 2, 3), Times.Once);
-                this._httpUtilsMock.Verify(utils => utils.GetTile(It.IsAny<Coord>()), expectedCallsAfterConversion);
+                this._httpUtilsMock.Verify(utils => utils.GetTile(It.IsAny<Coord>(), null), expectedCallsAfterConversion);
                 this._oneXOneConvertorMock.Verify(converter => converter.TryFromTwoXOne(It.IsAny<Coord>()), Times.Once);
             }
             else
             {
-                this._httpUtilsMock.Verify(utils => utils.GetTile(5, 2, 3), Times.Once);
+                this._httpUtilsMock.Verify(utils => utils.GetTile(5, 2, 3, null), Times.Once);
             }
             if (isOneXOne)
             {
@@ -401,11 +401,11 @@ namespace MergerLogicUnitTests.DataTypes
             }
 
 
-            this._httpUtilsMock.Verify(utils => utils.GetTile(4, 1, 1), expectedCallsAfterConversion);
-            this._httpUtilsMock.Verify(utils => utils.GetTile(3, 0, 0), expectedCallsAfterConversion);
-            this._httpUtilsMock.Verify(utils => utils.GetTile(2, 0, 0), expectedCallsAfterConversion);
-            this._httpUtilsMock.Verify(utils => utils.GetTile(1, 0, 0), expectedCallsAfterConversion);
-            this._httpUtilsMock.Verify(utils => utils.GetTile(0, 0, 0), expectedCallsAfterConversion);
+            this._httpUtilsMock.Verify(utils => utils.GetTile(4, 1, 1, null), expectedCallsAfterConversion);
+            this._httpUtilsMock.Verify(utils => utils.GetTile(3, 0, 0, null), expectedCallsAfterConversion);
+            this._httpUtilsMock.Verify(utils => utils.GetTile(2, 0, 0, null), expectedCallsAfterConversion);
+            this._httpUtilsMock.Verify(utils => utils.GetTile(1, 0, 0, null), expectedCallsAfterConversion);
+            this._httpUtilsMock.Verify(utils => utils.GetTile(0, 0, 0, null), expectedCallsAfterConversion);
 
             this.VerifyAll();
         }
@@ -583,7 +583,7 @@ namespace MergerLogicUnitTests.DataTypes
                     .Setup(converter => converter.ToTwoXOne(It.IsAny<Tile>()))
                     .Returns<Tile>(t => t);
                 this._httpUtilsMock
-                    .Setup(utils => utils.GetTile(It.IsAny<Coord>()))
+                    .Setup(utils => utils.GetTile(It.IsAny<Coord>(), null))
                     .Returns(new Tile(0, 0, 0, this._jpegImageData));
                 this._oneXOneConvertorMock
                     .Setup(converter => converter.TryFromTwoXOne(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
@@ -592,7 +592,7 @@ namespace MergerLogicUnitTests.DataTypes
             else
             {
                 this._httpUtilsMock
-                    .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+                    .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
                     .Returns(new Tile(0, 0, 0, this._jpegImageData));
             }
 
@@ -668,7 +668,7 @@ namespace MergerLogicUnitTests.DataTypes
                     {
                         this._httpUtilsMock
                         .InSequence(seq)
-                        .Setup(utils => utils.GetTile(It.IsAny<Coord>()))
+                        .Setup(utils => utils.GetTile(It.IsAny<Coord>(), null))
                         .Returns<Coord>(cords => cords.Z < tiles.Length ? tiles[cords.Z] : null);
                         if (i != 2)
                         {
@@ -683,7 +683,7 @@ namespace MergerLogicUnitTests.DataTypes
                 {
                     this._httpUtilsMock
                         .InSequence(seq)
-                        .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+                        .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
                         .Returns<int, int, int>((z, x, y) => z < tiles.Length ? tiles[z] : null);
                 }
             }
@@ -714,7 +714,7 @@ namespace MergerLogicUnitTests.DataTypes
                     this._oneXOneConvertorMock.Verify(converter => converter.TryFromTwoXOne(1, 0, 0), Times.Once);
                     if (i != 0)
                     {
-                        this._httpUtilsMock.Verify(utils => utils.GetTile(It.Is<Coord>(c => c.Z == i && c.X == 0 && c.Y == 0)), Times.Once);
+                        this._httpUtilsMock.Verify(utils => utils.GetTile(It.Is<Coord>(c => c.Z == i && c.X == 0 && c.Y == 0), null), Times.Once);
                         if (i != 2)
                         {
                             this._oneXOneConvertorMock.Verify(converter =>
@@ -724,7 +724,7 @@ namespace MergerLogicUnitTests.DataTypes
                 }
                 else
                 {
-                    this._httpUtilsMock.Verify(utils => utils.GetTile(i, 0, 0), Times.Once);
+                    this._httpUtilsMock.Verify(utils => utils.GetTile(i, 0, 0, null), Times.Once);
                 }
             }
 

@@ -223,7 +223,7 @@ namespace MergerService.Runners
                             this._logger.LogInformation($"[{methodName}] Validating merged data sources");
                             using (this._activitySource.StartActivity("validating tiles"))
                             {
-                                bool valid = this.Validate(target, bounds);
+                                bool valid = this.Validate(target, bounds, task.Parameters.TargetFormat);
 
                                 if (!valid)
                                 {
@@ -324,7 +324,7 @@ namespace MergerService.Runners
             }
         }
 
-        private bool Validate(IData target, TileBounds bounds)
+        private bool Validate(IData target, TileBounds bounds, TileFormat? format)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             int totalTileCount = (int)bounds.Size();
@@ -338,7 +338,7 @@ namespace MergerService.Runners
                 for (int y = bounds.MinY; y < bounds.MaxY; y++)
                 {
                     Coord coord = new Coord(bounds.Zoom, x, y);
-                    if (target.TileExists(coord))
+                    if (target.TileExists(coord, format))
                     {
                         ++tilesChecked;
                     }

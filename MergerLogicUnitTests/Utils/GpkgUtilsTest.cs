@@ -82,7 +82,7 @@ namespace MergerLogicUnitTests.Utils
                 var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
                     this._fileSystemMock.Object, this._geoUtilsMock.Object);
 
-                var res = useCoords ? gpkgUtils.GetTile(cords) : gpkgUtils.GetTile(cords.Z, cords.X, cords.Y);
+                var res = useCoords ? gpkgUtils.GetTile(cords, null) : gpkgUtils.GetTile(cords.Z, cords.X, cords.Y);
 
                 if (!exist)
                 {
@@ -314,7 +314,7 @@ namespace MergerLogicUnitTests.Utils
             for (int i = 0; i < tileCount; i++)
             {
                 testTiles.Add(new Tile(0, i, 0, this._jpegImageData));
-            };
+            }
 
             using (var connection = new SQLiteConnection($"Data Source={path}"))
             {

@@ -53,7 +53,7 @@ namespace MergerLogicUnitTests.Utils
             var httpSourceUtils = new HttpSourceClient("http://testPath", this._httpRequestUtilsMock.Object,
                 this._pathPatternUtilsMock.Object, this._geoUtilsMock.Object);
 
-            var res = useCoords ? httpSourceUtils.GetTile(cords) : httpSourceUtils.GetTile(cords.Z, cords.X, cords.Y);
+            var res = useCoords ? httpSourceUtils.GetTile(cords, null) : httpSourceUtils.GetTile(cords.Z, cords.X, cords.Y);
             if (returnsNull)
             {
                 Assert.IsNull(res);

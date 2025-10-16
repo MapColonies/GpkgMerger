@@ -201,7 +201,7 @@ namespace MergerLogicUnitTests.Utils
                     else
                     {
                         this._s3ClientMock.Setup(s3 => s3.GetTile(It.IsAny<int>(), It.IsAny<int>(),
-                            It.IsAny<int>())).Returns(new Tile(cords, data));
+                            It.IsAny<int>(), It.IsAny<TileFormat>())).Returns(new Tile(cords, data));
                     }
                 }
                 else
@@ -242,7 +242,7 @@ namespace MergerLogicUnitTests.Utils
                     if (paramType != GetTileParamType.String)
                     {
                         this._s3ClientMock.Setup(s3 => s3.GetTile(It.IsAny<int>(), It.IsAny<int>(),
-                            It.IsAny<int>())).Returns(new Tile(cords, data));
+                            It.IsAny<int>(), It.IsAny<TileFormat>())).Returns(new Tile(cords, data));
                     }
                 }
                 else
@@ -261,10 +261,10 @@ namespace MergerLogicUnitTests.Utils
                 switch (paramType)
                 {
                     case GetTileParamType.Coord:
-                        tile = s3Utils.GetTile(cords);
+                        tile = s3Utils.GetTile(cords, tileFormat);
                         break;
                     case GetTileParamType.Ints:
-                        tile = s3Utils.GetTile(cords.Z, cords.X, cords.Y);
+                        tile = s3Utils.GetTile(cords.Z, cords.X, cords.Y, tileFormat);
                         break;
                     case GetTileParamType.String:
                         tile = exist ? s3Utils.GetTile("key") : null;

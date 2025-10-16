@@ -3,6 +3,7 @@ using Amazon.S3.Model;
 using MergerLogic.Batching;
 using MergerLogic.Clients;
 using MergerLogic.DataTypes;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
@@ -97,6 +98,7 @@ namespace MergerLogicUnitTests.DataTypes
                     new Coord(0,2,3) //invalid conversion tile
 
                 }, //cords
+                new object[] { TileFormat.Jpeg, TileFormat.Png }, //target format
                 new object[] { true, false }, //is one on one
                 new object[] { GridOrigin.LOWER_LEFT, GridOrigin.UPPER_LEFT }, //origin
                 new object[] { true, false } // use cords
@@ -106,7 +108,7 @@ namespace MergerLogicUnitTests.DataTypes
         [TestMethod]
         [TestCategory("TileExists")]
         [DynamicData(nameof(GenTileExistsParams), DynamicDataSourceType.Method)]
-        public void TileExists(Coord cords, bool isOneXOne, GridOrigin origin, bool useCoords)
+        public void TileExists(Coord cords, TileFormat format, bool isOneXOne, GridOrigin origin, bool useCoords)
         {
             var seq = new MockSequence();
             this.SetupConstructorRequiredMocks(true, seq);
@@ -129,7 +131,7 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._s3UtilsMock
                     .InSequence(seq)
-                    .Setup(utils => utils.TileExists(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+                    .Setup(utils => utils.TileExists(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<TileFormat>()))
                     .Returns<int, int, int>((z, x, y) => z == 2);
             }
 
@@ -140,15 +142,15 @@ namespace MergerLogicUnitTests.DataTypes
             var expected = cords.Z == 2;
             if (useCoords)
             {
-                Assert.AreEqual(expected, s3Source.TileExists(cords));
+                Assert.AreEqual(expected, s3Source.TileExists(cords, format));
             }
             else
             {
                 var tile = new Tile(cords, this._jpegImageData);
-                Assert.AreEqual(expected, s3Source.TileExists(tile));
+                Assert.AreEqual(expected, s3Source.TileExists(tile, format));
             }
 
-            this._s3UtilsMock.Verify(util => util.TileExists(cords.Z, cords.X, cords.Y),
+            this._s3UtilsMock.Verify(util => util.TileExists(cords.Z, cords.X, cords.Y, format),
                 cords.Z != 0 || !isOneXOne
                     ? Times.Once
                     : Times.Never);
@@ -182,14 +184,14 @@ namespace MergerLogicUnitTests.DataTypes
             var existingTile = new Tile(2, 2, 3, this._jpegImageData);
             this.SetupConstructorRequiredMocks();
 
-            this._s3UtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+            this._s3UtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
                 .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
 
             var s3Source = new S3(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", batchSize, Grid.TwoXOne, GridOrigin.LOWER_LEFT, false);
 
             var cords = new Coord(z, x, y);
-            Assert.AreEqual(expectedNull ? null : existingTile, s3Source.GetCorrespondingTile(cords, false));
-            this._s3UtilsMock.Verify(util => util.GetTile(z, x, y), Times.Once);
+            Assert.AreEqual(expectedNull ? null : existingTile, s3Source.GetCorrespondingTile(cords, null, false));
+            this._s3UtilsMock.Verify(util => util.GetTile(z, x, y, null), Times.Once);
             this.VerifyAll();
         }
 
@@ -250,7 +252,7 @@ namespace MergerLogicUnitTests.DataTypes
                 {
                     this._s3UtilsMock
                         .InSequence(sequence)
-                        .Setup(utils => utils.GetTile(It.IsAny<Coord>()))
+                        .Setup(utils => utils.GetTile(It.IsAny<Coord>(), null))
                         .Returns<Coord>(cords => cords.Z == 2 ? existingTile : nullTile);
                 }
                 if (cords.Z == 2)
@@ -265,7 +267,7 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._s3UtilsMock
                     .InSequence(sequence)
-                    .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+                    .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
                     .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
             }
 
@@ -273,7 +275,7 @@ namespace MergerLogicUnitTests.DataTypes
             var s3Source = new S3(this._pathUtilsMock.Object, this._serviceProviderMock.Object,
                 "test", 10, grid, origin, false);
 
-            var res = s3Source.GetCorrespondingTile(cords, enableUpscale);
+            var res = s3Source.GetCorrespondingTile(cords, null, enableUpscale);
             if (expectedNull)
             {
                 Assert.IsNull(res);
@@ -293,7 +295,7 @@ namespace MergerLogicUnitTests.DataTypes
                 this._oneXOneConvertorMock.Verify(converter => converter.TryFromTwoXOne(cords.Z, cords.X, cords.Y));
                 if (cords.Z != 0)
                 {
-                    this._s3UtilsMock.Verify(util => util.GetTile(It.Is<Coord>(C => C.Z == cords.Z && C.X == cords.X && C.Y == cords.Y)), Times.Once);
+                    this._s3UtilsMock.Verify(util => util.GetTile(It.Is<Coord>(C => C.Z == cords.Z && C.X == cords.X && C.Y == cords.Y), null), Times.Once);
                 }
                 if (cords.Z == 2)
                 {
@@ -302,7 +304,7 @@ namespace MergerLogicUnitTests.DataTypes
             }
             else
             {
-                this._s3UtilsMock.Verify(utils => utils.GetTile(cords.Z, cords.X, cords.Y));
+                this._s3UtilsMock.Verify(utils => utils.GetTile(cords.Z, cords.X, cords.Y, null));
             }
             this.VerifyAll();
         }
@@ -353,7 +355,7 @@ namespace MergerLogicUnitTests.DataTypes
                 {
                     this._s3UtilsMock
                         .InSequence(sequence)
-                        .Setup(utils => utils.GetTile(It.Is<Coord>(c => c.Z == 5 && c.X == 2 && c.Y == 3)))
+                        .Setup(utils => utils.GetTile(It.Is<Coord>(c => c.Z == 5 && c.X == 2 && c.Y == 3), null))
                         .Returns(nullTile);
                 }
 
@@ -365,7 +367,7 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._s3UtilsMock
                     .InSequence(sequence)
-                    .Setup(utils => utils.GetTile(5, 2, 3))
+                    .Setup(utils => utils.GetTile(5, 2, 3, null))
                     .Returns(nullTile);
             }
             if (origin != GridOrigin.LOWER_LEFT)
@@ -380,7 +382,7 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._s3UtilsMock
                     .InSequence(sequence)
-                    .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
+                    .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
                     .Returns(i == 4 ? tile : nullTile);
             }
             if (isOneXOne)
@@ -398,7 +400,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             var expectedTile = isValidConversion ? tile : null;
             var expectedCallsAfterConversion = isValidConversion ? Times.Once() : Times.Never();
-            Assert.AreEqual(expectedTile, fsSource.GetCorrespondingTile(upscaleCords, true));
+            Assert.AreEqual(expectedTile, fsSource.GetCorrespondingTile(upscaleCords, null, true));
             if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock.Verify(utils => utils.FlipY(5, 3), Times.Once);
@@ -407,23 +409,23 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._oneXOneConvertorMock.Verify(converter =>
                     converter.TryFromTwoXOne(5, 2, 3), Times.Once);
-                this._s3UtilsMock.Verify(utils => utils.GetTile(It.IsAny<Coord>()), expectedCallsAfterConversion);
+                this._s3UtilsMock.Verify(utils => utils.GetTile(It.IsAny<Coord>(), null), expectedCallsAfterConversion);
                 this._oneXOneConvertorMock.Verify(converter => converter.TryFromTwoXOne(It.IsAny<Coord>()), Times.Once);
             }
             else
             {
-                this._s3UtilsMock.Verify(utils => utils.GetTile(5, 2, 3), Times.Once);
+                this._s3UtilsMock.Verify(utils => utils.GetTile(5, 2, 3, null), Times.Once);
             }
             if (isOneXOne)
             {
                 this._oneXOneConvertorMock.Verify(converter => converter.ToTwoXOne(tile), expectedCallsAfterConversion);
             }
 
-            this._s3UtilsMock.Verify(utils => utils.GetTile(4, 1, 1), expectedCallsAfterConversion);
-            this._s3UtilsMock.Verify(utils => utils.GetTile(3, 0, 0), expectedCallsAfterConversion);
-            this._s3UtilsMock.Verify(utils => utils.GetTile(2, 0, 0), expectedCallsAfterConversion);
-            this._s3UtilsMock.Verify(utils => utils.GetTile(1, 0, 0), expectedCallsAfterConversion);
-            this._s3UtilsMock.Verify(utils => utils.GetTile(0, 0, 0), expectedCallsAfterConversion);
+            this._s3UtilsMock.Verify(utils => utils.GetTile(4, 1, 1, null), expectedCallsAfterConversion);
+            this._s3UtilsMock.Verify(utils => utils.GetTile(3, 0, 0, null), expectedCallsAfterConversion);
+            this._s3UtilsMock.Verify(utils => utils.GetTile(2, 0, 0, null), expectedCallsAfterConversion);
+            this._s3UtilsMock.Verify(utils => utils.GetTile(1, 0, 0, null), expectedCallsAfterConversion);
+            this._s3UtilsMock.Verify(utils => utils.GetTile(0, 0, 0, null), expectedCallsAfterConversion);
 
             this.VerifyAll();
         }
