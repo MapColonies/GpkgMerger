@@ -668,7 +668,7 @@ namespace MergerLogicUnitTests.DataTypes
                         this._httpUtilsMock
                         .InSequence(seq)
                         .Setup(utils => utils.GetTile(It.IsAny<Coord>(), null))
-                        .Returns<Coord>(cords => cords.Z < tiles.Length ? tiles[cords.Z] : null);
+                        .Returns<Coord, TileFormat>((cords, format) => cords.Z < tiles.Length ? tiles[cords.Z] : null);
                         if (i != 2)
                         {
                             this._oneXOneConvertorMock
@@ -683,7 +683,7 @@ namespace MergerLogicUnitTests.DataTypes
                     this._httpUtilsMock
                         .InSequence(seq)
                         .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
-                        .Returns<int, int, int>((z, x, y) => z < tiles.Length ? tiles[z] : null);
+                        .Returns<int, int, int, TileFormat>((z, x, y, format) => z < tiles.Length ? tiles[z] : null);
                 }
             }
 
