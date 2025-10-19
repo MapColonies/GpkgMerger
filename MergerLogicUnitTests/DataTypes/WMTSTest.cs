@@ -1,6 +1,7 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.Clients;
 using MergerLogic.DataTypes;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
@@ -112,7 +113,7 @@ namespace MergerLogicUnitTests.DataTypes
                 this._httpUtilsMock
                     .InSequence(seq)
                     .Setup(utils => utils.TileExists(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
-                    .Returns<int, int, int>((z, x, y) => z == 2);
+                    .Returns<int, int, int, TileFormat>((z, x, y, format) => z == 2);
             }
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
@@ -162,7 +163,7 @@ namespace MergerLogicUnitTests.DataTypes
             Tile nullTile = null;
             var existingTile = new Tile(2, 2, 3, this._jpegImageData);
             this._httpUtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
-                .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
+                .Returns<int, int, int, TileFormat>((z, x, y, format) => z == 2 ? existingTile : nullTile);
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             var wmtsSource = new WMTS(this._serviceProviderMock.Object, "test", batchSize, extent, Grid.TwoXOne, GridOrigin.LOWER_LEFT, 21, 0);
@@ -231,7 +232,7 @@ namespace MergerLogicUnitTests.DataTypes
                     this._httpUtilsMock
                         .InSequence(sequence)
                         .Setup(utils => utils.GetTile(It.IsAny<Coord>(), null))
-                        .Returns<Coord>(cords => cords.Z == 2 ? existingTile : nullTile);
+                        .Returns<Coord, TileFormat>((cords, format) => cords.Z == 2 ? existingTile : nullTile);
                 }
                 if (cords.Z == 2)
                 {
@@ -246,7 +247,7 @@ namespace MergerLogicUnitTests.DataTypes
                 this._httpUtilsMock
                     .InSequence(sequence)
                     .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
-                    .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
+                    .Returns<int, int, int, TileFormat>((z, x, y, format) => z == 2 ? existingTile : nullTile);
             }
 
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
@@ -669,7 +670,7 @@ namespace MergerLogicUnitTests.DataTypes
                         this._httpUtilsMock
                         .InSequence(seq)
                         .Setup(utils => utils.GetTile(It.IsAny<Coord>(), null))
-                        .Returns<Coord>(cords => cords.Z < tiles.Length ? tiles[cords.Z] : null);
+                        .Returns<Coord, TileFormat>((cords, format) => cords.Z < tiles.Length ? tiles[cords.Z] : null);
                         if (i != 2)
                         {
                             this._oneXOneConvertorMock
@@ -684,7 +685,7 @@ namespace MergerLogicUnitTests.DataTypes
                     this._httpUtilsMock
                         .InSequence(seq)
                         .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
-                        .Returns<int, int, int>((z, x, y) => z < tiles.Length ? tiles[z] : null);
+                        .Returns<int, int, int, TileFormat>((z, x, y, format) => z < tiles.Length ? tiles[z] : null);
                 }
             }
 
