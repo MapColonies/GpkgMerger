@@ -181,7 +181,7 @@ namespace MergerLogicUnitTests.Utils
                 {
                     this._pathUtilsMock
                         .InSequence(seq)
-                        .Setup(utils => utils.GetTilePath("test", 0, 0, 0, TileFormat.Jpeg, true))
+                        .Setup(utils => utils.GetTilePath("test", 0, 0, 0, tileFormat, true))
                         .Returns("key");
                 }
 
@@ -302,7 +302,7 @@ namespace MergerLogicUnitTests.Utils
                 if (!exist)
                 {
                     this._pathUtilsMock.Verify(utils => utils.GetTilePath(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(),
-                    It.IsAny<int>(), It.IsAny<TileFormat>(), It.IsAny<bool>()), Times.Exactly(2));
+                    It.IsAny<int>(), It.IsAny<TileFormat>(), It.IsAny<bool>()), Times.Once());
                 }
                 else
                 {
