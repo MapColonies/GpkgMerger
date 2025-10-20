@@ -126,7 +126,7 @@ namespace MergerLogicUnitTests.DataTypes
                 this._fsUtilsMock
                     .InSequence(seq)
                     .Setup(utils => utils.TileExists(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<TileFormat>()))
-                    .Returns<int, int, int>((z, x, y) => z == 2);
+                    .Returns<int, int, int, TileFormat>((z, x, y, format) => z == 2);
             }
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
@@ -176,7 +176,7 @@ namespace MergerLogicUnitTests.DataTypes
             Tile nullTile = null;
             var existingTile = new Tile(2, 2, 3, this._jpegImageData);
             this._fsUtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
-                .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
+                .Returns<int, int, int, TileFormat>((z, x, y, format) => z == 2 ? existingTile : nullTile);
 
             var fsSource = new FS(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", batchSize, Grid.TwoXOne, GridOrigin.LOWER_LEFT, isBase);
 
@@ -246,7 +246,7 @@ namespace MergerLogicUnitTests.DataTypes
                     this._fsUtilsMock
                         .InSequence(sequence)
                         .Setup(utils => utils.GetTile(It.IsAny<Coord>(), null))
-                        .Returns<Coord>(cords => cords.Z == 2 ? existingTile : nullTile);
+                        .Returns<Coord, TileFormat>((cords, format) => cords.Z == 2 ? existingTile : nullTile);
                 }
                 if (cords.Z == 2)
                 {
@@ -261,7 +261,7 @@ namespace MergerLogicUnitTests.DataTypes
                 this._fsUtilsMock
                     .InSequence(sequence)
                     .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
-                    .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
+                    .Returns<int, int, int, TileFormat>((z, x, y, format) => z == 2 ? existingTile : nullTile);
             }
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
@@ -791,7 +791,7 @@ namespace MergerLogicUnitTests.DataTypes
                 this._fsUtilsMock
                     .InSequence(seq)
                     .Setup(utils => utils.GetTile(It.IsAny<Coord>(), null))
-                    .Returns<Coord>(c => tiles[c.Z]);
+                    .Returns<Coord, TileFormat>((c, format) => tiles[c.Z]);
                 if (tile != null)
                 {
                     if (isOneXOne)
