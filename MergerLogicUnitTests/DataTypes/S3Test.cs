@@ -132,7 +132,7 @@ namespace MergerLogicUnitTests.DataTypes
                 this._s3UtilsMock
                     .InSequence(seq)
                     .Setup(utils => utils.TileExists(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<TileFormat>()))
-                    .Returns<int, int, int>((z, x, y) => z == 2);
+                    .Returns<int, int, int, TileFormat>((z, x, y, format) => z == 2);
             }
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
@@ -185,7 +185,7 @@ namespace MergerLogicUnitTests.DataTypes
             this.SetupConstructorRequiredMocks();
 
             this._s3UtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
-                .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
+                .Returns<int, int, int, TileFormat>((z, x, y, format) => z == 2 ? existingTile : nullTile);
 
             var s3Source = new S3(this._pathUtilsMock.Object, this._serviceProviderMock.Object, "test", batchSize, Grid.TwoXOne, GridOrigin.LOWER_LEFT, false);
 
@@ -253,7 +253,7 @@ namespace MergerLogicUnitTests.DataTypes
                     this._s3UtilsMock
                         .InSequence(sequence)
                         .Setup(utils => utils.GetTile(It.IsAny<Coord>(), null))
-                        .Returns<Coord>(cords => cords.Z == 2 ? existingTile : nullTile);
+                        .Returns<Coord, TileFormat>((cords, format) => cords.Z == 2 ? existingTile : nullTile);
                 }
                 if (cords.Z == 2)
                 {
@@ -268,7 +268,7 @@ namespace MergerLogicUnitTests.DataTypes
                 this._s3UtilsMock
                     .InSequence(sequence)
                     .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
-                    .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
+                    .Returns<int, int, int, TileFormat>((z, x, y, format) => z == 2 ? existingTile : nullTile);
             }
 
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
