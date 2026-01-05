@@ -421,3 +421,4 @@ FodyWeavers.xsd
 
 # Local value yaml
 helm/local.yaml
+Chart.lock
