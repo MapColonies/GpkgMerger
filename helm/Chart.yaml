@@ -4,3 +4,7 @@ description: A Helm chart for gpkg-merger service # refers to MergerService
 type: application
 version: 2.0.0
 appVersion: 2.0.0
+dependencies:
+  - name: mclabels
+    version: 1.0.1
+    repository: oci://acrarolibotnonprod.azurecr.io/helm/infra
