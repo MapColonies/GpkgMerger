@@ -31,11 +31,11 @@ Common labels
 */}}
 {{- define "gpkg-merger.labels" -}}
 helm.sh/chart: {{ include "gpkg-merger.chart" . }}
-{{ include "gpkg-merger.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{ include "mclabels.labels" . }}
 {{- end }}
 
 {{/*
@@ -51,6 +51,7 @@ Selector labels
 {{- define "gpkg-merger.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "gpkg-merger.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+{{ include "mclabels.selectorLabels" . }}
 {{- end }}
 
 {{/*

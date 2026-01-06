@@ -40,12 +40,9 @@ spec:
         run: {{ $releaseName }}-{{ $chartName }}
         {{- include "gpkg-merger.selectorLabels" . | nindent 8 }}
       annotations:
+        {{ include "mclabels.annotations" . | nindent 8 }}
       {{- if .Values.resetOnConfigChange }}
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        {{- if .Values.env.metrics.enabled }}
-        prometheus.io/port: {{ .Values.env.metrics.port | quote }}
-        prometheus.io/scrape: {{ .Values.env.metrics.scrape | quote }}
-        {{- end }}
         {{- if .Values.podAnnotations }}
         {{- toYaml .Values.podAnnotations | nindent 8 }}
         {{- end }}

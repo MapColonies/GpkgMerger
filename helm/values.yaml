@@ -32,6 +32,17 @@ global:
     path: '/usr/local/share/ca-certificates'
     key: 'ca.crt'
 
+
+mclabels:
+  #environment: development
+  component: backend
+  partOf: ingestion
+  owner: raster
+  gisDomain: raster
+  prometheus:
+    enabled: true
+    port: 8080
+
 enabled: true
 environment: development
 replicaCount: 1
