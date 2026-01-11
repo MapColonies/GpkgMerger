@@ -94,7 +94,7 @@ namespace MergerLogic.DataTypes
                             .Where(file => this._supportedFileExtensions.Any(x => file.EndsWith(x, System.StringComparison.OrdinalIgnoreCase))))
                 {
                     Coord coord = this._pathUtils.FromPath(filePath);
-                    Tile? tile = this.Utils.GetTile(coord);
+                    Tile? tile = this.Utils.GetTile(coord, null);
                     if (tile is null)
                     {
                         continue;

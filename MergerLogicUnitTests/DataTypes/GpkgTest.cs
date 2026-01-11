@@ -1,6 +1,7 @@
 ﻿using MergerLogic.Batching;
 using MergerLogic.Clients;
 using MergerLogic.DataTypes;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
@@ -113,8 +114,8 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._gpkgUtilsMock
                     .InSequence(seq)
-                    .Setup(utils => utils.TileExists(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
-                    .Returns<int, int, int>((z, x, y) => z == 2);
+                    .Setup(utils => utils.TileExists(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
+                    .Returns<int, int, int, TileFormat>((z, x, y, format) => z == 2);
             }
 
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
@@ -124,14 +125,14 @@ namespace MergerLogicUnitTests.DataTypes
             var expected = cords.Z == 2;
             if (useCoords)
             {
-                Assert.AreEqual(expected, gpkg.TileExists(cords));
+                Assert.AreEqual(expected, gpkg.TileExists(cords, null));
             }
             else
             {
                 var tile = new Tile(cords, this._jpegImageData);
-                Assert.AreEqual(expected, gpkg.TileExists(tile));
+                Assert.AreEqual(expected, gpkg.TileExists(tile, null));
             }
-            this._gpkgUtilsMock.Verify(util => util.TileExists(cords.Z, cords.X, cords.Y),
+            this._gpkgUtilsMock.Verify(util => util.TileExists(cords.Z, cords.X, cords.Y, null),
                 cords.Z != 0 || !isOneXOne
                     ? Times.Once
                     : Times.Never);
@@ -165,16 +166,16 @@ namespace MergerLogicUnitTests.DataTypes
             this.SetupRequiredBaseMocks(isBase, false, extent);
             Tile nullTile = null;
             var existingTile = new Tile(2, 2, 3, this._jpegImageData);
-            this._gpkgUtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
-                .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
+            this._gpkgUtilsMock.Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
+                .Returns<int, int, int, TileFormat>((z, x, y, format) => z == 2 ? existingTile : nullTile);
 
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
                 this._serviceProviderMock.Object, "test.gpkg", batchSize, Grid.TwoXOne,
                 GridOrigin.LOWER_LEFT, isBase, extent);
 
             var cords = new Coord(z, x, y);
-            Assert.AreEqual(expectedNull ? null : existingTile, gpkg.GetCorrespondingTile(cords, false));
-            this._gpkgUtilsMock.Verify(util => util.GetTile(z, x, y), Times.Once);
+            Assert.AreEqual(expectedNull ? null : existingTile, gpkg.GetCorrespondingTile(cords, null, false));
+            this._gpkgUtilsMock.Verify(util => util.GetTile(z, x, y, null), Times.Once);
             this.VerifyAll();
         }
 
@@ -240,8 +241,8 @@ namespace MergerLogicUnitTests.DataTypes
                 {
                     this._gpkgUtilsMock
                         .InSequence(sequence)
-                        .Setup(utils => utils.GetTile(It.IsAny<Coord>()))
-                        .Returns<Coord>(cords => cords.Z == 2 ? existingTile : nullTile);
+                        .Setup(utils => utils.GetTile(It.IsAny<Coord>(), null))
+                        .Returns<Coord, TileFormat>((cords, format) => cords.Z == 2 ? existingTile : nullTile);
                 }
                 if (cords.Z == 2)
                 {
@@ -255,15 +256,15 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._gpkgUtilsMock
                     .InSequence(sequence)
-                    .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
-                    .Returns<int, int, int>((z, x, y) => z == 2 ? existingTile : nullTile);
+                    .Setup(utils => utils.GetTile(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), null))
+                    .Returns<int, int, int, TileFormat>((z, x, y, format) => z == 2 ? existingTile : nullTile);
             }
 
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
                 this._serviceProviderMock.Object, "test.gpkg", 10, grid, origin,
                 isBase, extent);
 
-            var res = gpkg.GetCorrespondingTile(cords, enableUpscale);
+            var res = gpkg.GetCorrespondingTile(cords, null, enableUpscale);
             if (expectedNull)
             {
                 Assert.IsNull(res);
@@ -283,7 +284,7 @@ namespace MergerLogicUnitTests.DataTypes
                 this._oneXOneConvertorMock.Verify(converter => converter.TryFromTwoXOne(cords.Z, cords.X, cords.Y));
                 if (cords.Z != 0)
                 {
-                    this._gpkgUtilsMock.Verify(util => util.GetTile(It.Is<Coord>(C => C.Z == cords.Z && C.X == cords.X && C.Y == cords.Y)), Times.Once);
+                    this._gpkgUtilsMock.Verify(util => util.GetTile(It.Is<Coord>(C => C.Z == cords.Z && C.X == cords.X && C.Y == cords.Y), null), Times.Once);
                 }
                 if (cords.Z == 2)
                 {
@@ -292,7 +293,7 @@ namespace MergerLogicUnitTests.DataTypes
             }
             else
             {
-                this._gpkgUtilsMock.Verify(utils => utils.GetTile(cords.Z, cords.X, cords.Y));
+                this._gpkgUtilsMock.Verify(utils => utils.GetTile(cords.Z, cords.X, cords.Y, null));
             }
             this.VerifyAll();
         }
@@ -348,7 +349,7 @@ namespace MergerLogicUnitTests.DataTypes
                 {
                     this._gpkgUtilsMock
                         .InSequence(sequence)
-                        .Setup(utils => utils.GetTile(It.Is<Coord>(c => c.Z == 5 && c.X == 2 && c.Y == 3)))
+                        .Setup(utils => utils.GetTile(It.Is<Coord>(c => c.Z == 5 && c.X == 2 && c.Y == 3), null))
                         .Returns(nullTile);
                 }
 
@@ -360,7 +361,7 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._gpkgUtilsMock
                     .InSequence(sequence)
-                    .Setup(utils => utils.GetTile(5, 2, 3))
+                    .Setup(utils => utils.GetTile(5, 2, 3, null))
                     .Returns(nullTile);
             }
             if (origin != GridOrigin.LOWER_LEFT)
@@ -389,7 +390,7 @@ namespace MergerLogicUnitTests.DataTypes
             var upscaleCords = new Coord(5, 2, 3);
 
             var expectedTile = isValidConversion ? tile : null;
-            Assert.AreEqual(expectedTile, gpkg.GetCorrespondingTile(upscaleCords, true));
+            Assert.AreEqual(expectedTile, gpkg.GetCorrespondingTile(upscaleCords, null, true));
             if (origin != GridOrigin.LOWER_LEFT)
             {
                 this._geoUtilsMock.Verify(utils => utils.FlipY(5, 3), Times.Once);
@@ -398,12 +399,12 @@ namespace MergerLogicUnitTests.DataTypes
             {
                 this._oneXOneConvertorMock.Verify(converter =>
                     converter.TryFromTwoXOne(5, 2, 3), Times.Once);
-                this._gpkgUtilsMock.Verify(utils => utils.GetTile(It.IsAny<Coord>()), isValidConversion ? Times.Once : Times.Never);
+                this._gpkgUtilsMock.Verify(utils => utils.GetTile(It.IsAny<Coord>(), null), isValidConversion ? Times.Once : Times.Never);
                 this._oneXOneConvertorMock.Verify(converter => converter.TryFromTwoXOne(It.IsAny<Coord>()), Times.Once);
             }
             else
             {
-                this._gpkgUtilsMock.Verify(utils => utils.GetTile(5, 2, 3), Times.Once);
+                this._gpkgUtilsMock.Verify(utils => utils.GetTile(5, 2, 3, null), Times.Once);
             }
             this._gpkgUtilsMock.Verify(utils => utils.GetLastTile(new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 }, upscaleCords.Z), isValidConversion ? Times.Once : Times.Never);
 
