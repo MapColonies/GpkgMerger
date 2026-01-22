@@ -10,9 +10,9 @@
 {{- $s3 := (include "common.s3.merged" .) | fromYaml }}
 {{- $fs := (include "common.fs.merged" .) | fromYaml }}
 {{- $storage := (include "common.storage.merged" .) | fromYaml }}
-{{ $gpkgPath := (printf "%s%s" $fs.ingestionSourcePvc.mountPath $fs.ingestionSourcePvc.gpkgSubPath) }}
+{{ $gpkgPath := (printf "%s%s" $fs.internalPvc.mountPath$fs.ingestionSourcePvc.gpkgSubPath) }}
 {{ $tilePath := (printf "%s%s"  $fs.internalPvc.mountPath $fs.internalPvc.tilesSubPath) }}
-{{ $sources := (ternary $tilePath (printf "%s%s" "/layerSources/" $fs.ingestionSourcePvc.subPath) .Values.isExporter ) }}
+{{ $sources := (ternary $tilePath (printf "%s%s" $fs.ingestionSourcePvc.mountPath $fs.ingestionSourcePvc.subPath) .Values.isExporter ) }}
 
 apiVersion: apps/v1
 kind: Deployment
