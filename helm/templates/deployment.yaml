@@ -10,8 +10,8 @@
 {{- $s3 := (include "common.s3.merged" .) | fromYaml }}
 {{- $fs := (include "common.fs.merged" .) | fromYaml }}
 {{- $storage := (include "common.storage.merged" .) | fromYaml }}
-{{ $gpkgPath := (printf "%s%s" "/app/tiles_outputs/" $fs.internalPvc.gpkgSubPath) }}
-{{ $tilePath := (printf "%s%s" "/app/tiles_outputs/" $fs.internalPvc.tilesSubPath) }}
+{{ $gpkgPath := (printf "%s%s" $fs.ingestionSourcePvc.mountPath $fs.ingestionSourcePvc.gpkgSubPath) }}
+{{ $tilePath := (printf "%s%s"  $fs.internalPvc.mountPath $fs.internalPvc.tilesSubPath) }}
 {{ $sources := (ternary $tilePath (printf "%s%s" "/layerSources/" $fs.ingestionSourcePvc.subPath) .Values.isExporter ) }}
 
 apiVersion: apps/v1
@@ -65,9 +65,16 @@ spec:
         - name: {{ $cloudProviderImagePullSecretName | quote }}
     {{- end }}
       volumes:
+      {{- if $fs.ingestionSourcePvc.enabled }}
       - name: ingestion-storage
         persistentVolumeClaim:
           claimName: {{ $fs.ingestionSourcePvc.name }}
+      {{- end }}
+      {{- if $fs.internalPvc.enabled }}
+      - name: internal-storage
+        persistentVolumeClaim:
+          claimName: {{ $fs.internalPvc.name }}
+      {{- end }}    
       {{- if .Values.global.ca.secretName }}
       - name: root-ca
         secret:
@@ -120,10 +127,14 @@ spec:
               containerPort: 8080
               protocol: TCP
           volumeMounts:
+          {{- if $fs.ingestionSourcePvc.enabled }}
             - name: ingestion-storage
-              mountPath: /layerSources
-            - name: ingestion-storage
-              mountPath: /app/tiles_outputs
+              mountPath: {{ $fs.ingestionSourcePvc.mountPath }}
+          {{- end }}
+          {{- if $fs.internalPvc.enabled }}
+            - name: internal-storage
+              mountPath: {{ $fs.internalPvc.mountPath }}
+          {{- end }}
             {{- if .Values.global.ca.secretName }}
             - name: root-ca
               mountPath: {{ printf "%s/%s" .Values.global.ca.path .Values.global.ca.key | quote }}

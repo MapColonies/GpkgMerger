@@ -68,9 +68,11 @@ storage:
   tilesStorageProvider: ""
   fs:
     ingestionSourcePvc:
+      enabled: false
       name: ""
       subPath: ""
     internalPvc:
+      enabled: false
       name: ""
       tilesSubPath: ""
       gpkgSubPath: ""
