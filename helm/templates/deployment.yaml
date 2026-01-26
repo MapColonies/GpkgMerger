@@ -10,6 +10,11 @@
 {{- $s3 := (include "common.s3.merged" .) | fromYaml }}
 {{- $fs := (include "common.fs.merged" .) | fromYaml }}
 {{- $storage := (include "common.storage.merged" .) | fromYaml }}
+
+{{- /* PVC handling - check if both PVCs point to the same claim */ -}}
+{{- $samePvc := and $fs.ingestionSourcePvc.enabled $fs.internalPvc.enabled (eq $fs.internalPvc.name $fs.ingestionSourcePvc.name) }}
+{{- $internalVolumeName := ternary "ingestion-storage" "internal-storage" $samePvc }}
+
 {{ $gpkgPath := clean (printf "/%s/%s" $fs.internalPvc.mountPath $fs.ingestionSourcePvc.gpkgSubPath) }}
 {{ $tilePath := clean (printf "/%s/%s" $fs.internalPvc.mountPath $fs.internalPvc.tilesSubPath) }}
 {{ $ingestionSourcePath := clean (printf "/%s/%s" $fs.ingestionSourcePvc.mountPath $fs.ingestionSourcePvc.subPath) }}
@@ -72,7 +77,7 @@ spec:
         persistentVolumeClaim:
           claimName: {{ $fs.ingestionSourcePvc.name }}
       {{- end }}
-      {{- if $fs.internalPvc.enabled }}
+      {{- if and $fs.internalPvc.enabled (not $samePvc) }}
       - name: internal-storage
         persistentVolumeClaim:
           claimName: {{ $fs.internalPvc.name }}
@@ -134,7 +139,7 @@ spec:
               mountPath: {{ $fs.ingestionSourcePvc.mountPath }}
           {{- end }}
           {{- if $fs.internalPvc.enabled }}
-            - name: internal-storage
+            - name: {{ $internalVolumeName }}
               mountPath: {{ $fs.internalPvc.mountPath }}
           {{- end }}
             {{- if .Values.global.ca.secretName }}
