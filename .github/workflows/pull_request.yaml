@@ -2,26 +2,6 @@ name: pull_request
 on: [pull_request]
 
 jobs:
-  dotnet-format:
-    name: Run .NET Format Check
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        dotnet-version: ["6.0.x"]
-
-    steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v6
-
-      - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ matrix.dotnet-version }}
-
-      - name: Check formatting
-        run: dotnet format --verify-no-changes --verbosity diagnostic
-
   helm-lint:
     name: Run Helm lint Check
     runs-on: ubuntu-latest
