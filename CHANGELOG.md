@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.1](https://github.com/MapColonies/GpkgMerger/compare/v2.2.0...v2.2.1) (2026-01-29)
+
+
+### Bug Fixes
+
+* update build and push workflow for improved artifact management ([#193](https://github.com/MapColonies/GpkgMerger/issues/193)) ([f2d37b1](https://github.com/MapColonies/GpkgMerger/commit/f2d37b10ced39e68be81175fb269be98337eca83))
+
 ## [2.2.0](https://github.com/MapColonies/GpkgMerger/compare/2.1.7...v2.2.0) (2026-01-29)
 
 
