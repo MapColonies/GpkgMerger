@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.2.2](https://github.com/MapColonies/GpkgMerger/compare/v2.2.1...v2.2.2) (2026-01-29)
+
+
+### Bug Fixes
+
+* add GitHub token to artifact update steps in CI workflow ([#196](https://github.com/MapColonies/GpkgMerger/issues/196)) ([1174f6d](https://github.com/MapColonies/GpkgMerger/commit/1174f6d6d158a9e845624190743f37cb6a319435))
+* update Docker build context for service and CLI images ([c448e23](https://github.com/MapColonies/GpkgMerger/commit/c448e234829a8badb6e2a54504ba094e35951df2))
+
 ## [2.2.1](https://github.com/MapColonies/GpkgMerger/compare/v2.2.0...v2.2.1) (2026-01-29)
 
 
