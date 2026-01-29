@@ -27,7 +27,7 @@ jobs:
         with:
           domain: raster
           registry: ${{ secrets.ACR_URL }}
-          context: MergerService
+          context: "-f MergerService/Dockerfile ."
           repository: tiles-merger-service
 
       - name: Push Service Docker Image
@@ -42,7 +42,7 @@ jobs:
         with:
           domain: raster
           registry: ${{ secrets.ACR_URL }}
-          context: MergerCli
+          context: "-f MergerCli/Dockerfile ."
           repository: tiles-merger-cli
 
       - name: Push CLI Docker Image
