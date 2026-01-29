@@ -1,9 +1,9 @@
 apiVersion: v2
 name: gpkg-merger
-description: A Helm chart for gpkg-merger service # refers to MergerService
+description: A Helm chart for gpkg-merger service
 type: application
-version: 2.1.7
-appVersion: 2.1.7
+version: 2.2.0
+appVersion: 2.2.0
 dependencies:
   - name: mclabels
     version: 1.0.1
