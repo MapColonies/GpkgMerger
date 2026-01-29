@@ -1,20 +1,34 @@
-name: "Pull Request"
-
+name: pull_request
 on: [pull_request]
 
 jobs:
+  helm-lint:
+    name: Run Helm lint Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Helm Lint Checks
+        uses: MapColonies/shared-workflows/actions/helm-lint@helm-lint-v1
+
   tests:
     name: Run Tests
     runs-on: ubuntu-latest
+
     strategy:
       matrix:
-        dotnet-version: ['6.0.x' ]
+        dotnet-version: ["6.0.x"]
+
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
-        uses: actions/setup-dotnet@v2
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
 
@@ -25,18 +39,35 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Run tests
-        run: dotnet test --no-restore --verbosity normal
+        run: dotnet test --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults
 
-  build_image:
-    name: Build Image
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Test Results ${{ matrix.dotnet-version }}
+          path: ./TestResults/**
+
+  build_docker_image:
+    name: Build Docker Images
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
 
-      - name: build service docker image
-        run: docker build --no-cache -t test-build-service:latest -f MergerService/Dockerfile .
+      - name: Build Service Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: MergerService/Dockerfile
+          push: false
+          tags: test-build-service:latest
 
-      - name: build cli docker image
-        run: docker build --no-cache -t test-build-cli:latest -f MergerCli/Dockerfile .
+      - name: Build CLI Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: MergerCli/Dockerfile
+          push: false
+          tags: test-build-cli:latest

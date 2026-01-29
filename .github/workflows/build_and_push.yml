@@ -1,62 +1,89 @@
-name: Match chart version and push to ACR
+name: Build and push artifacts
 
 on:
   push:
     tags:
-      - '*'
-
+      - "v*"
   workflow_dispatch:
     inputs:
       version:
         required: false
         type: string
 
-env:
-  HELM_EXPERIMENTAL_OCI: 1
-
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
-  build_and_push_docker:
+  build_and_push:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: azure/docker-login@v1
+      - name: Artifactory Login
+        uses: MapColonies/shared-workflows/actions/artifactory-login@artifactory-login-v1.0.0
         with:
-          login-server: ${{ secrets.ACR_URL }}
+          registry: ${{ secrets.ACR_URL }}
           username: ${{ secrets.ACR_PUSH_USER }}
           password: ${{ secrets.ACR_PUSH_TOKEN }}
-      - name: Build service docker image
-        run: docker build --build-arg VERSION=${{ github.ref_name }} -t ${{ secrets.ACR_URL }}/tiles-merger-service:${{ github.ref_name }} -f MergerService/Dockerfile .
-      - name: Push service docker image
-        run: docker push ${{ secrets.ACR_URL }}/tiles-merger-service:${{ github.ref_name }}
-      - name: Build CLI docker image
-        run: docker build --build-arg VERSION=${{ github.ref_name }} -t ${{ secrets.ACR_URL }}/tiles-merger-cli:${{ github.ref_name }} -f MergerCli/Dockerfile .
-      - name: Push CLI docker image
-        run: docker push ${{ secrets.ACR_URL }}/tiles-merger-cli:${{ github.ref_name }}
 
-  update_service_artifact:
-      uses: MapColonies/shared-workflows/.github/workflows/update-artifacts-file.yaml@v2
-      secrets: inherit
-      with:
-        type: docker
-        scope: raster
-        artifact-name: tiles-merger-service
-        artifact-tag: ${{ github.ref_name }}
+      - name: Build Service Docker Image
+        id: build-service
+        uses: MapColonies/shared-workflows/actions/build-docker@build-docker-v1.1.0
+        with:
+          domain: raster
+          registry: ${{ secrets.ACR_URL }}
+          dockerfile: MergerService/Dockerfile
+          image_name: tiles-merger-service
 
-  update_cli_artifact:
-      uses: MapColonies/shared-workflows/.github/workflows/update-artifacts-file.yaml@v2
-      secrets: inherit
-      with:
-        type: docker
-        scope: raster
-        artifact-name: tiles-merger-cli
-        artifact-tag: ${{ github.ref_name }}
+      - name: Push Service Docker Image
+        uses: MapColonies/shared-workflows/actions/push-docker@push-docker-v1.0.1
+        with:
+          image_name: ${{ steps.build-service.outputs.docker_image_full_name }}
+          image_tag: ${{ steps.build-service.outputs.docker_image_tag }}
 
-  build_and_push_helm:
-      uses: MapColonies/shared-workflows/.github/workflows/build-and-push-helm.yaml@v2
-      secrets: inherit
-      with:
-        scope: raster
+      - name: Build CLI Docker Image
+        id: build-cli
+        uses: MapColonies/shared-workflows/actions/build-docker@build-docker-v1.1.0
+        with:
+          domain: raster
+          registry: ${{ secrets.ACR_URL }}
+          dockerfile: MergerCli/Dockerfile
+          image_name: tiles-merger-cli
+
+      - name: Push CLI Docker Image
+        uses: MapColonies/shared-workflows/actions/push-docker@push-docker-v1.0.1
+        with:
+          image_name: ${{ steps.build-cli.outputs.docker_image_full_name }}
+          image_tag: ${{ steps.build-cli.outputs.docker_image_tag }}
+
+      - name: Build and Push Helm Chart
+        uses: MapColonies/shared-workflows/actions/build-and-push-helm@build-and-push-helm-v1.0.1
+        with:
+          context: ./helm
+          domain: raster
+          registry: ${{ secrets.ACR_URL }}
+
+      - name: Update Artifacts File - Service Docker
+        uses: MapColonies/shared-workflows/actions/update-artifacts-file@update-artifacts-file-v1.1.1
+        with:
+          domain: raster
+          artifact_name: tiles-merger-service
+          artifact_tag: ${{ github.ref_name }}
+          type: docker
+          registry: ${{ secrets.ACR_URL }}
+          github_token: ${{ secrets.GH_PAT }}
+
+      - name: Update Artifacts File - CLI Docker
+        uses: MapColonies/shared-workflows/actions/update-artifacts-file@update-artifacts-file-v1.1.1
+        with:
+          domain: raster
+          artifact_name: tiles-merger-cli
+          artifact_tag: ${{ github.ref_name }}
+          type: docker
+          registry: ${{ secrets.ACR_URL }}
+          github_token: ${{ secrets.GH_PAT }}
+
+      - name: Update Artifacts File -Service Helm
+        uses: MapColonies/shared-workflows/actions/update-artifacts-file@update-artifacts-file-v1.1.1
+        with:
+          domain: raster
+          artifact_name: ${{ github.event.repository.name }}
+          artifact_tag: ${{ github.ref_name }}
+          type: helm
+          registry: ${{ secrets.ACR_URL }}
+          github_token: ${{ secrets.GH_PAT }}
