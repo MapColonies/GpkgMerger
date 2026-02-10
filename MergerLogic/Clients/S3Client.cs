@@ -39,7 +39,7 @@ namespace MergerLogic.Clients
             {
                 return en.ErrorCode == "NoSuchKey";
             }
-            
+
             return false;
         }
 
@@ -79,21 +79,20 @@ namespace MergerLogic.Clients
             }
         }
 
-        public override Tile? GetTile(int z, int x, int y)
+        public override Tile? GetTile(int z, int x, int y, TileFormat? format)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             this._logger.LogDebug($"[{methodName}] start z: {z}, x: {x}, y: {y}");
-            string keyPrefix = this._pathUtils.GetTilePath(this.path, z, x, y, TileFormat.Jpeg, true);
+            if (format is null)
+            {
+                throw new ArgumentNullException(nameof(format));
+            }
+            string keyPrefix = this._pathUtils.GetTilePath(this.path, z, x, y, format.Value, true);
 
             byte[]? imageBytes = this.GetImageBytes(keyPrefix);
             if (imageBytes == null)
             {
-                keyPrefix = this._pathUtils.GetTilePath(this.path, z, x, y, TileFormat.Png, true);
-                imageBytes = this.GetImageBytes(keyPrefix);
-                if (imageBytes == null)
-                {
-                    return null;
-                }
+                return null;
             }
 
             this._logger.LogDebug($"[{methodName}] end z: {z}, x: {x}, y: {y}");
@@ -109,13 +108,13 @@ namespace MergerLogic.Clients
             {
                 return null;
             }
-            
+
             this._logger.LogDebug($"[{methodName}] end key: {key}");
             Coord coords = this._pathUtils.FromPath(key, true);
             return this.CreateTile(coords, imageBytes);
         }
 
-        public override bool TileExists(int z, int x, int y)
+        public override bool TileExists(int z, int x, int y, TileFormat? format = null)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             this._logger.LogDebug($"[{methodName}] start z: {z}, x: {x}, y: {y}");

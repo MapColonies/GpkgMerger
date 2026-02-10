@@ -5,7 +5,6 @@ using MergerLogic.Utils;
 using MergerLogicUnitTests.testUtils;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
@@ -73,10 +72,14 @@ namespace MergerLogicUnitTests.Clients
                 .InSequence(seq)
                 .Setup(util => util.Join(cords.Z.ToString(), cords.X.ToString(), cords.Y.ToString()))
                 .Returns("testTilePath");
-            this._directoryMock
+            this._pathMock
+            .InSequence(seq)
+            .Setup(util => util.Join("testFilePath", "testTilePath", ".", targetFormat.ToString().ToLower()))
+            .Returns("testTilePath");
+            this._fileMock
                 .InSequence(seq)
-                .Setup(dir => dir.EnumerateFiles("testFilePath", "testTilePath.*", SearchOption.TopDirectoryOnly))
-                .Returns(returnsNull ? Array.Empty<string>() : new string[] { "testTilePath" });
+                .Setup(dir => dir.Exists("testTilePath"))
+                .Returns(!returnsNull);
             if (!returnsNull)
             {
                 this._fileMock
@@ -91,7 +94,7 @@ namespace MergerLogicUnitTests.Clients
 
             var fileClient = new FileClient("testFilePath", this._geoUtilsMock.Object, this._fsMock.Object);
 
-            var res = useCoords ? fileClient.GetTile(cords) : fileClient.GetTile(cords.Z, cords.X, cords.Y);
+            var res = useCoords ? fileClient.GetTile(cords, targetFormat) : fileClient.GetTile(cords.Z, cords.X, cords.Y, targetFormat);
             if (returnsNull)
             {
                 Assert.IsNull(res);
@@ -124,14 +127,18 @@ namespace MergerLogicUnitTests.Clients
                 .InSequence(seq)
                 .Setup(util => util.Join(cords.Z.ToString(), cords.X.ToString(), cords.Y.ToString()))
                 .Returns("testTilePath");
-            this._directoryMock
+            this._pathMock
+            .InSequence(seq)
+            .Setup(util => util.Join("testFilePath", "testTilePath", ".", "png"))
+            .Returns("testFilePath/testTilePath.png");
+            this._fileMock
                 .InSequence(seq)
-                .Setup(dir => dir.EnumerateFiles("testFilePath", "testTilePath.*", SearchOption.TopDirectoryOnly))
-                .Returns(exist ? new string[] { "testFile" } : Array.Empty<string>());
+                .Setup(dir => dir.Exists("testFilePath/testTilePath.png"))
+                .Returns(exist);
 
             var fileClient = new FileClient("testFilePath", this._geoUtilsMock.Object, this._fsMock.Object);
 
-            var res = fileClient.TileExists(cords.Z, cords.X, cords.Y);
+            var res = fileClient.TileExists(cords.Z, cords.X, cords.Y, TileFormat.Png);
 
             Assert.AreEqual(exist, res);
             this._repository.VerifyAll();
@@ -147,14 +154,18 @@ namespace MergerLogicUnitTests.Clients
                 .InSequence(seq)
                 .Setup(util => util.Join(cords.Z.ToString(), cords.X.ToString(), cords.Y.ToString()))
                 .Returns("testTilePath");
-            this._directoryMock
+            this._pathMock
                 .InSequence(seq)
-                .Setup(dir => dir.EnumerateFiles("testFilePath", "testTilePath.*", SearchOption.TopDirectoryOnly))
-                .Throws<DirectoryNotFoundException>();
+                .Setup(util => util.Join("testFilePath", "testTilePath", ".", "png"))
+                .Returns("testFilePath/testTilePath.png");
+            this._fileMock
+                .InSequence(seq)
+                .Setup(dir => dir.Exists("testFilePath/testTilePath.png"))
+                .Returns(false);
 
             var fileClient = new FileClient("testFilePath", this._geoUtilsMock.Object, this._fsMock.Object);
 
-            var res = fileClient.TileExists(cords.Z, cords.X, cords.Y);
+            var res = fileClient.TileExists(cords.Z, cords.X, cords.Y, TileFormat.Png);
 
             Assert.AreEqual(false, res);
             this._repository.VerifyAll();

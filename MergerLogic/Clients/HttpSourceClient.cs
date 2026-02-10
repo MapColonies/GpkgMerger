@@ -1,4 +1,5 @@
 ﻿using MergerLogic.Batching;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 
 namespace MergerLogic.Clients
@@ -15,14 +16,14 @@ namespace MergerLogic.Clients
             this._pathPatternUtils = pathPatternUtils;
         }
 
-        public override Tile? GetTile(int z, int x, int y)
+        public override Tile? GetTile(int z, int x, int y, TileFormat? format = null)
         {
             string url = this._pathPatternUtils.RenderUrlTemplate(x, y, z);
             byte[]? data = this._httpClient.GetData(url, true);
             return this.CreateTile(z, x, y, data);
         }
 
-        public override bool TileExists(int z, int x, int y)
+        public override bool TileExists(int z, int x, int y, TileFormat? format = null)
         {
             return this.GetTile(z, x, y) is not null;
         }

@@ -73,7 +73,7 @@ namespace MergerLogic.DataTypes
                 {
                     for (int y = range.MinY; y < range.MaxY; y++)
                     {
-                        var tile = this.GetTile(range.Zoom, x, y);
+                        var tile = this.GetTile(range.Zoom, x, y, null);
                         if (tile != null)
                         {
                             yield return tile;

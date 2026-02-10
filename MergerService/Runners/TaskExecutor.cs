@@ -100,7 +100,7 @@ namespace MergerService.Runners
 
                 this._logger.LogDebug($"[{methodName}] BuildDataList");
                 List<IData> sources = this.BuildDataList(metadata.Sources, this._batchMaxSize);
-                
+
                 IData target = sources[0];
                 target.IsNew = metadata.IsNewTarget;
 
@@ -153,14 +153,14 @@ namespace MergerService.Runners
                                     // Create tile builder list for current coord for all sources
                                     List<CorrespondingTileBuilder> correspondingTileBuilders = new List<CorrespondingTileBuilder>();
                                     // Add target tile
-                                    correspondingTileBuilders.Add(() => sources[0].GetCorrespondingTile(coord, shouldUpscale));
-                                    
+                                    correspondingTileBuilders.Add(() => sources[0].GetCorrespondingTile(coord, task.Parameters.TargetFormat, shouldUpscale));
+
                                     // Add all sources tiles 
                                     this._logger.LogDebug($"[{methodName}] Get tile sources");
                                     foreach (IData source in sources.Skip(1))
                                     {
                                         // TODO: upscale = false - this is a temporary fix till we decide how sources should be upscaled
-                                        correspondingTileBuilders.Add(() => source.GetCorrespondingTile(coord, false));
+                                        correspondingTileBuilders.Add(() => source.GetCorrespondingTile(coord, task.Parameters.TargetFormat, false));
                                     }
                                     var tileMergeStopwatch = Stopwatch.StartNew();
                                     Tile? tile = this._tileMerger.MergeTiles(correspondingTileBuilders, coord, strategy, metadata.IsNewTarget);
@@ -223,7 +223,7 @@ namespace MergerService.Runners
                             this._logger.LogInformation($"[{methodName}] Validating merged data sources");
                             using (this._activitySource.StartActivity("validating tiles"))
                             {
-                                bool valid = this.Validate(target, bounds);
+                                bool valid = this.Validate(target, bounds, task.Parameters.TargetFormat);
 
                                 if (!valid)
                                 {
@@ -324,7 +324,7 @@ namespace MergerService.Runners
             }
         }
 
-        private bool Validate(IData target, TileBounds bounds)
+        private bool Validate(IData target, TileBounds bounds, TileFormat? format)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             int totalTileCount = (int)bounds.Size();
@@ -338,7 +338,7 @@ namespace MergerService.Runners
                 for (int y = bounds.MinY; y < bounds.MaxY; y++)
                 {
                     Coord coord = new Coord(bounds.Zoom, x, y);
-                    if (target.TileExists(coord))
+                    if (target.TileExists(coord, format))
                     {
                         ++tilesChecked;
                     }
