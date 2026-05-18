@@ -23,7 +23,7 @@ namespace MergerLogic.Batching
 
         public long Size()
         {
-            return (this.MaxX - this.MinX) * (this.MaxY - this.MinY);
+            return (this.MaxX - this.MinX + 1) * (this.MaxY - this.MinY + 1);
         }
 
         public void Print()
