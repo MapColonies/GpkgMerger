@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.3](https://github.com/MapColonies/GpkgMerger/compare/v2.2.2...v2.2.3) (2026-05-19)
+
+
+### Bug Fixes
+
+* correct tile size calculation and adjust loop boundaries for inc… ([#253](https://github.com/MapColonies/GpkgMerger/issues/253)) ([59a8a0f](https://github.com/MapColonies/GpkgMerger/commit/59a8a0f857fe10b2082241f0ecf4d13dafb1b27e))
+
 ## [2.2.2](https://github.com/MapColonies/GpkgMerger/compare/v2.2.1...v2.2.2) (2026-01-29)
 
 
