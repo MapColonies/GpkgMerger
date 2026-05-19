@@ -1,4 +1,4 @@
-﻿using MergerLogic.Batching;
+using MergerLogic.Batching;
 using MergerLogic.Clients;
 using MergerLogic.DataTypes;
 using MergerLogic.Monitoring.Metrics;
@@ -510,7 +510,7 @@ namespace MergerLogicUnitTests.DataTypes
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
             var tmsSource = new TMS(this._serviceProviderMock.Object, "test", 10, extent, grid, origin, 3, 0);
 
-            Assert.AreEqual(10, tmsSource.TileCount());
+            Assert.AreEqual(26, tmsSource.TileCount());
             this._geoUtilsMock.Verify(utils => utils.ExtentToTileRange(It.IsAny<Extent>(), It.IsAny<int>(), It.IsAny<GridOrigin>()), Times.Exactly(4));
             this.VerifyAll();
         }

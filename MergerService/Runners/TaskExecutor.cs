@@ -143,9 +143,9 @@ namespace MergerService.Runners
                         {
                             var batchWorkTimeStopwatch = Stopwatch.StartNew();
 
-                            for (int x = bounds.MinX; x < bounds.MaxX; x++)
+                            for (int x = bounds.MinX; x <= bounds.MaxX; x++)
                             {
-                                for (int y = bounds.MinY; y < bounds.MaxY; y++)
+                                for (int y = bounds.MinY; y <= bounds.MaxY; y++)
                                 {
                                     this._logger.LogDebug($"[{methodName}] Handle tile z:{bounds.Zoom}, x:{x}, y:{y}");
                                     Coord coord = new Coord(bounds.Zoom, x, y);
