@@ -100,7 +100,8 @@ namespace MergerService.Runners
 
                 this._logger.LogDebug($"[{methodName}] BuildDataList");
                 List<IData> sources = this.BuildDataList(metadata.Sources, this._batchMaxSize);
-                
+                try
+                {
                 IData target = sources[0];
                 target.IsNew = metadata.IsNewTarget;
 
@@ -252,6 +253,14 @@ namespace MergerService.Runners
                     this._metricsProvider.TilesInBatchGauge(0);
                 }
                 target.Wrapup();
+                }
+                finally
+                {
+                    foreach (IData source in sources)
+                    {
+                        source.Dispose();
+                    }
+                }
             }
             this._logger.LogDebug($"[{methodName}] end");
         }

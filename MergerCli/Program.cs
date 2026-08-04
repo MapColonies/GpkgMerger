@@ -136,6 +136,13 @@ namespace MergerCli
                 _logger.LogError(ex, ex.Message);
                 return;
             }
+            finally
+            {
+                foreach (IData source in sources)
+                {
+                    source.Dispose();
+                }
+            }
 
             totalTimeStopwatch.Stop();
             // Get the elapsed time as a TimeSpan value.
