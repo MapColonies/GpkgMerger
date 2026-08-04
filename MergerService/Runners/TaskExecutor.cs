@@ -6,6 +6,7 @@ using MergerLogic.Utils;
 using MergerService.Controllers;
 using MergerService.Models.Tasks;
 using MergerService.Utils;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO.Abstractions;
 using System.Reflection;
@@ -28,6 +29,7 @@ namespace MergerService.Runners
         private readonly long _batchMaxBytes;
         private readonly string _filePath;
         private readonly bool _shouldValidate;
+        private readonly int _maxDegreeOfParallelism;
         private static readonly int DEFAULT_BATCH_SIZE = 1000;
 
         public TaskExecutor(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, IConfigurationManager configurationManager,
@@ -59,6 +61,10 @@ namespace MergerService.Runners
 
                 this._batchMaxSize = DEFAULT_BATCH_SIZE;
             }
+
+            int numOfThreads = configurationManager.GetConfiguration<int>("GENERAL", "parallel", "numOfThreads");
+            // 0 (unset) or negative means "let the runtime decide" per available cores.
+            this._maxDegreeOfParallelism = numOfThreads > 0 ? numOfThreads : Environment.ProcessorCount;
         }
 
         public void ExecuteTask(MergeTask task, ITaskUtils taskUtils, string? managerCallbackUrl)
@@ -123,8 +129,6 @@ namespace MergerService.Runners
 
                         long singleTileBatchCount = bounds.Size();
                         this._metricsProvider.TilesInBatchGauge(singleTileBatchCount);
-                        int tileProgressCount = 0;
-
                         // TODO: remove comment and check that the activity is created (When bug will be fixed)
                         // batchActivity.AddTag("size", totalTileCount);
 
@@ -134,9 +138,6 @@ namespace MergerService.Runners
                             continue;
                         }
 
-                        List<Tile> tiles = new List<Tile>((int)singleTileBatchCount);
-                        long currentBatchBytes = 0;
-
                         this._logger.LogInformation($"[{methodName}] Total amount of tiles to merge for current batch: {singleTileBatchCount}");
 
                         // Go over the bounds of the current batch
@@ -144,25 +145,40 @@ namespace MergerService.Runners
                         {
                             var batchWorkTimeStopwatch = Stopwatch.StartNew();
 
+                            // Enumerate the coords once, then merge in parallel one chunk at a time. Each chunk
+                            // is flushed to the target before the next starts, so memory stays bounded to ~one
+                            // chunk (count-based; the previous byte cap is approximated by batchMaxSize).
+                            var coords = new List<Coord>((int)singleTileBatchCount);
                             for (int x = bounds.MinX; x <= bounds.MaxX; x++)
                             {
                                 for (int y = bounds.MinY; y <= bounds.MaxY; y++)
                                 {
-                                    this._logger.LogDebug($"[{methodName}] Handle tile z:{bounds.Zoom}, x:{x}, y:{y}");
-                                    Coord coord = new Coord(bounds.Zoom, x, y);
+                                    coords.Add(new Coord(bounds.Zoom, x, y));
+                                }
+                            }
 
-                                    // Create tile builder list for current coord for all sources
-                                    List<CorrespondingTileBuilder> correspondingTileBuilders = new List<CorrespondingTileBuilder>();
-                                    // Add target tile
-                                    correspondingTileBuilders.Add(() => sources[0].GetCorrespondingTile(coord, shouldUpscale));
-                                    
-                                    // Add all sources tiles 
-                                    this._logger.LogDebug($"[{methodName}] Get tile sources");
+                            int chunkSize = this._batchMaxSize;
+                            var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = this._maxDegreeOfParallelism };
+
+                            foreach (Coord[] chunk in coords.Chunk(chunkSize))
+                            {
+                                var mergedTiles = new ConcurrentBag<Tile>();
+
+                                // Merge is the hot path and each coord is independent; the target is only read
+                                // here (writes happen after this parallel phase), and GetCorrespondingTile is
+                                // thread-safe per data source.
+                                Parallel.ForEach(chunk, parallelOptions, coord =>
+                                {
+                                    var correspondingTileBuilders = new List<CorrespondingTileBuilder>
+                                    {
+                                        () => sources[0].GetCorrespondingTile(coord, shouldUpscale)
+                                    };
                                     foreach (IData source in sources.Skip(1))
                                     {
                                         // TODO: upscale = false - this is a temporary fix till we decide how sources should be upscaled
                                         correspondingTileBuilders.Add(() => source.GetCorrespondingTile(coord, false));
                                     }
+
                                     var tileMergeStopwatch = Stopwatch.StartNew();
                                     Tile? tile = this._tileMerger.MergeTiles(correspondingTileBuilders, coord, strategy, metadata.IsNewTarget);
                                     tileMergeStopwatch.Stop();
@@ -170,39 +186,24 @@ namespace MergerService.Runners
 
                                     if (tile != null)
                                     {
-                                        tiles.Add(tile);
-                                        currentBatchBytes += tile.Size();
-
-                                        // Flushes the "tiles" list if it reached the batch size or the batch max bytes
-                                        // This is done to prevent memory overflow
-                                        if (currentBatchBytes >= this._batchMaxBytes || (this._limitBatchSize && tiles.Count >= this._batchMaxSize))
-                                        {
-                                            this.UpdateTargetTiles(target, tiles, task, overallTileProgressCount, totalTileCount, taskUtils);
-
-                                            tiles.Clear();
-                                            currentBatchBytes = 0;
-                                        }
+                                        mergedTiles.Add(tile);
                                     }
+                                });
 
-                                    tileProgressCount++;
-                                    overallTileProgressCount++;
+                                long progressAfterChunk = Interlocked.Add(ref overallTileProgressCount, chunk.Length);
 
-                                    // Show progress every batchSize
-                                    if (overallTileProgressCount % this._batchMaxSize == 0)
-                                    {
-                                        this._logger.LogInformation(
-                                            $"[{methodName}] Job: {task.JobId}, Task: {task.Id}, Tile Count: {overallTileProgressCount} / {totalTileCount}");
-                                        UpdateRelativeProgress(task, overallTileProgressCount, totalTileCount, taskUtils);
-                                    }
+                                if (!mergedTiles.IsEmpty)
+                                {
+                                    this.UpdateTargetTiles(target, mergedTiles.ToList(), task, progressAfterChunk, totalTileCount, taskUtils);
                                 }
+
+                                this._logger.LogInformation(
+                                    $"[{methodName}] Job: {task.JobId}, Task: {task.Id}, Tile Count: {progressAfterChunk} / {totalTileCount}");
+                                UpdateRelativeProgress(task, progressAfterChunk, totalTileCount, taskUtils);
                             }
+
                             batchWorkTimeStopwatch.Stop();
                             this._metricsProvider.BatchWorkTimeHistogram(batchWorkTimeStopwatch.Elapsed.TotalSeconds);
-                        }
-
-                        if (tiles.Count > 0)
-                        {
-                            this.UpdateTargetTiles(target, tiles, task, overallTileProgressCount, totalTileCount, taskUtils);
                         }
 
                         this._logger.LogInformation($"[{methodName}] Overall tile Count: {overallTileProgressCount} / {totalTileCount}");
