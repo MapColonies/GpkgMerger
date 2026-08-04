@@ -330,24 +330,17 @@ namespace MergerLogicUnitTests.Utils
                         .Setup(utils => utils.GetTilePathWithoutExtension("test", 0, 0, 0, true))
                         .Returns("key");
 
+            var listResponse = new ListObjectsV2Response();
             if (exist)
             {
-                this._amazonS3ClientMock
-                .InSequence(seq)
-                .Setup(s3 => s3.GetObjectAsync(It.Is<GetObjectRequest>(req =>
-                        req.BucketName == "bucket" && req.Key == "key"),
-                    It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new GetObjectResponse() { Key = "key" });
+                listResponse.S3Objects.Add(new S3Object() { Key = "key" });
             }
-            else
-            {
-                this._amazonS3ClientMock
+            this._amazonS3ClientMock
                 .InSequence(seq)
-                .Setup(s3 => s3.GetObjectAsync(It.Is<GetObjectRequest>(req =>
-                        req.BucketName == "bucket" && req.Key == "key"),
+                .Setup(s3 => s3.ListObjectsV2Async(It.Is<ListObjectsV2Request>(req =>
+                        req.BucketName == "bucket" && req.Prefix == "key" && req.MaxKeys == 1),
                     It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new AmazonS3Exception("", Amazon.Runtime.ErrorType.Unknown, "NoSuchKey", "", System.Net.HttpStatusCode.NoContent));
-            }
+                .ReturnsAsync(listResponse);
 
             var s3Utils = new S3Client(this._amazonS3ClientMock.Object, this._pathUtilsMock.Object,
                 this._geoUtilsMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
@@ -355,8 +348,8 @@ namespace MergerLogicUnitTests.Utils
             Assert.AreEqual(exist, s3Utils.TileExists(0, 0, 0));
 
             this._pathUtilsMock.Verify(utils => utils.GetTilePathWithoutExtension("test", 0, 0, 0, true), Times.Once);
-            this._amazonS3ClientMock.Verify(s3 => s3.GetObjectAsync(It.Is<GetObjectRequest>(req =>
-                        req.BucketName == "bucket" && req.Key == "key"), It.IsAny<CancellationToken>()), Times.Once);
+            this._amazonS3ClientMock.Verify(s3 => s3.ListObjectsV2Async(It.Is<ListObjectsV2Request>(req =>
+                        req.BucketName == "bucket" && req.Prefix == "key" && req.MaxKeys == 1), It.IsAny<CancellationToken>()), Times.Once);
             this.VerifyAll();
         }
 
