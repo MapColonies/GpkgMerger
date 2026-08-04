@@ -85,12 +85,16 @@ namespace MergerLogic.ImageProcessing
                     int maxRowOffset = TILE_SIZE * scaledChannels;
                     int pixelRowBytes = TILE_SIZE * channels;
 
+                    // Read the whole source pixel buffer once instead of allocating a byte[] per source pixel.
+                    var srcValues = srcPixels.GetValues()!;
+                    int srcStride = baseImage.Width * channels;
+
                     //loop relevant source pixels
                     for (int i = pixelX; i < maxSrcX; i++)
                     {
                         for (int j = pixelY; j < maxSrcY; j++)
                         {
-                            var srcPixel = srcPixels.GetValue(i, j);
+                            int srcPixelIdx = (j * srcStride) + (i * channels);
                             var targetXStart = (i - pixelX) * scale;
                             var targetYStart = (j - pixelY) * scale;
                             var targetPixelIdxStart = (targetXStart + (TILE_SIZE * targetYStart)) * channels;
@@ -99,7 +103,7 @@ namespace MergerLogic.ImageProcessing
                                 for (int pixelRowOffset = 0; pixelRowOffset < maxRowOffset; pixelRowOffset += pixelRowBytes)
                                 {
                                     int pixelIdx = targetPixelIdxStart + pixelColOffset + pixelRowOffset;
-                                    srcPixel!.CopyTo(pixels, pixelIdx); //copy all channels 
+                                    Array.Copy(srcValues, srcPixelIdx, pixels, pixelIdx, channels); //copy all channels
                                 }
                             }
                         }
