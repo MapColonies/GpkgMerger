@@ -25,12 +25,13 @@ namespace MergerLogic.Utils
 
         public IEnumerable<IConfigurationSection> GetChildren(params string[] configPath)
         {
-            var config = this.config.GetSection(configPath[0]);
-            for (int i = 1; i < configPath.Length - 1; i++)
+            var section = this.config.GetSection(configPath[0]);
+            for (int i = 1; i < configPath.Length; i++)
             {
-                config = this.config.GetSection(configPath[i]);
+                // Traverse into the accumulated section, not back to the root each iteration.
+                section = section.GetSection(configPath[i]);
             }
-            return config.GetSection(configPath[configPath.Length - 1]).GetChildren();
+            return section.GetChildren();
         }
 
         public string GetConfiguration(params string[] configPath)
