@@ -107,6 +107,11 @@ namespace MergerLogic.Extensions
                     MaxErrorRetry = retries,
                 };
 
+                // Raise the per-endpoint connection cap so parallel tile PUTs are not serialized on the
+                // default limit (2). Set once, before the client's HTTP stack is created.
+                System.Net.ServicePointManager.DefaultConnectionLimit =
+                    Math.Max(System.Net.ServicePointManager.DefaultConnectionLimit, 100);
+
                 var credentials = new BasicAWSCredentials(accessKey, secretKey);
                 return new AmazonS3Client(credentials, s3Config);
             });

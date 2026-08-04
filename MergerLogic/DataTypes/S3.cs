@@ -198,10 +198,9 @@ namespace MergerLogic.DataTypes
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] start");
-            foreach (var tile in targetTiles)
-            {
-                this.Utils.UpdateTile(tile);
-            }
+            // Materialize first so the upstream (single-threaded) grid/origin projection runs before the
+            // uploads fan out; the S3 client and its PutObject calls are independent per tile.
+            Parallel.ForEach(targetTiles.ToList(), tile => this.Utils.UpdateTile(tile));
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] end");
         }
     }
