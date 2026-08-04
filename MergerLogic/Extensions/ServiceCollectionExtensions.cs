@@ -43,6 +43,12 @@ namespace MergerLogic.Extensions
 
         public static IServiceCollection RegisterImageProcessors(this IServiceCollection collection)
         {
+            // Tiles are already processed in parallel at the app level, so keep ImageMagick single-threaded
+            // per operation to avoid thread oversubscription, and cap its native memory so one large image
+            // cannot exhaust the host.
+            ImageMagick.ResourceLimits.Thread = 1;
+            ImageMagick.ResourceLimits.LimitMemory(new ImageMagick.Percentage(50));
+
             return collection
                 .AddSingleton<ITileMerger, TileMerger>()
                 .AddSingleton<ITileScaler, TileScaler>();
