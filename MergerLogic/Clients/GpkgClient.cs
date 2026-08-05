@@ -240,11 +240,9 @@ namespace MergerLogic.Clients
             }
         }
 
-        // Keyset pagination over the implicit rowid (present and indexed on every ordinary SQLite table,
-        // aliasing the INTEGER PRIMARY KEY where one is defined): seeks past the last rowid returned instead
-        // of scanning and discarding `lastId` rows, so page cost stays constant as the merge progresses.
-        // `lastId` is the cursor (0 to start); the returned LastId is the greatest rowid read (or the passed
-        // cursor when the page is empty), to feed the next call.
+        // Keyset pagination over rowid: seeks past lastId instead of OFFSET-scanning, so page cost stays
+        // constant regardless of depth. lastId is the cursor (0 to start); returns the greatest rowid read
+        // (or lastId unchanged when the page is empty).
         public (List<Tile> Tiles, long LastId) GetBatch(int batchSize, long lastId)
         {
             List<Tile> tiles = new List<Tile>(batchSize);
