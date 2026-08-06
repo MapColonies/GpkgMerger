@@ -164,9 +164,13 @@ namespace MergerLogicUnitTests.Utils
                     this._fileSystemMock.Object, this._geoUtilsMock.Object);
 
                 var comparer = ComparerFactory.Create<Tile>((t1, t2) => t1?.Z == t2?.Z && t1?.X == t2?.X && t1?.Y == t2?.Y ? 0 : -1);
-                var res = gpkgUtils.GetBatch(batchSize, offset);
-                var expected = testTiles.Skip(offset).Take(batchSize);
-                CollectionAssert.AreEqual(expected.ToArray(), res, comparer);
+                // Tiles are inserted in order, so their auto-increment ids are contiguous (1..N) and the
+                // keyset cursor `id > lastId` selects the same rows the old offset-based paging returned.
+                var (res, cursor) = gpkgUtils.GetBatch(batchSize, offset);
+                var expected = testTiles.Skip(offset).Take(batchSize).ToArray();
+                CollectionAssert.AreEqual(expected, res, comparer);
+                // Cursor advances to the id of the last row read (or stays put when the page is empty).
+                Assert.AreEqual(offset + expected.Length, cursor);
             }
             this.VerifyAll();
         }
@@ -191,8 +195,38 @@ namespace MergerLogicUnitTests.Utils
                 var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
                     this._fileSystemMock.Object, this._geoUtilsMock.Object);
 
-                var res = gpkgUtils.GetBatch(21, offset);
+                var (res, _) = gpkgUtils.GetBatch(21, offset);
                 CollectionAssert.AreEqual(Array.Empty<Tile>(), res);
+            }
+            this.VerifyAll();
+        }
+
+        #endregion
+
+        #region Dispose
+
+        [TestMethod]
+        [TestCategory("Dispose")]
+        public void DisposeAfterUseIsIdempotent()
+        {
+            string path = this.GetGpkgPath();
+            var testTiles = new Tile[] { new Tile(0, 0, 0, this._jpegImageData) };
+
+            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            {
+                connection.Open();
+                this.SetupConstructorRequiredMocks(connection);
+                this.CreateTestTiles(connection, testTiles);
+
+                var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+
+                // Opens the reused connection.
+                var (res, _) = gpkgUtils.GetBatch(1, 0);
+                Assert.AreEqual(1, res.Count);
+
+                gpkgUtils.Dispose();
+                gpkgUtils.Dispose(); // second dispose must be a no-op, not throw
             }
             this.VerifyAll();
         }

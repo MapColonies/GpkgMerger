@@ -671,7 +671,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             this.SetupRequiredBaseMocks(isBase, isOneXOne, extent);
             this._gpkgUtilsMock.Setup(utils => utils.GetBatch(10, It.IsAny<long>()))
-                .Returns(new List<Tile>());
+                .Returns<int, long>((_, lastId) => (new List<Tile>(), lastId));
 
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
                 this._serviceProviderMock.Object, "test.gpkg", 10, grid, origin,
@@ -709,7 +709,7 @@ namespace MergerLogicUnitTests.DataTypes
 
             this.SetupRequiredBaseMocks(isBase, isOneXOne, extent);
             this._gpkgUtilsMock.Setup(utils => utils.GetBatch(batchSize, It.IsAny<long>()))
-                .Returns(new List<Tile> { new Tile(0, 0, 0, this._jpegImageData) });
+                .Returns<int, long>((_, lastId) => (new List<Tile> { new Tile(0, 0, 0, this._jpegImageData) }, lastId + 1));
             if (origin == GridOrigin.UPPER_LEFT)
             {
                 this._geoUtilsMock.Setup(converter => converter.FlipY(It.IsAny<Tile>()))
@@ -769,10 +769,11 @@ namespace MergerLogicUnitTests.DataTypes
             var seq = new MockSequence();
             for (var i = 0; i < tileBatches.Count; i++)
             {
+                var batch = tileBatches[i].ToList();
                 this._gpkgUtilsMock
                     .InSequence(seq)
                     .Setup(utils => utils.GetBatch(batchSize, It.IsAny<long>()))
-                    .Returns(tileBatches[i].ToList());
+                    .Returns<int, long>((_, lastId) => (batch, lastId + batch.Count));
                 for (var j = 0; j < tileBatches[i].Length; j++)
                 {
                     if (origin == GridOrigin.UPPER_LEFT)

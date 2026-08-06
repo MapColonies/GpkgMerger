@@ -4,9 +4,9 @@ using MergerLogic.Utils;
 
 namespace MergerLogic.Clients
 {
-    public interface IGpkgClient : IDataUtils
+    public interface IGpkgClient : IDataUtils, IDisposable
     {
-        List<Tile> GetBatch(int batchSize, long offset);
+        (List<Tile> Tiles, long LastId) GetBatch(int batchSize, long lastId);
         Extent GetExtent();
         Tile? GetLastTile(int[] coords, int currentTileZoom);
         long GetTileCount();

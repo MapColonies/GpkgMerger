@@ -336,5 +336,11 @@ namespace MergerLogic.DataTypes
         public abstract long TileCount();
 
         public abstract void setBatchIdentifier(string batchIdentifier);
+
+        public virtual void Dispose()
+        {
+            (this.Utils as IDisposable)?.Dispose();
+            GC.SuppressFinalize(this);
+        }
     }
 }
