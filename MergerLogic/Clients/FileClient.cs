@@ -38,9 +38,7 @@ public class FileClient : DataUtils, IFileClient
 
     private string? GetTilePath(int z, int x, int y)
     {
-        // Probe the known extensions directly instead of globbing the directory: File.Exists returns
-        // false for a missing tile or missing directory, so no DirectoryNotFound handling is needed.
-        // TileFormat is the source of truth for the supported extensions (declaration order = probe order).
+        // Probe each supported extension via File.Exists (false for a missing dir too, so no glob/catch).
         foreach (TileFormat format in Enum.GetValues<TileFormat>())
         {
             string candidate = this._fileSystem.Path.Combine(
