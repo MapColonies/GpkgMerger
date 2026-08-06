@@ -35,7 +35,7 @@ namespace MergerLogic.Clients
         }
 
         // Returns the shared connection, opening it (with WAL) on first use. Caller must hold _connectionLock.
-        private SQLiteConnection GetConnection()
+        private SQLiteConnection GetOrCreateConnection()
         {
             if (this._connection == null)
             {
@@ -172,7 +172,7 @@ namespace MergerLogic.Clients
 
             lock (this._connectionLock)
             {
-                var connection = this.GetConnection();
+                var connection = this.GetOrCreateConnection();
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText =
@@ -191,7 +191,7 @@ namespace MergerLogic.Clients
         {
             lock (this._connectionLock)
             {
-                var connection = this.GetConnection();
+                var connection = this.GetOrCreateConnection();
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText =
@@ -212,7 +212,7 @@ namespace MergerLogic.Clients
         {
             lock (this._connectionLock)
             {
-                var connection = this.GetConnection();
+                var connection = this.GetOrCreateConnection();
                 using (var transaction = connection.BeginTransaction())
                 using (var command = connection.CreateCommand())
                 {
@@ -249,7 +249,7 @@ namespace MergerLogic.Clients
 
             lock (this._connectionLock)
             {
-                var connection = this.GetConnection();
+                var connection = this.GetOrCreateConnection();
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText =
@@ -287,7 +287,7 @@ namespace MergerLogic.Clients
             Tile? lastTile = null;
             lock (this._connectionLock)
             {
-                var connection = this.GetConnection();
+                var connection = this.GetOrCreateConnection();
                 using (var command = connection.CreateCommand())
                 {
                     // Build command

@@ -88,6 +88,10 @@ namespace MergerCli
             {
                 _logger.LogError("minimum of 2 sources is required");
                 PrintHelp(programName);
+                foreach (IData source in sources)
+                {
+                    source.Dispose();
+                }
                 return;
             }
 
