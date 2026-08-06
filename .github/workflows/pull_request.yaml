@@ -57,7 +57,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Build Service Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: MergerService/Dockerfile
@@ -65,7 +65,7 @@ jobs:
           tags: test-build-service:latest
 
       - name: Build CLI Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: MergerCli/Dockerfile
