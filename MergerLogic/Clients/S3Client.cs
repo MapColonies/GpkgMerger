@@ -84,17 +84,18 @@ namespace MergerLogic.Clients
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             this._logger.LogDebug($"[{methodName}] start z: {z}, x: {x}, y: {y}");
-            string keyPrefix = this._pathUtils.GetTilePath(this.path, z, x, y, TileFormat.Jpeg, true);
 
-            byte[]? imageBytes = this.GetImageBytes(keyPrefix);
+            // Resolve key+extension with one LIST instead of speculatively downloading Jpeg-then-Png (up to two GETs per tile).
+            string? key = this.GetTileKey(z, x, y);
+            if (key == null)
+            {
+                return null;
+            }
+
+            byte[]? imageBytes = this.GetImageBytes(key);
             if (imageBytes == null)
             {
-                keyPrefix = this._pathUtils.GetTilePath(this.path, z, x, y, TileFormat.Png, true);
-                imageBytes = this.GetImageBytes(keyPrefix);
-                if (imageBytes == null)
-                {
-                    return null;
-                }
+                return null;
             }
 
             this._logger.LogDebug($"[{methodName}] end z: {z}, x: {x}, y: {y}");
