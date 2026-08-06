@@ -5,6 +5,7 @@ using MergerLogic.Clients;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 using System.Reflection;
 
 namespace MergerLogic.DataTypes
@@ -67,15 +68,31 @@ namespace MergerLogic.DataTypes
         private List<int> GetZoomLevels()
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] start");
-            List<int> zoomLevels = new List<int>();
 
-            for (int zoomLevel = 0; zoomLevel < Data<IS3Client>.MaxZoomRead; zoomLevel++)
+            // One delimited LIST returns the immediate zoom-level "folders" as CommonPrefixes,
+            // replacing the previous per-level probe (one LIST for each of the 0..MaxZoomRead levels).
+            var listRequest = new ListObjectsV2Request
             {
-                if (this.FolderExists($"{zoomLevel}/"))
+                BucketName = this._bucket,
+                Prefix = $"{this.Path}/",
+                Delimiter = "/"
+            };
+            var response = this._client.ListObjectsV2Async(listRequest).Result;
+
+            List<int> zoomLevels = new List<int>();
+            foreach (string prefix in response.CommonPrefixes ?? Enumerable.Empty<string>())
+            {
+                // prefix is "{Path}/{zoom}/" — take the last path segment
+                string zoomSegment = prefix.TrimEnd('/').Split('/').Last();
+                if (int.TryParse(zoomSegment, out int zoomLevel) && zoomLevel < Data<IS3Client>.MaxZoomRead)
                 {
                     zoomLevels.Add(zoomLevel);
                 }
             }
+
+            // CommonPrefixes come back lexicographically ("10/" before "2/"); the read path expects
+            // ascending numeric zoom order.
+            zoomLevels.Sort();
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended");
             return zoomLevels;
         }
