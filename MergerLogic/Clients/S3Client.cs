@@ -5,6 +5,7 @@ using MergerLogic.DataTypes;
 using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 using System.Reflection;
 
 namespace MergerLogic.Clients
@@ -154,23 +155,12 @@ namespace MergerLogic.Clients
             string methodName = MethodBase.GetCurrentMethod().Name;
             string keyPrefix = this._pathUtils.GetTilePathWithoutExtension(this.path, z, x, y, true);
 
-            try
-            {
-                var getRequest = new GetObjectRequest { BucketName = this._bucket, Key = keyPrefix };
-                var getObjectTask = this._client.GetObjectAsync(getRequest);
-                string result = getObjectTask.Result.Key;
-                return result;
-            }
-            catch (AggregateException e)
-            {
-                if (IsKeyError(e))
-                {
-                    this._logger.LogDebug($"[{methodName}] error getting key: {e.Message}");
-                    return null;
-                }
-                // In case there are other errors such as connection to S3
-                throw e;
-            }
+            // A single prefixed LIST (MaxKeys=1) resolves existence and the real extension without
+            // downloading the object body the way GetObject did.
+            var listRequest = new ListObjectsV2Request { BucketName = this._bucket, Prefix = keyPrefix, MaxKeys = 1 };
+            this._logger.LogDebug($"[{methodName}] ListObjectsV2Async BucketName: {this._bucket}, Prefix: {keyPrefix}");
+            var listObjectsTask = this._client.ListObjectsV2Async(listRequest);
+            return listObjectsTask.Result.S3Objects.FirstOrDefault()?.Key;
         }
     }
 }
