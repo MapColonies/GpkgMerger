@@ -1,5 +1,6 @@
 using MergerLogic.Batching;
 using MergerLogic.ImageProcessing;
+using System;
 using System.IO.Abstractions;
 using MergerLogic.Utils;
 
@@ -39,7 +40,8 @@ public class FileClient : DataUtils, IFileClient
     {
         // Probe the known extensions directly instead of globbing the directory: File.Exists returns
         // false for a missing tile or missing directory, so no DirectoryNotFound handling is needed.
-        foreach (TileFormat format in new[] { TileFormat.Jpeg, TileFormat.Png })
+        // TileFormat is the source of truth for the supported extensions (declaration order = probe order).
+        foreach (TileFormat format in Enum.GetValues<TileFormat>())
         {
             string candidate = this._fileSystem.Path.Combine(
                 this.path, z.ToString(), x.ToString(), $"{y}.{format.ToString().ToLower()}");
