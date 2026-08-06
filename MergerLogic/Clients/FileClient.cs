@@ -1,4 +1,5 @@
 using MergerLogic.Batching;
+using MergerLogic.ImageProcessing;
 using System.IO.Abstractions;
 using MergerLogic.Utils;
 
@@ -36,16 +37,18 @@ public class FileClient : DataUtils, IFileClient
 
     private string? GetTilePath(int z, int x, int y)
     {
-        var tilePath = this._fileSystem.Path.Join(z.ToString(), x.ToString(), y.ToString());
-        try
+        // Probe the known extensions directly instead of globbing the directory: File.Exists returns
+        // false for a missing tile or missing directory, so no DirectoryNotFound handling is needed.
+        foreach (TileFormat format in new[] { TileFormat.Jpeg, TileFormat.Png })
         {
-            //this may or may not be faster then checking specific files of every supported type depending on the used file system
-            return this._fileSystem.Directory
-                .EnumerateFiles(this.path, $"{tilePath}.*", SearchOption.TopDirectoryOnly).FirstOrDefault();
+            string candidate = this._fileSystem.Path.Combine(
+                this.path, z.ToString(), x.ToString(), $"{y}.{format.ToString().ToLower()}");
+            if (this._fileSystem.File.Exists(candidate))
+            {
+                return candidate;
+            }
         }
-        catch (DirectoryNotFoundException)
-        {
-            return null;
-        }
+
+        return null;
     }
 }
