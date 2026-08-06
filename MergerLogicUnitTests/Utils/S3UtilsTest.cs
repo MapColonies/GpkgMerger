@@ -179,7 +179,6 @@ namespace MergerLogicUnitTests.Utils
             {
                 if (paramType == GetTileParamType.String)
                 {
-                    // GetTile(string key) fetches the object body directly and derives coords from the key.
                     this._amazonS3ClientMock
                         .InSequence(seq)
                         .Setup(s3 => s3.GetObjectAsync(It.Is<GetObjectRequest>(req =>
@@ -192,7 +191,6 @@ namespace MergerLogicUnitTests.Utils
                 }
                 else
                 {
-                    // GetTile(z,x,y) resolves the real key with a single LIST, then one GET.
                     this._pathUtilsMock
                         .InSequence(seq)
                         .Setup(utils => utils.GetTilePathWithoutExtension("test", 0, 0, 0, true))
@@ -239,13 +237,11 @@ namespace MergerLogicUnitTests.Utils
 
                 if (paramType == GetTileParamType.String && !exist)
                 {
-                    // GetTile(key) is not exercised in this combination
                     Assert.IsNull(tile);
                 }
                 else if (!exist)
                 {
                     Assert.IsNull(tile);
-                    // key not found via LIST -> no body GET
                     this._amazonS3ClientMock.Verify(s3 => s3.GetObjectAsync(It.IsAny<GetObjectRequest>(), It.IsAny<CancellationToken>()), Times.Never);
                 }
                 else

@@ -85,8 +85,7 @@ namespace MergerLogic.Clients
             string methodName = MethodBase.GetCurrentMethod().Name;
             this._logger.LogDebug($"[{methodName}] start z: {z}, x: {x}, y: {y}");
 
-            // Resolve the real key (and extension) with a single LIST instead of speculatively
-            // downloading Jpeg-then-Png, which cost up to two full GETs per tile.
+            // Resolve key+extension with one LIST instead of speculatively downloading Jpeg-then-Png (up to two GETs per tile).
             string? key = this.GetTileKey(z, x, y);
             if (key == null)
             {
