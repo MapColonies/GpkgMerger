@@ -81,7 +81,8 @@ namespace MergerLogic.DataTypes
             foreach (string prefix in response.CommonPrefixes ?? Enumerable.Empty<string>())
             {
                 string zoomSegment = prefix.TrimEnd('/').Split('/').Last();
-                if (int.TryParse(zoomSegment, out int zoomLevel) && zoomLevel < Data<IS3Client>.MaxZoomRead)
+                bool parsed = int.TryParse(zoomSegment, out int zoomLevel);
+                if (parsed && zoomLevel < Data<IS3Client>.MaxZoomRead)
                 {
                     zoomLevels.Add(zoomLevel);
                 }
