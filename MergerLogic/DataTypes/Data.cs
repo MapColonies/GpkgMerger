@@ -3,7 +3,6 @@ using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -215,36 +214,18 @@ namespace MergerLogic.DataTypes
                 coordsList.Add(new Coord(i, baseTileX, baseTileY));
             }
 
-            // Async method to request all tiles that can be used for "upscale" concurrently
-            var getUpscaleTiles = async delegate (Coord[] coordsArray)
+            // coordsList runs highest zoom first, so the first hit is the closest ancestor to upscale from.
+            foreach (Coord coord in coordsList)
             {
-                ConcurrentDictionary<int, Tile?> zOrderToTileDictionary = new ConcurrentDictionary<int, Tile?>();
-                // get all tiles concurrently
-                await Parallel.ForEachAsync(coordsArray, async (coord, cancellationToken) =>
+                Tile? tile = this.Utils.GetTile(coord.Z, coord.X, coord.Y);
+                if (tile != null)
                 {
-                    await Task.Run(() =>
-                    {
-                        Tile? tile = this.Utils.GetTile(coord.Z, coord.X, coord.Y);
-                        if (tile != null)
-                        {
-                            zOrderToTileDictionary.TryAdd(coord.Z, tile);
-                        }
-                    }, cancellationToken);
-                });
-                return zOrderToTileDictionary.ToArray();
-            };
-            var response = getUpscaleTiles(coordsList.ToArray());
-            var tilesResponseArray = response.Result;
-            if (tilesResponseArray.Length == 0)
-            {
-                return null;
+                    this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended, lastTile: z:{tile.Z}, x:{tile.X}, y:{tile.Y}");
+                    return tile;
+                }
             }
-            // Get first valid tile that can be upscaled
-            var orderedTilesArray = tilesResponseArray.OrderBy(kvp => kvp.Key);
-            Tile? lastTile = orderedTilesArray.Last().Value;
-            string message = lastTile == null ? "null" : $"z:{lastTile.Z}, x:{lastTile.X}, y:{lastTile.Y}";
-            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended, lastTile: {message}");
-            return lastTile;
+            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended, lastTile: null");
+            return null;
         }
 
         public bool TileExists(Tile tile)
