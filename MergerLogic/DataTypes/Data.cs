@@ -1,4 +1,6 @@
+using Amazon.S3.Model;
 using MergerLogic.Batching;
+using MergerLogic.ImageProcessing;
 using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,9 +43,9 @@ namespace MergerLogic.DataTypes
         public const int MaxZoomRead = 25;
 
         protected delegate int ValFromCoordFunction(Coord coord);
-        protected delegate Tile? GetTileFromXYZFunction(int z, int x, int y);
+        protected delegate Tile? GetTileFromXYZFunction(int z, int x, int y, TileFormat? format);
         protected delegate Coord? GetCoordFromCoordFunction(Coord coord);
-        protected delegate Tile? GetTileFromCoordFunction(Coord coord);
+        protected delegate Tile? GetTileFromCoordFunction(Coord coord, TileFormat? format);
         protected delegate Tile TileConvertorFunction(Tile tile);
         protected delegate Tile? NullableTileConvertorFunction(Tile tile);
         protected IServiceProvider _container;
@@ -125,10 +127,10 @@ namespace MergerLogic.DataTypes
                 {
                     return this.GeoUtils.FlipY(coord);
                 };
-                this.GetTile = (z, x, y) =>
+                this.GetTile = (z, x, y, format) =>
                 {
                     int newY = this.GeoUtils.FlipY(z, y);
-                    Tile? tile = fixedGridGetTileFunction(z, x, newY);
+                    Tile? tile = fixedGridGetTileFunction(z, x, newY, format);
                     //set cords to current origin
                     tile?.SetCoords(z, x, y);
                     return tile;
@@ -197,7 +199,7 @@ namespace MergerLogic.DataTypes
 
         public abstract void Reset();
 
-        protected virtual Tile? InternalGetLastExistingTile(Coord coords)
+        protected virtual Tile? InternalGetLastExistingTile(Coord coords, TileFormat? format)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] started for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}");
             // get tiles coordinates
@@ -224,7 +226,7 @@ namespace MergerLogic.DataTypes
                 {
                     await Task.Run(() =>
                     {
-                        Tile? tile = this.Utils.GetTile(coord.Z, coord.X, coord.Y);
+                        Tile? tile = this.Utils.GetTile(coord.Z, coord.X, coord.Y, format);
                         if (tile != null)
                         {
                             zOrderToTileDictionary.TryAdd(coord.Z, tile);
@@ -247,12 +249,12 @@ namespace MergerLogic.DataTypes
             return lastTile;
         }
 
-        public bool TileExists(Tile tile)
+        public bool TileExists(Tile tile, TileFormat? format)
         {
-            return this.TileExists(tile.GetCoord());
+            return this.TileExists(tile.GetCoord(), format);
         }
 
-        public bool TileExists(Coord coord)
+        public bool TileExists(Coord coord, TileFormat? format)
         {
             coord.Y = this.ConvertOriginCoord(coord);
             Coord? newCoord = this.FromCurrentGridCoord(coord);
@@ -262,43 +264,43 @@ namespace MergerLogic.DataTypes
                 return false;
             }
 
-            return this.Utils.TileExists(newCoord.Z, newCoord.X, newCoord.Y);
+            return this.Utils.TileExists(newCoord.Z, newCoord.X, newCoord.Y, format);
         }
 
         //TODO: move to util after IOC
-        protected Tile? GetLastOneXOneExistingTile(Coord coords)
+        protected Tile? GetLastOneXOneExistingTile(Coord coords, TileFormat? format)
         {
             Coord? newCoords = this.FromCurrentGridCoord(coords);
             if (newCoords is null)
             {
                 return null;
             }
-            Tile? tile = this.InternalGetLastExistingTile(newCoords);
+            Tile? tile = this.InternalGetLastExistingTile(newCoords, format);
             return tile != null ? this.OneXOneConvertor?.ToTwoXOne(tile) : null;
         }
 
-        protected virtual Tile? GetOneXOneTile(int z, int x, int y)
+        protected virtual Tile? GetOneXOneTile(int z, int x, int y, TileFormat? format)
         {
             Coord? oneXoneBaseCoords = this.OneXOneConvertor?.TryFromTwoXOne(z, x, y);
             if (oneXoneBaseCoords == null)
             {
                 return null;
             }
-            Tile? tile = this.Utils.GetTile(oneXoneBaseCoords);
+            Tile? tile = this.Utils.GetTile(oneXoneBaseCoords, format);
             return tile != null ? this.OneXOneConvertor?.ToTwoXOne(tile) : null;
         }
 
         public abstract List<Tile> GetNextBatch(out string batchIdentifier, out string? nextBatchIdentifier, long? totalTilesCount);
 
-        public Tile? GetCorrespondingTile(Coord coords, bool upscale)
+        public Tile? GetCorrespondingTile(Coord coords, TileFormat? format, bool upscale)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] start for coord: z:{coords.Z}, x:{coords.X}, y:{coords.Y}, upscale: {upscale}");
             Stopwatch stopwatch = Stopwatch.StartNew();
-            Tile? correspondingTile = this.GetTile(coords.Z, coords.X, coords.Y);
+            Tile? correspondingTile = this.GetTile(coords.Z, coords.X, coords.Y, format);
 
             if (upscale && correspondingTile == null)
             {
-                correspondingTile = this.GetLastExistingTile(coords);
+                correspondingTile = this.GetLastExistingTile(coords, format);
             }
             stopwatch.Stop();
             this._metricsProvider.TotalFetchTimePerTileHistogram(stopwatch.Elapsed.TotalMilliseconds);

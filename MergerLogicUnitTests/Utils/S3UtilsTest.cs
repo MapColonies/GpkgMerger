@@ -181,7 +181,7 @@ namespace MergerLogicUnitTests.Utils
                 {
                     this._pathUtilsMock
                         .InSequence(seq)
-                        .Setup(utils => utils.GetTilePath("test", 0, 0, 0, TileFormat.Jpeg, true))
+                        .Setup(utils => utils.GetTilePath("test", 0, 0, 0, tileFormat, true))
                         .Returns("key");
                 }
 
@@ -201,7 +201,7 @@ namespace MergerLogicUnitTests.Utils
                     else
                     {
                         this._s3ClientMock.Setup(s3 => s3.GetTile(It.IsAny<int>(), It.IsAny<int>(),
-                            It.IsAny<int>())).Returns(new Tile(cords, data));
+                            It.IsAny<int>(), It.IsAny<TileFormat>())).Returns(new Tile(cords, data));
                     }
                 }
                 else
@@ -242,7 +242,7 @@ namespace MergerLogicUnitTests.Utils
                     if (paramType != GetTileParamType.String)
                     {
                         this._s3ClientMock.Setup(s3 => s3.GetTile(It.IsAny<int>(), It.IsAny<int>(),
-                            It.IsAny<int>())).Returns(new Tile(cords, data));
+                            It.IsAny<int>(), It.IsAny<TileFormat>())).Returns(new Tile(cords, data));
                     }
                 }
                 else
@@ -261,10 +261,10 @@ namespace MergerLogicUnitTests.Utils
                 switch (paramType)
                 {
                     case GetTileParamType.Coord:
-                        tile = s3Utils.GetTile(cords);
+                        tile = s3Utils.GetTile(cords, tileFormat);
                         break;
                     case GetTileParamType.Ints:
-                        tile = s3Utils.GetTile(cords.Z, cords.X, cords.Y);
+                        tile = s3Utils.GetTile(cords.Z, cords.X, cords.Y, tileFormat);
                         break;
                     case GetTileParamType.String:
                         tile = exist ? s3Utils.GetTile("key") : null;
@@ -302,7 +302,7 @@ namespace MergerLogicUnitTests.Utils
                 if (!exist)
                 {
                     this._pathUtilsMock.Verify(utils => utils.GetTilePath(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>(),
-                    It.IsAny<int>(), It.IsAny<TileFormat>(), It.IsAny<bool>()), Times.Exactly(2));
+                    It.IsAny<int>(), It.IsAny<TileFormat>(), It.IsAny<bool>()), Times.Once());
                 }
                 else
                 {

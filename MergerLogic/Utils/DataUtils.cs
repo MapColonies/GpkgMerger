@@ -15,18 +15,19 @@ namespace MergerLogic.Utils
             this.GeoUtils = geoUtils;
         }
 
-        public virtual bool IsValidGrid(bool isOneXOne = false) {
+        public virtual bool IsValidGrid(bool isOneXOne = false)
+        {
             return true;
         }
 
-        public abstract Tile? GetTile(int z, int x, int y);
+        public abstract Tile? GetTile(int z, int x, int y, TileFormat? format);
 
-        public virtual Tile? GetTile(Coord coord)
+        public virtual Tile? GetTile(Coord coord, TileFormat? format)
         {
-            return this.GetTile(coord.Z, coord.X, coord.Y);
+            return this.GetTile(coord.Z, coord.X, coord.Y, format);
         }
 
-        public abstract bool TileExists(int z, int x, int y);
+        public abstract bool TileExists(int z, int x, int y, TileFormat? format);
 
         protected Tile? CreateTile(int z, int x, int y, byte[]? data)
         {

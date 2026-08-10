@@ -1,6 +1,7 @@
 using MergerLogic.Batching;
 using System.IO.Abstractions;
 using MergerLogic.Utils;
+using MergerLogic.ImageProcessing;
 
 namespace MergerLogic.Clients;
 
@@ -8,15 +9,20 @@ public class FileClient : DataUtils, IFileClient
 {
     private readonly IFileSystem _fileSystem;
 
-    public FileClient(string path, IGeoUtils geoUtils, IFileSystem fileSystem) 
+    public FileClient(string path, IGeoUtils geoUtils, IFileSystem fileSystem)
         : base(path, geoUtils)
     {
         this._fileSystem = fileSystem;
     }
 
-    public override Tile? GetTile(int z, int x, int y)
+    public override Tile? GetTile(int z, int x, int y, TileFormat? format)
     {
-        var tilePath = this.GetTilePath(z, x, y);
+        if (format is null)
+        {
+            throw new ArgumentNullException(nameof(format));
+        }
+
+        var tilePath = this.GetTilePath(z, x, y, format.Value);
 
         if (tilePath != null)
         {
@@ -29,23 +35,23 @@ public class FileClient : DataUtils, IFileClient
         }
     }
 
-    public override bool TileExists(int z, int x, int y)
+    public override bool TileExists(int z, int x, int y, TileFormat? format)
     {
-        return this.GetTilePath(z,x,y) != null;
+        if (format is null)
+        {
+            throw new ArgumentNullException(nameof(format));
+        }
+        return this.GetTilePath(z, x, y, format.Value) != null;
     }
 
-    private string? GetTilePath(int z, int x, int y)
+    private string? GetTilePath(int z, int x, int y, TileFormat format)
     {
         var tilePath = this._fileSystem.Path.Join(z.ToString(), x.ToString(), y.ToString());
-        try
+        string fullPath = this._fileSystem.Path.Join(this.path, tilePath, ".", format.ToString().ToLower());
+        if (this._fileSystem.File.Exists(fullPath))
         {
-            //this may or may not be faster then checking specific files of every supported type depending on the used file system
-            return this._fileSystem.Directory
-                .EnumerateFiles(this.path, $"{tilePath}.*", SearchOption.TopDirectoryOnly).FirstOrDefault();
+            return fullPath;
         }
-        catch (DirectoryNotFoundException)
-        {
-            return null;
-        }
+        return null;
     }
 }
