@@ -41,7 +41,7 @@ mclabels:
   gisDomain: raster
   prometheus:
     enabled: true
-    port: 8080
+    port: 9500
 
 enabled: true
 environment: development
@@ -50,6 +50,7 @@ initialDelaySeconds: 60
 nodePort: 30011
 resetOnConfigChange: true
 isExporter: false
+imagePullPolicy: IfNotPresent
 
 cloudProvider:
   dockerRegistryUrl: 'my-registry'
@@ -108,10 +109,10 @@ env:
         taskType: 'tilesMerging'
       - jobType: 'Ingestion_New'
         taskType: 'tilesMerging'
-    pollingTime: 1000
+    pollingTime: 3000
     maxAttempts: 3
   heartbeat:
-    intervalMs: 300
+    intervalMs: 3000
   HTTP:
     retries: 2
   logging:
