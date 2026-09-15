@@ -20,6 +20,15 @@ namespace MergerLogic.ImageProcessing
 
         public Tile? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords, TileFormatStrategy strategy, bool uploadOnly = false)
         {
+            return this.MergeTiles(tiles, targetCoords, strategy, out _, uploadOnly);
+        }
+
+        public Tile? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords, TileFormatStrategy strategy,
+            out MergeStats stats, bool uploadOnly = false)
+        {
+            bool targetUsed = false;
+            bool anySourceUsed = false;
+
             if(uploadOnly) {
                 this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] Configured to upload only mode");
                 // Ignore target if in upload only mode
@@ -30,11 +39,13 @@ namespace MergerLogic.ImageProcessing
                     this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] Only one source was found, using raw image");
                     Tile? rawTile = tiles[0]();
                     rawTile?.ConvertToFormat(strategy.ApplyStrategy(rawTile.Format));
+                    stats = new MergeStats(false, rawTile != null);
                     return rawTile;
                 }
             }
 
-            var images = this.GetImageList(tiles, targetCoords, uploadOnly);
+            bool hasTarget = !uploadOnly && tiles.Count > 0;
+            var images = this.GetImageList(tiles, targetCoords, uploadOnly, hasTarget, out targetUsed, out anySourceUsed);
             IMagickImage<byte> image;
 
             switch (images.Count)
@@ -42,6 +53,7 @@ namespace MergerLogic.ImageProcessing
                 case 0:
                     // There are no images
                     this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] No images where found return null");
+                    stats = new MergeStats(targetUsed, anySourceUsed);
                     return null;
                 case 1:
                     ImageFormatter.RemoveImageDateAttributes(images[0]);
@@ -73,14 +85,18 @@ namespace MergerLogic.ImageProcessing
             Tile tile = new Tile(targetCoords, image);
             image.Dispose();
             tile.ConvertToFormat(strategy.ApplyStrategy(tile.Format));
+            stats = new MergeStats(targetUsed, anySourceUsed);
             return tile;
         }
 
-        private List<MagickImage> GetImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords, bool uploadOnly)
+        private List<MagickImage> GetImageList(List<CorrespondingTileBuilder> tiles, Coord targetCoords, bool uploadOnly,
+            bool hasTarget, out bool targetUsed, out bool anySourceUsed)
         {
             var images = new List<MagickImage>();
             int i = tiles.Count - 1;
             Tile? tile = null;
+            targetUsed = false;
+            anySourceUsed = false;
 
             bool hasAlpha = false;
             try
@@ -100,7 +116,20 @@ namespace MergerLogic.ImageProcessing
                         continue;
                     }
 
+                    int before = images.Count;
                     this.AddTileToImageList(targetCoords, tile, images, out hasAlpha);
+                    if (images.Count > before)
+                    {
+                        if (hasTarget && i == 0)
+                        {
+                            targetUsed = true;
+                        }
+                        else
+                        {
+                            anySourceUsed = true;
+                        }
+                    }
+
                     if (!hasAlpha)
                     {
                         return images;
