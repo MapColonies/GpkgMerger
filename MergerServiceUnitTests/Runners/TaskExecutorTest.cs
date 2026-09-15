@@ -195,10 +195,13 @@ namespace MergerLogicUnitTests.Utils
             ));
         }
 
+        // Integration/wiring test: verifies ExecuteTask feeds RecordOutcome the right inputs
+        // (existedBefore, tile produced, MergeStats) and writes the resulting report.
+        // The exhaustive added/merged/replaced/skipped classification permutations live in MergeReportTest.
         [TestMethod]
         [TestCategory("unit")]
         [TestCategory("runners")]
-        public void ExecuteTask_ExistingTargetTileBlended_CountsAsMerged()
+        public void ExecuteTask_ClassifiesTileAndWritesReport()
         {
             this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "batchSize", "batchMaxSize")).Returns(1);
             this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<bool>("GENERAL", "batchSize", "limitBatchSize")).Returns(true);
@@ -219,6 +222,7 @@ namespace MergerLogicUnitTests.Utils
                 testSource.Grid, testSource.Origin, testSource.Extent, It.IsAny<bool>())
             ).Returns(sourceDataMock.Object);
 
+            // target already has this tile → existedBefore == true; merger reports target blended → merged
             targetDataMock.Setup(targetData => targetData.TileExists(It.IsAny<Coord>())).Returns(true);
 
             TileBounds tileBounds = new TileBounds(1, 1, 1, 1, 1);
@@ -226,7 +230,7 @@ namespace MergerLogicUnitTests.Utils
               new MergeMetadata(TileFormat.Jpeg, false, new TileBounds[] { tileBounds }, new Source[] { testTarget, testSource }),
               Status.PENDING, null, "reason", 0, "jobId", true, new DateTime(), new DateTime());
 
-            MergeStats outStats = new MergeStats(true, true);
+            MergeStats outStats = new MergeStats(targetUsed: true, anySourceUsed: true);
             this._tileMergerMock.Setup(m => m.MergeTiles(
                 It.IsAny<List<CorrespondingTileBuilder>>(), It.IsAny<Coord>(),
                 It.IsAny<TileFormatStrategy>(), out outStats, It.IsAny<bool>())
@@ -242,228 +246,12 @@ namespace MergerLogicUnitTests.Utils
 
             testTaskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, null, "reports");
 
+            this._reportWriterMock.Verify(w => w.WriteReport(It.IsAny<MergeReport>(), "reports"), Times.Once);
             Assert.IsNotNull(captured);
             Assert.AreEqual(1, captured.Merged);
             Assert.AreEqual(0, captured.Added);
             Assert.AreEqual(0, captured.Replaced);
             Assert.AreEqual(0, captured.Skipped);
-        }
-
-        [TestMethod]
-        [TestCategory("unit")]
-        [TestCategory("runners")]
-        public void ExecuteTask_NewTargetTile_CountsAsAdded()
-        {
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "batchSize", "batchMaxSize")).Returns(1);
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<bool>("GENERAL", "batchSize", "limitBatchSize")).Returns(true);
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "batchMaxBytes")).Returns(1);
-
-            byte[] tileBytes = File.ReadAllBytes("tile.jpeg");
-            Source testTarget = new Source("target", "target_type", new Extent(), GridOrigin.UPPER_LEFT, Grid.TwoXOne);
-            Source testSource = new Source("source", "source_type");
-            Mock<IData> targetDataMock = this._mockRepository.Create<IData>();
-            Mock<IData> sourceDataMock = this._mockRepository.Create<IData>();
-
-            this._dataFactoryMock.Setup(dataFactory => dataFactory.CreateDataSource(
-                testTarget.Type, testTarget.Path, It.IsAny<int>(),
-                testTarget.Grid, testTarget.Origin, testTarget.Extent, It.IsAny<bool>())
-            ).Returns(targetDataMock.Object);
-            this._dataFactoryMock.Setup(dataFactory => dataFactory.CreateDataSource(
-                testSource.Type, testSource.Path, It.IsAny<int>(),
-                testSource.Grid, testSource.Origin, testSource.Extent, It.IsAny<bool>())
-            ).Returns(sourceDataMock.Object);
-
-            targetDataMock.Setup(targetData => targetData.TileExists(It.IsAny<Coord>())).Returns(false);
-
-            TileBounds tileBounds = new TileBounds(1, 1, 1, 1, 1);
-            var testTask = new MergeTask("id", "type", "description",
-              new MergeMetadata(TileFormat.Jpeg, false, new TileBounds[] { tileBounds }, new Source[] { testTarget, testSource }),
-              Status.PENDING, null, "reason", 0, "jobId", true, new DateTime(), new DateTime());
-
-            MergeStats outStats = new MergeStats(false, true);
-            this._tileMergerMock.Setup(m => m.MergeTiles(
-                It.IsAny<List<CorrespondingTileBuilder>>(), It.IsAny<Coord>(),
-                It.IsAny<TileFormatStrategy>(), out outStats, It.IsAny<bool>())
-            ).Returns(new Tile(new Coord(1, 1, 1), tileBytes));
-
-            MergeReport captured = null;
-            this._reportWriterMock.Setup(w => w.WriteReport(It.IsAny<MergeReport>(), "reports"))
-                .Callback<MergeReport, string>((r, p) => captured = r);
-
-            var testTaskExecutor = new TaskExecutor(_dataFactoryMock.Object, _tileMergerMock.Object, _timeUtilsMock.Object,
-              _configurationManagerMock.Object, _taskExecutorLoggerMock.Object, _testActivitySource, _testFileSystem,
-              _metricsProviderMock.Object, _reportWriterMock.Object);
-
-            testTaskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, null, "reports");
-
-            Assert.IsNotNull(captured);
-            Assert.AreEqual(1, captured.Added);
-            Assert.AreEqual(1, captured.AddedTiles.Count);
-            Assert.AreEqual(1, captured.AddedTiles[0].Z);
-            Assert.AreEqual(1, captured.AddedTiles[0].X);
-            Assert.AreEqual(1, captured.AddedTiles[0].Y);
-            Assert.AreEqual(0, captured.Merged);
-            Assert.AreEqual(0, captured.Replaced);
-        }
-
-        [TestMethod]
-        [TestCategory("unit")]
-        [TestCategory("runners")]
-        public void ExecuteTask_OpaqueSourceOverExisting_CountsAsReplaced()
-        {
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "batchSize", "batchMaxSize")).Returns(1);
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<bool>("GENERAL", "batchSize", "limitBatchSize")).Returns(true);
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "batchMaxBytes")).Returns(1);
-
-            byte[] tileBytes = File.ReadAllBytes("tile.jpeg");
-            Source testTarget = new Source("target", "target_type", new Extent(), GridOrigin.UPPER_LEFT, Grid.TwoXOne);
-            Source testSource = new Source("source", "source_type");
-            Mock<IData> targetDataMock = this._mockRepository.Create<IData>();
-            Mock<IData> sourceDataMock = this._mockRepository.Create<IData>();
-
-            this._dataFactoryMock.Setup(dataFactory => dataFactory.CreateDataSource(
-                testTarget.Type, testTarget.Path, It.IsAny<int>(),
-                testTarget.Grid, testTarget.Origin, testTarget.Extent, It.IsAny<bool>())
-            ).Returns(targetDataMock.Object);
-            this._dataFactoryMock.Setup(dataFactory => dataFactory.CreateDataSource(
-                testSource.Type, testSource.Path, It.IsAny<int>(),
-                testSource.Grid, testSource.Origin, testSource.Extent, It.IsAny<bool>())
-            ).Returns(sourceDataMock.Object);
-
-            targetDataMock.Setup(targetData => targetData.TileExists(It.IsAny<Coord>())).Returns(true);
-
-            TileBounds tileBounds = new TileBounds(1, 1, 1, 1, 1);
-            var testTask = new MergeTask("id", "type", "description",
-              new MergeMetadata(TileFormat.Jpeg, false, new TileBounds[] { tileBounds }, new Source[] { testTarget, testSource }),
-              Status.PENDING, null, "reason", 0, "jobId", true, new DateTime(), new DateTime());
-
-            MergeStats outStats = new MergeStats(false, true);
-            this._tileMergerMock.Setup(m => m.MergeTiles(
-                It.IsAny<List<CorrespondingTileBuilder>>(), It.IsAny<Coord>(),
-                It.IsAny<TileFormatStrategy>(), out outStats, It.IsAny<bool>())
-            ).Returns(new Tile(new Coord(1, 1, 1), tileBytes));
-
-            MergeReport captured = null;
-            this._reportWriterMock.Setup(w => w.WriteReport(It.IsAny<MergeReport>(), "reports"))
-                .Callback<MergeReport, string>((r, p) => captured = r);
-
-            var testTaskExecutor = new TaskExecutor(_dataFactoryMock.Object, _tileMergerMock.Object, _timeUtilsMock.Object,
-              _configurationManagerMock.Object, _taskExecutorLoggerMock.Object, _testActivitySource, _testFileSystem,
-              _metricsProviderMock.Object, _reportWriterMock.Object);
-
-            testTaskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, null, "reports");
-
-            Assert.IsNotNull(captured);
-            Assert.AreEqual(1, captured.Replaced);
-            Assert.AreEqual(0, captured.Added);
-            Assert.AreEqual(0, captured.Merged);
-        }
-
-        [TestMethod]
-        [TestCategory("unit")]
-        [TestCategory("runners")]
-        public void ExecuteTask_MergeReturnsNull_CountsAsSkipped()
-        {
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "batchSize", "batchMaxSize")).Returns(1);
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<bool>("GENERAL", "batchSize", "limitBatchSize")).Returns(true);
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "batchMaxBytes")).Returns(1);
-
-            Source testTarget = new Source("target", "target_type", new Extent(), GridOrigin.UPPER_LEFT, Grid.TwoXOne);
-            Source testSource = new Source("source", "source_type");
-            Mock<IData> targetDataMock = this._mockRepository.Create<IData>();
-            Mock<IData> sourceDataMock = this._mockRepository.Create<IData>();
-
-            this._dataFactoryMock.Setup(dataFactory => dataFactory.CreateDataSource(
-                testTarget.Type, testTarget.Path, It.IsAny<int>(),
-                testTarget.Grid, testTarget.Origin, testTarget.Extent, It.IsAny<bool>())
-            ).Returns(targetDataMock.Object);
-            this._dataFactoryMock.Setup(dataFactory => dataFactory.CreateDataSource(
-                testSource.Type, testSource.Path, It.IsAny<int>(),
-                testSource.Grid, testSource.Origin, testSource.Extent, It.IsAny<bool>())
-            ).Returns(sourceDataMock.Object);
-
-            targetDataMock.Setup(targetData => targetData.TileExists(It.IsAny<Coord>())).Returns(false);
-
-            TileBounds tileBounds = new TileBounds(1, 1, 1, 1, 1);
-            var testTask = new MergeTask("id", "type", "description",
-              new MergeMetadata(TileFormat.Jpeg, false, new TileBounds[] { tileBounds }, new Source[] { testTarget, testSource }),
-              Status.PENDING, null, "reason", 0, "jobId", true, new DateTime(), new DateTime());
-
-            MergeStats outStats = new MergeStats(false, false);
-            this._tileMergerMock.Setup(m => m.MergeTiles(
-                It.IsAny<List<CorrespondingTileBuilder>>(), It.IsAny<Coord>(),
-                It.IsAny<TileFormatStrategy>(), out outStats, It.IsAny<bool>())
-            ).Returns((Tile)null);
-
-            MergeReport captured = null;
-            this._reportWriterMock.Setup(w => w.WriteReport(It.IsAny<MergeReport>(), "reports"))
-                .Callback<MergeReport, string>((r, p) => captured = r);
-
-            var testTaskExecutor = new TaskExecutor(_dataFactoryMock.Object, _tileMergerMock.Object, _timeUtilsMock.Object,
-              _configurationManagerMock.Object, _taskExecutorLoggerMock.Object, _testActivitySource, _testFileSystem,
-              _metricsProviderMock.Object, _reportWriterMock.Object);
-
-            testTaskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, null, "reports");
-
-            Assert.IsNotNull(captured);
-            Assert.AreEqual(1, captured.Skipped);
-            Assert.AreEqual(0, captured.Added);
-            Assert.AreEqual(0, captured.Merged);
-            Assert.AreEqual(0, captured.Replaced);
-        }
-
-        [TestMethod]
-        [TestCategory("unit")]
-        [TestCategory("runners")]
-        public void ExecuteTask_TileWithNoSourceData_CountsAsSkipped()
-        {
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "batchSize", "batchMaxSize")).Returns(1);
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<bool>("GENERAL", "batchSize", "limitBatchSize")).Returns(true);
-            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "batchMaxBytes")).Returns(1);
-
-            byte[] tileBytes = File.ReadAllBytes("tile.jpeg");
-            Source testTarget = new Source("target", "target_type", new Extent(), GridOrigin.UPPER_LEFT, Grid.TwoXOne);
-            Source testSource = new Source("source", "source_type");
-            Mock<IData> targetDataMock = this._mockRepository.Create<IData>();
-            Mock<IData> sourceDataMock = this._mockRepository.Create<IData>();
-
-            this._dataFactoryMock.Setup(dataFactory => dataFactory.CreateDataSource(
-                testTarget.Type, testTarget.Path, It.IsAny<int>(),
-                testTarget.Grid, testTarget.Origin, testTarget.Extent, It.IsAny<bool>())
-            ).Returns(targetDataMock.Object);
-            this._dataFactoryMock.Setup(dataFactory => dataFactory.CreateDataSource(
-                testSource.Type, testSource.Path, It.IsAny<int>(),
-                testSource.Grid, testSource.Origin, testSource.Extent, It.IsAny<bool>())
-            ).Returns(sourceDataMock.Object);
-
-            targetDataMock.Setup(targetData => targetData.TileExists(It.IsAny<Coord>())).Returns(false);
-
-            TileBounds tileBounds = new TileBounds(1, 1, 1, 1, 1);
-            var testTask = new MergeTask("id", "type", "description",
-              new MergeMetadata(TileFormat.Jpeg, false, new TileBounds[] { tileBounds }, new Source[] { testTarget, testSource }),
-              Status.PENDING, null, "reason", 0, "jobId", true, new DateTime(), new DateTime());
-
-            MergeStats outStats = new MergeStats(targetUsed: true, anySourceUsed: false);
-            this._tileMergerMock.Setup(m => m.MergeTiles(
-                It.IsAny<List<CorrespondingTileBuilder>>(), It.IsAny<Coord>(),
-                It.IsAny<TileFormatStrategy>(), out outStats, It.IsAny<bool>())
-            ).Returns(new Tile(new Coord(1, 1, 1), tileBytes));
-
-            MergeReport captured = null;
-            this._reportWriterMock.Setup(w => w.WriteReport(It.IsAny<MergeReport>(), "reports"))
-                .Callback<MergeReport, string>((r, p) => captured = r);
-
-            var testTaskExecutor = new TaskExecutor(_dataFactoryMock.Object, _tileMergerMock.Object, _timeUtilsMock.Object,
-              _configurationManagerMock.Object, _taskExecutorLoggerMock.Object, _testActivitySource, _testFileSystem,
-              _metricsProviderMock.Object, _reportWriterMock.Object);
-
-            testTaskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, null, "reports");
-
-            Assert.IsNotNull(captured);
-            Assert.AreEqual(1, captured.Skipped);
-            Assert.AreEqual(0, captured.Added);
-            Assert.AreEqual(0, captured.Merged);
-            Assert.AreEqual(0, captured.Replaced);
         }
 
         private Tuple<MergeTask, Mock<IData>, Tile[]> SetupTestTask(int amountOfSources, bool isTargetNew)

@@ -177,26 +177,10 @@ namespace MergerService.Runners
                                     tileMergeStopwatch.Stop();
                                     this._metricsProvider.MergeTimePerTileHistogram(tileMergeStopwatch.Elapsed.TotalSeconds, metadata.TargetFormat);
 
+                                    report.RecordOutcome(coord, existedBefore, tile != null, stats);
+
                                     if (tile != null)
                                     {
-                                        if (!stats.AnySourceUsed)
-                                        {
-                                            // No source contributed data → not counted as a real change (skipped), even if the target coord was empty before.
-                                            report.RecordSkipped();
-                                        }
-                                        else if (!existedBefore)
-                                        {
-                                            report.RecordAdded(new Coord(coord.Z, coord.X, coord.Y));
-                                        }
-                                        else if (stats.TargetUsed)
-                                        {
-                                            report.RecordMerged();
-                                        }
-                                        else
-                                        {
-                                            report.RecordReplaced();
-                                        }
-
                                         tiles.Add(tile);
                                         currentBatchBytes += tile.Size();
 
@@ -209,10 +193,6 @@ namespace MergerService.Runners
                                             tiles.Clear();
                                             currentBatchBytes = 0;
                                         }
-                                    }
-                                    else
-                                    {
-                                        report.RecordSkipped();
                                     }
 
                                     tileProgressCount++;
