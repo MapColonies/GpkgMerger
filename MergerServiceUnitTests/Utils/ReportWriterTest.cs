@@ -3,9 +3,11 @@ using Amazon.S3.Model;
 using MergerLogic.Utils;
 using MergerService.Models.Reports;
 using MergerService.Utils;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using System;
 using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 using System.Linq;
@@ -21,6 +23,7 @@ namespace MergerServiceUnitTests.Utils
         private Mock<IConfigurationManager> _config;
         private Mock<ILogger<ReportWriter>> _logger;
         private Mock<IAmazonS3> _s3;
+        private Mock<IServiceProvider> _serviceProvider;
 
         [TestInitialize]
         public void BeforeEach()
@@ -28,6 +31,8 @@ namespace MergerServiceUnitTests.Utils
             this._config = new Mock<IConfigurationManager>(MockBehavior.Loose);
             this._logger = new Mock<ILogger<ReportWriter>>(MockBehavior.Loose);
             this._s3 = new Mock<IAmazonS3>(MockBehavior.Loose);
+            this._serviceProvider = new Mock<IServiceProvider>(MockBehavior.Loose);
+            this._serviceProvider.Setup(sp => sp.GetService(typeof(IAmazonS3))).Returns(this._s3.Object);
         }
 
         private MergeReport BuildReport()
@@ -42,7 +47,7 @@ namespace MergerServiceUnitTests.Utils
         {
             this._config.Setup(c => c.GetConfiguration("REPORT", "sink")).Returns("FS");
             var fs = new MockFileSystem();
-            var writer = new ReportWriter(this._config.Object, fs, this._s3.Object, this._logger.Object);
+            var writer = new ReportWriter(this._config.Object, fs, this._serviceProvider.Object, this._logger.Object);
 
             writer.WriteReport(this.BuildReport(), "/reports");
 
@@ -59,7 +64,7 @@ namespace MergerServiceUnitTests.Utils
             this._s3.Setup(s => s.PutObjectAsync(It.IsAny<PutObjectRequest>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(new PutObjectResponse());
             var fs = new MockFileSystem();
-            var writer = new ReportWriter(this._config.Object, fs, this._s3.Object, this._logger.Object);
+            var writer = new ReportWriter(this._config.Object, fs, this._serviceProvider.Object, this._logger.Object);
 
             writer.WriteReport(this.BuildReport(), "reports");
 
@@ -72,7 +77,7 @@ namespace MergerServiceUnitTests.Utils
         public void EmptyPath_IsNoOp()
         {
             var fs = new MockFileSystem();
-            var writer = new ReportWriter(this._config.Object, fs, this._s3.Object, this._logger.Object);
+            var writer = new ReportWriter(this._config.Object, fs, this._serviceProvider.Object, this._logger.Object);
 
             writer.WriteReport(this.BuildReport(), null);
             writer.WriteReport(this.BuildReport(), "");

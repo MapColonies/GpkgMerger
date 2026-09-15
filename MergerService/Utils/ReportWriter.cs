@@ -2,6 +2,7 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using MergerLogic.Utils;
 using MergerService.Models.Reports;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.IO.Abstractions;
 using System.Reflection;
@@ -12,15 +13,15 @@ namespace MergerService.Utils
     {
         private readonly IConfigurationManager _configuration;
         private readonly IFileSystem _fileSystem;
-        private readonly IAmazonS3 _s3;
+        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ReportWriter> _logger;
 
-        public ReportWriter(IConfigurationManager configuration, IFileSystem fileSystem, IAmazonS3 s3,
+        public ReportWriter(IConfigurationManager configuration, IFileSystem fileSystem, IServiceProvider serviceProvider,
             ILogger<ReportWriter> logger)
         {
             this._configuration = configuration;
             this._fileSystem = fileSystem;
-            this._s3 = s3;
+            this._serviceProvider = serviceProvider;
             this._logger = logger;
         }
 
@@ -67,7 +68,8 @@ namespace MergerService.Utils
                 ContentBody = json,
                 ContentType = "application/json"
             };
-            var res = this._s3.PutObjectAsync(request).Result;
+            var s3 = this._serviceProvider.GetRequiredService<IAmazonS3>();
+            s3.PutObjectAsync(request).Wait();
         }
     }
 }
