@@ -865,6 +865,11 @@ namespace MergerService.Runners
 }
 ```
 
+**IMPORTANT — existing call sites to update (compile breakers):**
+- `MergerServiceUnitTests/Runners/TaskExecutorTest.cs` constructs `TaskExecutor` in **two** places (in `WhenGivenSourcesWithOneTile...` and `WhenConfiguringBatchLimits...`). Add an `IReportWriter` mock in `BeforeEach` and pass `reportWriterMock.Object` as the new final ctor arg at both sites.
+- The same two tests call `ExecuteTask(testTask, _taskUtilsMock.Object, null)` — add the 4th arg → `ExecuteTask(testTask, _taskUtilsMock.Object, null, null)`.
+- `MockRepository` is `Loose` and there is no `VerifyAll()`, so the new `target.TileExists(coord)` call in `ExecuteTask` (unmocked → returns `false`) does not break these existing tests.
+
 - [ ] **Step 4: Wire the writer + report into `TaskExecutor`**
 
 In `TaskExecutor.cs`:
