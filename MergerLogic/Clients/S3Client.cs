@@ -5,7 +5,7 @@ using MergerLogic.DataTypes;
 using MergerLogic.ImageProcessing;
 using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
-using System.Linq;
+using System.Net;
 using System.Reflection;
 
 namespace MergerLogic.Clients
@@ -29,6 +29,10 @@ namespace MergerLogic.Clients
             this._storageClass = new S3StorageClass(storageClass ?? S3StorageClass.Standard);
         }
 
+        // Read paths don't know a tile's extension ahead of time, so existence is probed against
+        // these candidates in order (matches the historical Jpeg-then-Png GetTile lookup).
+        private static readonly TileFormat[] _readFormats = { TileFormat.Jpeg, TileFormat.Png };
+
         private bool IsKeyError(Exception e)
         {
             if (e is AmazonS3Exception ex)
@@ -40,8 +44,20 @@ namespace MergerLogic.Clients
             {
                 return en.ErrorCode == "NoSuchKey";
             }
-            
+
             return false;
+        }
+
+        // HEAD returns 404 (not the GET "NoSuchKey") for a missing object.
+        private bool IsKeyNotFound(Exception e)
+        {
+            AmazonS3Exception? ex = e as AmazonS3Exception ?? e.InnerException as AmazonS3Exception;
+            if (ex is null)
+            {
+                return false;
+            }
+
+            return ex.StatusCode == HttpStatusCode.NotFound || ex.ErrorCode == "NoSuchKey";
         }
 
         private byte[]? GetImageBytes(string key)
@@ -150,17 +166,44 @@ namespace MergerLogic.Clients
             this._logger.LogDebug($"[{methodName}] end {tile.ToString()}");
         }
 
+        // Resolves existence and the real extension with a HEAD per candidate format. HEAD is an
+        // O(1) key lookup; a prefix LIST would scan the bucket index, which does not scale on the
+        // billions-of-objects bucket (MAPCO-7954).
         private string? GetTileKey(int z, int x, int y)
         {
-            string methodName = MethodBase.GetCurrentMethod().Name;
-            string keyPrefix = this._pathUtils.GetTilePathWithoutExtension(this.path, z, x, y, true);
+            foreach (TileFormat format in _readFormats)
+            {
+                string key = this._pathUtils.GetTilePath(this.path, z, x, y, format, true);
+                if (this.KeyExists(key))
+                {
+                    return key;
+                }
+            }
 
-            // A single prefixed LIST (MaxKeys=1) resolves existence and the real extension without
-            // downloading the object body the way GetObject did.
-            var listRequest = new ListObjectsV2Request { BucketName = this._bucket, Prefix = keyPrefix, MaxKeys = 1 };
-            this._logger.LogDebug($"[{methodName}] ListObjectsV2Async BucketName: {this._bucket}, Prefix: {keyPrefix}");
-            var listObjectsTask = this._client.ListObjectsV2Async(listRequest);
-            return listObjectsTask.Result.S3Objects.FirstOrDefault()?.Key;
+            return null;
+        }
+
+        private bool KeyExists(string key)
+        {
+            string methodName = MethodBase.GetCurrentMethod().Name;
+            try
+            {
+                var request = new GetObjectMetadataRequest { BucketName = this._bucket, Key = key };
+                this._logger.LogDebug($"[{methodName}] GetObjectMetadataAsync BucketName: {this._bucket}, Key: {key}");
+                var task = this._client.GetObjectMetadataAsync(request);
+                _ = task.Result;
+                return true;
+            }
+            catch (AggregateException e)
+            {
+                if (IsKeyNotFound(e))
+                {
+                    this._logger.LogDebug($"[{methodName}] key not found: {key}");
+                    return false;
+                }
+                // In case there are other errors such as connection to S3
+                throw e;
+            }
         }
     }
 }
