@@ -73,7 +73,7 @@ namespace MergerLogicUnitTests.Utils
         Status.PENDING, 0, "reason", 0, "testJobId", true, new DateTime(), new DateTime());
 
       this._taskUtilsMock.Setup(taskUtils => taskUtils.GetTask(It.IsAny<string>(), It.IsAny<string>())).Returns(testTask);
-      this._taskExecutorMock.Setup(taskExecutor => taskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, It.IsAny<string?>()));
+      this._taskExecutorMock.Setup(taskExecutor => taskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, It.IsAny<string?>(), It.IsAny<string?>()));
 
       var testTaskRunner = new TaskRunner(_taskExecutorMock.Object, _jobUtilsMock.Object, _loggerMock.Object,
         _taskUtilsMock.Object, _heartbeatClientMock.Object, _metricsProviderMock.Object,
@@ -95,7 +95,7 @@ namespace MergerLogicUnitTests.Utils
         Status.PENDING, 0, "reason", 0, "testJobId", true, new DateTime(), new DateTime());
 
       this._taskUtilsMock.Setup(taskUtils => taskUtils.GetTask(It.IsAny<string>(), It.IsAny<string>())).Returns(testTask);
-      this._taskExecutorMock.Setup(taskExecutor => taskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, It.IsAny<string?>())).Throws(new Exception(testFailureMessage));
+      this._taskExecutorMock.Setup(taskExecutor => taskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, It.IsAny<string?>(), It.IsAny<string?>())).Throws(new Exception(testFailureMessage));
 
       var testTaskRunner = new TaskRunner(_taskExecutorMock.Object, _jobUtilsMock.Object, _loggerMock.Object,
         _taskUtilsMock.Object, _heartbeatClientMock.Object, _metricsProviderMock.Object,

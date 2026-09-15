@@ -114,7 +114,7 @@ namespace MergerService.Runners
             try
             {
                 this._heartbeatClient.Start(task.Id);
-                this._taskExecutor.ExecuteTask(task, this._taskUtils, managerCallbackUrl);
+                this._taskExecutor.ExecuteTask(task, this._taskUtils, managerCallbackUrl, null);
                 taskSucceed = true;
             }
             catch (Exception e)
