@@ -181,7 +181,7 @@ namespace MergerService.Runners
                                     {
                                         if (!stats.AnySourceUsed)
                                         {
-                                            // target re-encode with no source data — not a real change
+                                            // No source contributed data → not counted as a real change (skipped), even if the target coord was empty before.
                                             report.RecordSkipped();
                                         }
                                         else if (!existedBefore)
