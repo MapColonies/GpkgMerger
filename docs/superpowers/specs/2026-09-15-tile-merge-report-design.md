@@ -123,11 +123,17 @@ Notes / edge cases:
 
 Log line = same object **without** `addedTiles`.
 
-## Error handling
+## Error handling — OPEN QUESTION (raise on the implementation PR)
 
-- Report writing is best-effort: any exception in serialization/sink write is logged
-  and swallowed; task success is unaffected.
-- Absent `ReportOutputPath` → log line only.
+Do **not** bake this in as decided. Post it as an open-question comment on the
+implementation PR for reviewer input:
+
+> Should a failure to write the report artifact (serialization / sink error) be
+> best-effort (log + swallow, task still succeeds), or should it fail/reject the task?
+> Best-effort is the proposed default, but the report may be a downstream dependency —
+> confirm before finalizing.
+
+- Absent `ReportOutputPath` → log line only (not in question; this is settled).
 
 ## Testing
 
@@ -144,8 +150,8 @@ Log line = same object **without** `addedTiles`.
   Jira ticket (see below), which also covers auditing/cleaning existing metrics and
   organizing the dashboards.
 
-## Follow-up ticket (drafted, pending confirmation)
+## Follow-up ticket
 
-MAPCO ticket to: add added/merged/replaced counts (and percentage-of-total per
-category) as Prometheus metrics and to the dashboard; and audit, clean up, and
-reorganize existing metrics + dashboards.
+**MAPCO-11688** — add added/merged/replaced counts (and percentage-of-total per
+category) as Prometheus metrics and to the dashboard; audit, clean up, and reorganize
+existing metrics + dashboards.
