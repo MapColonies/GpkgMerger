@@ -1,5 +1,6 @@
 using MergerLogic.DataTypes;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace MergerService.Models.Reports
 {
@@ -65,7 +66,8 @@ namespace MergerService.Models.Reports
             }
         }
 
-        public string ToJson() => JsonConvert.SerializeObject(this, Formatting.None);
+        public string ToJson() => JsonConvert.SerializeObject(this, Formatting.None,
+            new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });
 
         // Summary for the structured log line: counts + percentages, WITHOUT the added-tile list.
         public string ToLogString()
