@@ -407,6 +407,7 @@ Create `MergerService/Models/Reports/MergeReport.cs`:
 ```csharp
 using MergerLogic.DataTypes;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace MergerService.Models.Reports
 {
@@ -471,7 +472,9 @@ namespace MergerService.Models.Reports
             }
         }
 
-        public string ToJson() => JsonConvert.SerializeObject(this, Formatting.None);
+        // camelCase so the artifact matches the spec JSON shape (jobId, counts, z/x/y)
+        public string ToJson() => JsonConvert.SerializeObject(this, Formatting.None,
+            new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });
 
         // Summary for the structured log line: counts + percentages, WITHOUT the added-tile list.
         public string ToLogString()
@@ -494,13 +497,7 @@ namespace MergerService.Models.Reports
 }
 ```
 
-Note: `ToJson()` serializes `AddedTiles` (property name `addedTiles` via camelCase is NOT applied by default in Newtonsoft — the test parses `json["addedTiles"]`). To match, add `[JsonProperty("addedTiles")]` on `AddedTiles` and `[JsonProperty("added")]` etc. only where the test asserts specific names. Concretely add these attributes:
-
-```csharp
-[JsonProperty("addedTiles")] public List<Coord> AddedTiles { get; } = new List<Coord>();
-```
-
-And in `ToJson()` the top-level `added` count is asserted in the log-string test only (which uses the anonymous object). For `ToJson` the test only checks `addedTiles`, so the single attribute above is sufficient.
+Note: `ToJson()` uses `CamelCasePropertyNamesContractResolver`, so all property/field names serialize camelCase (`jobId`, `addedTiles`, and `Coord` → `z/x/y`), matching the spec's artifact shape. The explicit `[JsonProperty("addedTiles")]` on `AddedTiles` is kept but redundant under the resolver.
 
 - [ ] **Step 4: Run to verify pass**
 
