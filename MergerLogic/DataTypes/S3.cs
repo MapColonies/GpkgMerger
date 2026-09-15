@@ -5,6 +5,7 @@ using MergerLogic.Clients;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 using System.Reflection;
 
 namespace MergerLogic.DataTypes
@@ -67,15 +68,28 @@ namespace MergerLogic.DataTypes
         private List<int> GetZoomLevels()
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] start");
-            List<int> zoomLevels = new List<int>();
 
-            for (int zoomLevel = 0; zoomLevel < Data<IS3Client>.MaxZoomRead; zoomLevel++)
+            var listRequest = new ListObjectsV2Request
             {
-                if (this.FolderExists($"{zoomLevel}/"))
+                BucketName = this._bucket,
+                Prefix = $"{this.Path}/",
+                Delimiter = "/"
+            };
+            var response = this._client.ListObjectsV2Async(listRequest).Result;
+
+            List<int> zoomLevels = new List<int>();
+            foreach (string prefix in response.CommonPrefixes ?? Enumerable.Empty<string>())
+            {
+                string zoomSegment = prefix.TrimEnd('/').Split('/').Last();
+                bool parsed = int.TryParse(zoomSegment, out int zoomLevel);
+                if (parsed && zoomLevel < Data<IS3Client>.MaxZoomRead)
                 {
                     zoomLevels.Add(zoomLevel);
                 }
             }
+
+            // CommonPrefixes sort lexicographically ("10/" before "2/"); the read path needs numeric order.
+            zoomLevels.Sort();
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended");
             return zoomLevels;
         }
