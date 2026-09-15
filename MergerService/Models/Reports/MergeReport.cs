@@ -1,4 +1,5 @@
 using MergerLogic.DataTypes;
+using MergerLogic.ImageProcessing;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
@@ -40,15 +41,43 @@ namespace MergerService.Models.Reports
             this.IsNewTarget = isNewTarget;
         }
 
-        public void RecordAdded(Coord coord)
+        // Classifies a single merged tile into added / merged / replaced / skipped.
+        // added = tile didn't exist in target before the merge; merged = existed and the
+        // target was blended with source data; replaced = existed and an opaque source
+        // covered it; skipped = no tile produced or no source data contributed.
+        public void RecordOutcome(Coord coord, bool existedBefore, bool tileProduced, MergeStats stats)
         {
-            this.Added++;
-            this.AddedTiles.Add(coord);
+            if (!tileProduced || !stats.AnySourceUsed)
+            {
+                this.RecordSkipped();
+                return;
+            }
+
+            if (!existedBefore)
+            {
+                this.RecordAdded(coord);
+                return;
+            }
+
+            if (stats.TargetUsed)
+            {
+                this.RecordMerged();
+                return;
+            }
+
+            this.RecordReplaced();
         }
 
-        public void RecordMerged() => this.Merged++;
-        public void RecordReplaced() => this.Replaced++;
-        public void RecordSkipped() => this.Skipped++;
+        private void RecordAdded(Coord coord)
+        {
+            this.Added++;
+            // store a copy so a later in-place coord mutation can't corrupt the list
+            this.AddedTiles.Add(new Coord(coord.Z, coord.X, coord.Y));
+        }
+
+        private void RecordMerged() => this.Merged++;
+        private void RecordReplaced() => this.Replaced++;
+        private void RecordSkipped() => this.Skipped++;
 
         public void Finalize(DateTime startTime, DateTime endTime)
         {
