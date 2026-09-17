@@ -440,7 +440,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 13
+        "y": 23
       },
       "fieldConfig": {
         "defaults": {
@@ -520,7 +520,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 13
+        "y": 23
       },
       "fieldConfig": {
         "defaults": {
@@ -576,7 +576,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 21
+        "y": 13
       },
       "fieldConfig": {
         "defaults": {
@@ -917,12 +917,48 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "message"
+              "options": "error"
             },
             "properties": [
               {
                 "id": "custom.width",
                 "value": 900
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "job"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter dashboard to this job/task",
+                    "url": "/d/gpkg-merger-logs?${__url_time_range}&var-job=${__data.fields.job}&var-task=${__data.fields.task}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "task"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter dashboard to this job/task",
+                    "url": "/d/gpkg-merger-logs?${__url_time_range}&var-job=${__data.fields.job}&var-task=${__data.fields.task}",
+                    "targetBlank": false
+                  }
+                ]
               }
             ]
           }
