@@ -57,15 +57,15 @@ namespace MergerLogic.ImageProcessing
                         }
 
                         this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] {imageCollection.Count} where found for merge, start 'imageMagic' merging");
-                        using (var mergedImage = imageCollection.Flatten(MagickColor.FromRgba(0, 0, 0, 0)))
-                        {
-                            ImageFormatter.RemoveImageDateAttributes(mergedImage);
+                        // Flatten returns an image independent of the collection, so it outlives the
+                        // collection's disposal without an extra full-image copy.
+                        IMagickImage<byte> mergedImage = imageCollection.Flatten(MagickColor.FromRgba(0, 0, 0, 0))!;
+                        ImageFormatter.RemoveImageDateAttributes(mergedImage);
 
-                            mergedImage.ColorSpace = ColorSpace.sRGB;
-                            mergedImage.ColorType = mergedImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor;
-                            image = new MagickImage(mergedImage);
-                            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] 'imageMagic' merging finished");
-                        }
+                        mergedImage.ColorSpace = ColorSpace.sRGB;
+                        mergedImage.ColorType = mergedImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor;
+                        image = mergedImage;
+                        this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] 'imageMagic' merging finished");
                     }
                     break;
             }
