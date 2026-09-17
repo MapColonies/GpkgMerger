@@ -267,7 +267,20 @@ namespace MergerService.Runners
             }
 
             report.Finalize(reportStart, DateTime.UtcNow);
-            this._logger.LogInformation($"[{methodName}] Merge report: {report.ToLogString()}");
+            // emit the report counts as structured scope fields (top-level in the JSON log line)
+            // so per-job/task statistics can be aggregated straight from the logs
+            using (this._logger.BeginScope(new Dictionary<string, object>
+            {
+                ["added"] = report.Added,
+                ["merged"] = report.Merged,
+                ["replaced"] = report.Replaced,
+                ["skipped"] = report.Skipped,
+                ["total"] = report.Total,
+                ["durationSeconds"] = report.DurationSeconds,
+            }))
+            {
+                this._logger.LogInformation($"[{methodName}] Merge report: {report.ToLogString()}");
+            }
             try
             {
                 this._reportWriter.WriteReport(report, reportOutputPath);
