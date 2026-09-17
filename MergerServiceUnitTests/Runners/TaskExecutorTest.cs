@@ -4,6 +4,7 @@ using MergerLogic.ImageProcessing;
 using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using MergerService.Controllers;
+using MergerService.Models.Reports;
 using MergerService.Models.Tasks;
 using MergerService.Runners;
 using MergerService.Utils;
@@ -37,6 +38,8 @@ namespace MergerLogicUnitTests.Utils
         private Mock<ITaskUtils> _taskUtilsMock;
         private Mock<ITileScaler> _tileScalerMock;
         private Mock<ILogger<TileMerger>> _tileMergerLoggerMock;
+        private Mock<IReportWriter> _reportWriterMock;
+        private Mock<ITileMerger> _tileMergerMock;
 
         private ActivitySource _testActivitySource;
         private ITileMerger _testTileMerger;
@@ -67,6 +70,8 @@ namespace MergerLogicUnitTests.Utils
             this._taskUtilsMock = this._mockRepository.Create<ITaskUtils>();
             this._tileScalerMock = this._mockRepository.Create<ITileScaler>();
             this._tileMergerLoggerMock = this._mockRepository.Create<ILogger<TileMerger>>();
+            this._reportWriterMock = this._mockRepository.Create<IReportWriter>();
+            this._tileMergerMock = this._mockRepository.Create<ITileMerger>();
 
             this._testActivitySource = new ActivitySource("test");
             this._testTileMerger = new TileMerger(_tileScalerMock.Object, _tileMergerLoggerMock.Object);
@@ -89,13 +94,13 @@ namespace MergerLogicUnitTests.Utils
 
             var testTaskExecutor = new TaskExecutor(_dataFactoryMock.Object, _testTileMerger, _timeUtilsMock.Object,
               _configurationManagerMock.Object, _taskExecutorLoggerMock.Object, _testActivitySource, _testFileSystem,
-              _metricsProviderMock.Object);
+              _metricsProviderMock.Object, _reportWriterMock.Object);
 
             targetDataMock.Setup(targetData => targetData.UpdateTiles(It.IsAny<IEnumerable<Tile>>())).Callback<IEnumerable<Tile>>(
               resultWrittenTiles.AddRange
             );
 
-            testTaskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, null);
+            testTaskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, null, null);
 
             targetDataMock.Verify(targetData => targetData.UpdateTiles(It.Is<IEnumerable<Tile>>(
               tiles => tiles.All(
@@ -174,13 +179,13 @@ namespace MergerLogicUnitTests.Utils
             var resultWrittenTiles = new List<Tile>();
             var testTaskExecutor = new TaskExecutor(_dataFactoryMock.Object, _testTileMerger, _timeUtilsMock.Object,
               _configurationManagerMock.Object, _taskExecutorLoggerMock.Object, _testActivitySource, _testFileSystem,
-              _metricsProviderMock.Object);
+              _metricsProviderMock.Object, _reportWriterMock.Object);
 
             targetDataMock.Setup(targetData => targetData.UpdateTiles(It.IsAny<IEnumerable<Tile>>())).Callback<IEnumerable<Tile>>(
               resultWrittenTiles.AddRange
             );
 
-            testTaskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, null);
+            testTaskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, null, null);
 
             targetDataMock.Verify(targetData => targetData.UpdateTiles(It.IsAny<IEnumerable<Tile>>()), Times.Exactly(amountOfFlushes));
             targetDataMock.Verify(targetData => targetData.Wrapup(), Times.Once);
@@ -188,6 +193,65 @@ namespace MergerLogicUnitTests.Utils
             Assert.IsTrue(testSourceTiles.All(
                 tile => resultWrittenTiles.Any(sourceTile => sourceTile.Z == tile.Z && sourceTile.X == tile.X && sourceTile.Y == tile.Y)
             ));
+        }
+
+        // Integration/wiring test: verifies ExecuteTask feeds RecordOutcome the right inputs
+        // (existedBefore, tile produced, MergeStats) and writes the resulting report.
+        // The exhaustive added/merged/replaced/skipped classification permutations live in MergeReportTest.
+        [TestMethod]
+        [TestCategory("unit")]
+        [TestCategory("runners")]
+        public void ExecuteTask_ClassifiesTileAndWritesReport()
+        {
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<int>("GENERAL", "batchSize", "batchMaxSize")).Returns(1);
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<bool>("GENERAL", "batchSize", "limitBatchSize")).Returns(true);
+            this._configurationManagerMock.Setup(configManager => configManager.GetConfiguration<long>("GENERAL", "batchMaxBytes")).Returns(1);
+
+            byte[] tileBytes = File.ReadAllBytes("tile.jpeg");
+            Source testTarget = new Source("target", "target_type", new Extent(), GridOrigin.UPPER_LEFT, Grid.TwoXOne);
+            Source testSource = new Source("source", "source_type");
+            Mock<IData> targetDataMock = this._mockRepository.Create<IData>();
+            Mock<IData> sourceDataMock = this._mockRepository.Create<IData>();
+
+            this._dataFactoryMock.Setup(dataFactory => dataFactory.CreateDataSource(
+                testTarget.Type, testTarget.Path, It.IsAny<int>(),
+                testTarget.Grid, testTarget.Origin, testTarget.Extent, It.IsAny<bool>())
+            ).Returns(targetDataMock.Object);
+            this._dataFactoryMock.Setup(dataFactory => dataFactory.CreateDataSource(
+                testSource.Type, testSource.Path, It.IsAny<int>(),
+                testSource.Grid, testSource.Origin, testSource.Extent, It.IsAny<bool>())
+            ).Returns(sourceDataMock.Object);
+
+            // target already has this tile → existedBefore == true; merger reports target blended → merged
+            targetDataMock.Setup(targetData => targetData.TileExists(It.IsAny<Coord>())).Returns(true);
+
+            TileBounds tileBounds = new TileBounds(1, 1, 1, 1, 1);
+            var testTask = new MergeTask("id", "type", "description",
+              new MergeMetadata(TileFormat.Jpeg, false, new TileBounds[] { tileBounds }, new Source[] { testTarget, testSource }),
+              Status.PENDING, null, "reason", 0, "jobId", true, new DateTime(), new DateTime());
+
+            MergeStats outStats = new MergeStats(targetUsed: true, anySourceUsed: true);
+            this._tileMergerMock.Setup(m => m.MergeTiles(
+                It.IsAny<List<CorrespondingTileBuilder>>(), It.IsAny<Coord>(),
+                It.IsAny<TileFormatStrategy>(), out outStats, It.IsAny<bool>())
+            ).Returns(new Tile(new Coord(1, 1, 1), tileBytes));
+
+            MergeReport captured = null;
+            this._reportWriterMock.Setup(w => w.WriteReport(It.IsAny<MergeReport>(), "reports"))
+                .Callback<MergeReport, string>((r, p) => captured = r);
+
+            var testTaskExecutor = new TaskExecutor(_dataFactoryMock.Object, _tileMergerMock.Object, _timeUtilsMock.Object,
+              _configurationManagerMock.Object, _taskExecutorLoggerMock.Object, _testActivitySource, _testFileSystem,
+              _metricsProviderMock.Object, _reportWriterMock.Object);
+
+            testTaskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, null, "reports");
+
+            this._reportWriterMock.Verify(w => w.WriteReport(It.IsAny<MergeReport>(), "reports"), Times.Once);
+            Assert.IsNotNull(captured);
+            Assert.AreEqual(1, captured.Merged);
+            Assert.AreEqual(0, captured.Added);
+            Assert.AreEqual(0, captured.Replaced);
+            Assert.AreEqual(0, captured.Skipped);
         }
 
         private Tuple<MergeTask, Mock<IData>, Tile[]> SetupTestTask(int amountOfSources, bool isTargetNew)
