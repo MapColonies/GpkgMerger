@@ -18,6 +18,13 @@ namespace MergerLogic.Clients
         private readonly ILogger _logger;
         private readonly IFileSystem _fileSystem;
 
+        // Single reusable connection for the hot path (GetTile/TileExists/GetLastTile/InsertTiles/GetBatch).
+        // Opened lazily and guarded by _connectionLock so the client is safe under the concurrent access
+        // that Data.GetLastExistingTile (Parallel.ForEachAsync) and the service-side parallel merge perform.
+        private readonly object _connectionLock = new object();
+        private SQLiteConnection? _connection;
+        private bool _disposed;
+
         public GpkgClient(string path, ITimeUtils timeUtils, ILogger<GpkgClient> logger, IFileSystem fileSystem,
             IGeoUtils geoUtils) : base(path, geoUtils)
         {
@@ -25,6 +32,41 @@ namespace MergerLogic.Clients
             this._logger = logger;
             this._fileSystem = fileSystem;
             this._tileCache = this.InternalGetTileCache();
+        }
+
+        // Returns the shared connection, opening it (with WAL) on first use. Caller must hold _connectionLock.
+        private SQLiteConnection GetOrCreateConnection()
+        {
+            if (this._connection == null)
+            {
+                var connection = new SQLiteConnection($"Data Source={this.path}");
+                connection.Open();
+                using (var pragma = connection.CreateCommand())
+                {
+                    // WAL + NORMAL sync: concurrent readers alongside a writer and far fewer fsyncs on the hot path.
+                    pragma.CommandText = "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;";
+                    pragma.ExecuteNonQuery();
+                }
+
+                this._connection = connection;
+            }
+
+            return this._connection;
+        }
+
+        public void Dispose()
+        {
+            if (this._disposed)
+            {
+                return;
+            }
+
+            lock (this._connectionLock)
+            {
+                this._connection?.Dispose();
+                this._connection = null;
+                this._disposed = true;
+            }
         }
 
         private string InternalGetTileCache()
@@ -126,12 +168,11 @@ namespace MergerLogic.Clients
 
         public override Tile? GetTile(int z, int x, int y)
         {
-            byte[]? blob = null;
+            byte[]? blob;
 
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            lock (this._connectionLock)
             {
-                connection.Open();
-
+                var connection = this.GetOrCreateConnection();
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText =
@@ -139,7 +180,7 @@ namespace MergerLogic.Clients
                     command.Parameters.AddWithValue("$z", z);
                     command.Parameters.AddWithValue("$x", x);
                     command.Parameters.AddWithValue("$y", y);
-                    blob = (byte[])command.ExecuteScalar();
+                    blob = command.ExecuteScalar() as byte[];
                 }
             }
 
@@ -148,10 +189,9 @@ namespace MergerLogic.Clients
 
         public override bool TileExists(int z, int x, int y)
         {
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            lock (this._connectionLock)
             {
-                connection.Open();
-
+                var connection = this.GetOrCreateConnection();
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText =
@@ -162,73 +202,69 @@ namespace MergerLogic.Clients
 
                     using (var reader = command.ExecuteReader(System.Data.CommandBehavior.SingleRow))
                     {
-                        // Check if a row was returned
-                        if (reader.HasRows)
-                        {
-                            return true;
-                        }
+                        return reader.HasRows;
                     }
                 }
             }
-
-            return false;
         }
 
         public void InsertTiles(IEnumerable<Tile> tiles)
         {
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            lock (this._connectionLock)
             {
-                connection.Open();
-
+                var connection = this.GetOrCreateConnection();
+                using (var transaction = connection.BeginTransaction())
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText =
                         $"REPLACE INTO \"{this._tileCache}\" (zoom_level, tile_column, tile_row, tile_data) VALUES ($z, $x, $y, $blob)";
 
-                    using (var transaction = connection.BeginTransaction())
+                    // Bind parameters once and reuse the prepared statement for every tile in the batch.
+                    var zParameter = command.Parameters.Add("$z", System.Data.DbType.Int32);
+                    var xParameter = command.Parameters.Add("$x", System.Data.DbType.Int32);
+                    var yParameter = command.Parameters.Add("$y", System.Data.DbType.Int32);
+                    var blobParameter = command.Parameters.Add("$blob", System.Data.DbType.Binary);
+                    command.Prepare();
+
+                    foreach (Tile tile in tiles)
                     {
-                        foreach (Tile tile in tiles)
-                        {
-                            byte[] tileBytes = tile.GetImageBytes();
-                            SQLiteParameter blobParameter =
-                                new SQLiteParameter("$blob", System.Data.DbType.Binary, tileBytes.Length);
-                            blobParameter.Value = tileBytes;
-
-                            command.Parameters.AddWithValue("$z", tile.Z);
-                            command.Parameters.AddWithValue("$x", tile.X);
-                            command.Parameters.AddWithValue("$y", tile.Y);
-                            command.Parameters.Add(blobParameter);
-                            command.ExecuteNonQuery();
-                        }
-
-                        transaction.Commit();
+                        zParameter.Value = tile.Z;
+                        xParameter.Value = tile.X;
+                        yParameter.Value = tile.Y;
+                        blobParameter.Value = tile.GetImageBytes();
+                        command.ExecuteNonQuery();
                     }
+
+                    transaction.Commit();
                 }
             }
         }
 
-        public List<Tile> GetBatch(int batchSize, long offset)
+        // Keyset pagination over rowid: seeks past lastId instead of OFFSET-scanning, so page cost stays
+        // constant regardless of depth. lastId is the cursor (0 to start); returns the greatest rowid read
+        // (or lastId unchanged when the page is empty).
+        public (List<Tile> Tiles, long LastId) GetBatch(int batchSize, long lastId)
         {
-            List<Tile> tiles = new List<Tile>();
+            List<Tile> tiles = new List<Tile>(batchSize);
 
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            lock (this._connectionLock)
             {
-                connection.Open();
-
+                var connection = this.GetOrCreateConnection();
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText =
-                        $"SELECT zoom_level, tile_column, tile_row, tile_data FROM \"{this._tileCache}\" ORDER BY zoom_level ASC limit $limit offset $offset";
+                        $"SELECT rowid, zoom_level, tile_column, tile_row, tile_data FROM \"{this._tileCache}\" WHERE rowid > $lastId ORDER BY rowid ASC LIMIT $limit";
+                    command.Parameters.AddWithValue("$lastId", lastId);
                     command.Parameters.AddWithValue("$limit", batchSize);
-                    command.Parameters.AddWithValue("$offset", offset);
 
                     using (var reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
-                            var z = reader.GetInt32(0);
-                            var x = reader.GetInt32(1);
-                            var y = reader.GetInt32(2);
+                            lastId = reader.GetInt64(0);
+                            var z = reader.GetInt32(1);
+                            var x = reader.GetInt32(2);
+                            var y = reader.GetInt32(3);
                             var blob = (byte[])reader["tile_data"];
 
                             Tile tile = this.CreateTile(z, x, y, blob)!;
@@ -238,7 +274,7 @@ namespace MergerLogic.Clients
                 }
             }
 
-            return tiles;
+            return (tiles, lastId);
         }
 
         public Tile? GetLastTile(int[] coords, int currentTileZoom)
@@ -249,10 +285,9 @@ namespace MergerLogic.Clients
             }
 
             Tile? lastTile = null;
-            using (var connection = new SQLiteConnection($"Data Source={this.path}"))
+            lock (this._connectionLock)
             {
-                connection.Open();
-
+                var connection = this.GetOrCreateConnection();
                 using (var command = connection.CreateCommand())
                 {
                     // Build command

@@ -2,7 +2,7 @@
 
 namespace MergerLogic.DataTypes
 {
-    public interface IData
+    public interface IData : IDisposable
     {
         public DataType Type { get; }
         public string Path { get; }
