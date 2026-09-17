@@ -602,8 +602,8 @@
                 "id": "links",
                 "value": [
                   {
-                    "title": "Filter dashboard to this job/task",
-                    "url": "/d/gpkg-merger-logs?${__url_time_range}&var-job=${__data.fields.job}&var-task=${__data.fields.task}",
+                    "title": "Filter dashboard to this job",
+                    "url": "/d/gpkg-merger-logs?${__url_time_range}&var-job=${__data.fields.job}&var-task=",
                     "targetBlank": false
                   }
                 ]
@@ -620,7 +620,7 @@
                 "id": "links",
                 "value": [
                   {
-                    "title": "Filter dashboard to this job/task",
+                    "title": "Filter dashboard to this job and task",
                     "url": "/d/gpkg-merger-logs?${__url_time_range}&var-job=${__data.fields.job}&var-task=${__data.fields.task}",
                     "targetBlank": false
                   }
@@ -942,8 +942,8 @@
                 "id": "links",
                 "value": [
                   {
-                    "title": "Filter dashboard to this job/task",
-                    "url": "/d/gpkg-merger-logs?${__url_time_range}&var-job=${__data.fields.job}&var-task=${__data.fields.task}",
+                    "title": "Filter dashboard to this job",
+                    "url": "/d/gpkg-merger-logs?${__url_time_range}&var-job=${__data.fields.job}&var-task=",
                     "targetBlank": false
                   }
                 ]
@@ -960,7 +960,7 @@
                 "id": "links",
                 "value": [
                   {
-                    "title": "Filter dashboard to this job/task",
+                    "title": "Filter dashboard to this job and task",
                     "url": "/d/gpkg-merger-logs?${__url_time_range}&var-job=${__data.fields.job}&var-task=${__data.fields.task}",
                     "targetBlank": false
                   }
