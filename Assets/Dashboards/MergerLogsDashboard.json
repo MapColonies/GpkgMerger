@@ -645,6 +645,14 @@
       ],
       "transformations": [
         {
+          "id": "extractFields",
+          "options": {
+            "source": "labels",
+            "replace": false,
+            "keepTime": false
+          }
+        },
+        {
           "id": "organize",
           "options": {
             "excludeByName": {
@@ -658,9 +666,9 @@
               "k8s_pod_name": true,
               "time": true,
               "Line": true,
+              "labels": true,
               "id": true,
               "tsNs": true,
-              "labels": true,
               "level": true,
               "category": true,
               "message": true
@@ -825,28 +833,51 @@
       ]
     },
     {
-      "id": 13,
-      "type": "logs",
-      "title": "Errors & warnings",
+      "id": 15,
+      "type": "stat",
+      "title": "Errors (range)",
       "datasource": {
         "type": "loki",
         "uid": "${loki}"
       },
       "gridPos": {
         "h": 8,
-        "w": 24,
+        "w": 4,
         "x": 0,
         "y": 34
       },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
       "options": {
-        "showTime": true,
-        "showLabels": false,
-        "showCommonLabels": false,
-        "wrapLogMessage": true,
-        "prettifyLogMessage": false,
-        "enableLogDetails": true,
-        "dedupStrategy": "none",
-        "sortOrder": "Descending"
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "area"
       },
       "targets": [
         {
@@ -856,8 +887,113 @@
             "uid": "${loki}"
           },
           "editorMode": "code",
-          "expr": "{k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" | level=~\"Error|Warning|Critical\"",
+          "expr": "sum(count_over_time({k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" | level=~\"Error|Critical\" [$__range]))",
+          "queryType": "instant"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "table",
+      "title": "Error messages",
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 20,
+        "x": 4,
+        "y": 34
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "filterable": true,
+            "align": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "message"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 900
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "{k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" | level=~\"Error|Critical\"",
           "queryType": "range"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "labels",
+            "replace": false,
+            "keepTime": false
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "service": true,
+              "version": true,
+              "thread": true,
+              "service_name": true,
+              "k8s_container_name": true,
+              "k8s_deployment_name": true,
+              "k8s_namespace_name": true,
+              "k8s_pod_name": true,
+              "time": true,
+              "Line": true,
+              "labels": true,
+              "id": true,
+              "tsNs": true,
+              "category": true,
+              "level": true,
+              "added": true,
+              "merged": true,
+              "replaced": true,
+              "skipped": true,
+              "total": true,
+              "durationSeconds": true
+            },
+            "indexByName": {
+              "Time": 0,
+              "jobId": 1,
+              "taskId": 2,
+              "message": 3
+            },
+            "renameByName": {
+              "jobId": "job",
+              "taskId": "task",
+              "message": "error"
+            }
+          }
         }
       ]
     },
@@ -905,6 +1041,14 @@
       ],
       "transformations": [
         {
+          "id": "extractFields",
+          "options": {
+            "source": "labels",
+            "replace": false,
+            "keepTime": false
+          }
+        },
+        {
           "id": "organize",
           "options": {
             "excludeByName": {
@@ -918,9 +1062,9 @@
               "k8s_pod_name": true,
               "time": true,
               "Line": true,
+              "labels": true,
               "id": true,
               "tsNs": true,
-              "labels": true,
               "jobId": true,
               "taskId": true,
               "added": true,
