@@ -252,6 +252,8 @@ namespace MergerLogicUnitTests.Utils
             Assert.AreEqual(0, captured.Added);
             Assert.AreEqual(0, captured.Replaced);
             Assert.AreEqual(0, captured.Skipped);
+
+            this._metricsProviderMock.Verify(m => m.MergeTileOutcomes(0, 1, 0, 0, "type", "Jpeg", false), Times.Once);
         }
 
         private Tuple<MergeTask, Mock<IData>, Tile[]> SetupTestTask(int amountOfSources, bool isTargetNew)

@@ -108,6 +108,7 @@ namespace MergerService.Runners
                     this._logger.LogError(innerError, $"[{methodName}] Error in MergerService while updating reject status for job {task.JobId}, task {task.Id} due to max attemps reached with {task.Attempts}, update task failure: {innerError.Message}");
                 }
 
+                this._metricsProvider.TaskOutcome("reject", task.Type);
                 return false;
             }
 
@@ -123,6 +124,7 @@ namespace MergerService.Runners
             catch (Exception e)
             {
                 this._logger.LogError(e, $"[{methodName}] Error in MergerService while running task {task.Id}, error: {e.Message}");
+                this._metricsProvider.TaskOutcome("error", task.Type);
 
                 try
                 {
@@ -144,6 +146,8 @@ namespace MergerService.Runners
             {
                 return false;
             }
+
+            this._metricsProvider.TaskOutcome("success", task.Type);
 
             try
             {
