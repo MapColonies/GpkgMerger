@@ -39,6 +39,7 @@ mclabels:
   partOf: ingestion
   owner: raster
   gisDomain: raster
+  logScraping: true
   prometheus:
     enabled: true
     port: 8080
