@@ -92,6 +92,7 @@ namespace MergerLogicUnitTests.Utils
       Assert.AreEqual(testTask, testResultTask);
       this._taskExecutorMock.Verify(e => e.ExecuteTask(testTask, _taskUtilsMock.Object, It.IsAny<string>(), "reports"), Times.Once);
       _taskUtilsMock.Verify(taskUtils => taskUtils.UpdateCompletion(testTask.JobId, testTask.Id, It.IsAny<string?>()), Times.Once);
+      _metricsProviderMock.Verify(m => m.TaskOutcome("success", testTask.Type), Times.Once);
     }
 
     [TestMethod]
@@ -115,6 +116,7 @@ namespace MergerLogicUnitTests.Utils
 
       Assert.AreEqual(testTask, testResultTask);
       _taskUtilsMock.Verify(taskUtils => taskUtils.UpdateReject(testTask.JobId, testTask.Id, testTask.Attempts, testFailureMessage, testTask.Resettable, It.IsAny<string?>()), Times.Once);
+      _metricsProviderMock.Verify(m => m.TaskOutcome("error", testTask.Type), Times.Once);
     }
 
     [TestMethod]
@@ -137,6 +139,7 @@ namespace MergerLogicUnitTests.Utils
 
       Assert.AreEqual(testTask, testResultTask);
       _taskUtilsMock.Verify(taskUtils => taskUtils.UpdateReject(testTask.JobId, testTask.Id, testTask.Attempts, It.IsAny<string>(), testTask.Resettable, It.IsAny<string?>()), Times.Once);
+      _metricsProviderMock.Verify(m => m.TaskOutcome("reject", testTask.Type), Times.Once);
     }
   }
 }

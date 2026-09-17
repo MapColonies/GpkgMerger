@@ -267,6 +267,8 @@ namespace MergerService.Runners
             }
 
             report.Finalize(reportStart, DateTime.UtcNow);
+            this._metricsProvider.MergeTileOutcomes(report.Added, report.Merged, report.Replaced, report.Skipped,
+                task.Type, metadata.TargetFormat.ToString(), metadata.IsNewTarget);
             this._logger.LogInformation($"[{methodName}] Merge report: {report.ToLogString()}");
             try
             {
@@ -276,6 +278,7 @@ namespace MergerService.Runners
             {
                 // Best-effort (proposed default). Whether this should fail the task is an open
                 // question raised on the implementation PR.
+                this._metricsProvider.ReportWriteFailure();
                 this._logger.LogError(e, $"[{methodName}] Failed to write merge report artifact: {e.Message}");
             }
 
