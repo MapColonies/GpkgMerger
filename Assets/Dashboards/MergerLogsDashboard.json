@@ -1,5 +1,5 @@
 {
-  "title": "GPKG-Merger \u2014 Logs",
+  "title": "GPKG-Merger — Logs",
   "uid": "gpkg-merger-logs",
   "tags": [
     "gpkg-merger",
@@ -603,7 +603,7 @@
                 "value": [
                   {
                     "title": "Filter dashboard to this job",
-                    "url": "/d/gpkg-merger-logs?${__url_time_range}&var-job=${__data.fields.job}&var-task=",
+                    "url": "/d/gpkg-merger-logs?${__url_time_range}&var-loki=${loki}&${namespace:queryparam}&var-job=${__data.fields.job}&var-task=",
                     "targetBlank": false
                   }
                 ]
@@ -621,7 +621,7 @@
                 "value": [
                   {
                     "title": "Filter dashboard to this job and task",
-                    "url": "/d/gpkg-merger-logs?${__url_time_range}&var-job=${__data.fields.job}&var-task=${__data.fields.task}",
+                    "url": "/d/gpkg-merger-logs?${__url_time_range}&var-loki=${loki}&${namespace:queryparam}&var-job=${__data.fields.job}&var-task=${__data.fields.task}",
                     "targetBlank": false
                   }
                 ]
@@ -943,7 +943,7 @@
                 "value": [
                   {
                     "title": "Filter dashboard to this job",
-                    "url": "/d/gpkg-merger-logs?${__url_time_range}&var-job=${__data.fields.job}&var-task=",
+                    "url": "/d/gpkg-merger-logs?${__url_time_range}&var-loki=${loki}&${namespace:queryparam}&var-job=${__data.fields.job}&var-task=",
                     "targetBlank": false
                   }
                 ]
@@ -961,7 +961,7 @@
                 "value": [
                   {
                     "title": "Filter dashboard to this job and task",
-                    "url": "/d/gpkg-merger-logs?${__url_time_range}&var-job=${__data.fields.job}&var-task=${__data.fields.task}",
+                    "url": "/d/gpkg-merger-logs?${__url_time_range}&var-loki=${loki}&${namespace:queryparam}&var-job=${__data.fields.job}&var-task=${__data.fields.task}",
                     "targetBlank": false
                   }
                 ]
