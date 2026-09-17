@@ -339,6 +339,65 @@ namespace MergerLogicUnitTests.ImageProcessing
             CollectionAssert.AreEqual(expectedTileBytes, result.GetImageBytes());
         }
 
+        [TestMethod]
+        [TestCategory("MergeTiles")]
+        public void MergeTilesStatsBlendedTargetAndSource()
+        {
+            var targetCoord = new Coord(15, 0, 0);
+            // target (index 0) is transparent, source (last) is transparent -> both enter the stack
+            var tiles = new[]
+            {
+                new Tile(targetCoord, File.ReadAllBytes("2.png")),
+                new Tile(targetCoord, File.ReadAllBytes("1.png"))
+            };
+            var tileBuilders = tiles.Select<Tile, CorrespondingTileBuilder>(tile => () => tile).ToList();
+
+            var result = this._testTileMerger.MergeTiles(tileBuilders, targetCoord, new TileFormatStrategy(TileFormat.Png), out var stats);
+
+            Assert.IsNotNull(result);
+            Assert.IsTrue(stats.TargetUsed);
+            Assert.IsTrue(stats.AnySourceUsed);
+        }
+
+        [TestMethod]
+        [TestCategory("MergeTiles")]
+        public void MergeTilesStatsOpaqueSourceOverTarget()
+        {
+            var targetCoord = new Coord(15, 0, 0);
+            // opaque source (last) short-circuits before the target (index 0) is reached
+            var tiles = new[]
+            {
+                new Tile(targetCoord, File.ReadAllBytes("1.png")),
+                new Tile(targetCoord, File.ReadAllBytes("3.jpeg"))
+            };
+            var tileBuilders = tiles.Select<Tile, CorrespondingTileBuilder>(tile => () => tile).ToList();
+
+            var result = this._testTileMerger.MergeTiles(tileBuilders, targetCoord, new TileFormatStrategy(TileFormat.Jpeg), out var stats);
+
+            Assert.IsNotNull(result);
+            Assert.IsFalse(stats.TargetUsed);
+            Assert.IsTrue(stats.AnySourceUsed);
+        }
+
+        [TestMethod]
+        [TestCategory("MergeTiles")]
+        public void MergeTilesStatsUploadOnly()
+        {
+            var targetCoord = new Coord(15, 0, 0);
+            var tiles = new[]
+            {
+                new Tile(targetCoord, File.ReadAllBytes("2.png")),
+                new Tile(targetCoord, File.ReadAllBytes("1.png"))
+            };
+            var tileBuilders = tiles.Select<Tile, CorrespondingTileBuilder>(tile => () => tile).ToList();
+
+            var result = this._testTileMerger.MergeTiles(tileBuilders, targetCoord, new TileFormatStrategy(TileFormat.Jpeg), out var stats, uploadOnly: true);
+
+            Assert.IsNotNull(result);
+            Assert.IsFalse(stats.TargetUsed);
+            Assert.IsTrue(stats.AnySourceUsed);
+        }
+
         #endregion
     }
 }

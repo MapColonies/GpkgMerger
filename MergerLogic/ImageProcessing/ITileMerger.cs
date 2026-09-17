@@ -6,5 +6,7 @@ namespace MergerLogic.ImageProcessing
     public interface ITileMerger
     {
         Tile? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords, TileFormatStrategy strategy, bool uploadOnly = false);
+
+        Tile? MergeTiles(List<CorrespondingTileBuilder> tiles, Coord targetCoords, TileFormatStrategy strategy, out MergeStats stats, bool uploadOnly = false);
     }
 }

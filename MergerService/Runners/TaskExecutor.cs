@@ -4,6 +4,7 @@ using MergerLogic.ImageProcessing;
 using MergerLogic.Monitoring.Metrics;
 using MergerLogic.Utils;
 using MergerService.Controllers;
+using MergerService.Models.Reports;
 using MergerService.Models.Tasks;
 using MergerService.Utils;
 using System.Diagnostics;
@@ -21,6 +22,7 @@ namespace MergerService.Runners
         private readonly ActivitySource _activitySource;
         private readonly IFileSystem _fileSystem;
         private readonly IMetricsProvider _metricsProvider;
+        private readonly IReportWriter _reportWriter;
         private readonly string _inputPath;
         private readonly string _gpkgPath;
         private readonly bool _limitBatchSize;
@@ -32,7 +34,7 @@ namespace MergerService.Runners
 
         public TaskExecutor(IDataFactory dataFactory, ITileMerger tileMerger, ITimeUtils timeUtils, IConfigurationManager configurationManager,
             ILogger<TaskExecutor> logger, ActivitySource activitySource,
-            IFileSystem fileSystem, IMetricsProvider metricsProvider)
+            IFileSystem fileSystem, IMetricsProvider metricsProvider, IReportWriter reportWriter)
         {
             this._dataFactory = dataFactory;
             this._tileMerger = tileMerger;
@@ -41,6 +43,7 @@ namespace MergerService.Runners
             this._activitySource = activitySource;
             this._fileSystem = fileSystem;
             this._metricsProvider = metricsProvider;
+            this._reportWriter = reportWriter;
             this._inputPath = configurationManager.GetConfiguration("GENERAL", "inputPath");
             this._gpkgPath = configurationManager.GetConfiguration("GENERAL", "gpkgPath");
             this._filePath = configurationManager.GetConfiguration("GENERAL", "filePath");
@@ -61,7 +64,7 @@ namespace MergerService.Runners
             }
         }
 
-        public void ExecuteTask(MergeTask task, ITaskUtils taskUtils, string? managerCallbackUrl)
+        public void ExecuteTask(MergeTask task, ITaskUtils taskUtils, string? managerCallbackUrl, string? reportOutputPath)
         {
             string methodName = MethodBase.GetCurrentMethod().Name;
             this._logger.LogDebug($"[{methodName}] start {task.ToString()}");
@@ -83,6 +86,9 @@ namespace MergerService.Runners
             }
 
             MergeMetadata metadata = task.Parameters;
+            DateTime reportStart = DateTime.UtcNow;
+            MergeReport report = new MergeReport(task.JobId, task.Id, task.Type,
+                metadata.TargetFormat.ToString(), metadata.IsNewTarget);
             Stopwatch mergeRunTimeStopwatch = new Stopwatch();
             TimeSpan ts;
 
@@ -162,10 +168,16 @@ namespace MergerService.Runners
                                         // TODO: upscale = false - this is a temporary fix till we decide how sources should be upscaled
                                         correspondingTileBuilders.Add(() => source.GetCorrespondingTile(coord, false));
                                     }
+                                    // TileExists mutates coord.Y in place; pass a copy so the coord the
+                                    // merge builders capture stays in its original grid/origin space.
+                                    bool existedBefore = !metadata.IsNewTarget && target.TileExists(new Coord(coord.Z, coord.X, coord.Y));
+
                                     var tileMergeStopwatch = Stopwatch.StartNew();
-                                    Tile? tile = this._tileMerger.MergeTiles(correspondingTileBuilders, coord, strategy, metadata.IsNewTarget);
+                                    Tile? tile = this._tileMerger.MergeTiles(correspondingTileBuilders, coord, strategy, out MergeStats stats, metadata.IsNewTarget);
                                     tileMergeStopwatch.Stop();
                                     this._metricsProvider.MergeTimePerTileHistogram(tileMergeStopwatch.Elapsed.TotalSeconds, metadata.TargetFormat);
+
+                                    report.RecordOutcome(coord, existedBefore, tile != null, stats);
 
                                     if (tile != null)
                                     {
@@ -253,6 +265,20 @@ namespace MergerService.Runners
                 }
                 target.Wrapup();
             }
+
+            report.Finalize(reportStart, DateTime.UtcNow);
+            this._logger.LogInformation($"[{methodName}] Merge report: {report.ToLogString()}");
+            try
+            {
+                this._reportWriter.WriteReport(report, reportOutputPath);
+            }
+            catch (Exception e)
+            {
+                // Best-effort (proposed default). Whether this should fail the task is an open
+                // question raised on the implementation PR.
+                this._logger.LogError(e, $"[{methodName}] Failed to write merge report artifact: {e.Message}");
+            }
+
             this._logger.LogDebug($"[{methodName}] end");
         }
 
