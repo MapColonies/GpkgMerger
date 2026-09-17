@@ -152,6 +152,8 @@ namespace MergerLogic.Extensions
                         options.AddProcessor(
                             new SimpleLogRecordExportProcessor(new OpenTelemetryFormattedConsoleExporter(new ConsoleExporterOptions()))); //lgtm [cs/local-not-disposed]
                         options.SetResourceBuilder(resourceBuilder);
+                        // required for the exporter to emit BeginScope correlation fields (jobId/taskId)
+                        options.IncludeScopes = true;
                     });
             });
             #endregion Logger
