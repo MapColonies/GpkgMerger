@@ -16,7 +16,7 @@ namespace MergerLogic.DataTypes
         private IFileSystem _fileSystem;
 
         private readonly string[] _supportedFileExtensions = { ".png", ".jpg", ".jpeg" };
-        static readonly object _locker = new object();
+        private readonly object _locker = new object();
 
         public FS(IPathUtils pathUtils, IServiceProvider container, string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false)
             : base(container, DataType.FOLDER, path, batchSize, grid, origin, isBase)

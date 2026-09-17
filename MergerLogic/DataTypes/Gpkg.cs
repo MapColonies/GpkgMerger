@@ -11,7 +11,7 @@ namespace MergerLogic.DataTypes
         private long _offset;
         private Extent _extent;
         private readonly IConfigurationManager _configManager;
-        static readonly object _locker = new object();
+        private readonly object _locker = new object();
 
         public Gpkg(IConfigurationManager configuration, IServiceProvider container,
             string path, int batchSize, Grid? grid, GridOrigin? origin, bool isBase = false, Extent? extent = null)
