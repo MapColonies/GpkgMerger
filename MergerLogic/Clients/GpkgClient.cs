@@ -37,6 +37,12 @@ namespace MergerLogic.Clients
         // Returns the shared connection, opening it (with WAL) on first use. Caller must hold _connectionLock.
         private SQLiteConnection GetOrCreateConnection()
         {
+            // Dispose nulls _connection, so without this a post-dispose call would open a connection nothing closes.
+            if (this._disposed)
+            {
+                throw new ObjectDisposedException(nameof(GpkgClient));
+            }
+
             if (this._connection == null)
             {
                 var connection = new SQLiteConnection($"Data Source={this.path}");
@@ -56,13 +62,13 @@ namespace MergerLogic.Clients
 
         public void Dispose()
         {
-            if (this._disposed)
-            {
-                return;
-            }
-
             lock (this._connectionLock)
             {
+                if (this._disposed)
+                {
+                    return;
+                }
+
                 this._connection?.Dispose();
                 this._connection = null;
                 this._disposed = true;

@@ -231,6 +231,28 @@ namespace MergerLogicUnitTests.Utils
             this.VerifyAll();
         }
 
+        [TestMethod]
+        [TestCategory("Dispose")]
+        public void UseAfterDisposeThrows()
+        {
+            string path = this.GetGpkgPath();
+            var testTiles = new Tile[] { new Tile(0, 0, 0, this._jpegImageData) };
+
+            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            {
+                connection.Open();
+                this.SetupConstructorRequiredMocks(connection);
+                this.CreateTestTiles(connection, testTiles);
+
+                var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+                gpkgUtils.Dispose();
+
+                Assert.ThrowsException<ObjectDisposedException>(() => gpkgUtils.TileExists(0, 0, 0));
+            }
+            this.VerifyAll();
+        }
+
         #endregion
 
         #region GetExtent
