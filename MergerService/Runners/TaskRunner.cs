@@ -1,5 +1,6 @@
 using MergerLogic.Clients;
 using MergerLogic.Monitoring.Metrics;
+using MergerService.Models.Jobs;
 using MergerService.Models.Tasks;
 using MergerService.Utils;
 using System.Diagnostics;
@@ -87,7 +88,9 @@ namespace MergerService.Runners
             }
 
             this._logger.LogInformation($"[{methodName}] Run Task: jobId {task.JobId}, taskId {task.Id}");
-            string? managerCallbackUrl = this._jobUtils.GetJob(task.JobId)?.Parameters.AdditionalParams?.JobTrackerServiceURL;
+            MergeJob? job = this._jobUtils.GetJob(task.JobId);
+            string? managerCallbackUrl = job?.Parameters.AdditionalParams?.JobTrackerServiceURL;
+            string? reportOutputPath = job?.Parameters.AdditionalParams?.ReportOutputPath;
             string log = managerCallbackUrl == null ? "managerCallbackUrl not provided as job parameter" : $"managerCallback url: {managerCallbackUrl}";
             this._logger.LogDebug($"[{methodName}]{log}");
 
@@ -114,7 +117,7 @@ namespace MergerService.Runners
             try
             {
                 this._heartbeatClient.Start(task.Id);
-                this._taskExecutor.ExecuteTask(task, this._taskUtils, managerCallbackUrl);
+                this._taskExecutor.ExecuteTask(task, this._taskUtils, managerCallbackUrl, reportOutputPath);
                 taskSucceed = true;
             }
             catch (Exception e)
