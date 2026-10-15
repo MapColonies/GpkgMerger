@@ -691,6 +691,8 @@ namespace MergerLogicUnitTests.DataTypes
                 .Setup(s3 => s3.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ListObjectsV2Response()
                 {
+                    // serves both the ctor zoom-discovery (CommonPrefixes) and the batch reads (S3Objects)
+                    CommonPrefixes = new List<string>() { "test/0/" },
                     S3Objects = new List<S3Object>()
                     {
                         new S3Object(),
@@ -1015,33 +1017,31 @@ namespace MergerLogicUnitTests.DataTypes
         {
             var seq = sequence ?? new MockSequence();
 
-            ListObjectsV2Response res = new ListObjectsV2Response() { KeyCount = exists ? 1 : 0 };
+            // base ctor Exists() check
             this._s3ClientMock
                 .InSequence(seq)
                 .Setup(s3 => s3.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(res);
+                .ReturnsAsync(new ListObjectsV2Response() { KeyCount = exists ? 1 : 0 });
 
-            // Mock existance check for each zoom level until MaxZoomRead
+            // GetZoomLevels() — one delimited LIST returns the zoom-level folders as CommonPrefixes
+            var zoomPrefixes = new List<string>();
             for (int i = 0; i < Data<IS3Client>.MaxZoomRead; i++)
             {
-                this._s3ClientMock
-                    .InSequence(seq)
-                    .Setup(s3 => s3.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(new ListObjectsV2Response() { KeyCount = 1 });
+                zoomPrefixes.Add($"test/{i}/");
             }
+            this._s3ClientMock
+                .InSequence(seq)
+                .Setup(s3 => s3.ListObjectsV2Async(It.IsAny<ListObjectsV2Request>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ListObjectsV2Response() { CommonPrefixes = zoomPrefixes });
         }
 
         private void VerifyConstructorRequiredMocks()
         {
-            for (int z = 0; z < Data<IS3Client>.MaxZoomRead; z++)
-            {
-                this._s3ClientMock.Verify(s3 => s3.ListObjectsV2Async(It.Is<ListObjectsV2Request>(req =>
-                    req.BucketName == "bucket" &&
-                    req.Prefix == $"test/{z}/" &&
-                    req.StartAfter == $"test/{z}/" &&
-                    req.MaxKeys == 1
-                ), It.IsAny<CancellationToken>()), Times.Once);
-            }
+            this._s3ClientMock.Verify(s3 => s3.ListObjectsV2Async(It.Is<ListObjectsV2Request>(req =>
+                req.BucketName == "bucket" &&
+                req.Prefix == "test/" &&
+                req.Delimiter == "/"
+            ), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         private void VerifyAll()
