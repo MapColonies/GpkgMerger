@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.2.4](https://github.com/MapColonies/GpkgMerger/compare/v2.2.3...v2.2.4) (2026-10-15)
+
+
+### Performance Improvements
+
+* **gpkg:** connection reuse + prepared bulk-insert + keyset paging (MAPCO-11320) ([#255](https://github.com/MapColonies/GpkgMerger/issues/255)) ([023d0b3](https://github.com/MapColonies/GpkgMerger/commit/023d0b3a7f63825d7f45a02549e713f2c08e412c))
+* **image:** remove per-pixel allocs + redundant merged-image copy (MAPCO-11321) ([#256](https://github.com/MapColonies/GpkgMerger/issues/256)) ([ececf03](https://github.com/MapColonies/GpkgMerger/commit/ececf03077b85ae415306be75315163015cb039f))
+
 ## [2.2.3](https://github.com/MapColonies/GpkgMerger/compare/v2.2.2...v2.2.3) (2026-05-19)
 
 
