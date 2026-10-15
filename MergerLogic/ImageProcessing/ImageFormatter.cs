@@ -5,8 +5,8 @@ namespace MergerLogic.ImageProcessing
 {
     public enum TileFormat
     {
-        [EnumMember(Value = "png")] Png,
         [EnumMember(Value = "jpeg")] Jpeg,
+        [EnumMember(Value = "png")] Png,
     }
 
     public class TileFormatStrategy {
