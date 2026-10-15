@@ -87,6 +87,31 @@ namespace MergerLogicUnitTests.Utils
     }
 
     [TestMethod]
+    public void WhenRunningTask_ShouldScopeLogsWithJobAndTaskId()
+    {
+      var testTask = new MergeTask("testTaskId", "type", "description",
+        new MergeMetadata(TileFormat.Jpeg, true, new TileBounds[0], new Source[0]),
+        Status.PENDING, 0, "reason", 0, "testJobId", true, new DateTime(), new DateTime());
+
+      Dictionary<string, object>? capturedScope = null;
+      this._taskUtilsMock.Setup(taskUtils => taskUtils.GetTask(It.IsAny<string>(), It.IsAny<string>())).Returns(testTask);
+      this._taskExecutorMock.Setup(taskExecutor => taskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, It.IsAny<string?>()));
+      this._loggerMock.Setup(logger => logger.BeginScope(It.IsAny<Dictionary<string, object>>()))
+        .Returns(Mock.Of<IDisposable>())
+        .Callback<Dictionary<string, object>>(scope => capturedScope = scope);
+
+      var testTaskRunner = new TaskRunner(_taskExecutorMock.Object, _jobUtilsMock.Object, _loggerMock.Object,
+        _taskUtilsMock.Object, _heartbeatClientMock.Object, _metricsProviderMock.Object,
+        _configurationManagerMock.Object);
+
+      testTaskRunner.RunTask(testTaskRunner.FetchTask(new KeyValuePair<string, string>("testJobType", "testTaskType")));
+
+      Assert.IsNotNull(capturedScope);
+      Assert.AreEqual(testTask.JobId, capturedScope["jobId"]);
+      Assert.AreEqual(testTask.Id, capturedScope["taskId"]);
+    }
+
+    [TestMethod]
     public void WhenTaskExecutionFailed_ShouldUpdateTaskFailed()
     {
       var testFailureMessage = "failed message";
