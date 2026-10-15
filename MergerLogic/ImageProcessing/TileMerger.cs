@@ -44,8 +44,16 @@ namespace MergerLogic.ImageProcessing
                     this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] No images where found return null");
                     return null;
                 case 1:
-                    ImageFormatter.RemoveImageDateAttributes(images[0]);
                     image = images[0];
+                    try
+                    {
+                        ImageFormatter.RemoveImageDateAttributes(image);
+                    }
+                    catch
+                    {
+                        image.Dispose();
+                        throw;
+                    }
                     this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] 1 image found");
                     break;
                 default:
@@ -57,21 +65,31 @@ namespace MergerLogic.ImageProcessing
                         }
 
                         this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] {imageCollection.Count} where found for merge, start 'imageMagic' merging");
-                        using (var mergedImage = imageCollection.Flatten(MagickColor.FromRgba(0, 0, 0, 0)))
+                        // Flatten returns an image independent of the collection, so it outlives the
+                        // collection's disposal without an extra full-image copy.
+                        IMagickImage<byte> mergedImage = imageCollection.Flatten(MagickColor.FromRgba(0, 0, 0, 0))!;
+                        try
                         {
                             ImageFormatter.RemoveImageDateAttributes(mergedImage);
-
                             mergedImage.ColorSpace = ColorSpace.sRGB;
                             mergedImage.ColorType = mergedImage.HasAlpha ? ColorType.TrueColorAlpha : ColorType.TrueColor;
-                            image = new MagickImage(mergedImage);
-                            this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] 'imageMagic' merging finished");
                         }
+                        catch
+                        {
+                            mergedImage.Dispose();
+                            throw;
+                        }
+                        image = mergedImage;
+                        this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] 'imageMagic' merging finished");
                     }
                     break;
             }
 
-            Tile tile = new Tile(targetCoords, image);
-            image.Dispose();
+            Tile tile;
+            using (image)
+            {
+                tile = new Tile(targetCoords, image);
+            }
             tile.ConvertToFormat(strategy.ApplyStrategy(tile.Format));
             return tile;
         }
