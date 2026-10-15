@@ -24,6 +24,19 @@
   "liveNow": false,
   "panels": [
     {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 20,
+      "panels": [],
+      "title": "Task & Throughput",
+      "type": "row"
+    },
+    {
       "datasource": {
         "type": "prometheus",
         "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
@@ -84,12 +97,14 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 0
+        "y": 1
       },
-      "id": 4,
+      "id": 1,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true
@@ -106,11 +121,8 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "exemplar": false,
-          "expr": "sum(rate(batch_initialization_time_sum{app=\"MergerService\", pod=\"$pod\"}[$interval])) / sum(rate(batch_initialization_time_count{app=\"MergerService\", pod=\"$pod\"}[$interval]))",
-          "format": "time_series",
+          "expr": "sum(rate(task_execution_time_sum{app=\"MergerService\", pod=~\"$pod\"}[$interval])) / sum(rate(task_execution_time_count{app=\"MergerService\", pod=~\"$pod\"}[$interval]))",
           "instant": false,
-          "interval": "",
           "legendFormat": "avg",
           "range": true,
           "refId": "A"
@@ -121,7 +133,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by (le) (rate(batch_initialization_time_bucket{app=\"MergerService\",pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.5, sum by(le) (rate(task_execution_time_bucket{app=\"MergerService\", pod=~\"$pod\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p50",
@@ -134,7 +146,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by (le) (rate(batch_initialization_time_bucket{app=\"MergerService\",pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.9, sum by(le) (rate(task_execution_time_bucket{app=\"MergerService\", pod=~\"$pod\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p90",
@@ -142,7 +154,7 @@
           "refId": "C"
         }
       ],
-      "title": "Batch Initialization Time  ",
+      "title": "Task Execution Time",
       "type": "timeseries"
     },
     {
@@ -175,13 +187,15 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 0
+        "y": 1
       },
       "id": 3,
       "options": {
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         },
@@ -266,12 +280,14 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 0
+        "y": 1
       },
       "id": 8,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true
@@ -288,7 +304,7 @@
             "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
           },
           "editorMode": "code",
-          "expr": "sum(rate(build_sources_list_time_sum{app=\"MergerService\", pod=\"$pod\"}[$interval])) / sum(rate(build_sources_list_time_count{app=\"MergerService\", pod=\"$pod\"}[$interval]))",
+          "expr": "sum(rate(build_sources_list_time_sum{app=\"MergerService\", pod=~\"$pod\"}[$interval])) / sum(rate(build_sources_list_time_count{app=\"MergerService\", pod=~\"$pod\"}[$interval]))",
           "instant": false,
           "legendFormat": "avg",
           "range": true,
@@ -300,7 +316,7 @@
             "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(build_sources_list_time_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.5, sum by(le) (rate(build_sources_list_time_bucket{app=\"MergerService\", pod=~\"$pod\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p50",
@@ -313,7 +329,7 @@
             "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by(le) (rate(build_sources_list_time_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.9, sum by(le) (rate(build_sources_list_time_bucket{app=\"MergerService\", pod=~\"$pod\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p90",
@@ -323,6 +339,19 @@
       ],
       "title": "Build Sources List Time",
       "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 21,
+      "panels": [],
+      "title": "Per-tile & Batch Timing",
+      "type": "row"
     },
     {
       "datasource": {
@@ -385,12 +414,14 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 7
+        "y": 9
       },
       "id": 5,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true
@@ -407,7 +438,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "sum(rate(batch_work_time_sum{app=\"MergerService\", pod=\"$pod\"}[$interval])) / sum(rate(batch_work_time_count{app=\"MergerService\", pod=\"$pod\"}[$interval]))",
+          "expr": "sum(rate(batch_work_time_sum{app=\"MergerService\", pod=~\"$pod\"}[$interval])) / sum(rate(batch_work_time_count{app=\"MergerService\", pod=~\"$pod\"}[$interval]))",
           "instant": false,
           "legendFormat": "avg",
           "range": true,
@@ -419,7 +450,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(batch_work_time_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.5, sum by(le) (rate(batch_work_time_bucket{app=\"MergerService\", pod=~\"$pod\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p50",
@@ -432,7 +463,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by(le) (rate(batch_work_time_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.9, sum by(le) (rate(batch_work_time_bucket{app=\"MergerService\", pod=~\"$pod\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p90",
@@ -504,131 +535,14 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 7
-      },
-      "id": 1,
-      "options": {
-        "legend": {
-          "calcs": ["lastNotNull"],
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
-          },
-          "editorMode": "code",
-          "expr": "sum(rate(task_execution_time_sum{app=\"MergerService\", pod=\"$pod\"}[$interval])) / sum(rate(task_execution_time_count{app=\"MergerService\", pod=\"$pod\"}[$interval]))",
-          "instant": false,
-          "legendFormat": "avg",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
-          },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(task_execution_time_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "p50",
-          "range": true,
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
-          },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by(le) (rate(task_execution_time_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
-          "hide": false,
-          "instant": false,
-          "legendFormat": "p90",
-          "range": true,
-          "refId": "C"
-        }
-      ],
-      "title": "Task Execution Time",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "Duration",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green"
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "s"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 16,
-        "y": 7
+        "y": 9
       },
       "id": 6,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true
@@ -645,7 +559,7 @@
             "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
           },
           "editorMode": "code",
-          "expr": "sum(rate(merge_time_per_tile_sum{app=\"MergerService\", pod=\"$pod\"}[$interval])) / \nsum(rate(merge_time_per_tile_count{app=\"MergerService\", pod=\"$pod\"}[$interval]))\n",
+          "expr": "sum(rate(merge_time_per_tile_sum{app=\"MergerService\", pod=~\"$pod\"}[$interval])) / \nsum(rate(merge_time_per_tile_count{app=\"MergerService\", pod=~\"$pod\"}[$interval]))\n",
           "instant": false,
           "legendFormat": "avg",
           "range": true,
@@ -657,7 +571,7 @@
             "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(merge_time_per_tile_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.5, sum by(le) (rate(merge_time_per_tile_bucket{app=\"MergerService\", pod=~\"$pod\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p50",
@@ -670,7 +584,7 @@
             "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by(le) (rate(merge_time_per_tile_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.9, sum by(le) (rate(merge_time_per_tile_bucket{app=\"MergerService\", pod=~\"$pod\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p90",
@@ -741,13 +655,15 @@
       "gridPos": {
         "h": 7,
         "w": 8,
-        "x": 0,
-        "y": 14
+        "x": 16,
+        "y": 9
       },
       "id": 9,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true
@@ -764,7 +680,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "sum(rate(upscale_time_per_tile_sum{app=\"MergerService\", pod=\"$pod\"}[$interval])) / sum(rate(upscale_time_per_tile_count{app=\"MergerService\", pod=\"$pod\"}[$interval]))",
+          "expr": "sum(rate(upscale_time_per_tile_sum{app=\"MergerService\", pod=~\"$pod\"}[$interval])) / sum(rate(upscale_time_per_tile_count{app=\"MergerService\", pod=~\"$pod\"}[$interval]))",
           "instant": false,
           "legendFormat": "avg",
           "range": true,
@@ -776,7 +692,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(upscale_time_per_tile_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.5, sum by(le) (rate(upscale_time_per_tile_bucket{app=\"MergerService\", pod=~\"$pod\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p50",
@@ -789,7 +705,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by(le) (rate(upscale_time_per_tile_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.9, sum by(le) (rate(upscale_time_per_tile_bucket{app=\"MergerService\", pod=~\"$pod\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p90",
@@ -860,13 +776,15 @@
       "gridPos": {
         "h": 7,
         "w": 8,
-        "x": 8,
-        "y": 14
+        "x": 0,
+        "y": 16
       },
       "id": 10,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true
@@ -883,7 +801,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "sum(rate(total_fetch_time_per_tile_sum{app=\"MergerService\", pod=\"$pod\"}[$interval])) / sum(rate(total_fetch_time_per_tile_count{app=\"MergerService\", pod=\"$pod\"}[$interval]))",
+          "expr": "sum(rate(total_fetch_time_per_tile_sum{app=\"MergerService\", pod=~\"$pod\"}[$interval])) / sum(rate(total_fetch_time_per_tile_count{app=\"MergerService\", pod=~\"$pod\"}[$interval]))",
           "instant": false,
           "legendFormat": "avg",
           "range": true,
@@ -895,7 +813,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(total_fetch_time_per_tile_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.5, sum by(le) (rate(total_fetch_time_per_tile_bucket{app=\"MergerService\", pod=~\"$pod\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p50",
@@ -908,7 +826,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by(le) (rate(total_fetch_time_per_tile_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.9, sum by(le) (rate(total_fetch_time_per_tile_bucket{app=\"MergerService\", pod=~\"$pod\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p90",
@@ -979,13 +897,15 @@
       "gridPos": {
         "h": 7,
         "w": 8,
-        "x": 16,
-        "y": 14
+        "x": 8,
+        "y": 16
       },
       "id": 2,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "displayMode": "table",
           "placement": "right",
           "showLegend": true
@@ -1002,7 +922,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "sum(rate(batch_upload_time_sum{app=\"MergerService\", pod=\"$pod\"}[$interval])) / sum(rate(batch_upload_time_count{app=\"MergerService\", pod=\"$pod\"}[$interval]))",
+          "expr": "sum(rate(batch_upload_time_sum{app=\"MergerService\", pod=~\"$pod\"}[$interval])) / sum(rate(batch_upload_time_count{app=\"MergerService\", pod=~\"$pod\"}[$interval]))",
           "instant": false,
           "legendFormat": "avg",
           "range": true,
@@ -1014,7 +934,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum by(le) (rate(batch_upload_time_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.5, sum by(le) (rate(batch_upload_time_bucket{app=\"MergerService\", pod=~\"$pod\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p50",
@@ -1027,7 +947,7 @@
             "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.9, sum by(le) (rate(batch_upload_time_bucket{app=\"MergerService\", pod=\"$pod\"}[$interval])))",
+          "expr": "histogram_quantile(0.9, sum by(le) (rate(batch_upload_time_bucket{app=\"MergerService\", pod=~\"$pod\"}[$interval])))",
           "hide": false,
           "instant": false,
           "legendFormat": "p90",
@@ -1037,6 +957,664 @@
       ],
       "title": "Tiles Upload Time",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Duration",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 16
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "sum(rate(total_validation_time_sum{app=\"MergerService\", pod=~\"$pod\"}[$interval])) / sum(rate(total_validation_time_count{app=\"MergerService\", pod=~\"$pod\"}[$interval]))",
+          "format": "time_series",
+          "instant": false,
+          "interval": "",
+          "legendFormat": "avg",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(total_validation_time_bucket{app=\"MergerService\",pod=~\"$pod\"}[$interval])))",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "p50",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b30ff3fe-dfa6-4bde-84cc-ed95800726d4"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.9, sum by (le) (rate(total_validation_time_bucket{app=\"MergerService\",pod=~\"$pod\"}[$interval])))",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "p90",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "Total Validation Time",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "id": 22,
+      "panels": [],
+      "title": "Merge Outcomes",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Tiles/s",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 24
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
+          },
+          "editorMode": "code",
+          "expr": "sum by (outcome) (rate(merge_tile_outcomes_total{app=\"MergerService\", pod=~\"$pod\"}[$interval]))",
+          "instant": false,
+          "legendFormat": "{{outcome}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Merge Tile Outcomes (rate)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "% of total",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 24
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
+          },
+          "editorMode": "code",
+          "expr": "100 * sum by (outcome) (rate(merge_tile_outcomes_total{app=\"MergerService\", pod=~\"$pod\"}[$interval])) / ignoring(outcome) group_left sum(rate(merge_tile_outcomes_total{app=\"MergerService\", pod=~\"$pod\"}[$interval]))",
+          "instant": false,
+          "legendFormat": "{{outcome}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Merge Tile Outcomes (% of total)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Tiles/s",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 24
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(merge_tile_outcomes_total{app=\"MergerService\", pod=~\"$pod\"}[$interval]))",
+          "instant": false,
+          "legendFormat": "tiles/s",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Tile Throughput",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 31
+      },
+      "id": 14,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
+          },
+          "editorMode": "code",
+          "expr": "sum by (outcome) (increase(merge_tile_outcomes_total{app=\"MergerService\", pod=~\"$pod\"}[$__range]))",
+          "instant": true,
+          "legendFormat": "{{outcome}}",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Tiles by Outcome (range total)",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 38
+      },
+      "id": 23,
+      "panels": [],
+      "title": "Task Health",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Tasks/s",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 39
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
+          },
+          "editorMode": "code",
+          "expr": "sum by (result) (rate(merger_task_outcomes_total{app=\"MergerService\", pod=~\"$pod\"}[$interval]))",
+          "instant": false,
+          "legendFormat": "{{result}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Task Outcomes (rate)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 39
+      },
+      "id": 16,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "fa7eeb57-1744-493c-8b39-194c176263b1"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(merger_report_write_failures_total{app=\"MergerService\", pod=~\"$pod\"}[$__range]))",
+          "instant": true,
+          "legendFormat": "failures",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Report Write Failures (range)",
+      "type": "stat"
     }
   ],
   "refresh": "5s",
@@ -1115,11 +1693,15 @@
         "type": "interval"
       },
       {
-        "allValue": ".*",
+        "allValue": null,
         "current": {
-          "selected": false,
-          "text": "gpkg-merger-metrics-deployment-54799699d4-rhxcs",
-          "value": "gpkg-merger-metrics-deployment-54799699d4-rhxcs"
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
         },
         "datasource": {
           "type": "prometheus",
@@ -1127,8 +1709,8 @@
         },
         "definition": "label_values({namespace=\"$namespace\", app=\"MergerService\"},pod)",
         "hide": 0,
-        "includeAll": false,
-        "multi": false,
+        "includeAll": true,
+        "multi": true,
         "name": "pod",
         "options": [],
         "query": {
@@ -1143,9 +1725,13 @@
       },
       {
         "current": {
-          "selected": false,
-          "text": "raster-qa",
-          "value": "raster-qa"
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
         },
         "datasource": {
           "type": "prometheus",
@@ -1153,8 +1739,8 @@
         },
         "definition": "label_values({app=\"MergerService\"},namespace)",
         "hide": 0,
-        "includeAll": false,
-        "multi": false,
+        "includeAll": true,
+        "multi": true,
         "name": "namespace",
         "options": [],
         "query": {
@@ -1165,7 +1751,8 @@
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
-        "type": "query"
+        "type": "query",
+        "allValue": null
       }
     ]
   },
