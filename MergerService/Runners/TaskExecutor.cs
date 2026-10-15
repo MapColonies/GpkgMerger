@@ -100,7 +100,8 @@ namespace MergerService.Runners
 
                 this._logger.LogDebug($"[{methodName}] BuildDataList");
                 List<IData> sources = this.BuildDataList(metadata.Sources, this._batchMaxSize);
-                
+                try
+                {
                 IData target = sources[0];
                 target.IsNew = metadata.IsNewTarget;
 
@@ -252,6 +253,14 @@ namespace MergerService.Runners
                     this._metricsProvider.TilesInBatchGauge(0);
                 }
                 target.Wrapup();
+                }
+                finally
+                {
+                    foreach (IData source in sources)
+                    {
+                        source.Dispose();
+                    }
+                }
             }
             this._logger.LogDebug($"[{methodName}] end");
         }
@@ -266,15 +275,27 @@ namespace MergerService.Runners
 
                 if (paths.Length != 0)
                 {
-                    string path = BuildPath(paths[0], true);
-                    sources.Add(this._dataFactory.CreateDataSource(paths[0].Type, path, batchSize, paths[0].Grid,
-                        paths[0].Origin, paths[0].Extent, true));
-                    foreach (Source source in paths.Skip(1))
+                    try
                     {
-                        // TODO: add support for HTTP
-                        path = BuildPath(source, false);
-                        sources.Add(this._dataFactory.CreateDataSource(source.Type, path, batchSize,
-                            source.Grid, source.Origin));
+                        string path = BuildPath(paths[0], true);
+                        sources.Add(this._dataFactory.CreateDataSource(paths[0].Type, path, batchSize, paths[0].Grid,
+                            paths[0].Origin, paths[0].Extent, true));
+                        foreach (Source source in paths.Skip(1))
+                        {
+                            // TODO: add support for HTTP
+                            path = BuildPath(source, false);
+                            sources.Add(this._dataFactory.CreateDataSource(source.Type, path, batchSize,
+                                source.Grid, source.Origin));
+                        }
+                    }
+                    catch
+                    {
+                        // Dispose the sources already built so a mid-list failure doesn't leak open handles.
+                        foreach (IData source in sources)
+                        {
+                            source.Dispose();
+                        }
+                        throw;
                     }
                 }
                 stopwatch.Stop();

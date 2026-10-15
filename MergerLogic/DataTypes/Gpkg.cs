@@ -8,7 +8,8 @@ namespace MergerLogic.DataTypes
 {
     public class Gpkg : Data<IGpkgClient>
     {
-        private long _offset;
+        // Keyset cursor: the greatest tile id handed out so far. Persisted as the batch identifier for resume.
+        private long _batchCursorId;
         private Extent _extent;
         private readonly IConfigurationManager _configManager;
         static readonly object _locker = new object();
@@ -18,7 +19,7 @@ namespace MergerLogic.DataTypes
             : base(container, DataType.GPKG, path, batchSize, grid, origin, isBase, extent)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] Ctor started");
-            this._offset = 0;
+            this._batchCursorId = 0;
             this._configManager = configuration;
 
             if (isBase)
@@ -82,7 +83,7 @@ namespace MergerLogic.DataTypes
         {
             lock (_locker)
             {
-                this._offset = 0;
+                this._batchCursorId = 0;
             }
         }
 
@@ -91,28 +92,19 @@ namespace MergerLogic.DataTypes
             lock (_locker)
             {
                 this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] started");
-                currentBatchIdentifier = this._offset.ToString();
-                List<Tile> tiles = new List<Tile>();
-                if (this._offset != totalTilesCount)
-                {
-                    //TODO: optimize after IOC refactoring
-                    int counter = 0;
+                currentBatchIdentifier = this._batchCursorId.ToString();
 
-                    tiles = this.Utils.GetBatch(this.BatchSize, this._offset)
-                        .Select(t =>
-                        {
-                            Tile tile = this.ConvertOriginTile(t);
-                            tile = this.ToCurrentGrid(tile);
-                            counter++;
-                            return tile;
-                        }).Where(t => t != null).ToList();
+                var (rawTiles, cursor) = this.Utils.GetBatch(this.BatchSize, this._batchCursorId);
+                List<Tile> tiles = rawTiles
+                    .Select(t =>
+                    {
+                        Tile tile = this.ConvertOriginTile(t);
+                        tile = this.ToCurrentGrid(tile);
+                        return tile;
+                    }).Where(t => t != null).ToList();
 
-                    Interlocked.Add(ref this._offset, counter);
-                    nextBatchIdentifier = this._offset.ToString();
-
-                    return tiles;
-                }
-                nextBatchIdentifier = this._offset.ToString();
+                this._batchCursorId = cursor;
+                nextBatchIdentifier = this._batchCursorId.ToString();
                 this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended");
                 return tiles;
             }
@@ -122,7 +114,7 @@ namespace MergerLogic.DataTypes
         {
             lock (_locker)
             {
-                this._offset = long.Parse(batchIdentifier);
+                this._batchCursorId = long.Parse(batchIdentifier);
             }
         }
 
