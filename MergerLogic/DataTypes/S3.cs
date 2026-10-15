@@ -17,7 +17,7 @@ namespace MergerLogic.DataTypes
         private IEnumerator<int> _zoomEnumerator;
         private string? _continuationToken;
         private bool _endOfRead;
-        static readonly object _locker = new object();
+        private readonly object _locker = new object();
         private const string nullStringValue = "Null";
 
         private readonly IPathUtils _pathUtils;
