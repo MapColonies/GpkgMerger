@@ -84,8 +84,8 @@ namespace MergerLogic.Clients
             }
             catch (Exception e)
             {
+                // System.Timers.Timer swallows exceptions from Elapsed, so rethrowing was a no-op; log so failures are visible.
                 this._logger.LogError($"[{MethodBase.GetCurrentMethod().Name}] Could not send heartbeat for task={this._taskId}, {e.Message}");
-                throw;
             }
         }
     }
