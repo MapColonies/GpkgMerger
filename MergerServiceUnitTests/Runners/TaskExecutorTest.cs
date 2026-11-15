@@ -112,19 +112,16 @@ namespace MergerLogicUnitTests.Utils
 
         public static IEnumerable<object[]> GetBatchLimitTestParameters()
         {
-            // Tests that given a batch limit size, it flushes every time it reaches the limit
-            // When the limit is 2, and there are total 5 tiles, we expect 3 flushes
-            // We set the bytes limit to a high value to avoid it being reached by the test
+            // Merging is chunked by batchMaxSize and each chunk is flushed once.
+            // limitBatchSize=true, size=2, 5 tiles -> ceil(5/2) = 3 flushes.
             yield return new object[] {
                 true, 2, 1024 * 1024 * 80, 3, 5
             };
 
-            // Tests that given a batch bytes limit, it flushes every time it reaches the limit
-            // When the limit is one byte more then twice the size of the tile, and there are total 7 tiles, we expect 3 flushes
-            // (Flush every 3rd tile, and additional flush at the end)
-            // We disable the size limit to avoid it being used in the test
+            // limitBatchSize=false -> chunking falls back to the default batch size (1000),
+            // so a small 7-tile task is written in a single flush.
             yield return new object[] {
-                false, 1, (File.ReadAllBytes("tile.jpeg").Length * 2) + 1, 3, 7
+                false, 1, (File.ReadAllBytes("tile.jpeg").Length * 2) + 1, 1, 7
             };
         }
 
@@ -143,7 +140,9 @@ namespace MergerLogicUnitTests.Utils
             Source testSource = new Source($"source", $"source_type");
             Coord[] testSourceCoords = new int[totalAmountOfTiles].Select((_, index) => new Coord(1, index, 0)).ToArray();
             Tile[] testSourceTiles = testSourceCoords.Select(coord => new Tile(coord, tileBytes)).ToArray();
-            TileBounds tileBounds = new TileBounds(1, 0, testSourceCoords.Length, 0, 1);
+            // Dense single-row bounds: every coord in the bounds has a tile, so chunking by coord equals
+            // chunking by produced tile.
+            TileBounds tileBounds = new TileBounds(1, 0, testSourceCoords.Length - 1, 0, 0);
             Mock<IData> sourceDataMock = this._mockRepository.Create<IData>();
 
             for (var testSourceCoordIdx = 0; testSourceCoordIdx < testSourceCoords.Length; testSourceCoordIdx++)
