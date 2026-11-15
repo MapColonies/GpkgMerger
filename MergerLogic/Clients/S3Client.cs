@@ -92,7 +92,7 @@ namespace MergerLogic.Clients
                     return null;
                 }
                 // In case there are other errors such as connection to S3
-                throw e;
+                throw;
             }
         }
 
@@ -202,7 +202,7 @@ namespace MergerLogic.Clients
                     return false;
                 }
                 // In case there are other errors such as connection to S3
-                throw e;
+                throw;
             }
         }
     }
