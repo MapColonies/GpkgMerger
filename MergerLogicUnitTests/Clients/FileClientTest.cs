@@ -57,18 +57,19 @@ namespace MergerLogicUnitTests.Clients
             {
                 new object[] { true, false }, //useCoords
                 new object[] { true, false }, // return null
-                new object[] { TileFormat.Png, TileFormat.Jpeg }
+                new object[] { "png", "jpeg", "jpg" }
             });
         }
 
         [TestMethod]
         [DynamicData(nameof(GetGetTileParams), DynamicDataSourceType.Method)]
-        public void GetTile(bool useCoords, bool returnsNull, TileFormat targetFormat)
+        public void GetTile(bool useCoords, bool returnsNull, string extension)
         {
             Coord cords = new Coord(1, 2, 3);
+            TileFormat targetFormat = extension == "png" ? TileFormat.Png : TileFormat.Jpeg;
             byte[] data = targetFormat == TileFormat.Jpeg ? this._jpegImageData : this._pngImageData;
 
-            SetupTilePathProbe(cords, returnsNull, targetFormat, out string? foundPath);
+            SetupTilePathProbe(cords, returnsNull ? null : extension, out string? foundPath);
             if (!returnsNull)
             {
                 this._fileMock
@@ -94,29 +95,24 @@ namespace MergerLogicUnitTests.Clients
             this._repository.VerifyAll();
         }
 
-        // GetTilePath probes jpeg then png via File.Exists. Sets up only the calls the probe actually
-        // makes: png is not probed once jpeg is found, so its setups are omitted (strict mocks).
-        private void SetupTilePathProbe(Coord cords, bool missing, TileFormat targetFormat, out string? foundPath)
+        // Strict mocks: set up only the probes GetTilePath makes, which stop at the first existing file.
+        private void SetupTilePathProbe(Coord cords, string? existingExtension, out string? foundPath)
         {
-            string jpegPath = "1/2/3.jpeg";
-            string pngPath = "1/2/3.png";
-            bool jpegExists = !missing && targetFormat == TileFormat.Jpeg;
-            bool pngExists = !missing && targetFormat == TileFormat.Png;
-
-            this._pathMock
-                .Setup(p => p.Combine("testFilePath", cords.Z.ToString(), cords.X.ToString(), $"{cords.Y}.jpeg"))
-                .Returns(jpegPath);
-            this._fileMock.Setup(f => f.Exists(jpegPath)).Returns(jpegExists);
-
-            if (!jpegExists)
+            foundPath = null;
+            foreach (string extension in new[] { "jpeg", "png", "jpg" })
             {
+                string candidate = $"{cords.Z}/{cords.X}/{cords.Y}.{extension}";
+                bool exists = extension == existingExtension;
                 this._pathMock
-                    .Setup(p => p.Combine("testFilePath", cords.Z.ToString(), cords.X.ToString(), $"{cords.Y}.png"))
-                    .Returns(pngPath);
-                this._fileMock.Setup(f => f.Exists(pngPath)).Returns(pngExists);
+                    .Setup(p => p.Combine("testFilePath", cords.Z.ToString(), cords.X.ToString(), $"{cords.Y}.{extension}"))
+                    .Returns(candidate);
+                this._fileMock.Setup(f => f.Exists(candidate)).Returns(exists);
+                if (exists)
+                {
+                    foundPath = candidate;
+                    return;
+                }
             }
-
-            foundPath = jpegExists ? jpegPath : (pngExists ? pngPath : null);
         }
 
         #endregion
@@ -124,13 +120,14 @@ namespace MergerLogicUnitTests.Clients
         #region TileExists
 
         [TestMethod]
-        [DataRow(true)]
-        [DataRow(false)]
-        public void TileExists(bool exist)
+        [DataRow("jpeg", true)]
+        [DataRow("jpg", true)]
+        [DataRow(null, false)]
+        public void TileExists(string? existingExtension, bool exist)
         {
             Coord cords = new Coord(1, 2, 3);
 
-            SetupTilePathProbe(cords, !exist, TileFormat.Jpeg, out _);
+            SetupTilePathProbe(cords, existingExtension, out _);
 
             var fileClient = new FileClient("testFilePath", this._geoUtilsMock.Object, this._fsMock.Object);
 
