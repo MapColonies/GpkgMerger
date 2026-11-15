@@ -15,5 +15,8 @@ namespace MergerLogic.Monitoring.Metrics
         void UpscaleTimePerTileHistogram(double measuredTime);
         void TotalValidationTimeHistogram(double measuredTime);
         void TilesInBatchGauge(double batchCount);
+        void MergeTileOutcomes(int added, int merged, int replaced, int skipped, string taskType, string targetFormat, bool isNewTarget);
+        void TaskOutcome(string result, string taskType);
+        void ReportWriteFailure();
     }
 }
