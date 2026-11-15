@@ -17,7 +17,7 @@ namespace MergerLogic.DataTypes
         private IEnumerator<int> _zoomEnumerator;
         private string? _continuationToken;
         private bool _endOfRead;
-        static readonly object _locker = new object();
+        private readonly object _locker = new object();
         private const string nullStringValue = "Null";
 
         private readonly IPathUtils _pathUtils;
@@ -198,10 +198,9 @@ namespace MergerLogic.DataTypes
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] start");
-            foreach (var tile in targetTiles)
-            {
-                this.Utils.UpdateTile(tile);
-            }
+            // ToList so Parallel.ForEach range-partitions instead of running the upstream grid/origin
+            // projection under the shared-enumerator lock a bare IEnumerable would impose.
+            Parallel.ForEach(targetTiles.ToList(), tile => this.Utils.UpdateTile(tile));
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] end");
         }
     }

@@ -473,8 +473,9 @@ namespace MergerLogicUnitTests.DataTypes
 
                 if (!isOneXOne || tile.Z != 7)
                 {
+                    // Uploads run in parallel after the (ordered) grid/origin projection, so UpdateTile is
+                    // intentionally outside the strict sequence; per-tile Times.Once is verified below.
                     this._s3UtilsMock
-                        .InSequence(seq)
                         .Setup(utils => utils.UpdateTile(It.IsAny<Tile>()));
                 }
             }
