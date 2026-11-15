@@ -7,6 +7,8 @@ namespace MergerService.Models.Reports
 {
     public class MergeReport
     {
+        private readonly object _recordLock = new object();
+
         public int Version => 1;
         public string JobId { get; }
         public string TaskId { get; }
@@ -46,6 +48,14 @@ namespace MergerService.Models.Reports
         // target was blended with source data; replaced = existed and an opaque source
         // covered it; skipped = no tile produced or no source data contributed.
         public void RecordOutcome(Coord coord, bool existedBefore, bool tileProduced, MergeStats stats)
+        {
+            lock (this._recordLock)
+            {
+                this.RecordOutcomeUnsafe(coord, existedBefore, tileProduced, stats);
+            }
+        }
+
+        private void RecordOutcomeUnsafe(Coord coord, bool existedBefore, bool tileProduced, MergeStats stats)
         {
             if (!tileProduced || !stats.AnySourceUsed)
             {

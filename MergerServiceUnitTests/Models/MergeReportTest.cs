@@ -4,6 +4,7 @@ using MergerService.Models.Reports;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Threading.Tasks;
 
 namespace MergerServiceUnitTests.Models
 {
@@ -105,6 +106,27 @@ namespace MergerServiceUnitTests.Models
 
             Assert.IsFalse(report.ToLogString().Contains("addedTiles"));
             Assert.IsTrue(report.ToLogString().Contains("\"added\""));
+        }
+
+        [TestMethod]
+        public void RecordOutcome_ConcurrentCalls_CountsEveryTile()
+        {
+            const int perKind = 5000;
+            var report = new MergeReport("job1", "task1", "MERGE", "PNG", false);
+
+            Parallel.For(0, perKind, i =>
+            {
+                report.RecordOutcome(new Coord(10, i, 0), existedBefore: false, tileProduced: true, new MergeStats(false, true));
+                report.RecordOutcome(AnyCoord, existedBefore: true, tileProduced: true, new MergeStats(true, true));
+                report.RecordOutcome(AnyCoord, existedBefore: true, tileProduced: true, new MergeStats(false, true));
+                report.RecordOutcome(AnyCoord, existedBefore: false, tileProduced: false, new MergeStats(false, false));
+            });
+
+            Assert.AreEqual(perKind, report.Added);
+            Assert.AreEqual(perKind, report.AddedTiles.Count);
+            Assert.AreEqual(perKind, report.Merged);
+            Assert.AreEqual(perKind, report.Replaced);
+            Assert.AreEqual(perKind, report.Skipped);
         }
 
         [TestMethod]
