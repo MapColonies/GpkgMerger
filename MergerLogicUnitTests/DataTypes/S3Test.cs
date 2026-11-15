@@ -621,6 +621,11 @@ namespace MergerLogicUnitTests.DataTypes
 
             Assert.AreEqual(tileCount, s3Source.TileCount());
 
+            this._s3ClientMock.Verify(s3 => s3.ListObjectsV2Async(It.Is<ListObjectsV2Request>(req =>
+                req.BucketName == "bucket" &&
+                req.Prefix == "test/" &&
+                req.StartAfter == "test/" &&
+                req.MaxKeys != 1), It.IsAny<CancellationToken>()), Times.Exactly(token + 1));
             this.VerifyAll();
         }
 

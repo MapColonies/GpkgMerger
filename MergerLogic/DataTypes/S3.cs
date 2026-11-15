@@ -194,8 +194,8 @@ namespace MergerLogic.DataTypes
                 var listRequests = new ListObjectsV2Request
                 {
                     BucketName = this._bucket,
-                    Prefix = this.Path,
-                    StartAfter = this.Path,
+                    Prefix = $"{this.Path}/",
+                    StartAfter = $"{this.Path}/",
                     ContinuationToken = continuationToken
                 };
 
