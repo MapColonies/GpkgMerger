@@ -1,4 +1,5 @@
-﻿using Amazon.S3;
+﻿using Amazon.Runtime;
+using Amazon.S3;
 using Amazon.S3.Model;
 using MergerLogic.Batching;
 using MergerLogic.Clients;
@@ -12,6 +13,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -324,32 +326,42 @@ namespace MergerLogicUnitTests.Utils
         [DataRow(false)]
         public void TileExists(bool exist)
         {
-            var seq = new MockSequence();
-            this._pathUtilsMock
-                        .InSequence(seq)
-                        .Setup(utils => utils.GetTilePathWithoutExtension("test", 0, 0, 0, true))
-                        .Returns("key");
+            var notFound = new AmazonS3Exception("Not Found", ErrorType.Sender, "NotFound", "req", HttpStatusCode.NotFound);
 
-            var listResponse = new ListObjectsV2Response();
-            if (exist)
-            {
-                listResponse.S3Objects.Add(new S3Object() { Key = "key" });
-            }
+            // Jpeg is probed first via HEAD; only when it 404s is the Png candidate probed.
+            this._pathUtilsMock
+                .Setup(utils => utils.GetTilePath("test", 0, 0, 0, TileFormat.Jpeg, true))
+                .Returns("keyJpeg");
             this._amazonS3ClientMock
-                .InSequence(seq)
-                .Setup(s3 => s3.ListObjectsV2Async(It.Is<ListObjectsV2Request>(req =>
-                        req.BucketName == "bucket" && req.Prefix == "key" && req.MaxKeys == 1),
+                .Setup(s3 => s3.GetObjectMetadataAsync(
+                    It.Is<GetObjectMetadataRequest>(req => req.BucketName == "bucket" && req.Key == "keyJpeg"),
                     It.IsAny<CancellationToken>()))
-                .ReturnsAsync(listResponse);
+                .Returns(exist
+                    ? Task.FromResult(new GetObjectMetadataResponse())
+                    : Task.FromException<GetObjectMetadataResponse>(notFound));
+
+            if (!exist)
+            {
+                this._pathUtilsMock
+                    .Setup(utils => utils.GetTilePath("test", 0, 0, 0, TileFormat.Png, true))
+                    .Returns("keyPng");
+                this._amazonS3ClientMock
+                    .Setup(s3 => s3.GetObjectMetadataAsync(
+                        It.Is<GetObjectMetadataRequest>(req => req.BucketName == "bucket" && req.Key == "keyPng"),
+                        It.IsAny<CancellationToken>()))
+                    .Returns(Task.FromException<GetObjectMetadataResponse>(notFound));
+            }
 
             var s3Utils = new S3Client(this._amazonS3ClientMock.Object, this._pathUtilsMock.Object,
                 this._geoUtilsMock.Object, this._loggerMock.Object, "STANDARD", "bucket", "test");
 
             Assert.AreEqual(exist, s3Utils.TileExists(0, 0, 0));
 
-            this._pathUtilsMock.Verify(utils => utils.GetTilePathWithoutExtension("test", 0, 0, 0, true), Times.Once);
-            this._amazonS3ClientMock.Verify(s3 => s3.ListObjectsV2Async(It.Is<ListObjectsV2Request>(req =>
-                        req.BucketName == "bucket" && req.Prefix == "key" && req.MaxKeys == 1), It.IsAny<CancellationToken>()), Times.Once);
+            this._amazonS3ClientMock.Verify(s3 => s3.GetObjectMetadataAsync(
+                It.Is<GetObjectMetadataRequest>(req => req.Key == "keyJpeg"), It.IsAny<CancellationToken>()), Times.Once);
+            this._amazonS3ClientMock.Verify(s3 => s3.GetObjectMetadataAsync(
+                It.Is<GetObjectMetadataRequest>(req => req.Key == "keyPng"), It.IsAny<CancellationToken>()),
+                exist ? Times.Never() : Times.Once());
             this.VerifyAll();
         }
 
