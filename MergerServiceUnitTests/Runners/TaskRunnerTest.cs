@@ -3,6 +3,7 @@ using MergerLogic.Clients;
 using MergerLogic.ImageProcessing;
 using MergerLogic.Monitoring.Metrics;
 using MergerService.Controllers;
+using MergerService.Models.Jobs;
 using MergerService.Models.Tasks;
 using MergerService.Runners;
 using MergerService.Utils;
@@ -72,8 +73,14 @@ namespace MergerLogicUnitTests.Utils
         new MergeMetadata(TileFormat.Jpeg, true, new TileBounds[0], new Source[0]),
         Status.PENDING, 0, "reason", 0, "testJobId", true, new DateTime(), new DateTime());
 
+      var testJob = new MergeJob("testJobId", "resourceId", "version", "type", "resolution", "description",
+        new JobMergeMetadata(null!, new string[0], "", "", new AdditionalParams("http://tracker", "reports")),
+        new DateTime(), new DateTime(), Status.PENDING, 0, "reason", false, 0, "internalId", "producerName",
+        "productName", "productType", 0, 0, 0, 0, 0, 0, 0, "additionalIdentifiers", "domain", new MergeTask[0]);
+
       this._taskUtilsMock.Setup(taskUtils => taskUtils.GetTask(It.IsAny<string>(), It.IsAny<string>())).Returns(testTask);
-      this._taskExecutorMock.Setup(taskExecutor => taskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, It.IsAny<string?>()));
+      this._jobUtilsMock.Setup(jobUtils => jobUtils.GetJob(testTask.JobId)).Returns(testJob);
+      this._taskExecutorMock.Setup(taskExecutor => taskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, It.IsAny<string?>(), It.IsAny<string?>()));
 
       var testTaskRunner = new TaskRunner(_taskExecutorMock.Object, _jobUtilsMock.Object, _loggerMock.Object,
         _taskUtilsMock.Object, _heartbeatClientMock.Object, _metricsProviderMock.Object,
@@ -83,6 +90,7 @@ namespace MergerLogicUnitTests.Utils
       testTaskRunner.RunTask(testResultTask);
 
       Assert.AreEqual(testTask, testResultTask);
+      this._taskExecutorMock.Verify(e => e.ExecuteTask(testTask, _taskUtilsMock.Object, It.IsAny<string>(), "reports"), Times.Once);
       _taskUtilsMock.Verify(taskUtils => taskUtils.UpdateCompletion(testTask.JobId, testTask.Id, It.IsAny<string?>()), Times.Once);
     }
 
@@ -95,7 +103,7 @@ namespace MergerLogicUnitTests.Utils
         Status.PENDING, 0, "reason", 0, "testJobId", true, new DateTime(), new DateTime());
 
       this._taskUtilsMock.Setup(taskUtils => taskUtils.GetTask(It.IsAny<string>(), It.IsAny<string>())).Returns(testTask);
-      this._taskExecutorMock.Setup(taskExecutor => taskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, It.IsAny<string?>())).Throws(new Exception(testFailureMessage));
+      this._taskExecutorMock.Setup(taskExecutor => taskExecutor.ExecuteTask(testTask, _taskUtilsMock.Object, It.IsAny<string?>(), It.IsAny<string?>())).Throws(new Exception(testFailureMessage));
 
       var testTaskRunner = new TaskRunner(_taskExecutorMock.Object, _jobUtilsMock.Object, _loggerMock.Object,
         _taskUtilsMock.Object, _heartbeatClientMock.Object, _metricsProviderMock.Object,
