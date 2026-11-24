@@ -21,6 +21,9 @@ namespace MergerLogic.Monitoring.Metrics
             [EnumMember(Value = "total_validation_time")] TotalValidationTimeHistogram,
             [EnumMember(Value = "total_fetch_time_per_tile")] TotalFetchTimePerTileHistogram,
             [EnumMember(Value = "tiles_in_batch")] TilesInBatchGauge,
+            [EnumMember(Value = "merge_tile_outcomes_total")] MergeTileOutcomesCounter,
+            [EnumMember(Value = "merger_task_outcomes_total")] TaskOutcomesCounter,
+            [EnumMember(Value = "merger_report_write_failures_total")] ReportWriteFailuresCounter,
         }
         private readonly CollectorRegistry _registry;
         private readonly double[]? _buckets;
@@ -150,6 +153,61 @@ namespace MergerLogic.Monitoring.Metrics
            );
         }
 
+        public void MergeTileOutcomes(int added, int merged, int replaced, int skipped, string taskType, string targetFormat, bool isNewTarget)
+        {
+            const string help = "Count of merged tiles by outcome (added / merged / replaced / skipped)";
+            string[] labels = new string[] { "outcome", "task_type", "target_format", "is_new_target" };
+            string newTarget = isNewTarget ? "true" : "false";
+
+            this.IncrementCounter(MetricName.MergeTileOutcomesCounter, help, added, labels,
+                new string[] { "added", taskType, targetFormat, newTarget });
+            this.IncrementCounter(MetricName.MergeTileOutcomesCounter, help, merged, labels,
+                new string[] { "merged", taskType, targetFormat, newTarget });
+            this.IncrementCounter(MetricName.MergeTileOutcomesCounter, help, replaced, labels,
+                new string[] { "replaced", taskType, targetFormat, newTarget });
+            this.IncrementCounter(MetricName.MergeTileOutcomesCounter, help, skipped, labels,
+                new string[] { "skipped", taskType, targetFormat, newTarget });
+        }
+
+        public void TaskOutcome(string result, string taskType)
+        {
+            this.IncrementCounter(MetricName.TaskOutcomesCounter, "Count of task outcomes by result (success / reject / error)",
+                1, new string[] { "result", "task_type" }, new string[] { result, taskType });
+        }
+
+        public void ReportWriteFailure()
+        {
+            this.IncrementCounter(MetricName.ReportWriteFailuresCounter, "Count of merge-report artifact write failures", 1);
+        }
+
+        // The Prometheus metric name is the MetricName's [EnumMember] value (snake_case), not the
+        // enum member identifier — dashboards and Prometheus naming conventions expect snake_case.
+        private static string MetricNameValue(MetricName metricName)
+        {
+            return typeof(MetricName).GetField(metricName.ToString())!
+                .GetCustomAttribute<EnumMemberAttribute>()!.Value!;
+        }
+
+        private void IncrementCounter(MetricName metricName, string help, double value, string[]? labels = null, string[]? labelValues = null)
+        {
+            if (!this._enabled)
+            {
+                return;
+            }
+
+            Counter counter = Prometheus.Metrics.WithCustomRegistry(_registry).CreateCounter(MetricNameValue(metricName), help,
+                new CounterConfiguration { LabelNames = labels });
+
+            if (labelValues != null)
+            {
+                counter.WithLabels(labelValues).Inc(value);
+            }
+            else
+            {
+                counter.Inc(value);
+            }
+        }
+
         private void ObserveHistogram(MetricName metricName, string help, double value, string[]? labels = null, string[]? labelValues = null)
         {
             if (!this._enabled)
@@ -157,7 +215,7 @@ namespace MergerLogic.Monitoring.Metrics
                 return;
             }
 
-            Histogram histogram = Prometheus.Metrics.WithCustomRegistry(_registry).CreateHistogram(metricName.ToString(), help,
+            Histogram histogram = Prometheus.Metrics.WithCustomRegistry(_registry).CreateHistogram(MetricNameValue(metricName), help,
             new HistogramConfiguration
             {
                 Buckets = this._buckets,
@@ -166,9 +224,12 @@ namespace MergerLogic.Monitoring.Metrics
 
             if (labelValues != null)
             {
-                histogram.WithLabels(labelValues);
+                histogram.WithLabels(labelValues).Observe(value);
             }
-            histogram.Observe(value);
+            else
+            {
+                histogram.Observe(value);
+            }
         }
 
 
@@ -180,7 +241,7 @@ namespace MergerLogic.Monitoring.Metrics
 
             }
 
-            Gauge gauge = Prometheus.Metrics.WithCustomRegistry(_registry).CreateGauge(metricName.ToString(), help,
+            Gauge gauge = Prometheus.Metrics.WithCustomRegistry(_registry).CreateGauge(MetricNameValue(metricName), help,
                 new GaugeConfiguration
                 {
                     LabelNames = labels
@@ -188,9 +249,12 @@ namespace MergerLogic.Monitoring.Metrics
 
             if (labelValues != null)
             {
-                gauge.WithLabels(labelValues);
+                gauge.WithLabels(labelValues).Set(value);
             }
-            gauge.Set(value);
+            else
+            {
+                gauge.Set(value);
+            }
         }
     }
 }
