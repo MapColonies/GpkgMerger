@@ -1,4 +1,6 @@
 using MergerLogic.Batching;
+using MergerLogic.ImageProcessing;
+using System;
 using System.IO.Abstractions;
 using MergerLogic.Utils;
 
@@ -6,6 +8,12 @@ namespace MergerLogic.Clients;
 
 public class FileClient : DataUtils, IFileClient
 {
+    // "jpg" is not a TileFormat (it encodes as Jpeg), but folder sources hold .jpg tiles too.
+    private static readonly string[] TileExtensions = Enum.GetValues<TileFormat>()
+        .Select(format => format.ToString().ToLower())
+        .Append("jpg")
+        .ToArray();
+
     private readonly IFileSystem _fileSystem;
 
     public FileClient(string path, IGeoUtils geoUtils, IFileSystem fileSystem) 
@@ -36,16 +44,17 @@ public class FileClient : DataUtils, IFileClient
 
     private string? GetTilePath(int z, int x, int y)
     {
-        var tilePath = this._fileSystem.Path.Join(z.ToString(), x.ToString(), y.ToString());
-        try
+        // Probe each supported extension via File.Exists (false for a missing dir too, so no glob/catch).
+        foreach (string extension in TileExtensions)
         {
-            //this may or may not be faster then checking specific files of every supported type depending on the used file system
-            return this._fileSystem.Directory
-                .EnumerateFiles(this.path, $"{tilePath}.*", SearchOption.TopDirectoryOnly).FirstOrDefault();
+            string candidate = this._fileSystem.Path.Combine(
+                this.path, z.ToString(), x.ToString(), $"{y}.{extension}");
+            if (this._fileSystem.File.Exists(candidate))
+            {
+                return candidate;
+            }
         }
-        catch (DirectoryNotFoundException)
-        {
-            return null;
-        }
+
+        return null;
     }
 }

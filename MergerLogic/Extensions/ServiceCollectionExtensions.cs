@@ -26,6 +26,8 @@ namespace MergerLogic.Extensions
     {
         public static IServiceCollection RegisterMergerLogicType(this IServiceCollection collection, bool includeServiceProvider = true)
         {
+            ConfigureImageMagick();
+
             if (includeServiceProvider)
             {
                 collection = collection.RegisterServiceProvider();
@@ -46,6 +48,15 @@ namespace MergerLogic.Extensions
             return collection
                 .AddSingleton<ITileMerger, TileMerger>()
                 .AddSingleton<ITileScaler, TileScaler>();
+        }
+
+        // Process-global ImageMagick tuning. Applied once at composition root, kept out of the DI
+        // registration methods so runtime side effects aren't hidden behind a "register services" call.
+        private static void ConfigureImageMagick()
+        {
+            // Tiles are already processed in parallel at the app level, so keep ImageMagick single-threaded
+            // per operation to avoid thread oversubscription.
+            ImageMagick.ResourceLimits.Thread = 1;
         }
 
         public static IServiceCollection RegisterMergerUtils(this IServiceCollection collection)
