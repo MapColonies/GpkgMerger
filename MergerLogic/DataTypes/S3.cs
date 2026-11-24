@@ -5,6 +5,7 @@ using MergerLogic.Clients;
 using MergerLogic.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 using System.Reflection;
 
 namespace MergerLogic.DataTypes
@@ -17,7 +18,7 @@ namespace MergerLogic.DataTypes
         private IEnumerator<int> _zoomEnumerator;
         private string? _continuationToken;
         private bool _endOfRead;
-        static readonly object _locker = new object();
+        private readonly object _locker = new object();
         private const string nullStringValue = "Null";
 
         private readonly IPathUtils _pathUtils;
@@ -67,15 +68,28 @@ namespace MergerLogic.DataTypes
         private List<int> GetZoomLevels()
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] start");
-            List<int> zoomLevels = new List<int>();
 
-            for (int zoomLevel = 0; zoomLevel < Data<IS3Client>.MaxZoomRead; zoomLevel++)
+            var listRequest = new ListObjectsV2Request
             {
-                if (this.FolderExists($"{zoomLevel}/"))
+                BucketName = this._bucket,
+                Prefix = $"{this.Path}/",
+                Delimiter = "/"
+            };
+            var response = this._client.ListObjectsV2Async(listRequest).Result;
+
+            List<int> zoomLevels = new List<int>();
+            foreach (string prefix in response.CommonPrefixes ?? Enumerable.Empty<string>())
+            {
+                string zoomSegment = prefix.TrimEnd('/').Split('/').Last();
+                bool parsed = int.TryParse(zoomSegment, out int zoomLevel);
+                if (parsed && zoomLevel < Data<IS3Client>.MaxZoomRead)
                 {
                     zoomLevels.Add(zoomLevel);
                 }
             }
+
+            // CommonPrefixes sort lexicographically ("10/" before "2/"); the read path needs numeric order.
+            zoomLevels.Sort();
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended");
             return zoomLevels;
         }
@@ -180,8 +194,8 @@ namespace MergerLogic.DataTypes
                 var listRequests = new ListObjectsV2Request
                 {
                     BucketName = this._bucket,
-                    Prefix = this.Path,
-                    StartAfter = this.Path,
+                    Prefix = $"{this.Path}/",
+                    StartAfter = $"{this.Path}/",
                     ContinuationToken = continuationToken
                 };
 
@@ -198,10 +212,9 @@ namespace MergerLogic.DataTypes
         protected override void InternalUpdateTiles(IEnumerable<Tile> targetTiles)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] start");
-            foreach (var tile in targetTiles)
-            {
-                this.Utils.UpdateTile(tile);
-            }
+            // ToList so Parallel.ForEach range-partitions instead of running the upstream grid/origin
+            // projection under the shared-enumerator lock a bare IEnumerable would impose.
+            Parallel.ForEach(targetTiles.ToList(), tile => this.Utils.UpdateTile(tile));
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] end");
         }
     }

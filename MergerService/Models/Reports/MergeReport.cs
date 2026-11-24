@@ -32,6 +32,9 @@ namespace MergerService.Models.Reports
         [JsonProperty("addedTiles")]
         public List<Coord> AddedTiles { get; } = new List<Coord>();
 
+        // TaskExecutor calls RecordOutcome from a Parallel.ForEach over the tile coords.
+        private readonly object _recordLock = new object();
+
         public MergeReport(string jobId, string taskId, string taskType, string targetFormat, bool isNewTarget)
         {
             this.JobId = jobId;
@@ -47,25 +50,28 @@ namespace MergerService.Models.Reports
         // covered it; skipped = no tile produced or no source data contributed.
         public void RecordOutcome(Coord coord, bool existedBefore, bool tileProduced, MergeStats stats)
         {
-            if (!tileProduced || !stats.AnySourceUsed)
+            lock (this._recordLock)
             {
-                this.RecordSkipped();
-                return;
-            }
+                if (!tileProduced || !stats.AnySourceUsed)
+                {
+                    this.RecordSkipped();
+                    return;
+                }
 
-            if (!existedBefore)
-            {
-                this.RecordAdded(coord);
-                return;
-            }
+                if (!existedBefore)
+                {
+                    this.RecordAdded(coord);
+                    return;
+                }
 
-            if (stats.TargetUsed)
-            {
-                this.RecordMerged();
-                return;
-            }
+                if (stats.TargetUsed)
+                {
+                    this.RecordMerged();
+                    return;
+                }
 
-            this.RecordReplaced();
+                this.RecordReplaced();
+            }
         }
 
         private void RecordAdded(Coord coord)

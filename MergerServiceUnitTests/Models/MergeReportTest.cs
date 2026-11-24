@@ -4,6 +4,7 @@ using MergerService.Models.Reports;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Threading.Tasks;
 
 namespace MergerServiceUnitTests.Models
 {
@@ -91,6 +92,29 @@ namespace MergerServiceUnitTests.Models
             Assert.AreEqual(5, report.Total);
             Assert.AreEqual(60, report.DurationSeconds);
             Assert.AreEqual(40.0, report.AddedPercentage, 0.01);
+        }
+
+        [TestMethod]
+        public void RecordOutcome_ConcurrentCalls_CountsEveryTile()
+        {
+            const int tilesPerKind = 5000;
+            var report = new MergeReport("job1", "task1", "MERGE", "PNG", false);
+
+            Parallel.For(0, tilesPerKind * 2, i =>
+            {
+                if (i % 2 == 0)
+                {
+                    report.RecordOutcome(new Coord(10, i, 0), existedBefore: false, tileProduced: true, new MergeStats(false, true));
+                }
+                else
+                {
+                    report.RecordOutcome(AnyCoord, existedBefore: true, tileProduced: true, new MergeStats(true, true));
+                }
+            });
+
+            Assert.AreEqual(tilesPerKind, report.Added);
+            Assert.AreEqual(tilesPerKind, report.AddedTiles.Count);
+            Assert.AreEqual(tilesPerKind, report.Merged);
         }
 
         [TestMethod]

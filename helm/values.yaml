@@ -103,6 +103,9 @@ env:
     batchSize:
       limitBatchSize: true
       batchMaxSize: 1000
+    parallel:
+      # 0 = Environment.ProcessorCount (CPU limit if set, else node cores)
+      numOfThreads: 4
   TASK:
     types:
       - jobType: 'Ingestion_Update'
