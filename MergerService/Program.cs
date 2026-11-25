@@ -29,6 +29,7 @@ builder.Services.AddSingleton<ITaskUtils, TaskUtils>();
 builder.Services.AddSingleton<IJobUtils, JobUtils>();
 builder.Services.AddSingleton<ITaskRunner, TaskRunner>();
 builder.Services.AddSingleton<ITaskExecutor, TaskExecutor>();
+builder.Services.AddSingleton<IReportWriter, ReportWriter>();
 builder.Services.AddSingleton<IHeartbeatClient, HeartbeatClient>();
 
 var app = builder.Build();

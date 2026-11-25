@@ -1,0 +1,1134 @@
+{
+  "title": "GPKG-Merger — Logs",
+  "uid": "gpkg-merger-logs",
+  "tags": [
+    "gpkg-merger",
+    "logs"
+  ],
+  "timezone": "",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "30s",
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "loki",
+        "label": "Loki datasource",
+        "type": "datasource",
+        "query": "loki",
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false
+      },
+      {
+        "name": "namespace",
+        "label": "namespace",
+        "type": "query",
+        "datasource": {
+          "type": "loki",
+          "uid": "${loki}"
+        },
+        "query": {
+          "label": "k8s_namespace_name",
+          "stream": "{k8s_deployment_name=~\"gpkg-merger.*\"}",
+          "type": 4,
+          "refId": "LokiVariableQueryEditor-VariableQuery"
+        },
+        "definition": "label_values({k8s_deployment_name=~\"gpkg-merger.*\"}, k8s_namespace_name)",
+        "current": {
+          "text": "All",
+          "value": "$__all",
+          "selected": true
+        },
+        "includeAll": true,
+        "multi": true,
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "hide": 0,
+        "skipUrlSync": false
+      },
+      {
+        "name": "job",
+        "label": "jobId",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "skipUrlSync": false
+      },
+      {
+        "name": "task",
+        "label": "taskId",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "skipUrlSync": false
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Added",
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No data",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "sum(last_over_time({k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" | message=~\".*Merge report.*\" | unwrap added [$__range]))",
+          "queryType": "instant"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Merged",
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 4,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No data",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "sum(last_over_time({k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" | message=~\".*Merge report.*\" | unwrap merged [$__range]))",
+          "queryType": "instant"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Replaced",
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 8,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No data",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "sum(last_over_time({k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" | message=~\".*Merge report.*\" | unwrap replaced [$__range]))",
+          "queryType": "instant"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Skipped",
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 12,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No data",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "sum(last_over_time({k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" | message=~\".*Merge report.*\" | unwrap skipped [$__range]))",
+          "queryType": "instant"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Total tiles",
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 16,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "No data",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "sum(last_over_time({k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" | message=~\".*Merge report.*\" | unwrap total [$__range]))",
+          "queryType": "instant"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "p95 duration",
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 20,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "No data",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 120
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "max(quantile_over_time(0.95, {k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" | message=~\".*Merge report.*\" | unwrap durationSeconds [$__range]))",
+          "queryType": "instant"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Tiles by outcome (per $__interval)",
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 23
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 50,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "sum(sum_over_time({k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" | message=~\".*Merge report.*\" | unwrap added [$__interval]))",
+          "queryType": "range",
+          "legendFormat": "added"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "sum(sum_over_time({k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" | message=~\".*Merge report.*\" | unwrap merged [$__interval]))",
+          "queryType": "range",
+          "legendFormat": "merged"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "sum(sum_over_time({k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" | message=~\".*Merge report.*\" | unwrap replaced [$__interval]))",
+          "queryType": "range",
+          "legendFormat": "replaced"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "sum(sum_over_time({k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" | message=~\".*Merge report.*\" | unwrap skipped [$__interval]))",
+          "queryType": "range",
+          "legendFormat": "skipped"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Task duration (s)",
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 23
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "max(quantile_over_time(0.5, {k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" | message=~\".*Merge report.*\" | unwrap durationSeconds [$__interval]))",
+          "queryType": "range",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "max(quantile_over_time(0.95, {k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" | message=~\".*Merge report.*\" | unwrap durationSeconds [$__interval]))",
+          "queryType": "range",
+          "legendFormat": "p95"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Per-task merge reports (click job/task to filter)",
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki}"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "filterable": true,
+            "align": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "job"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter dashboard to this job",
+                    "url": "/d/gpkg-merger-logs?${__url_time_range}&var-loki=${loki}&${namespace:queryparam}&var-job=${__data.fields.job}&var-task=",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "task"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter dashboard to this job and task",
+                    "url": "/d/gpkg-merger-logs?${__url_time_range}&var-loki=${loki}&${namespace:queryparam}&var-job=${__data.fields.job}&var-task=${__data.fields.task}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "{k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" | message=~\".*Merge report.*\"",
+          "queryType": "range"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "labels",
+            "replace": false,
+            "keepTime": false
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "service": true,
+              "version": true,
+              "thread": true,
+              "service_name": true,
+              "k8s_container_name": true,
+              "k8s_deployment_name": true,
+              "k8s_namespace_name": true,
+              "k8s_pod_name": true,
+              "time": true,
+              "Line": true,
+              "labels": true,
+              "id": true,
+              "tsNs": true,
+              "level": true,
+              "category": true,
+              "message": true
+            },
+            "indexByName": {
+              "Time": 0,
+              "jobId": 1,
+              "taskId": 2,
+              "added": 3,
+              "merged": 4,
+              "replaced": 5,
+              "skipped": 6,
+              "total": 7,
+              "durationSeconds": 8
+            },
+            "renameByName": {
+              "jobId": "job",
+              "taskId": "task",
+              "durationSeconds": "duration(s)"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "logs",
+      "title": "Task logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki}"
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 16,
+        "x": 0,
+        "y": 31
+      },
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "{k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\"",
+          "queryType": "range"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Log rate by level",
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki}"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 31
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 40,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (level) (count_over_time({k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" [$__interval]))",
+          "queryType": "range",
+          "legendFormat": "{{level}}"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Log lines (range)",
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 16,
+        "y": 37
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "sum(count_over_time({k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" [$__range]))",
+          "queryType": "instant"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "type": "stat",
+      "title": "Errors (range)",
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 0,
+        "y": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "area"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "sum(count_over_time({k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" | level=~\"Error|Critical\" [$__range]))",
+          "queryType": "instant"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "table",
+      "title": "Error messages",
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki}"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 20,
+        "x": 4,
+        "y": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "filterable": true,
+            "align": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 900
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "job"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter dashboard to this job",
+                    "url": "/d/gpkg-merger-logs?${__url_time_range}&var-loki=${loki}&${namespace:queryparam}&var-job=${__data.fields.job}&var-task=",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "task"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter dashboard to this job and task",
+                    "url": "/d/gpkg-merger-logs?${__url_time_range}&var-loki=${loki}&${namespace:queryparam}&var-job=${__data.fields.job}&var-task=${__data.fields.task}",
+                    "targetBlank": false
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "{k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\" | level=~\"Error|Critical\"",
+          "queryType": "range"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "labels",
+            "replace": false,
+            "keepTime": false
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "service": true,
+              "version": true,
+              "thread": true,
+              "service_name": true,
+              "k8s_container_name": true,
+              "k8s_deployment_name": true,
+              "k8s_namespace_name": true,
+              "k8s_pod_name": true,
+              "time": true,
+              "Line": true,
+              "labels": true,
+              "id": true,
+              "tsNs": true,
+              "category": true,
+              "level": true,
+              "added": true,
+              "merged": true,
+              "replaced": true,
+              "skipped": true,
+              "total": true,
+              "durationSeconds": true
+            },
+            "indexByName": {
+              "Time": 0,
+              "jobId": 1,
+              "taskId": 2,
+              "message": 3
+            },
+            "renameByName": {
+              "jobId": "job",
+              "taskId": "task",
+              "message": "error"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "type": "table",
+      "title": "Log timeline (parsed)",
+      "datasource": {
+        "type": "loki",
+        "uid": "${loki}"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 42
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "filterable": true,
+            "align": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "editorMode": "code",
+          "expr": "{k8s_namespace_name=~\"$namespace\", k8s_deployment_name=~\"gpkg-merger.*\"} | json | __error__=\"\" | jobId=~\"$job\" | taskId=~\"$task\"",
+          "queryType": "range"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "labels",
+            "replace": false,
+            "keepTime": false
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "service": true,
+              "version": true,
+              "thread": true,
+              "service_name": true,
+              "k8s_container_name": true,
+              "k8s_deployment_name": true,
+              "k8s_namespace_name": true,
+              "k8s_pod_name": true,
+              "time": true,
+              "Line": true,
+              "labels": true,
+              "id": true,
+              "tsNs": true,
+              "jobId": true,
+              "taskId": true,
+              "added": true,
+              "merged": true,
+              "replaced": true,
+              "skipped": true,
+              "total": true,
+              "durationSeconds": true
+            },
+            "indexByName": {
+              "Time": 0,
+              "level": 1,
+              "category": 2,
+              "message": 3
+            },
+            "renameByName": {}
+          }
+        }
+      ]
+    }
+  ],
+  "annotations": {
+    "list": []
+  }
+}
