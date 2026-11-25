@@ -306,7 +306,7 @@ namespace MergerLogicUnitTests.Utils
                 using (var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
                     this._fileSystemMock.Object, this._geoUtilsMock.Object))
                 {
-                    var (res, _) = gpkgUtils.GetBatch(1, 0);
+                    var (res, _) = gpkgUtils.GetBatch(1, null);
                     Assert.AreEqual(1, res.Count);
                 }
 
@@ -331,7 +331,7 @@ namespace MergerLogicUnitTests.Utils
                 using (var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
                     this._fileSystemMock.Object, this._geoUtilsMock.Object))
                 {
-                    var (res, _) = gpkgUtils.GetBatch(1, 0);
+                    var (res, _) = gpkgUtils.GetBatch(1, null);
                     Assert.AreEqual(1, res.Count);
                 }
             }
