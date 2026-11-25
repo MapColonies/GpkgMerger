@@ -63,7 +63,7 @@ namespace MergerCli
             // base data wrap up is in program as the same base data object is used in multiple calls 
         }
 
-        private (List<Tile> newTiles, string currentBatchIdentifier) ManageBatchIdentifier(BatchStatusManager batchStatusManager, IData newData, string? resumeBatchIdentifier, long totalTileCount, ref bool resumeMode)
+        private (List<Tile> newTiles, string currentBatchIdentifier, long? ticket) ManageBatchIdentifier(BatchStatusManager batchStatusManager, IData newData, string? resumeBatchIdentifier, long totalTileCount, ref bool resumeMode, ZoomOrderGate zoomOrderGate)
         {
             lock (_locker)
             {
@@ -95,7 +95,8 @@ namespace MergerCli
                     batchStatusManager.SetCurrentBatch(newData.Path, nextBatchIdentifier);
                 }
                 
-                return (newTiles, currentBatchIdentifier);
+                long? ticket = newTiles.Count == 0 ? null : zoomOrderGate.Register(newTiles.Min(tile => tile.Z), newTiles.Max(tile => tile.Z));
+                return (newTiles, currentBatchIdentifier, ticket);
             }
         }
         
@@ -140,13 +141,28 @@ namespace MergerCli
             BatchStatusManager batchStatusManager, long tileProgressCount, long totalTileCount, string? resumeBatchIdentifier, bool resumeMode,bool pollForBatch)
         {
             var numOfThreads = this._configManager.GetConfiguration<int>("GENERAL", "parallel", "numOfThreads");
+            var zoomOrderGate = new ZoomOrderGate();
             Parallel.For(0, numOfThreads, new ParallelOptions { MaxDegreeOfParallelism = -1 }, _ =>
             {
                 while (tileProgressCount != totalTileCount && pollForBatch)
                 {
-                    var batchResult = ManageBatchIdentifier(batchStatusManager, newData, resumeBatchIdentifier, totalTileCount, ref resumeMode);
-                    ProcessBatch(baseData, batchResult.newTiles, ref tileProgressCount,
-                        totalTileCount, ref pollForBatch);
+                    var batchResult = ManageBatchIdentifier(batchStatusManager, newData, resumeBatchIdentifier, totalTileCount, ref resumeMode, zoomOrderGate);
+                    try
+                    {
+                        if (batchResult.ticket is long ticket)
+                        {
+                            zoomOrderGate.WaitForLowerZooms(ticket);
+                        }
+                        ProcessBatch(baseData, batchResult.newTiles, ref tileProgressCount,
+                            totalTileCount, ref pollForBatch);
+                    }
+                    finally
+                    {
+                        if (batchResult.ticket is long ticket)
+                        {
+                            zoomOrderGate.Complete(ticket);
+                        }
+                    }
                     batchStatusManager.CompleteBatch(newData.Path, batchResult.currentBatchIdentifier, tileProgressCount);
                 }
             });
