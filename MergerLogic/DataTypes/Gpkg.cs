@@ -8,8 +8,10 @@ namespace MergerLogic.DataTypes
 {
     public class Gpkg : Data<IGpkgClient>
     {
-        // Keyset cursor: the greatest tile id handed out so far. Persisted as the batch identifier for resume.
-        private long _batchCursorId;
+        // Keyset cursor: the last tile handed out (null before the first batch). Persisted as the batch
+        // identifier for resume: "0" before the first batch, otherwise "z/x/y".
+        private Coord? _batchCursor;
+        private const string StartBatchIdentifier = "0";
         private Extent _extent;
         private readonly IConfigurationManager _configManager;
         private readonly object _locker = new object();
@@ -19,7 +21,7 @@ namespace MergerLogic.DataTypes
             : base(container, DataType.GPKG, path, batchSize, grid, origin, isBase, extent)
         {
             this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] Ctor started");
-            this._batchCursorId = 0;
+            this._batchCursor = null;
             this._configManager = configuration;
 
             if (isBase)
@@ -83,7 +85,7 @@ namespace MergerLogic.DataTypes
         {
             lock (_locker)
             {
-                this._batchCursorId = 0;
+                this._batchCursor = null;
             }
         }
 
@@ -92,9 +94,9 @@ namespace MergerLogic.DataTypes
             lock (_locker)
             {
                 this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] started");
-                currentBatchIdentifier = this._batchCursorId.ToString();
+                currentBatchIdentifier = ToBatchIdentifier(this._batchCursor);
 
-                var (rawTiles, cursor) = this.Utils.GetBatch(this.BatchSize, this._batchCursorId);
+                var (rawTiles, cursor) = this.Utils.GetBatch(this.BatchSize, this._batchCursor);
                 List<Tile> tiles = rawTiles
                     .Select(t =>
                     {
@@ -103,8 +105,8 @@ namespace MergerLogic.DataTypes
                         return tile;
                     }).Where(t => t != null).ToList();
 
-                this._batchCursorId = cursor;
-                nextBatchIdentifier = this._batchCursorId.ToString();
+                this._batchCursor = cursor;
+                nextBatchIdentifier = ToBatchIdentifier(this._batchCursor);
                 this._logger.LogDebug($"[{MethodBase.GetCurrentMethod()?.Name}] ended");
                 return tiles;
             }
@@ -114,8 +116,28 @@ namespace MergerLogic.DataTypes
         {
             lock (_locker)
             {
-                this._batchCursorId = long.Parse(batchIdentifier);
+                this._batchCursor = FromBatchIdentifier(batchIdentifier);
             }
+        }
+
+        private static string ToBatchIdentifier(Coord? cursor)
+        {
+            return cursor is null ? StartBatchIdentifier : $"{cursor.Z}/{cursor.X}/{cursor.Y}";
+        }
+
+        private static Coord? FromBatchIdentifier(string batchIdentifier)
+        {
+            if (batchIdentifier == StartBatchIdentifier)
+            {
+                return null;
+            }
+
+            string[] parts = batchIdentifier.Split('/');
+            if (parts.Length != 3)
+            {
+                throw new FormatException($"invalid gpkg batch identifier '{batchIdentifier}', expected '{StartBatchIdentifier}' or 'z/x/y'");
+            }
+            return new Coord(int.Parse(parts[0]), int.Parse(parts[1]), int.Parse(parts[2]));
         }
 
         protected override Tile? InternalGetLastExistingTile(Coord baseCoords)

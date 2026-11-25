@@ -657,31 +657,49 @@ namespace MergerLogicUnitTests.DataTypes
                 new object[] { true, false }, //is one on one
                 new object[] { true, false }, //is base
                 new object[] { GridOrigin.LOWER_LEFT, GridOrigin.UPPER_LEFT }, //origin
-                new object[] { 7, 13650 } //batch offset
+                new object[] { "0", "5/7/13650" } //batch identifier
             );
         }
 
         [TestMethod]
         [TestCategory("SetBatchIdentifier")]
         [DynamicData(nameof(GenSetBatchIdentifierParams), DynamicDataSourceType.Method)]
-        public void SetBatchIdentifier(bool isOneXOne, bool isBase, GridOrigin origin, int offset)
+        public void SetBatchIdentifier(bool isOneXOne, bool isBase, GridOrigin origin, string testIdentifier)
         {
             var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
 
             this.SetupRequiredBaseMocks(isBase, isOneXOne, extent);
-            this._gpkgUtilsMock.Setup(utils => utils.GetBatch(10, It.IsAny<long>()))
-                .Returns<int, long>((_, lastId) => (new List<Tile>(), lastId));
+            this._gpkgUtilsMock.Setup(utils => utils.GetBatch(10, It.IsAny<Coord?>()))
+                .Returns<int, Coord?>((_, after) => (new List<Tile>(), after));
 
             var gpkg = new Gpkg(this._configurationManagerMock.Object,
                 this._serviceProviderMock.Object, "test.gpkg", 10, grid, origin,
                 isBase, extent);
 
-            string testIdentifier = offset.ToString();
             gpkg.setBatchIdentifier(testIdentifier);
             gpkg.GetNextBatch(out string batchIdentifier, out string? _, null);
             Assert.AreEqual(testIdentifier, batchIdentifier);
-            this._gpkgUtilsMock.Verify(utils => utils.GetBatch(10, offset), Times.Once);
+            Coord? expectedCursor = testIdentifier == "0" ? null : new Coord(5, 7, 13650);
+            this._gpkgUtilsMock.Verify(utils => utils.GetBatch(10, expectedCursor), Times.Once);
+            this.VerifyAll();
+        }
+
+        [TestMethod]
+        [TestCategory("SetBatchIdentifier")]
+        [DataRow("13650")]
+        [DataRow("5/7")]
+        [DataRow("a/b/c")]
+        public void SetBatchIdentifierRejectsInvalidIdentifier(string identifier)
+        {
+            var extent = new Extent() { MinX = -180, MinY = -90, MaxX = 180, MaxY = 90 };
+            this.SetupRequiredBaseMocks(false, false, extent);
+
+            var gpkg = new Gpkg(this._configurationManagerMock.Object,
+                this._serviceProviderMock.Object, "test.gpkg", 10, Grid.TwoXOne, GridOrigin.UPPER_LEFT,
+                false, extent);
+
+            Assert.ThrowsException<FormatException>(() => gpkg.setBatchIdentifier(identifier));
             this.VerifyAll();
         }
 
@@ -708,8 +726,8 @@ namespace MergerLogicUnitTests.DataTypes
             Grid grid = isOneXOne ? Grid.OneXOne : Grid.TwoXOne;
 
             this.SetupRequiredBaseMocks(isBase, isOneXOne, extent);
-            this._gpkgUtilsMock.Setup(utils => utils.GetBatch(batchSize, It.IsAny<long>()))
-                .Returns<int, long>((_, lastId) => (new List<Tile> { new Tile(0, 0, 0, this._jpegImageData) }, lastId + 1));
+            this._gpkgUtilsMock.Setup(utils => utils.GetBatch(batchSize, It.IsAny<Coord?>()))
+                .Returns<int, Coord?>((_, after) => (new List<Tile> { new Tile(0, 0, 0, this._jpegImageData) }, new Coord(0, 0, 0)));
             if (origin == GridOrigin.UPPER_LEFT)
             {
                 this._geoUtilsMock.Setup(converter => converter.FlipY(It.IsAny<Tile>()))
@@ -732,8 +750,8 @@ namespace MergerLogicUnitTests.DataTypes
             gpkg.Reset();
             gpkg.GetNextBatch(out batchIdentifier, out string? _, null);
             Assert.AreEqual("0", batchIdentifier);
-            this._gpkgUtilsMock.Verify(utils => utils.GetBatch(batchSize, 0), Times.Exactly(2));
-            this._gpkgUtilsMock.Verify(utils => utils.GetBatch(batchSize, It.IsAny<long>()), Times.Exactly(3));
+            this._gpkgUtilsMock.Verify(utils => utils.GetBatch(batchSize, null), Times.Exactly(2));
+            this._gpkgUtilsMock.Verify(utils => utils.GetBatch(batchSize, It.IsAny<Coord?>()), Times.Exactly(3));
             this.VerifyAll();
         }
 
@@ -772,8 +790,8 @@ namespace MergerLogicUnitTests.DataTypes
                 var batch = tileBatches[i].ToList();
                 this._gpkgUtilsMock
                     .InSequence(seq)
-                    .Setup(utils => utils.GetBatch(batchSize, It.IsAny<long>()))
-                    .Returns<int, long>((_, lastId) => (batch, lastId + batch.Count));
+                    .Setup(utils => utils.GetBatch(batchSize, It.IsAny<Coord?>()))
+                    .Returns<int, Coord?>((_, after) => (batch, batch.Last().GetCoord()));
                 for (var j = 0; j < tileBatches[i].Length; j++)
                 {
                     if (origin == GridOrigin.UPPER_LEFT)
@@ -804,9 +822,10 @@ namespace MergerLogicUnitTests.DataTypes
 
                 Assert.IsTrue(res.SequenceEqual(exactedBatch, EqualityComparerFactory.Create<Tile>(
                     (t1, t2) => t1.Z == t2.Z && t1.X == t2.X && t1.Y == t2.Y)));
-                string expectedBatchId = Math.Min(i * batchSize, tiles.Length).ToString();
+                Coord? expectedCursor = i == 0 ? null : tileBatches[i - 1].Last().GetCoord();
+                string expectedBatchId = expectedCursor is null ? "0" : $"{expectedCursor.Z}/{expectedCursor.X}/{expectedCursor.Y}";
                 Assert.AreEqual(expectedBatchId, batchIdentifier);
-                this._gpkgUtilsMock.Verify(utils => utils.GetBatch(batchSize, i * batchSize), Times.Once);
+                this._gpkgUtilsMock.Verify(utils => utils.GetBatch(batchSize, expectedCursor), Times.Once);
                 foreach (var tile in tileBatches[i])
                 {
                     if (origin == GridOrigin.UPPER_LEFT)

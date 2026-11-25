@@ -164,22 +164,21 @@ namespace MergerLogicUnitTests.Utils
                     this._fileSystemMock.Object, this._geoUtilsMock.Object);
 
                 var comparer = ComparerFactory.Create<Tile>((t1, t2) => t1?.Z == t2?.Z && t1?.X == t2?.X && t1?.Y == t2?.Y ? 0 : -1);
-                // Tiles are inserted in order, so their auto-increment ids are contiguous (1..N) and the
-                // keyset cursor `id > lastId` selects the same rows the old offset-based paging returned.
-                var (res, cursor) = gpkgUtils.GetBatch(batchSize, offset);
+                Coord? after = offset == 0 ? null : new Coord(offset - 1, offset - 1, offset - 1);
+                var (res, cursor) = gpkgUtils.GetBatch(batchSize, after);
                 var expected = testTiles.Skip(offset).Take(batchSize).ToArray();
                 CollectionAssert.AreEqual(expected, res, comparer);
-                // Cursor advances to the id of the last row read (or stays put when the page is empty).
-                Assert.AreEqual(offset + expected.Length, cursor);
+                // Cursor advances to the last tile read (or stays put when the page is empty).
+                Assert.AreEqual(expected.Length == 0 ? after : expected.Last().GetCoord(), cursor);
             }
             this.VerifyAll();
         }
 
         [TestMethod]
         [TestCategory("GetBatch")]
-        public void GetBatchWithLongOffset()
+        public void GetBatchAfterLastTileIsEmpty()
         {
-            long offset = 1L + int.MaxValue;
+            var after = new Coord(0, 0, 1);
             string path = this.GetGpkgPath();
             var testTiles = new Tile[]
             {
@@ -195,8 +194,47 @@ namespace MergerLogicUnitTests.Utils
                 var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
                     this._fileSystemMock.Object, this._geoUtilsMock.Object);
 
-                var (res, _) = gpkgUtils.GetBatch(21, offset);
+                var (res, cursor) = gpkgUtils.GetBatch(21, after);
                 CollectionAssert.AreEqual(Array.Empty<Tile>(), res);
+                Assert.AreEqual(after, cursor);
+            }
+            this.VerifyAll();
+        }
+
+        [TestMethod]
+        [TestCategory("GetBatch")]
+        public void GetBatchReturnsLowestZoomFirstWhateverTheInsertOrder()
+        {
+            string path = this.GetGpkgPath();
+            // Rows stored highest zoom first must still be read lowest zoom first.
+            var testTiles = new Tile[]
+            {
+                new Tile(2, 3, 1, this._jpegImageData), new Tile(2, 0, 2, this._jpegImageData),
+                new Tile(1, 1, 0, this._jpegImageData), new Tile(1, 0, 1, this._jpegImageData),
+                new Tile(0, 0, 0, this._jpegImageData),
+            };
+            var expected = testTiles.OrderBy(t => t.Z).ThenBy(t => t.X).ThenBy(t => t.Y).ToArray();
+
+            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            {
+                connection.Open();
+                this.SetupConstructorRequiredMocks(connection);
+                this.CreateTestTiles(connection, testTiles);
+
+                var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object);
+
+                var comparer = ComparerFactory.Create<Tile>((t1, t2) => t1?.Z == t2?.Z && t1?.X == t2?.X && t1?.Y == t2?.Y ? 0 : -1);
+                var read = new List<Tile>();
+                Coord? cursor = null;
+                List<Tile> page;
+                do
+                {
+                    (page, cursor) = gpkgUtils.GetBatch(2, cursor);
+                    read.AddRange(page);
+                } while (page.Count > 0);
+
+                CollectionAssert.AreEqual(expected, read, comparer);
             }
             this.VerifyAll();
         }
@@ -222,7 +260,7 @@ namespace MergerLogicUnitTests.Utils
                     this._fileSystemMock.Object, this._geoUtilsMock.Object);
 
                 // Opens the reused connection.
-                var (res, _) = gpkgUtils.GetBatch(1, 0);
+                var (res, _) = gpkgUtils.GetBatch(1, null);
                 Assert.AreEqual(1, res.Count);
 
                 gpkgUtils.Dispose();
@@ -268,7 +306,7 @@ namespace MergerLogicUnitTests.Utils
                 using (var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
                     this._fileSystemMock.Object, this._geoUtilsMock.Object))
                 {
-                    var (res, _) = gpkgUtils.GetBatch(1, 0);
+                    var (res, _) = gpkgUtils.GetBatch(1, null);
                     Assert.AreEqual(1, res.Count);
                 }
 
@@ -293,7 +331,7 @@ namespace MergerLogicUnitTests.Utils
                 using (var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
                     this._fileSystemMock.Object, this._geoUtilsMock.Object))
                 {
-                    var (res, _) = gpkgUtils.GetBatch(1, 0);
+                    var (res, _) = gpkgUtils.GetBatch(1, null);
                     Assert.AreEqual(1, res.Count);
                 }
             }

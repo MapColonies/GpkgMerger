@@ -1,4 +1,5 @@
 using MergerLogic.Batching;
+using MergerLogic.DataTypes;
 using MergerLogic.Extensions;
 using MergerLogic.Utils;
 using Microsoft.Extensions.Logging;
@@ -241,10 +242,10 @@ namespace MergerLogic.Clients
             }
         }
 
-        // Keyset pagination over rowid: seeks past lastId instead of OFFSET-scanning, so page cost stays
-        // constant regardless of depth. lastId is the cursor (0 to start); returns the greatest rowid read
-        // (or lastId unchanged when the page is empty).
-        public (List<Tile> Tiles, long LastId) GetBatch(int batchSize, long lastId)
+        // Keyset paging on the GPKG's UNIQUE(zoom_level, tile_column, tile_row) index: constant page cost, lowest zoom first.
+        // Merge order matters (partial tiles are filled by upscaling a lower zoom already in the target), so never page by rowid.
+        // after: last tile read (null to start); returns the page's last tile, or after when the page is empty.
+        public (List<Tile> Tiles, Coord? Last) GetBatch(int batchSize, Coord? after)
         {
             List<Tile> tiles = new List<Tile>(batchSize);
 
@@ -253,19 +254,25 @@ namespace MergerLogic.Clients
                 var connection = this.GetOrCreateConnection();
                 using (var command = connection.CreateCommand())
                 {
+                    string where = after is null ? "" : "WHERE (zoom_level, tile_column, tile_row) > ($z, $x, $y) ";
                     command.CommandText =
-                        $"SELECT rowid, zoom_level, tile_column, tile_row, tile_data FROM \"{this._tileCache}\" WHERE rowid > $lastId ORDER BY rowid ASC LIMIT $limit";
-                    command.Parameters.AddWithValue("$lastId", lastId);
+                        $"SELECT zoom_level, tile_column, tile_row, tile_data FROM \"{this._tileCache}\" {where}ORDER BY zoom_level, tile_column, tile_row LIMIT $limit";
+                    if (after is not null)
+                    {
+                        command.Parameters.AddWithValue("$z", after.Z);
+                        command.Parameters.AddWithValue("$x", after.X);
+                        command.Parameters.AddWithValue("$y", after.Y);
+                    }
                     command.Parameters.AddWithValue("$limit", batchSize);
 
                     using (var reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
-                            lastId = reader.GetInt64(0);
-                            var z = reader.GetInt32(1);
-                            var x = reader.GetInt32(2);
-                            var y = reader.GetInt32(3);
+                            var z = reader.GetInt32(0);
+                            var x = reader.GetInt32(1);
+                            var y = reader.GetInt32(2);
+                            after = new Coord(z, x, y);
                             var blob = (byte[])reader["tile_data"];
 
                             Tile tile = this.CreateTile(z, x, y, blob)!;
@@ -275,7 +282,7 @@ namespace MergerLogic.Clients
                 }
             }
 
-            return (tiles, lastId);
+            return (tiles, after);
         }
 
         public Tile? GetLastTile(int[] coords, int currentTileZoom)
