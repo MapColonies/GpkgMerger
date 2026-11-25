@@ -86,73 +86,77 @@ namespace MergerService.Runners
                 return false;
             }
 
-            this._logger.LogInformation($"[{methodName}] Run Task: jobId {task.JobId}, taskId {task.Id}");
-            string? managerCallbackUrl = this._jobUtils.GetJob(task.JobId)?.Parameters.AdditionalParams?.JobTrackerServiceURL;
-            string log = managerCallbackUrl == null ? "managerCallbackUrl not provided as job parameter" : $"managerCallback url: {managerCallbackUrl}";
-            this._logger.LogDebug($"[{methodName}]{log}");
-
-            // check if needs to fail task that was released by task liberator and reached max attempts
-            if (task.Attempts >= this._maxTaskRetriesAttempts)
+            // tag every log line from this task with jobId/taskId for per-task correlation
+            using (this._logger.BeginScope(new Dictionary<string, object> { ["jobId"] = task.JobId, ["taskId"] = task.Id }))
             {
-                try
+                this._logger.LogInformation($"[{methodName}] Run Task: jobId {task.JobId}, taskId {task.Id}");
+                string? managerCallbackUrl = this._jobUtils.GetJob(task.JobId)?.Parameters.AdditionalParams?.JobTrackerServiceURL;
+                string log = managerCallbackUrl == null ? "managerCallbackUrl not provided as job parameter" : $"managerCallback url: {managerCallbackUrl}";
+                this._logger.LogDebug($"[{methodName}]{log}");
+
+                // check if needs to fail task that was released by task liberator and reached max attempts
+                if (task.Attempts >= this._maxTaskRetriesAttempts)
                 {
-                    string reason = string.IsNullOrEmpty(task.Reason) ? $"Max attempts reached, current attempt is {task.Attempts}" : $"{task.Reason} and Max attempts reached with {task.Attempts} attempts";
-                    this._logger.LogWarning($"[{methodName}] reject job because attemts count reached, jobId {task.JobId}, taskId {task.Id}, {reason}");
-                    this._taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, reason, task.Resettable, managerCallbackUrl);
+                    try
+                    {
+                        string reason = string.IsNullOrEmpty(task.Reason) ? $"Max attempts reached, current attempt is {task.Attempts}" : $"{task.Reason} and Max attempts reached with {task.Attempts} attempts";
+                        this._logger.LogWarning($"[{methodName}] reject job because attemts count reached, jobId {task.JobId}, taskId {task.Id}, {reason}");
+                        this._taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, reason, task.Resettable, managerCallbackUrl);
+                    }
+                    catch (Exception innerError)
+                    {
+                        this._logger.LogError(innerError, $"[{methodName}] Error in MergerService while updating reject status for job {task.JobId}, task {task.Id} due to max attemps reached with {task.Attempts}, update task failure: {innerError.Message}");
+                    }
+
+                    return false;
                 }
-                catch (Exception innerError)
-                {
-                    this._logger.LogError(innerError, $"[{methodName}] Error in MergerService while updating reject status for job {task.JobId}, task {task.Id} due to max attemps reached with {task.Attempts}, update task failure: {innerError.Message}");
-                }
 
-                return false;
-            }
-
-            var totalTaskStopwatch = Stopwatch.StartNew();
-            bool taskSucceed = false;
-
-            try
-            {
-                this._heartbeatClient.Start(task.Id);
-                this._taskExecutor.ExecuteTask(task, this._taskUtils, managerCallbackUrl);
-                taskSucceed = true;
-            }
-            catch (Exception e)
-            {
-                this._logger.LogError(e, $"[{methodName}] Error in MergerService while running task {task.Id}, error: {e.Message}");
+                var totalTaskStopwatch = Stopwatch.StartNew();
+                bool taskSucceed = false;
 
                 try
                 {
-                    this._taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, e.Message, true, managerCallbackUrl);
+                    this._heartbeatClient.Start(task.Id);
+                    this._taskExecutor.ExecuteTask(task, this._taskUtils, managerCallbackUrl);
+                    taskSucceed = true;
                 }
-                catch (Exception innerError)
+                catch (Exception e)
                 {
-                    this._logger.LogError(e, $"[{methodName}] Error in MergerService while updating reject status, RunTask catch block - update task failure: {innerError.Message}");
+                    this._logger.LogError(e, $"[{methodName}] Error in MergerService while running task {task.Id}, error: {e.Message}");
+
+                    try
+                    {
+                        this._taskUtils.UpdateReject(task.JobId, task.Id, task.Attempts, e.Message, true, managerCallbackUrl);
+                    }
+                    catch (Exception innerError)
+                    {
+                        this._logger.LogError(e, $"[{methodName}] Error in MergerService while updating reject status, RunTask catch block - update task failure: {innerError.Message}");
+                    }
                 }
-            }
-            finally
-            {
-                totalTaskStopwatch.Stop();
-                this._metricsProvider.TaskExecutionTimeHistogram(totalTaskStopwatch.Elapsed.TotalSeconds, task.Type);
-                this._heartbeatClient.Stop();
-            }
+                finally
+                {
+                    totalTaskStopwatch.Stop();
+                    this._metricsProvider.TaskExecutionTimeHistogram(totalTaskStopwatch.Elapsed.TotalSeconds, task.Type);
+                    this._heartbeatClient.Stop();
+                }
 
-            if (!taskSucceed)
-            {
-                return false;
-            }
+                if (!taskSucceed)
+                {
+                    return false;
+                }
 
-            try
-            {
-                this._taskUtils.UpdateCompletion(task.JobId, task.Id, managerCallbackUrl);
-                this._logger.LogInformation($"[{methodName}] Completed task: jobId: {task.JobId}, taskId: {task.Id}");
-            }
-            catch (Exception e)
-            {
-                this._logger.LogError(e, $"[{methodName}] Error in MergerService start - update task completion: {e.Message}");
-            }
+                try
+                {
+                    this._taskUtils.UpdateCompletion(task.JobId, task.Id, managerCallbackUrl);
+                    this._logger.LogInformation($"[{methodName}] Completed task: jobId: {task.JobId}, taskId: {task.Id}");
+                }
+                catch (Exception e)
+                {
+                    this._logger.LogError(e, $"[{methodName}] Error in MergerService start - update task completion: {e.Message}");
+                }
 
-            return true;
+                return true;
+            }
         }
     }
 }
