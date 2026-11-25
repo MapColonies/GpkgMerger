@@ -45,7 +45,6 @@ spec:
         app: {{ $chartName }}
         release: {{ $releaseName }}
         run: {{ $releaseName }}-{{ $chartName }}
-        {{- include "gpkg-merger.selectorLabels" . | nindent 8 }}
         {{- include "gpkg-merger.labels" . | nindent 8 }}
       annotations:
         {{ include "mclabels.annotations" . | nindent 8 }}

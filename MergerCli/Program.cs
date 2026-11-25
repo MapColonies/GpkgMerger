@@ -19,7 +19,7 @@ namespace MergerCli
         private static bool _done = false;
         private static string _resumeFilePath;
 
-        private static void Main(string[] args)
+        private static int Main(string[] args)
         {
             ServiceProvider container = CreateContainer();
             _logger = container.GetRequiredService<ILogger<Program>>();
@@ -33,7 +33,7 @@ namespace MergerCli
             {
                 _logger.LogError("invalid command.");
                 PrintHelp(programName);
-                return;
+                return 1;
             }
 
             var config = container.GetRequiredService<IConfigurationManager>();
@@ -67,7 +67,7 @@ namespace MergerCli
             {
                 _logger.LogError(ex.Message);
                 PrintHelp(args[0]);
-                return;
+                return 1;
             }
 
             IData baseData = sources[0];
@@ -92,7 +92,7 @@ namespace MergerCli
                 {
                     source.Dispose();
                 }
-                return;
+                return 1;
             }
 
             var process = container.GetRequiredService<IProcess>();
@@ -138,7 +138,7 @@ namespace MergerCli
                 //save status on unhandled exceptions
                 OnFailure();
                 _logger.LogError(ex, ex.Message);
-                return;
+                return 1;
             }
             finally
             {
@@ -153,6 +153,7 @@ namespace MergerCli
             ts = totalTimeStopwatch.Elapsed;
             _logger.LogInformation(timeUtils.FormatElapsedTime("Total runtime", ts));
             _done = true;
+            return 0;
         }
 
         private static ServiceProvider CreateContainer()
