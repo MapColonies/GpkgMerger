@@ -35,7 +35,7 @@ namespace MergerLogic.Clients
             this._tileCache = this.InternalGetTileCache();
         }
 
-        // Returns the shared connection, opening it (with WAL) on first use. Caller must hold _connectionLock.
+        // Returns the shared connection, opening it on first use. Caller must hold _connectionLock.
         private SQLiteConnection GetOrCreateConnection()
         {
             // Dispose nulls _connection, so without this a post-dispose call would open a connection nothing closes.
@@ -47,14 +47,9 @@ namespace MergerLogic.Clients
             if (this._connection == null)
             {
                 var connection = new SQLiteConnection($"Data Source={this.path}");
+                // No journal_mode/synchronous pragmas: changing the journal mode writes to the file, which modifies
+                // source GPKGs, fails on read-only ones, and WAL is unsupported on the network filesystems we run on.
                 connection.Open();
-                using (var pragma = connection.CreateCommand())
-                {
-                    // WAL + NORMAL sync: concurrent readers alongside a writer and far fewer fsyncs on the hot path.
-                    pragma.CommandText = "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;";
-                    pragma.ExecuteNonQuery();
-                }
-
                 this._connection = connection;
             }
 

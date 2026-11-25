@@ -293,6 +293,57 @@ namespace MergerLogicUnitTests.Utils
 
         #endregion
 
+        #region Source files
+
+        // In-memory databases ignore journal_mode, so these tests need a real file on disk.
+        [TestMethod]
+        [TestCategory("SourceFiles")]
+        public void ReadingDoesNotChangeJournalMode()
+        {
+            string path = this.CreateGpkgFile(new Tile(0, 0, 0, this._jpegImageData));
+            try
+            {
+                using (var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object))
+                {
+                    var (res, _) = gpkgUtils.GetBatch(1, 0);
+                    Assert.AreEqual(1, res.Count);
+                }
+
+                Assert.AreEqual("delete", this.GetJournalMode(path));
+                Assert.IsFalse(File.Exists($"{path}-wal"));
+            }
+            finally
+            {
+                this.DeleteGpkgFile(path);
+            }
+            this.VerifyAll();
+        }
+
+        [TestMethod]
+        [TestCategory("SourceFiles")]
+        public void ReadsReadOnlyFile()
+        {
+            string path = this.CreateGpkgFile(new Tile(0, 0, 0, this._jpegImageData));
+            try
+            {
+                File.SetAttributes(path, FileAttributes.ReadOnly);
+                using (var gpkgUtils = new GpkgClient(path, this._timeUtilsMock.Object, this._loggerMock.Object,
+                    this._fileSystemMock.Object, this._geoUtilsMock.Object))
+                {
+                    var (res, _) = gpkgUtils.GetBatch(1, 0);
+                    Assert.AreEqual(1, res.Count);
+                }
+            }
+            finally
+            {
+                this.DeleteGpkgFile(path);
+            }
+            this.VerifyAll();
+        }
+
+        #endregion
+
         #region GetExtent
 
         public static IEnumerable<object[]> GenGetExtentParams()
@@ -944,6 +995,40 @@ namespace MergerLogicUnitTests.Utils
                     command.Parameters.Add(blobParameter);
                     command.ExecuteNonQuery();
                 }
+            }
+        }
+
+        private string CreateGpkgFile(params Tile[] testTiles)
+        {
+            string path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.gpkg");
+            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            {
+                connection.Open();
+                this.SetupConstructorRequiredMocks(connection);
+                this.CreateTestTiles(connection, testTiles);
+            }
+            return path;
+        }
+
+        private string GetJournalMode(string path)
+        {
+            using (var connection = new SQLiteConnection($"Data Source={path}"))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "PRAGMA journal_mode;";
+                    return (string)command.ExecuteScalar();
+                }
+            }
+        }
+
+        private void DeleteGpkgFile(string path)
+        {
+            File.SetAttributes(path, FileAttributes.Normal);
+            foreach (string file in new[] { path, $"{path}-wal", $"{path}-shm", $"{path}-journal" })
+            {
+                File.Delete(file);
             }
         }
 
