@@ -31,6 +31,7 @@ Common labels
 */}}
 {{- define "gpkg-merger.labels" -}}
 helm.sh/chart: {{ include "gpkg-merger.chart" . }}
+{{ include "gpkg-merger.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
