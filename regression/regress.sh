@@ -29,6 +29,12 @@ OC=(oc -n "$ns")
 bucket=regression
 
 teardown() {
+  local rc=$?
+  # Deleting the project deletes its events too, and they are often the only trace of why a pod vanished.
+  if ((rc != 0)); then
+    "${OC[@]}" get events --sort-by=.lastTimestamp >"$results/events.log" 2>&1 || true
+    "${OC[@]}" get pods -o wide >"$results/pods.log" 2>&1 || true
+  fi
   if [[ $KEEP == 1 ]]; then
     echo "KEEP=1: project $ns is left running; delete it with: oc delete project $ns"
   else

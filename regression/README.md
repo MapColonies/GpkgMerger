@@ -58,6 +58,7 @@ Everything lands in `RESULTS_DIR` (default `./regression-results/<time>`):
 - `compare.log`: each pair's tile counts and the first differing tiles, as `(zoom, x, y)` with the largest channel
   difference.
 - `build-<label>.log`: the image build, when a git ref was given.
+- `events.log` and `pods.log`: the project's events and pods, saved before it is deleted when a run fails.
 
 A CLI call fails when it exits non-zero, logs an `[Error]`, or stops before its tile count reaches the total. Older
 versions exit 0 after a failed merge, so the log is checked too. A failed call skips the rest of its case and leaves
