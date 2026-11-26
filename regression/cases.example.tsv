@@ -1,0 +1,9 @@
+# <case name><TAB><CLI arguments after the program name>
+# Lines with the same name run in order on one target; the first source after the batch size is the target.
+# Placeholders: {BATCH}, {SRC} (a fresh copy of the sample), {OUT} (the case's output folder), {S3} (the case's
+# key prefix in the run's MinIO bucket). Values cannot contain spaces.
+# Merging a high zoom over a lower one is the update that a wrong zoom order breaks.
+update_s3	{BATCH} s3 {S3} gpkg {SRC}/<low-zoom>.gpkg
+update_s3	{BATCH} s3 {S3} gpkg {SRC}/<high-zoom>.gpkg
+update_fs	{BATCH} fs {OUT}/tiles gpkg {SRC}/<low-zoom>.gpkg
+update_fs	{BATCH} fs {OUT}/tiles gpkg {SRC}/<high-zoom>.gpkg
